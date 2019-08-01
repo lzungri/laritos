@@ -1,26 +1,20 @@
-    .text
+    .section .vectors
     .global _vectors
 
 _vectors:
-    ldr pc, reset_addr
-    ldr pc, undef_handler_addr
-    ldr pc, svc_addr
-    ldr pc, prefetch_addr
-    ldr pc, abort_addr
-    b . // Reserved vector
-    ldr pc, irq_addr
-    ldr pc, fiq_addr
+    ldr pc, =reset_handler
+    ldr pc, =undef_handler
+    ldr pc, =svc_handler
+    ldr pc, =prefetch_handler
+    ldr pc, =abort_handler
+    ldr pc, =reserved_handler
+    ldr pc, =irq_handler
+    ldr pc, =fiq_handler
 
 
     .align 4
 
-reset_addr:         .word reset_handler
-undef_handler_addr: .word undef_handler
-svc_addr:           .word svc_handler
-prefetch_addr:      .word prefetch_handler
-abort_addr:         .word abort_handler
-irq_addr:           .word irq_handler
-fiq_addr:           .word fiq_handler
+# TODO Use weak functions
 
 reset_handler:
     b _start
@@ -36,6 +30,9 @@ prefetch_handler:
 
 abort_handler:
     b abort_handler
+
+reserved_handler:
+    b reserved_handler
 
 irq_handler:
     b irq_handler
