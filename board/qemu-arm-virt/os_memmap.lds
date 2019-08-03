@@ -23,7 +23,6 @@ SECTIONS
         . = ALIGN(4);
         __text_start = ABSOLUTE(.);
         *(.text);
-        *(.text.*);
         . = ALIGN(4);
         __text_end = ABSOLUTE(.);
         __text_size = __text_end - __text_start;
@@ -36,7 +35,6 @@ SECTIONS
         . = ALIGN(4);
         __data_start = ABSOLUTE(.);
         *(.data);
-        *(.data.*);
         BYTE(0xff)
         . = ALIGN(4);
         __data_end = ABSOLUTE(.);
@@ -48,7 +46,6 @@ SECTIONS
         . = ALIGN(4);
         __bss_start = ABSOLUTE(.);
         *(.bss)
-        *(.bss.*)
         . = ALIGN(4);
         __bss_end = ABSOLUTE(.);
         __bss_size = __bss_end - __bss_start;
