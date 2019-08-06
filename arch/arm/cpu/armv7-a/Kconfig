@@ -1,0 +1,4 @@
+menu "armv-7a options"
+    depends on ARMV7_A
+
+endmenu

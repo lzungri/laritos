@@ -1,0 +1,10 @@
+config BOARD_QEMU_ARM_VIRT
+    bool "QEMU ARM Board"
+    depends on ARM
+
+config BOARD_QEMU_AARCH64_VIRT
+    bool "QEMU AARCH64 Board"
+    depends on AARCH64
+
+source "board/qemu-arm-virt/Kconfig"
+source "board/qemu-aarch64-virt/Kconfig"

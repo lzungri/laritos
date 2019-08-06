@@ -3,8 +3,10 @@
 # For a description of the syntax of this configuration file,
 # see Documentation/kbuild/kconfig-language.rst.
 #
-mainmenu "Linux/$(ARCH) $(KERNELVERSION) Kernel Configuration"
-
-comment "Compiler: $(CC_VERSION_TEXT)"
+mainmenu "laritOS/$(ARCH) $(KERNELVERSION) Configuration"
 
 source "scripts/Kconfig.include"
+
+source "board/Kconfig"
+source "arch/Kconfig"
+source "kernel/Kconfig"

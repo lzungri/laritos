@@ -1,0 +1,26 @@
+choice
+    prompt "Architecture select"
+    default ARM
+
+config ARM
+    bool "ARM architecture"
+
+config AARCH64
+    bool "AARCH64 architecture"
+
+endchoice
+
+choice
+    prompt "Instruction set"
+    optional
+
+config ARMV7_A
+    bool "armv7-a"
+
+config ARMV8_A
+    bool "armv8-a"
+    
+endchoice
+
+source "arch/arm/Kconfig"
+source "arch/aarch64/Kconfig"

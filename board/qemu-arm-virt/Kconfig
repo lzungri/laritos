@@ -1,0 +1,28 @@
+menu "QEMU ARM Board Options"
+    depends on BOARD_QEMU_ARM_VIRT
+
+config SYS_BOARD
+    string "Board name"
+    default "qemu-arm-virt"
+
+config SYS_VENDOR
+    string "Vendor name"
+    default "qemu"
+
+config SYS_FLASH_BASE
+    hex "Flash base address"
+    default 0x00000000
+
+config SYS_FLASH_SIZE
+    hex "Flash size"
+    default 0x1000000000
+
+config SYS_RAM_BASE
+    hex "RAM base address"
+    default 0x40000000
+
+config SYS_RAM_SIZE
+    hex "RAM size"
+    default 0x40000000
+
+endmenu

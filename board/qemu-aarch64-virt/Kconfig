@@ -1,0 +1,28 @@
+menu "QEMU AARCH64 Board Options"
+    depends on BOARD_QEMU_AARCH64_VIRT
+
+config SYS_BOARD
+    string "Board name"
+    default "qemu-aarch64-virt"
+
+config SYS_VENDOR
+    string "Vendor name"
+    default "qemu"
+
+config SYS_FLASH_BASE
+    hex "Flash base address"
+    default 0x00000000
+
+config SYS_FLASH_SIZE
+    hex "Flash size"
+    default 0x1000000000
+
+config SYS_RAM_BASE
+    hex "RAM base address"
+    default 0x40000000
+
+config SYS_RAM_SIZE
+    hex "RAM size"
+    default 0x40000000
+
+endmenu

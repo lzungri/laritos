@@ -1,0 +1,4 @@
+menu "cortex-a15 options"
+    depends on SYS_CPU_CORTEX_A15
+
+endmenu

@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0
-VERSION = 5
-PATCHLEVEL = 3
-SUBLEVEL = 0
-EXTRAVERSION = -rc1
-NAME = Bobtail Squid
+VERSION = 0
+PATCHLEVEL = 0
+SUBLEVEL = 1
+EXTRAVERSION =
+NAME = laritOS
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
@@ -1174,142 +1174,11 @@ quiet_cmd_headers_install = INSTALL $(INSTALL_HDR_PATH)/include
 	rsync -mrl --include='*/' --include='*\.h' --exclude='*' \
 	usr/include $(INSTALL_HDR_PATH)
 
-PHONY += headers_install
-headers_install: headers
-	$(call cmd,headers_install)
-
 PHONY += archheaders archscripts
-
-hdr-inst := -f $(srctree)/scripts/Makefile.headersinst obj
-
-PHONY += headers
-headers: $(version_h) scripts_unifdef uapi-asm-generic archheaders archscripts
-	$(if $(wildcard $(srctree)/arch/$(SRCARCH)/include/uapi/asm/Kbuild),, \
-	  $(error Headers not exportable for the $(SRCARCH) architecture))
-	$(Q)$(MAKE) $(hdr-inst)=include/uapi
-	$(Q)$(MAKE) $(hdr-inst)=arch/$(SRCARCH)/include/uapi
-
-PHONY += headers_check
-headers_check: headers
-	$(Q)$(MAKE) $(hdr-inst)=include/uapi HDRCHECK=1
-	$(Q)$(MAKE) $(hdr-inst)=arch/$(SRCARCH)/include/uapi HDRCHECK=1
-
-ifdef CONFIG_HEADERS_INSTALL
-prepare: headers
-endif
-
-ifdef CONFIG_HEADERS_CHECK
-all: headers_check
-endif
 
 PHONY += scripts_unifdef
 scripts_unifdef: scripts_basic
 	$(Q)$(MAKE) $(build)=scripts scripts/unifdef
-
-# ---------------------------------------------------------------------------
-# Kernel selftest
-
-PHONY += kselftest
-kselftest:
-	$(Q)$(MAKE) -C $(srctree)/tools/testing/selftests run_tests
-
-PHONY += kselftest-clean
-kselftest-clean:
-	$(Q)$(MAKE) -C $(srctree)/tools/testing/selftests clean
-
-PHONY += kselftest-merge
-kselftest-merge:
-	$(if $(wildcard $(objtree)/.config),, $(error No .config exists, config your kernel first!))
-	$(Q)find $(srctree)/tools/testing/selftests -name config | \
-		xargs $(srctree)/scripts/kconfig/merge_config.sh -m $(objtree)/.config
-	+$(Q)$(MAKE) -f $(srctree)/Makefile olddefconfig
-
-# ---------------------------------------------------------------------------
-# Modules
-
-ifdef CONFIG_MODULES
-
-# By default, build modules as well
-
-all: modules
-
-# Build modules
-#
-# A module can be listed more than once in obj-m resulting in
-# duplicate lines in modules.order files.  Those are removed
-# using awk while concatenating to the final file.
-
-PHONY += modules
-modules: $(if $(KBUILD_BUILTIN),vmlinux) modules.order modules.builtin
-	@$(kecho) '  Building modules, stage 2.';
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/modules-check.sh
-
-modules.order: $(vmlinux-dirs)
-	$(Q)$(AWK) '!x[$$0]++' $(addsuffix /$@, $(vmlinux-dirs)) > $@
-
-modbuiltin-dirs := $(addprefix _modbuiltin_, $(vmlinux-dirs))
-
-modules.builtin: $(modbuiltin-dirs)
-	$(Q)$(AWK) '!x[$$0]++' $(addsuffix /$@, $(vmlinux-dirs)) > $@
-
-PHONY += $(modbuiltin-dirs)
-# tristate.conf is not included from this Makefile. Add it as a prerequisite
-# here to make it self-healing in case somebody accidentally removes it.
-$(modbuiltin-dirs): include/config/tristate.conf
-	$(Q)$(MAKE) $(modbuiltin)=$(patsubst _modbuiltin_%,%,$@)
-
-# Target to prepare building external modules
-PHONY += modules_prepare
-modules_prepare: prepare
-
-# Target to install modules
-PHONY += modules_install
-modules_install: _modinst_ _modinst_post
-
-PHONY += _modinst_
-_modinst_:
-	@rm -rf $(MODLIB)/kernel
-	@rm -f $(MODLIB)/source
-	@mkdir -p $(MODLIB)/kernel
-	@ln -s $(abspath $(srctree)) $(MODLIB)/source
-	@if [ ! $(objtree) -ef  $(MODLIB)/build ]; then \
-		rm -f $(MODLIB)/build ; \
-		ln -s $(CURDIR) $(MODLIB)/build ; \
-	fi
-	@sed 's:^:kernel/:' modules.order > $(MODLIB)/modules.order
-	@sed 's:^:kernel/:' modules.builtin > $(MODLIB)/modules.builtin
-	@cp -f $(objtree)/modules.builtin.modinfo $(MODLIB)/
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modinst
-
-# This depmod is only for convenience to give the initial
-# boot a modules.dep even before / is mounted read-write.  However the
-# boot script depmod is the master version.
-PHONY += _modinst_post
-_modinst_post: _modinst_
-	$(call cmd,depmod)
-
-ifeq ($(CONFIG_MODULE_SIG), y)
-PHONY += modules_sign
-modules_sign:
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modsign
-endif
-
-else # CONFIG_MODULES
-
-# Modules not configured
-# ---------------------------------------------------------------------------
-
-PHONY += modules modules_install
-modules modules_install:
-	@echo >&2
-	@echo >&2 "The present kernel configuration has modules disabled."
-	@echo >&2 "Type 'make config' and enable loadable module support."
-	@echo >&2 "Then build a kernel with module support enabled."
-	@echo >&2
-	@exit 1
-
-endif # CONFIG_MODULES
 
 ###
 # Cleaning is done on three levels.
@@ -1370,22 +1239,12 @@ distclean: mrproper
 		-type f -print | xargs rm -f
 
 
-# Packaging of the kernel to various formats
-# ---------------------------------------------------------------------------
-package-dir	:= scripts/package
-
-%src-pkg: FORCE
-	$(Q)$(MAKE) $(build)=$(package-dir) $@
-%pkg: include/config/kernel.release FORCE
-	$(Q)$(MAKE) $(build)=$(package-dir) $@
-
-
 # Brief documentation of the typical targets used
 # ---------------------------------------------------------------------------
 
-boards := $(wildcard $(srctree)/arch/$(SRCARCH)/configs/*_defconfig)
+boards := $(wildcard $(srctree)/board/configs/*_defconfig)
 boards := $(sort $(notdir $(boards)))
-board-dirs := $(dir $(wildcard $(srctree)/arch/$(SRCARCH)/configs/*/*_defconfig))
+board-dirs := $(dir $(wildcard $(srctree)/board/configs/*/*_defconfig))
 board-dirs := $(sort $(notdir $(board-dirs:/=)))
 
 PHONY += help
@@ -1401,16 +1260,12 @@ help:
 	@echo  ''
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
-	@echo  '* vmlinux	  - Build the bare kernel'
-	@echo  '* modules	  - Build all modules'
-	@echo  '  modules_install - Install all modules to INSTALL_MOD_PATH (default: /)'
 	@echo  '  dir/            - Build all files in dir and below'
 	@echo  '  dir/file.[ois]  - Build specified target only'
 	@echo  '  dir/file.ll     - Build the LLVM assembly file'
 	@echo  '                    (requires compiler support for LLVM assembly generation)'
 	@echo  '  dir/file.lst    - Build specified mixed source/assembly target only'
 	@echo  '                    (requires a recent binutils and recent build (System.map))'
-	@echo  '  dir/file.ko     - Build module including final link'
 	@echo  '  modules_prepare - Set up for building external modules'
 	@echo  '  tags/TAGS	  - Generate tags file for editors'
 	@echo  '  cscope	  - Generate cscope index'
@@ -1430,14 +1285,6 @@ help:
 	@echo  '  headers_check   - Sanity check on exported headers'
 	@echo  '  headerdep       - Detect inclusion cycles in headers'
 	@echo  '  coccicheck      - Check with Coccinelle'
-	@echo  ''
-	@echo  'Kernel selftest:'
-	@echo  '  kselftest       - Build and run kernel selftest (run as root)'
-	@echo  '                    Build, install, and boot kernel before'
-	@echo  '                    running kselftest on it'
-	@echo  '  kselftest-clean - Remove all generated kselftest files'
-	@echo  '  kselftest-merge - Merge all the config dependencies of kselftest to existing'
-	@echo  '                    .config.'
 	@echo  ''
 
 	@echo 'Userspace tools targets:'
@@ -1478,7 +1325,7 @@ help-board-dirs := $(addprefix help-,$(board-dirs))
 
 help-boards: $(help-board-dirs)
 
-boards-per-dir = $(sort $(notdir $(wildcard $(srctree)/arch/$(SRCARCH)/configs/$*/*_defconfig)))
+boards-per-dir = $(sort $(notdir $(wildcard $(srctree)/board/configs/$*/*_defconfig)))
 
 $(help-board-dirs): help-%:
 	@echo  'Architecture specific targets ($(SRCARCH) $*):'
@@ -1502,75 +1349,6 @@ endif
 
 else # KBUILD_EXTMOD
 
-###
-# External module support.
-# When building external modules the kernel used as basis is considered
-# read-only, and no consistency checks are made and the make
-# system is not used on the basis kernel. If updates are required
-# in the basis kernel ordinary make commands (without M=...) must
-# be used.
-#
-# The following are the only valid targets when building external
-# modules.
-# make M=dir clean     Delete all automatically generated files
-# make M=dir modules   Make all modules in specified dir
-# make M=dir	       Same as 'make M=dir modules'
-# make M=dir modules_install
-#                      Install the modules built in the module directory
-#                      Assumes install directory is already created
-
-# We are always building modules
-KBUILD_MODULES := 1
-
-PHONY += $(objtree)/Module.symvers
-$(objtree)/Module.symvers:
-	@test -e $(objtree)/Module.symvers || ( \
-	echo; \
-	echo "  WARNING: Symbol version dump $(objtree)/Module.symvers"; \
-	echo "           is missing; modules will have no dependencies and modversions."; \
-	echo )
-
-module-dirs := $(addprefix _module_,$(KBUILD_EXTMOD))
-PHONY += $(module-dirs) modules
-$(module-dirs): prepare $(objtree)/Module.symvers
-	$(Q)$(MAKE) $(build)=$(patsubst _module_%,%,$@) need-modorder=1
-
-modules: $(module-dirs)
-	@$(kecho) '  Building modules, stage 2.';
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost
-
-PHONY += modules_install
-modules_install: _emodinst_ _emodinst_post
-
-install-dir := $(if $(INSTALL_MOD_DIR),$(INSTALL_MOD_DIR),extra)
-PHONY += _emodinst_
-_emodinst_:
-	$(Q)mkdir -p $(MODLIB)/$(install-dir)
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modinst
-
-PHONY += _emodinst_post
-_emodinst_post: _emodinst_
-	$(call cmd,depmod)
-
-clean-dirs := $(addprefix _clean_,$(KBUILD_EXTMOD))
-
-PHONY += $(clean-dirs) clean
-$(clean-dirs):
-	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
-
-clean: rm-files := $(KBUILD_EXTMOD)/Module.symvers
-
-PHONY += help
-help:
-	@echo  '  Building external modules.'
-	@echo  '  Syntax: make -C path/to/kernel/src M=$$PWD target'
-	@echo  ''
-	@echo  '  modules         - default target, build the module(s)'
-	@echo  '  modules_install - install the module'
-	@echo  '  clean           - remove generated files in module directory only'
-	@echo  ''
-
-PHONY += prepare
 endif # KBUILD_EXTMOD
 
 clean: $(clean-dirs)
@@ -1578,7 +1356,6 @@ clean: $(clean-dirs)
 	$(call cmd,rmfiles)
 	@find $(if $(KBUILD_EXTMOD), $(KBUILD_EXTMOD), .) $(RCS_FIND_IGNORE) \
 		\( -name '*.[aios]' -o -name '*.ko' -o -name '.*.cmd' \
-		-o -name '*.ko.*' \
 		-o -name '*.dwo' -o -name '*.lst' \
 		-o -name '*.su' -o -name '*.mod' \
 		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \

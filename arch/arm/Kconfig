@@ -1,0 +1,19 @@
+menu "ARM architecture"
+	depends on ARM
+
+choice
+    prompt "CPU selection"
+    default SYS_CPU_CORTEX_A15
+
+config SYS_CPU_CORTEX_A15
+    bool "cortex-a15"
+    select ARMV7_A
+
+config SYS_CPU_CORTEX_A9
+    bool "cortex-a9"
+    
+endchoice
+
+source "arch/arm/cpu/Kconfig"
+
+endmenu

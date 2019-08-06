@@ -1,0 +1,14 @@
+menu "AARCH64 architecture"
+    depends on AARCH64
+
+choice
+    prompt "CPU selection"
+    default SYS_CPU_CORTEX_A57
+
+config SYS_CPU_CORTEX_A57
+    bool "cortex-a57"
+    select ARMV8_A
+
+endchoice
+
+endmenu
