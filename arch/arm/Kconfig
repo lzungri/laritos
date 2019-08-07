@@ -11,7 +11,10 @@ config SYS_CPU_CORTEX_A15
 
 config SYS_CPU_CORTEX_A9
     bool "cortex-a9"
-    
+
+config SYS_CPU_GENERIC_ARMV7A
+    bool "generic-armv7a"
+
 endchoice
 
 source "arch/arm/cpu/Kconfig"

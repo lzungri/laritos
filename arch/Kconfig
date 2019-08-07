@@ -22,5 +22,17 @@ config ARMV8_A
     
 endchoice
 
+choice
+    prompt "Endianess"
+    default CPU_LITTLE_ENDIAN
+
+config CPU_LITTLE_ENDIAN
+    bool "Little endian"
+
+config CPU_BIG_ENDIAN
+    bool "Big endian"
+
+endchoice
+
 source "arch/arm/Kconfig"
 source "arch/aarch64/Kconfig"

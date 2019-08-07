@@ -11,8 +11,8 @@ void loop(void) {
 
 void kernel_entry(void) {
 //	var = "abc";
-	asm("mov r0, #0xff");
 	int i = 2;
+	asm("mov r0, #0xff");
 
 	test_bss[i] = 0xff;
 	test_data[0] = 2;

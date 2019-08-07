@@ -311,13 +311,6 @@ ifneq ($(filter $(clean-targets),$(MAKECMDGOALS)),)
         endif
 endif
 
-# install and modules_install need also be processed one by one
-ifneq ($(filter install,$(MAKECMDGOALS)),)
-        ifneq ($(filter modules_install,$(MAKECMDGOALS)),)
-	        mixed-targets := 1
-        endif
-endif
-
 ifeq ($(mixed-targets),1)
 # ===========================================================================
 # We're called with mixed targets (*config and build targets).
@@ -444,12 +437,7 @@ AFLAGS_KERNEL	=
 LDFLAGS_vmlinux =
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
-USERINCLUDE    := \
-		-I$(srctree)/arch/$(SRCARCH)/include/uapi \
-		-I$(objtree)/arch/$(SRCARCH)/include/generated/uapi \
-		-I$(srctree)/include/uapi \
-		-I$(objtree)/include/generated/uapi \
-                -include $(srctree)/include/linux/kconfig.h
+USERINCLUDE    := -include $(srctree)/include/kconfig.h
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
@@ -464,14 +452,10 @@ KBUILD_AFLAGS   := -D__ASSEMBLY__ -fno-PIE
 KBUILD_CFLAGS   := -Wall -Wundef -Werror=strict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE \
 		   -Werror=implicit-function-declaration -Werror=implicit-int \
-		   -Wno-format-security \
-		   -std=gnu89
+		   -Wno-format-security -std=gnu11
 KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS_MODULE  := -DMODULE
-KBUILD_CFLAGS_MODULE  := -DMODULE
-KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 KBUILD_LDFLAGS :=
 GCC_PLUGINS_CFLAGS :=
 
@@ -484,7 +468,6 @@ export KBUILD_CPPFLAGS NOSTDINC_FLAGS LINUXINCLUDE OBJCOPYFLAGS KBUILD_LDFLAGS
 export KBUILD_CFLAGS CFLAGS_KERNEL CFLAGS_MODULE
 export CFLAGS_KASAN CFLAGS_KASAN_NOSANITIZE CFLAGS_UBSAN
 export KBUILD_AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
-export KBUILD_AFLAGS_MODULE KBUILD_CFLAGS_MODULE KBUILD_LDFLAGS_MODULE
 export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
 export KBUILD_ARFLAGS
 
@@ -555,6 +538,9 @@ ifeq ($(config-targets),1)
 include arch/$(SRCARCH)/Makefile
 export KBUILD_DEFCONFIG KBUILD_KCONFIG CC_VERSION_TEXT
 
+# Read specific board Makefile
+include board/Makefile
+
 config: scripts_basic outputmakefile FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
@@ -569,11 +555,7 @@ else
 # If building an external module we do not care about the all: rule
 # but instead _all depend on modules
 PHONY += all
-ifeq ($(KBUILD_EXTMOD),)
 _all: all
-else
-_all: modules
-endif
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -590,19 +572,7 @@ ifeq ($(MAKECMDGOALS),modules)
   KBUILD_BUILTIN := $(if $(CONFIG_MODVERSIONS),1)
 endif
 
-# If we have "make <whatever> modules", compile modules
-# in addition to whatever we do anyway.
-# Just "make" or "make all" shall build modules as well
-
-ifneq ($(filter all _all modules,$(MAKECMDGOALS)),)
-  KBUILD_MODULES := 1
-endif
-
-ifeq ($(MAKECMDGOALS),)
-  KBUILD_MODULES := 1
-endif
-
-export KBUILD_MODULES KBUILD_BUILTIN
+export KBUILD_BUILTIN
 
 ifeq ($(dot-config),1)
 include include/config/auto.conf
@@ -612,7 +582,7 @@ endif
 # command line.
 # This allow a user to issue only 'make' to build a kernel including modules
 # Defaults to vmlinux, but the arch makefile usually adds further targets
-all: osimage
+all: laritos
 
 CFLAGS_GCOV	:= -fprofile-arcs -ftest-coverage \
 	$(call cc-option,-fno-tree-loop-im) \
@@ -639,6 +609,9 @@ ARCH_CPPFLAGS :=
 ARCH_AFLAGS :=
 ARCH_CFLAGS :=
 include arch/$(SRCARCH)/Makefile
+
+# Read specific board Makefile
+include board/Makefile
 
 ifeq ($(dot-config),1)
 ifeq ($(may-sync-config),1)
@@ -909,7 +882,7 @@ CHECKFLAGS += $(if $(CONFIG_64BIT),-m64,-m32)
 # set in the environment
 # Also any assignments in arch/$(ARCH)/Makefile take precedence over
 # this default value
-# export KBUILD_IMAGE ?= vmlinux
+export KBUILD_IMAGE ?= vmlinux
 
 #
 # INSTALL_PATH specifies where to place the updated kernel and system map
@@ -922,56 +895,6 @@ export	INSTALL_PATH ?= /boot
 # an argument if needed. Otherwise it defaults to the kernel install path
 #
 export INSTALL_DTBS_PATH ?= $(INSTALL_PATH)/dtbs/$(KERNELRELEASE)
-
-#
-# INSTALL_MOD_PATH specifies a prefix to MODLIB for module directory
-# relocations required by build roots.  This is not defined in the
-# makefile but the argument can be passed to make if needed.
-#
-
-MODLIB	= $(INSTALL_MOD_PATH)/lib/modules/$(KERNELRELEASE)
-export MODLIB
-
-#
-# INSTALL_MOD_STRIP, if defined, will cause modules to be
-# stripped after they are installed.  If INSTALL_MOD_STRIP is '1', then
-# the default option --strip-debug will be used.  Otherwise,
-# INSTALL_MOD_STRIP value will be used as the options to the strip command.
-
-ifdef INSTALL_MOD_STRIP
-ifeq ($(INSTALL_MOD_STRIP),1)
-mod_strip_cmd = $(STRIP) --strip-debug
-else
-mod_strip_cmd = $(STRIP) $(INSTALL_MOD_STRIP)
-endif # INSTALL_MOD_STRIP=1
-else
-mod_strip_cmd = true
-endif # INSTALL_MOD_STRIP
-export mod_strip_cmd
-
-# CONFIG_MODULE_COMPRESS, if defined, will cause module to be compressed
-# after they are installed in agreement with CONFIG_MODULE_COMPRESS_GZIP
-# or CONFIG_MODULE_COMPRESS_XZ.
-
-mod_compress_cmd = true
-ifdef CONFIG_MODULE_COMPRESS
-  ifdef CONFIG_MODULE_COMPRESS_GZIP
-    mod_compress_cmd = gzip -n -f
-  endif # CONFIG_MODULE_COMPRESS_GZIP
-  ifdef CONFIG_MODULE_COMPRESS_XZ
-    mod_compress_cmd = xz -f
-  endif # CONFIG_MODULE_COMPRESS_XZ
-endif # CONFIG_MODULE_COMPRESS
-export mod_compress_cmd
-
-ifdef CONFIG_MODULE_SIG_ALL
-$(eval $(call config_filename,MODULE_SIG_KEY))
-
-mod_sign_cmd = scripts/sign-file $(CONFIG_MODULE_SIG_HASH) $(MODULE_SIG_KEY_SRCPREFIX)$(CONFIG_MODULE_SIG_KEY) certs/signing_key.x509
-else
-mod_sign_cmd = true
-endif
-export mod_sign_cmd
 
 HOST_LIBELF_LIBS = $(shell pkg-config libelf --libs 2>/dev/null || echo -lelf)
 
@@ -988,77 +911,44 @@ endif
 
 PHONY += prepare0
 
-ifeq ($(KBUILD_EXTMOD),)
-#core-y		+= kernel/
-#
-#vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
-#		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
-#		     $(net-y) $(net-m) $(libs-y) $(libs-m) $(virt-y)))
-#
-#vmlinux-alldirs	:= $(sort $(vmlinux-dirs) \
-#		     $(patsubst %/,%,$(filter %/, $(init-) $(core-) \
-#			$(drivers-) $(net-) $(libs-) $(virt-))))
+core-y += core/ board/
 
-#init-y		:= $(patsubst %/, %/built-in.a, $(init-y))
-#core-y		:= $(patsubst %/, %/built-in.a, $(core-y))
-#drivers-y	:= $(patsubst %/, %/built-in.a, $(drivers-y))
-#net-y		:= $(patsubst %/, %/built-in.a, $(net-y))
-#libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
-#libs-y2		:= $(patsubst %/, %/built-in.a, $(filter-out %.a, $(libs-y)))
-#virt-y		:= $(patsubst %/, %/built-in.a, $(virt-y))
+laritos-dirs := $(patsubst %/,%,$(filter %/, $(init-y) $(core-y) $(drivers-y) $(libs-y) $(virt-y)))
+laritos-alldirs := $(sort $(laritos-dirs) $(patsubst %/,%,$(filter %/, $(init-) $(core-) $(drivers-) $(libs-) $(virt-))))
+
+init-y		:= $(patsubst %/, %/built-in.a, $(init-y))
+core-y		:= $(patsubst %/, %/built-in.a, $(core-y))
+drivers-y	:= $(patsubst %/, %/built-in.a, $(drivers-y))
+libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
+libs-y2		:= $(patsubst %/, %/built-in.a, $(filter-out %.a, $(libs-y)))
+virt-y		:= $(patsubst %/, %/built-in.a, $(virt-y))
 
 # Externally visible symbols (used by link-vmlinux.sh)
-#export KBUILD_VMLINUX_OBJS := $(head-y) $(init-y) $(core-y) $(libs-y2) \
-#			      $(drivers-y) $(net-y) $(virt-y)
-#export KBUILD_VMLINUX_LIBS := $(libs-y1)
-#export KBUILD_LDS          := arch/$(SRCARCH)/kernel/vmlinux.lds
-#export LDFLAGS_vmlinux
-# used by scripts/package/Makefile
-#export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(vmlinux-alldirs)) LICENSES arch include scripts tools)
+export KBUILD_LARITOS_OBJS := $(head-y) $(init-y) $(core-y) $(libs-y2) $(drivers-y) $(virt-y)
+export KBUILD_LARITOS_LIBS := $(libs-y1)
+export KBUILD_LDS          := board/$(subst $\",,$(CONFIG_SYS_BOARD))/os_memmap.lds
+export LDFLAGS_laritos
 
-#vmlinux-deps := $(KBUILD_LDS) $(KBUILD_VMLINUX_OBJS) $(KBUILD_VMLINUX_LIBS)
+laritos-deps := $(KBUILD_LDS) $(KBUILD_LARITOS_OBJS) $(KBUILD_LARITOS_LIBS)
 
-# Recurse until adjust_autoksyms.sh is satisfied
-#PHONY += autoksyms_recursive
-#ifdef CONFIG_TRIM_UNUSED_KSYMS
-#autoksyms_recursive: $(vmlinux-deps) modules.order
-#	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/adjust_autoksyms.sh \
-#	  "$(MAKE) -f $(srctree)/Makefile vmlinux"
-#endif
+laritos: $(laritos-deps) FORCE
+	+$(call if_changed,link-vmlinux)
 
-# For the kernel to actually contain only the needed exported symbols,
-# we have to build modules as well to determine what those symbols are.
-# (this can be evaluated only once include/config/auto.conf has been included)
-#ifdef CONFIG_TRIM_UNUSED_KSYMS
-#  KBUILD_MODULES := 1
-#endif
-#
-#autoksyms_h := $(if $(CONFIG_TRIM_UNUSED_KSYMS), include/generated/autoksyms.h)
-#
-#$(autoksyms_h):
-#	$(Q)mkdir -p $(dir $@)
-#	$(Q)touch $@
-#
-#ARCH_POSTLINK := $(wildcard $(srctree)/arch/$(SRCARCH)/Makefile.postlink)
-#
-#vmlinux: autoksyms_recursive $(vmlinux-deps) FORCE
-#	+$(call if_changed,link-vmlinux)
-
-#targets := vmlinux
+targets := laritos
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
-#$(sort $(vmlinux-deps)): $(vmlinux-dirs) ;
+$(sort $(laritos-deps)): $(laritos-dirs) ;
 
-# Handle descending into subdirectories listed in $(vmlinux-dirs)
+# Handle descending into subdirectories listed in $(laritos-dirs)
 # Preset locale variables to speed up the build process. Limit locale
 # tweaks to this spot to avoid wrong language settings when running
 # make menuconfig etc.
 # Error messages still appears in the original language
 #
-#PHONY += $(vmlinux-dirs)
-#$(vmlinux-dirs): prepare
-#	$(Q)$(MAKE) $(build)=$@ need-builtin=1 need-modorder=1
+PHONY += $(laritos-dirs)
+$(laritos-dirs): prepare
+	$(Q)$(MAKE) $(build)=$@ need-builtin=1
 
 filechk_kernel.release = \
 	echo "$(KERNELVERSION)$$($(CONFIG_SHELL) $(srctree)/scripts/setlocalversion $(srctree))"
@@ -1098,17 +988,17 @@ ifdef building_out_of_srctree
 endif
 
 archprepare: archheaders archscripts scripts prepare3 outputmakefile \
-	asm-generic $(version_h) $(autoksyms_h) include/generated/utsrelease.h
+#	asm-generic $(version_h) $(autoksyms_h) include/generated/utsrelease.h
 
 prepare0: archprepare
-	$(Q)$(MAKE) $(build)=scripts/mod
+#	$(Q)$(MAKE) $(build)=scripts/mod
 	$(Q)$(MAKE) $(build)=.
 
 # All the preparing..
 prepare: prepare0 prepare-objtool
 
 # Support for using generic headers in asm-generic
-asm-generic := -f $(srctree)/scripts/Makefile.asm-generic obj
+#asm-generic := -f $(srctree)/scripts/Makefile.asm-generic obj
 
 #PHONY += asm-generic uapi-asm-generic
 #asm-generic: uapi-asm-generic
@@ -1346,10 +1236,6 @@ scripts_gdb: prepare0
 ifdef CONFIG_GDB_SCRIPTS
 all: scripts_gdb
 endif
-
-else # KBUILD_EXTMOD
-
-endif # KBUILD_EXTMOD
 
 clean: $(clean-dirs)
 	$(call cmd,rmdirs)

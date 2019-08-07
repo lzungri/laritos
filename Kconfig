@@ -9,4 +9,4 @@ source "scripts/Kconfig.include"
 
 source "board/Kconfig"
 source "arch/Kconfig"
-source "kernel/Kconfig"
+source "core/Kconfig"
