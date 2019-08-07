@@ -334,3 +334,19 @@ endef
 
 # do not delete intermediate files automatically
 .SECONDARY:
+
+
+# Debugging utilities
+
+# Print variable name, e.g. ARCH=arm CROSS_COMPILE=arm-none-eabi- make laritos print-KBUILD_CFLAGS
+print-%:
+	@$(info -------------------------)
+	@$(info )
+	@$(info $*=$($*))
+	@$(info )
+	@$(info Definition: $*=$(value $*))
+	@$(info )
+	@$(info Defined from: $(origin $*))
+	@$(info -------------------------)
+	@$(error )
+$(filter-out print-%, $(MAKECMDGOALS)): $(filter print-%, $(MAKECMDGOALS))
