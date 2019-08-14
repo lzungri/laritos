@@ -1,0 +1,14 @@
+menu "Kernel"
+
+menu "Debugging"
+
+config DEBUG_INFO
+    bool "Add debugging info"
+    default n
+
+config CC_DISABLE_OPTIMIZATIONS
+    bool "Disable optimizations"
+    default n
+
+endmenu
+endmenu

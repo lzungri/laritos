@@ -1,3 +1,5 @@
+menu "Architecture"
+
 choice
     prompt "Architecture select"
     default ARM
@@ -36,3 +38,5 @@ endchoice
 
 source "arch/arm/Kconfig"
 source "arch/aarch64/Kconfig"
+
+endmenu
