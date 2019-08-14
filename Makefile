@@ -205,32 +205,11 @@ ifeq ("$(origin C)", "command line")
   KBUILD_CHECKSRC = $(C)
 endif
 ifndef KBUILD_CHECKSRC
-  KBUILD_CHECKSRC = 0
+  # Run the code checker by default
+  KBUILD_CHECKSRC = 1
 endif
 
-# Use make M=dir to specify directory of external module to build
-# Old syntax make ... SUBDIRS=$PWD is still supported
-# Setting the environment variable KBUILD_EXTMOD take precedence
-ifdef SUBDIRS
-  $(warning ================= WARNING ================)
-  $(warning 'SUBDIRS' will be removed after Linux 5.3)
-  $(warning )
-  $(warning If you are building an individual subdirectory)
-  $(warning in the kernel tree, you can do like this:)
-  $(warning $$ make path/to/dir/you/want/to/build/)
-  $(warning (Do not forget the trailing slash))
-  $(warning )
-  $(warning If you are building an external module,)
-  $(warning Please use 'M=' or 'KBUILD_EXTMOD' instead)
-  $(warning ==========================================)
-  KBUILD_EXTMOD ?= $(SUBDIRS)
-endif
-
-ifeq ("$(origin M)", "command line")
-  KBUILD_EXTMOD := $(M)
-endif
-
-export KBUILD_CHECKSRC KBUILD_EXTMOD
+export KBUILD_CHECKSRC
 
 ifeq ($(abs_srctree),$(abs_objtree))
         # building in the source tree
@@ -291,16 +270,12 @@ ifneq ($(filter $(no-sync-config-targets), $(MAKECMDGOALS)),)
 	endif
 endif
 
-ifneq ($(KBUILD_EXTMOD),)
-	may-sync-config := 0
-endif
+may-sync-config := 0
 
-ifeq ($(KBUILD_EXTMOD),)
-        ifneq ($(filter config %config,$(MAKECMDGOALS)),)
-                config-targets := 1
-                ifneq ($(words $(MAKECMDGOALS)),1)
-                        mixed-targets := 1
-                endif
+ifneq ($(filter config %config,$(MAKECMDGOALS)),)
+        config-targets := 1
+        ifneq ($(words $(MAKECMDGOALS)),1)
+                mixed-targets := 1
         endif
 endif
 
@@ -338,6 +313,18 @@ export VERSION PATCHLEVEL SUBLEVEL KERNELRELEASE KERNELVERSION
 
 include scripts/subarch.include
 
+
+# Include the config file (if exists) and set the architecture for the board
+-include include/config/auto.conf
+
+ifeq ($(CONFIG_ARM),y)
+ARCH = arm
+else
+ifeq ($(CONFIG_AARCH64),y)
+ARCH = aarch64
+endif
+endif
+
 # Cross compiling and selecting different set of gcc/bin-utils
 # ---------------------------------------------------------------------------
 #
@@ -361,27 +348,6 @@ ARCH		?= $(SUBARCH)
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
 SRCARCH 	:= $(ARCH)
-
-# Additional ARCH settings for x86
-ifeq ($(ARCH),i386)
-        SRCARCH := x86
-endif
-ifeq ($(ARCH),x86_64)
-        SRCARCH := x86
-endif
-
-# Additional ARCH settings for sparc
-ifeq ($(ARCH),sparc32)
-       SRCARCH := sparc
-endif
-ifeq ($(ARCH),sparc64)
-       SRCARCH := sparc
-endif
-
-# Additional ARCH settings for sh
-ifeq ($(ARCH),sh64)
-       SRCARCH := sh
-endif
 
 KCONFIG_CONFIG	?= .config
 export KCONFIG_CONFIG
@@ -418,8 +384,6 @@ PAHOLE		= pahole
 LEX		= flex
 YACC		= bison
 AWK		= awk
-INSTALLKERNEL  := installkernel
-DEPMOD		= /sbin/depmod
 PERL		= perl
 PYTHON		= python
 PYTHON2		= python2
@@ -434,7 +398,7 @@ AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
-LDFLAGS_vmlinux =
+LDFLAGS_laritos =
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := -include $(srctree)/include/kconfig.h
@@ -461,7 +425,7 @@ GCC_PLUGINS_CFLAGS :=
 
 export ARCH SRCARCH CONFIG_SHELL HOSTCC KBUILD_HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM STRIP OBJCOPY OBJDUMP PAHOLE KBUILD_HOSTLDFLAGS KBUILD_HOSTLDLIBS
-export MAKE LEX YACC AWK INSTALLKERNEL PERL PYTHON PYTHON2 PYTHON3 UTS_MACHINE
+export MAKE LEX YACC AWK PERL PYTHON PYTHON2 PYTHON3 UTS_MACHINE
 export HOSTCXX KBUILD_HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
 
 export KBUILD_CPPFLAGS NOSTDINC_FLAGS LINUXINCLUDE OBJCOPYFLAGS KBUILD_LDFLAGS
@@ -531,12 +495,6 @@ ifeq ($(config-targets),1)
 # ===========================================================================
 # *config targets only - make sure prerequisites are updated, and descend
 # in scripts/kconfig to make the *config target
-
-# Read arch specific Makefile to set KBUILD_DEFCONFIG as needed.
-# KBUILD_DEFCONFIG may point out an alternative default configuration
-# used for 'make defconfig'
-include arch/$(SRCARCH)/Makefile
-export KBUILD_DEFCONFIG KBUILD_KCONFIG CC_VERSION_TEXT
 
 # Read specific board Makefile
 include board/Makefile
@@ -661,10 +619,12 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, format-truncation)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 
+ifndef CONFIG_CC_DISABLE_OPTIMIZATIONS
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
 KBUILD_CFLAGS   += -O2
+endif
 endif
 
 ifdef CONFIG_CC_DISABLE_WARN_MAYBE_UNINITIALIZED
@@ -793,7 +753,7 @@ endif
 
 ifdef CONFIG_LD_DEAD_CODE_DATA_ELIMINATION
 KBUILD_CFLAGS_KERNEL += -ffunction-sections -fdata-sections
-LDFLAGS_vmlinux += --gc-sections
+LDFLAGS_laritos += --gc-sections
 endif
 
 ifdef CONFIG_LIVEPATCH
@@ -865,10 +825,10 @@ KBUILD_AFLAGS   += $(ARCH_AFLAGS)   $(KAFLAGS)
 KBUILD_CFLAGS   += $(ARCH_CFLAGS)   $(KCFLAGS)
 
 KBUILD_LDFLAGS_MODULE += --build-id
-LDFLAGS_vmlinux += --build-id
+LDFLAGS_laritos += --build-id
 
 ifeq ($(CONFIG_STRIP_ASM_SYMS),y)
-LDFLAGS_vmlinux	+= $(call ld-option, -X,)
+LDFLAGS_laritos	+= $(call ld-option, -X,)
 endif
 
 # insure the checker run with the right endianness
@@ -882,7 +842,7 @@ CHECKFLAGS += $(if $(CONFIG_64BIT),-m64,-m32)
 # set in the environment
 # Also any assignments in arch/$(ARCH)/Makefile take precedence over
 # this default value
-export KBUILD_IMAGE ?= vmlinux
+export KBUILD_IMAGE ?= laritos
 
 #
 # INSTALL_PATH specifies where to place the updated kernel and system map
@@ -923,18 +883,34 @@ libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.a, $(filter-out %.a, $(libs-y)))
 virt-y		:= $(patsubst %/, %/built-in.a, $(virt-y))
 
-# Externally visible symbols (used by link-vmlinux.sh)
-export KBUILD_LARITOS_OBJS := $(head-y) $(init-y) $(core-y) $(libs-y2) $(drivers-y) $(virt-y)
-export KBUILD_LARITOS_LIBS := $(libs-y1)
-export KBUILD_LDS          := board/$(subst $\",,$(CONFIG_SYS_BOARD))/os_memmap.lds
-export LDFLAGS_laritos
+KBUILD_LARITOS_OBJS := $(head-y) $(init-y) $(core-y) $(libs-y2) $(drivers-y) $(virt-y)
+KBUILD_LARITOS_LIBS := $(libs-y1)
 
-laritos-deps := $(KBUILD_LDS) $(KBUILD_LARITOS_OBJS) $(KBUILD_LARITOS_LIBS)
+laritos-deps := $(KBUILD_LARITOS_OBJS) $(KBUILD_LARITOS_LIBS)
 
-laritos: $(laritos-deps) FORCE
-	+$(call if_changed,link-vmlinux)
+quiet_cmd_link_laritos ?= LD      $@
+	cmd_link_laritos ?= $(LD) -T $(KBUILD_LDS) -whole-archive $(KBUILD_LARITOS_OBJS) -o $@
 
-targets := laritos
+laritos.elf: $(laritos-deps) $(KBUILD_LDS) FORCE
+	$(call if_changed,link_laritos)
+
+quiet_cmd_objcopy_laritos ?= OBJCOPY $@
+	cmd_objcopy_laritos ?= $(OBJCOPY) -O binary $< $@
+
+laritos.bin: laritos.elf FORCE
+	$(call if_changed,objcopy_laritos)
+
+quiet_cmd_img_laritos ?= IMAGE   $@
+	cmd_img_laritos ?= \
+		dd if=/dev/zero of=$@ bs=1M count=64 status=none; \
+		dd if=$< of=$@ conv=notrunc status=none
+
+laritos.img: laritos.bin FORCE
+	$(call if_changed,img_laritos)
+
+laritos: laritos.img
+
+targets := laritos laritos.img laritos.bin laritos.elf $(KBUILD_LDS)
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
@@ -991,7 +967,6 @@ archprepare: archheaders archscripts scripts prepare3 outputmakefile \
 #	asm-generic $(version_h) $(autoksyms_h) include/generated/utsrelease.h
 
 prepare0: archprepare
-#	$(Q)$(MAKE) $(build)=scripts/mod
 	$(Q)$(MAKE) $(build)=.
 
 # All the preparing..
@@ -1090,13 +1065,16 @@ DISTCLEAN_FILES += tags TAGS cscope* GPATH GTAGS GRTAGS GSYMS
 #
 clean: rm-dirs  := $(CLEAN_DIRS)
 clean: rm-files := $(CLEAN_FILES)
-clean-dirs      := $(addprefix _clean_, . $(vmlinux-alldirs))
+clean-dirs      := $(addprefix _clean_, . $(laritos-alldirs))
 
-PHONY += $(clean-dirs) clean archclean vmlinuxclean
+PHONY += $(clean-dirs) clean archclean laritosclean
 $(clean-dirs):
 	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
 
-clean: archclean
+laritosclean:
+	$(Q)echo TODO
+
+clean: archclean laritosclean
 
 # mrproper - Delete all generated files, including .config
 #
@@ -1297,7 +1275,7 @@ else
 CHECKSTACK_ARCH := $(ARCH)
 endif
 checkstack:
-	$(OBJDUMP) -d vmlinux $$(find . -name '*.ko') | \
+	$(OBJDUMP) -d laritos.elf $$(find . -name '*.ko') | \
 	$(PERL) $(srctree)/scripts/checkstack.pl $(CHECKSTACK_ARCH)
 
 kernelrelease:
@@ -1364,11 +1342,6 @@ quiet_cmd_rmdirs = $(if $(wildcard $(rm-dirs)),CLEAN   $(wildcard $(rm-dirs)))
 
 quiet_cmd_rmfiles = $(if $(wildcard $(rm-files)),CLEAN   $(wildcard $(rm-files)))
       cmd_rmfiles = rm -f $(rm-files)
-
-# Run depmod only if we have System.map and depmod is executable
-quiet_cmd_depmod = DEPMOD  $(KERNELRELEASE)
-      cmd_depmod = $(CONFIG_SHELL) $(srctree)/scripts/depmod.sh $(DEPMOD) \
-                   $(KERNELRELEASE)
 
 # read saved command lines for existing targets
 existing-targets := $(wildcard $(sort $(targets)))

@@ -1,21 +1,17 @@
-machine-$(CONFIG_BOARD_QEMU_ARM_VIRT) += qemu-arm-virt
-machine-$(CONFIG_BOARD_QEMU_AARCH64_VIRT) += qemu-aarch64-virt
+board-dir = board/$(subst $\",,$(CONFIG_SYS_BOARD))
 
-# The first directory contains additional information for the boot setup code
-#ifneq ($(machine-y),)
-#MACHINE  := arch/arm/mach-$(word 1,$(machine-y))/
-#else
-#MACHINE  :=
-#endif
-#ifeq ($(CONFIG_ARCH_MULTIPLATFORM),y)
-#MACHINE  :=
-#endif
+core-y += $(board-dir)/
 
-machdirs := $(patsubst %,board/%/,$(machine-y))
 
-core-y += $(machdirs)
+KBUILD_LDS := $(board-dir)/os_memmap.lds
 
-all:	laritos
+quiet_cmd_prep_ldss ?= PREP    $@
+	cmd_prep_ldss ?= $(CPP) $(cpp_flags) -I $(LINUXINCLUDE) -P -U$(ARCH) -D__ASSEMBLY__ -DLINKER_SCRIPT -o $@ $<
+
+$(KBUILD_LDS): $(KBUILD_LDS).S FORCE
+	$(call if_changed,prep_ldss)
+
+all: laritos
 
 ## Convert bzImage to zImage
 #bzImage: zImage
