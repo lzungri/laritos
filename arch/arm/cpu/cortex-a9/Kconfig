@@ -1,0 +1,4 @@
+menu "cortex-a9 options"
+    depends on SYS_CPU_CORTEX_A9
+
+endmenu
