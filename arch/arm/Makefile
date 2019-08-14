@@ -11,10 +11,6 @@
 # Copyright (C) 1995-2001 by Russell King
 
 LDFLAGS_laritos	:= --no-undefined -X --pic-veneer
-ifeq ($(CONFIG_CPU_ENDIAN_BE8),y)
-LDFLAGS_laritos	+= --be8
-KBUILD_LDFLAGS_MODULE	+= --be8
-endif
 
 # This should work on most of the modern platforms
 KBUILD_DEFCONFIG := qemu_arm_virt_defconfig

@@ -1052,6 +1052,8 @@ scripts_unifdef: scripts_basic
 # make mrproper  Delete the current configuration, and all generated files
 # make distclean Remove editor backup files, patch leftover files and the like
 
+CLEAN_FILES += laritos.img laritos.bin laritos.elf $(KBUILD_LDS)
+
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config include/generated          \
 		  arch/$(SRCARCH)/include/generated .tmp_objdiff
@@ -1071,10 +1073,7 @@ PHONY += $(clean-dirs) clean archclean laritosclean
 $(clean-dirs):
 	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
 
-laritosclean:
-	$(Q)echo TODO
-
-clean: archclean laritosclean
+clean: archclean
 
 # mrproper - Delete all generated files, including .config
 #
