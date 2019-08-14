@@ -1,4 +1,4 @@
-#include <config.h>
+#include <generated/autoconf.h>
 
 /* Memory layout extracted from qemu/hw/arm/virt.c */
 
@@ -37,7 +37,6 @@ SECTIONS
         . = ALIGN(4);
         __data_start = ABSOLUTE(.);
         *(.data);
-        BYTE(0xff)
         . = ALIGN(4);
         __data_end = ABSOLUTE(.);
         __data_size = __data_end - __data_start;
