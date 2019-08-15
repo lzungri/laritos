@@ -1,6 +1,6 @@
 # .gitignore copied from the Linux kernel tree
 
-# Default output foldef
+# Default output folder
 bin
 
 #
