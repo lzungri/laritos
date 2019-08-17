@@ -1,14 +1,46 @@
 menu "Kernel"
 
+menu "Logging"
+
+menu "Log level"
+
+config LOG_LEVEL_ERROR
+    bool "ERROR"
+    default y
+
+config LOG_LEVEL_WARN
+    bool "WARN"
+    select LOG_LEVEL_ERROR
+
+config LOG_LEVEL_INFO
+    bool "INFO"
+    select LOG_LEVEL_WARN
+
+config LOG_LEVEL_DEBUG
+    bool "DEBUG"
+    select LOG_LEVEL_INFO
+
+config LOG_LEVEL_VERBOSE
+    bool "VERBOSE"
+    select LOG_LEVEL_DEBUG
+
+endmenu
+
+config LOG_FILE_AND_LINEN
+    bool "Log file path and line number"
+    default y
+
+endmenu
+
 menu "Debugging"
 
 config DEBUG_INFO
     bool "Add debugging info"
-    default n
+    default y
 
 config CC_DISABLE_OPTIMIZATIONS
     bool "Disable optimizations"
-    default n
+    default y
 
 endmenu
 endmenu

@@ -1,2 +1,3 @@
 obj-y += entry.o
-obj-y += sub/
+obj-y += board.o
+obj-y += log.o

@@ -25,12 +25,19 @@ SECTIONS
         . = ALIGN(4);
         __text_start = ABSOLUTE(.);
         *(.text);
+
+        /* Keep the read only data in the flash */
+        *(.rodata*)
+
+        /* ARM stuff */
+        *(.glue*)
+        *(.vfp11_veneer)
+        *(.v4_bx*)
+
         . = ALIGN(4);
         __text_end = ABSOLUTE(.);
         __text_size = __text_end - __text_start;
     } > flash
-
-    __data_lma = .;
 
     /* Data section/s will be loaded into the flash memory and then relocated manually in ram. */
     .data : {
@@ -41,6 +48,9 @@ SECTIONS
         __data_end = ABSOLUTE(.);
         __data_size = __data_end - __data_start;
      } > ram AT > flash
+
+     /* Variable used to transfer the .data section from flash to ram */
+     __data_lma = LOADADDR(.data);
 
      /* Non initialized data will be manually allocated (and zeroed) in ram */
     .bss : {

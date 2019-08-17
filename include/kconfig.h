@@ -1,5 +1,4 @@
-#ifndef __LINUX_KCONFIG_H
-#define __LINUX_KCONFIG_H
+#pragma once
 
 #include <generated/autoconf.h>
 
@@ -103,5 +102,3 @@
  *  0 otherwise.
  */
 #define CONFIG_IS_MODULE(option) config_enabled(CONFIG_VAL(option##_MODULE))
-
-#endif /* __LINUX_KCONFIG_H */
