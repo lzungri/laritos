@@ -1,5 +1,3 @@
-#define MODULE "core.entry"
-
 #include <entry.h>
 #include <board.h>
 #include <log.h>

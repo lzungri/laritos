@@ -404,8 +404,6 @@ USERINCLUDE    := -include $(srctree)/include/kconfig.h
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 LINUXINCLUDE    := \
-		-I$(srctree)/arch/$(SRCARCH)/include \
-		-I$(objtree)/arch/$(SRCARCH)/include/generated \
 		$(if $(building_out_of_srctree),-I$(srctree)/include) \
 		-I$(objtree)/include \
 		$(USERINCLUDE)
@@ -761,7 +759,7 @@ KBUILD_CFLAGS += $(call cc-option, -flive-patching=inline-clone)
 endif
 
 # arch Makefile may override CC so keep this after arch Makefile is included
-NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
+NOSTDINC_FLAGS +=  -isystem $(shell $(CC) -print-file-name=include)
 
 # Variable Length Arrays (VLAs) should not be used anywhere in the kernel
 KBUILD_CFLAGS += -Wvla

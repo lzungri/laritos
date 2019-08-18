@@ -1,5 +1,3 @@
-#define MODULE "qemu.arm.board"
-
 #include <board.h>
 #include <log.h>
 

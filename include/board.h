@@ -1,6 +1,6 @@
 #pragma once
 
-//#include <stdint.h>
+#include <stdint.h>
 
 #define BOARD_MAX_COMPONENTS 10
 #define BOARD_MAX_COMPONENT_ATTRS 10
@@ -14,12 +14,12 @@ typedef struct {
     char *name;
     char *driver;
     comp_attr_info_t attr[BOARD_MAX_COMPONENT_ATTRS];
-    int attrlen;
+    uint8_t attrlen;
 } comp_info_t;
 
 typedef struct {
     comp_info_t components[BOARD_MAX_COMPONENTS];
-    int len;
+    uint8_t len;
 } board_info_t;
 
 typedef struct {

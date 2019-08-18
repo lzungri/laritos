@@ -3,8 +3,8 @@
 #include <generated/autoconf.h>
 #include <prep-utils.h>
 
-#ifndef MODULE
-#error MODULE macro not found. It must be defined in the file using the log infraestructure
+#ifndef KBUILD_MODNAME
+#error KBUILD_MODNAME macro not found
 #endif
 
 /**
@@ -13,9 +13,9 @@
 int __add_log_msg(char *level, char *tag, char *fmt, ...) __attribute__((__format__(printf, 3, 4)));
 
 #ifdef CONFIG_LOG_FILE_AND_LINEN
-#define log(_level, _msg, ...) __add_log_msg(_level, MODULE, __FILE__ ":" TOSTRING(__LINE__) " - " _msg "\n", ##__VA_ARGS__)
+#define log(_level, _msg, ...) __add_log_msg(_level, KBUILD_MODNAME, __FILE__ ":" TOSTRING(__LINE__) " - " _msg "\n", ##__VA_ARGS__)
 #else
-#define log(_level, _msg, ...) __add_log_msg(_level, MODULE, _msg "\n", ##__VA_ARGS__)
+#define log(_level, _msg, ...) __add_log_msg(_level, KBUILD_MODNAME, _msg "\n", ##__VA_ARGS__)
 #endif
 
 #define fatal(_msg, ...)  do { \

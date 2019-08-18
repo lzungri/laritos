@@ -1,9 +1,9 @@
-#define MODULE "core.board"
-
 #include <stddef.h>
 #include <board.h>
 #include <log.h>
 #include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 int board_init(board_info_t *bi) {
 
@@ -20,8 +20,8 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
 
     char *cur = bi_start_addr;
     char *token = cur;
-    int in_component = 1;
-    int found_keyword = 0;
+    bool in_component = true;
+    bool found_keyword = false;
 
     while (1) {
         if (*token == '\0') {
@@ -41,7 +41,7 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
                     goto syntax_error;
                 }
                 ci->driver = token;
-                in_component = 0;
+                in_component = false;
                 break;
             case '=':
                 if (in_component) {
@@ -68,10 +68,10 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
                 if (*cur == '\0') {
                     return 0;
                 }
-                in_component = 1;
+                in_component = true;
                 break;
             default:
-                found_keyword = 0;
+                found_keyword = false;
                 break;
         }
 
@@ -82,7 +82,7 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
             }
             token = cur;
         } else {
-            found_keyword = 1;
+            found_keyword = true;
             cur++;
         }
 
