@@ -3,16 +3,13 @@
 #include <entry.h>
 #include <board.h>
 #include <log.h>
+#include <string.h>
+
 
 static void loop(void) {
 	while (1) {
 		asm("wfi");
 	}
-}
-
-// TODO Implement these functions
-int memset(void *addr, char v, int len) {
-    return 0;
 }
 
 static char __board_info_start[] =

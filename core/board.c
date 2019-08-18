@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <board.h>
 #include <log.h>
+#include <string.h>
 
 int board_init(board_info_t *bi) {
 
@@ -15,8 +16,7 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
         return -1;
     }
 
-    bi->len = 0;
-//    memset(bi, 0, sizeof(*bi));
+    memset(bi, 0, sizeof(*bi));
 
     char *cur = bi_start_addr;
     char *token = cur;
