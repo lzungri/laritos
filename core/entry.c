@@ -10,18 +10,11 @@ static void loop(void) {
 	}
 }
 
-static char __board_info_start[] =
-        "cpu:armv7-a|smp=4,iset=le\n"
-        "uart:uart-arm|addr=0x500,ctrladdr=0x300\n"
-        "hd:hd-generic|blocks=100\n"
-        "touch:synaptics\n\n\n"
-        "accel:bosch|odr=1600\n\n";
-
 static int initialize_board(void) {
     board_info_t bi = { 0 };
     debug("Parsing board info data");
 
-    if (board_parse_info(__board_info_start, &bi) < 0) {
+    if (board_parse_info(_binary_boardinfo_start, &bi) < 0) {
         error("Error parsing board info");
         return -1;
     }

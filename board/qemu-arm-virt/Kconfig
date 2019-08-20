@@ -5,6 +5,10 @@ config SYS_BOARD
     string "Board name"
     default "qemu-arm-virt"
 
+config SYS_BOARD_INFO_FILE
+    string "Board info file"
+    default "default.bi"
+
 config SYS_VENDOR
     string "Vendor name"
     default "qemu"

@@ -27,6 +27,9 @@ typedef struct {
     int (*board_init)(board_info_t *binfo);
 } board_t;
 
+// Variable holding the plain-text board information (generated via `ld -r -b binary`)
+extern char _binary_boardinfo_start[];
+
 #define BOARD(_name, _binit) \
     board_t BOARD = { \
         .name = _name, \

@@ -204,10 +204,6 @@ MAKEFLAGS += --no-print-directory
 ifeq ("$(origin C)", "command line")
   KBUILD_CHECKSRC = $(C)
 endif
-ifndef KBUILD_CHECKSRC
-  # Run the code checker by default
-  KBUILD_CHECKSRC = 1
-endif
 
 export KBUILD_CHECKSRC
 
@@ -865,9 +861,9 @@ KBUILD_LARITOS_LIBS := $(libs-y1)
 laritos-deps := $(KBUILD_LARITOS_OBJS) $(KBUILD_LARITOS_LIBS)
 
 quiet_cmd_link_laritos ?= LD      $@
-	cmd_link_laritos ?= $(LD) -T $(KBUILD_LDS) -whole-archive $(KBUILD_LARITOS_OBJS) -o $@
+	cmd_link_laritos ?= $(LD) -T $(KBUILD_LDS) -whole-archive $(KBUILD_LARITOS_OBJS) $(KBUILD_BOARD_INFO) -o $@
 
-laritos.elf: $(laritos-deps) $(KBUILD_LDS) FORCE
+laritos.elf: $(laritos-deps) $(KBUILD_BOARD_INFO) $(KBUILD_LDS) FORCE
 	$(call if_changed,link_laritos)
 
 quiet_cmd_objcopy_laritos ?= OBJCOPY $@
@@ -886,7 +882,7 @@ laritos.img: laritos.bin FORCE
 
 laritos: laritos.img
 
-targets := laritos laritos.img laritos.bin laritos.elf $(KBUILD_LDS)
+targets := laritos laritos.img laritos.bin laritos.elf $(KBUILD_BOARD_INFO) $(KBUILD_LDS)
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
