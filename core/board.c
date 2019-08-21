@@ -6,8 +6,24 @@
 #include <stdbool.h>
 
 int board_init(board_info_t *bi) {
+    debug("Initializing board");
+    return 0;
+}
 
-	return 0;
+int board_parse_and_initialize(board_info_t *bi) {
+    info("Parsing board info data");
+    if (board_parse_info(_binary_boardinfo_start, bi) < 0) {
+        error("Error parsing board info");
+        return -1;
+    }
+
+    info("Initializing %s board", BOARD.name);
+    if (BOARD.board_init(bi) < 0) {
+        error("Failed to initialize board");
+        return -1;
+    }
+
+    return 0;
 }
 
 int board_parse_info(char *bi_start_addr, board_info_t *bi) {
@@ -28,7 +44,7 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
             return 0;
         }
 
-        comp_info_t *ci = &bi->components[bi->len];
+        board_comp_t *ci = &bi->components[bi->len];
         switch (*cur) {
             case ':':
                 if (!in_component) {

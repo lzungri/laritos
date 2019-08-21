@@ -27,12 +27,18 @@ SECTIONS
         *(.text);
 
         /* Keep the read only data in the flash */
-        *(.rodata*)
+        *(.rodata*);
+
+        . = ALIGN(4);
+        __drivers_start = ABSOLUTE(.);
+        KEEP(*(.drivers));
+        /* Mark the end of the drivers array with a NULL pointer */
+        LONG(0);
 
         /* ARM stuff */
-        *(.glue*)
-        *(.vfp11_veneer)
-        *(.v4_bx*)
+        *(.glue*);
+        *(.vfp11_veneer);
+        *(.v4_bx*);
 
         . = ALIGN(4);
         __text_end = ABSOLUTE(.);
@@ -56,7 +62,7 @@ SECTIONS
     .bss : {
         . = ALIGN(4);
         __bss_start = ABSOLUTE(.);
-        *(.bss)
+        *(.bss);
         . = ALIGN(4);
         __bss_end = ABSOLUTE(.);
         __bss_size = __bss_end - __bss_start;

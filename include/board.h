@@ -8,17 +8,17 @@
 typedef struct {
     char *name;
     char *value;
-} comp_attr_info_t;
+} board_comp_attr_t;
 
 typedef struct {
     char *name;
     char *driver;
-    comp_attr_info_t attr[BOARD_MAX_COMPONENT_ATTRS];
+    board_comp_attr_t attr[BOARD_MAX_COMPONENT_ATTRS];
     uint8_t attrlen;
-} comp_info_t;
+} board_comp_t;
 
 typedef struct {
-    comp_info_t components[BOARD_MAX_COMPONENTS];
+    board_comp_t components[BOARD_MAX_COMPONENTS];
     uint8_t len;
 } board_info_t;
 
@@ -40,3 +40,4 @@ extern board_t BOARD;
 
 int board_init(board_info_t *binfo);
 int board_parse_info(char *bi_start_addr, board_info_t *bi);
+int board_parse_and_initialize(board_info_t *bi);

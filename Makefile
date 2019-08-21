@@ -845,6 +845,7 @@ export KBUILD_IMAGE ?= laritos
 PHONY += prepare0
 
 core-y += core/ board/
+drivers-y += drivers/
 
 laritos-dirs := $(patsubst %/,%,$(filter %/, $(init-y) $(core-y) $(drivers-y) $(libs-y)))
 laritos-alldirs := $(sort $(laritos-dirs) $(patsubst %/,%,$(filter %/, $(init-) $(core-) $(drivers-) $(libs-))))
@@ -882,7 +883,7 @@ laritos.img: laritos.bin FORCE
 
 laritos: laritos.img
 
-targets := laritos laritos.img laritos.bin laritos.elf $(KBUILD_BOARD_INFO) $(KBUILD_LDS)
+targets := laritos laritos.img laritos.bin laritos.elf $(KBUILD_BOARD_INFO) $(KBUILD_BI_COPIED) $(KBUILD_LDS)
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
