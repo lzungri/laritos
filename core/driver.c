@@ -11,7 +11,7 @@ static int search_drivermgr_and_process(board_comp_t *comp) {
     driver_mgr_t **dptr;
     for (dptr = __driver_mgrs_start; *dptr; dptr++) {
         driver_mgr_t *d = *dptr;
-        if (strncmp(comp->driver, d->name, DRIVER_NAME_MAX_LEN) == 0) {
+        if (strncmp(comp->driver, d->name, CONFIG_DRIVER_NAME_MAX_LEN) == 0) {
             info("Processing driver '%s' for component '%s'", comp->driver, comp->name);
             if (d->process(comp) < 0) {
                 error("Couldn't process driver '%s' for component '%s'", d->name, comp->name);

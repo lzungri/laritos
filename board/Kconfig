@@ -1,5 +1,13 @@
 menu "Board"
 
+config BOARD_MAX_COMPONENTS
+    int "Max number of components in the board info (*.bi)"
+    default 10
+
+config BOARD_MAX_COMPONENT_ATTRS
+    int "Max number of attributes per component in the board info (*.bi)"
+    default 10
+
 config BOARD_QEMU_ARM_VIRT
     bool "QEMU ARM Board"
     depends on ARM

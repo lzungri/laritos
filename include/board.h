@@ -2,8 +2,7 @@
 
 #include <stdint.h>
 
-#define BOARD_MAX_COMPONENTS 10
-#define BOARD_MAX_COMPONENT_ATTRS 10
+#include <generated/autoconf.h>
 
 typedef struct {
     char *name;
@@ -13,12 +12,12 @@ typedef struct {
 typedef struct {
     char *name;
     char *driver;
-    board_comp_attr_t attr[BOARD_MAX_COMPONENT_ATTRS];
+    board_comp_attr_t attr[CONFIG_BOARD_MAX_COMPONENT_ATTRS];
     uint8_t attrlen;
 } board_comp_t;
 
 typedef struct {
-    board_comp_t components[BOARD_MAX_COMPONENTS];
+    board_comp_t components[CONFIG_BOARD_MAX_COMPONENTS];
     uint8_t len;
 } board_info_t;
 

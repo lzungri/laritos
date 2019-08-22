@@ -646,10 +646,11 @@ endif
 stackp-flags-$(CONFIG_CC_HAS_STACKPROTECTOR_NONE) := -fno-stack-protector
 stackp-flags-$(CONFIG_STACKPROTECTOR)             := -fstack-protector
 stackp-flags-$(CONFIG_STACKPROTECTOR_STRONG)      := -fstack-protector-strong
-
 KBUILD_CFLAGS += $(stackp-flags-y)
 
-KBUILD_CFLAGS += -fstack-usage
+# Benchmarking flags
+benchmarking-flags-$(CONFIG_STACK_USAGE) += -fstack-usage
+KBUILD_CFLAGS += $(benchmarking-flags-y)
 
 ifdef CONFIG_CC_IS_CLANG
 KBUILD_CPPFLAGS += -Qunused-arguments

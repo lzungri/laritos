@@ -43,4 +43,12 @@ config CC_DISABLE_OPTIMIZATIONS
     default y
 
 endmenu
+
+menu "Benchmarking"
+
+config STACK_USAGE
+    bool "Output stack usage info on a per-function basis"
+    default n
+
+endmenu
 endmenu

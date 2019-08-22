@@ -1,0 +1,7 @@
+menu "Drivers"
+
+config DRIVER_NAME_MAX_LEN
+    int "Maximum driver name length"
+    default 10
+
+endmenu
