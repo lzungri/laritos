@@ -30,8 +30,8 @@ SECTIONS
         *(.rodata*);
 
         . = ALIGN(4);
-        __drivers_start = ABSOLUTE(.);
-        KEEP(*(.drivers));
+        __driver_mgrs_start = ABSOLUTE(.);
+        KEEP(*(.driver_mgrs));
         /* Mark the end of the drivers array with a NULL pointer */
         LONG(0);
 
@@ -49,6 +49,13 @@ SECTIONS
     .data : {
         . = ALIGN(4);
         __data_start = ABSOLUTE(.);
+
+        /* Map the board information at the beginning of the .data section */
+        *boardinfo.o(*.data);
+        /* End the board info with a null char, we handle it as a null-terminated string */
+        BYTE(0);
+
+        . = ALIGN(4);
         *(.data);
         . = ALIGN(4);
         __data_end = ABSOLUTE(.);

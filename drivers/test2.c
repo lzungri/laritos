@@ -2,18 +2,13 @@
 #include <driver.h>
 #include <board.h>
 
-static int init(board_comp_t *comp) {
+static int process(board_comp_t *comp) {
     return 0;
 }
 
-static int deinit(void) {
-    return 0;
-}
-
-static driver_t _driver_test2 = {
+static driver_mgr_t _driver_mgr_test2 = {
     .name = "test2",
-    .init = init,
-    .deinit = deinit,
+    .process = process,
 };
 
-driver_t *_driver_test2_ptr __attribute__ ((section (".drivers"))) = &_driver_test2;
+driver_mgr_t *_driver_mgr_test2_ptr __attribute__ ((section (".driver_mgrs"))) = &_driver_mgr_test2;

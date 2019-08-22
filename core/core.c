@@ -24,8 +24,8 @@ void kernel_entry(void)  {
     debug("TODO: Dump board info struct");
 #endif
 
-    if (driver_initialize_all(&_laritos.bi) < 0) {
-        fatal("Error initializing drivers");
+    if (driver_process_board_components(&_laritos.bi) < 0) {
+        fatal("Error processing board components");
     }
 
     loop();
