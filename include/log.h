@@ -20,7 +20,7 @@ int log_flush(void);
 #endif
 
 #define fatal(_msg, ...)  do { \
-    log("FATAL", _msg, ##__VA_ARGS__); \
+    log("F", _msg, ##__VA_ARGS__); \
     while (1); \
 } while(0)
 

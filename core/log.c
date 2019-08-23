@@ -10,28 +10,28 @@ DEF_STATIC_CIRCBUF(logcb, logb, sizeof(logb));
 
 
 int __add_log_msg(char *level, char *tag, char *fmt, ...) {
-    char buf[CONFIG_LOG_MAX_LINE_SIZE] = { 0 };
+    char lineb[CONFIG_LOG_MAX_LINE_SIZE] = { 0 };
 
-    int nchars = snprintf(buf, sizeof(buf), "%s:%s:  ", level, tag);
+    int nchars = snprintf(lineb, sizeof(lineb), "%s:%s:", level, tag);
     // If the required number of chars is bigger than the size of the buffer, then truncate string
-    if (nchars > sizeof(buf)) {
+    if (nchars > sizeof(lineb)) {
         goto full_buf;
     }
 
     va_list ap;
     va_start(ap, fmt);
-    int nchars2 = vsnprintf(buf + nchars, sizeof(buf) - nchars, fmt, ap);
+    int nchars2 = vsnprintf(lineb + nchars, sizeof(lineb) - nchars, fmt, ap);
     va_end(ap);
     // If the required number of chars is bigger than the remaining buffer, then truncate string
-    if (nchars2 > sizeof(buf) - nchars) {
+    if (nchars2 > sizeof(lineb) - nchars) {
         goto full_buf;
     }
 
-    return circbuf_write(&logcb, buf, nchars + nchars2);
+    return circbuf_write(&logcb, lineb, nchars + nchars2);
 
 full_buf:
-    buf[sizeof(buf) - 1] = '\n';
-    return circbuf_write(&logcb, buf, sizeof(buf));
+    lineb[sizeof(lineb) - 1] = '\n';
+    return circbuf_write(&logcb, lineb, sizeof(lineb));
 }
 
 int log_flush(void) {
