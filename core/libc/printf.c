@@ -35,6 +35,10 @@
 
 #include "printf.h"
 
+#define PRINTF_DISABLE_SUPPORT_FLOAT
+#define PRINTF_DISABLE_SUPPORT_LONG_LONG
+#define PRINTF_DISABLE_SUPPORT_EXPONENTIAL
+
 
 // define this globally (e.g. gcc -DPRINTF_INCLUDE_CONFIG_H ...) to include the
 // printf_config.h header file
@@ -128,6 +132,10 @@ typedef struct {
   void* arg;
 } out_fct_wrap_type;
 
+
+void _putchar(char character) {
+    // Nothing
+}
 
 // internal buffer output
 static inline void _out_buffer(char character, void* buffer, size_t idx, size_t maxlen)
