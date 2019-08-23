@@ -34,7 +34,7 @@ int driver_process_board_components(board_info_t *bi) {
     int i;
     for (i = 0; i < bi->len; i++) {
         if (search_drivermgr_and_process(&bi->components[i]) < 0) {
-            error("Could not process component with name %s", bi->components[i].name);
+            error("Could not process component '%s'", bi->components[i].name);
             nerrors++;
         }
     }

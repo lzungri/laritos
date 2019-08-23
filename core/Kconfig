@@ -26,6 +26,14 @@ config LOG_LEVEL_VERBOSE
 
 endmenu
 
+config LOG_MAX_LINE_SIZE
+    int "Max number of character per log line (longer messages will be truncated)"
+    default 128
+
+config LOG_BUFSIZE_BYTES
+    int "Log buffer size in bytes"
+    default 2048
+
 config LOG_FILE_AND_LINEN
     bool "Log file path and line number"
     default y
