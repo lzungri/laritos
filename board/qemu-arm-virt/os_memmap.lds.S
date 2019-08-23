@@ -26,6 +26,9 @@ SECTIONS
         __text_start = ABSOLUTE(.);
         *(.text);
 
+        /* Build id created by the linker */
+        KEEP(*(.note.gnu.build-id))
+
         /* Keep the read only data in the flash */
         *(.rodata*);
 

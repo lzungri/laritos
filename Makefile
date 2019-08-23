@@ -405,13 +405,22 @@ LINUXINCLUDE    := \
 		$(USERINCLUDE)
 
 KBUILD_AFLAGS   := -D__ASSEMBLY__ -fno-PIE
+
 KBUILD_CFLAGS   := -Wall -Wundef -Werror=strict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE \
 		   -Werror=implicit-function-declaration -Werror=implicit-int \
 		   -Wno-format-security -std=gnu11
+# -ffreestanding: Assert that compilation targets a freestanding environment.  This implies -fno-builtin.
+# 		A freestanding environment is one in which the standard library may not exist, and program startup may
+# 		not necessarily be at "main".  The most obvious example is an OS kernel.  This is equivalent to -fno-hosted.
+KBUILD_CFLAGS += -ffreestanding
+
 KBUILD_CPPFLAGS := -D__KERNEL__
+
 KBUILD_AFLAGS_KERNEL :=
+
 KBUILD_CFLAGS_KERNEL :=
+
 KBUILD_LDFLAGS :=
 GCC_PLUGINS_CFLAGS :=
 
@@ -756,7 +765,7 @@ KBUILD_CFLAGS += $(call cc-option, -flive-patching=inline-clone)
 endif
 
 # arch Makefile may override CC so keep this after arch Makefile is included
-NOSTDINC_FLAGS +=  -isystem $(shell $(CC) -print-file-name=include)
+NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
 
 # Variable Length Arrays (VLAs) should not be used anywhere in the kernel
 KBUILD_CFLAGS += -Wvla
@@ -819,6 +828,15 @@ KBUILD_CFLAGS   += $(ARCH_CFLAGS)   $(KCFLAGS)
 KBUILD_LDFLAGS_MODULE += --build-id
 LDFLAGS_laritos += --build-id
 
+# -nostdlib: Do not use the standard system startup files or libraries when linking
+LDFLAGS_laritos += -nostdlib
+GNU_LIBGCC_A := $(shell $(CC) -print-file-name=libgcc.a)
+# -lgcc: From gcc doc, When you specify -nostdlib or -nodefaultlibs you should usually specify -lgcc as well.
+#		This ensures that you have no unresolved references to internal GCC library subroutines (e.g. __aeabi_uidivmod for arm-none-eabi-)
+# -no-whole-archive: Only include those objects referenced by the program, otherwise it will fail when searching for symbols not (yet?) implemented
+# 		in laritOS, (e.g. malloc(), abort())
+LDFLAGS_laritos += --no-whole-archive -L $(dir $(GNU_LIBGCC_A)) -lgcc
+
 ifeq ($(CONFIG_STRIP_ASM_SYMS),y)
 LDFLAGS_laritos	+= $(call ld-option, -X,)
 endif
@@ -863,7 +881,7 @@ KBUILD_LARITOS_LIBS := $(libs-y1)
 laritos-deps := $(KBUILD_LARITOS_OBJS) $(KBUILD_LARITOS_LIBS)
 
 quiet_cmd_link_laritos ?= LD      $@
-	cmd_link_laritos ?= $(LD) -T $(KBUILD_LDS) -whole-archive $(KBUILD_LARITOS_OBJS) $(KBUILD_BOARD_INFO) -o $@
+	cmd_link_laritos ?= $(LD) -T $(KBUILD_LDS) -whole-archive $(KBUILD_LARITOS_OBJS) $(KBUILD_BOARD_INFO) -o $@ $(KBUILD_LDFLAGS) $(LDFLAGS_laritos)
 
 laritos.elf: $(laritos-deps) $(KBUILD_BOARD_INFO) $(KBUILD_LDS) FORCE
 	$(call if_changed,link_laritos)
