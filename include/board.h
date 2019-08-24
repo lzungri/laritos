@@ -10,7 +10,7 @@ typedef struct {
 } board_comp_attr_t;
 
 typedef struct {
-    char *name;
+    char *id;
     char *driver;
     board_comp_attr_t attr[CONFIG_BOARD_MAX_COMPONENT_ATTRS];
     uint8_t attrlen;

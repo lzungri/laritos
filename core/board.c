@@ -50,7 +50,7 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
                 if (!in_component) {
                     goto syntax_error;
                 }
-                ci->name = token;
+                ci->id = token;
                 break;
             case '|':
                 if (!in_component) {

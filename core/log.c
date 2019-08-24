@@ -40,7 +40,7 @@ full_buf:
 }
 
 int log_flush(void) {
-    // TODO Kconfig log transport (e.g. uart)
+    // TODO Use board info to configure log transport (e.g. uartX)
 
     char buf[10] = { 0 };
     circbuf_read(&logcb, buf, sizeof(buf));
