@@ -10,6 +10,7 @@ DEF_STATIC_CIRCBUF(logcb, logb, sizeof(logb));
 
 
 int __add_log_msg(char *level, char *tag, char *fmt, ...) {
+    int ret = 0;
     char lineb[CONFIG_LOG_MAX_LINE_SIZE] = { 0 };
 
     int nchars = snprintf(lineb, sizeof(lineb), "%s:%s:", level, tag);
@@ -27,14 +28,23 @@ int __add_log_msg(char *level, char *tag, char *fmt, ...) {
         goto full_buf;
     }
 
-    return circbuf_write(&logcb, lineb, nchars + nchars2);
+    ret = circbuf_write(&logcb, lineb, nchars + nchars2);
+    log_flush();
+    return ret;
 
 full_buf:
     lineb[sizeof(lineb) - 1] = '\n';
-    return circbuf_write(&logcb, lineb, sizeof(lineb));
+    ret = circbuf_write(&logcb, lineb, sizeof(lineb));
+    log_flush();
+    return ret;
 }
 
 int log_flush(void) {
     // TODO Kconfig log transport (e.g. uart)
+
+    char buf[10] = { 0 };
+    circbuf_read(&logcb, buf, sizeof(buf));
+
+
     return 0;
 }
