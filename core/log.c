@@ -1,8 +1,9 @@
 #include <log.h>
-#include <circbuf.h>
 #include <stdarg.h>
-#include <utils.h>
+
+#include <circbuf.h>
 #include <printf.h>
+#include <utils.h>
 
 static char logb[CONFIG_LOG_BUFSIZE_BYTES];
 

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <strtoxl.h>
 
 int board_init(board_info_t *bi) {
     debug("Initializing board");
@@ -110,5 +111,40 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
 
 syntax_error:
     error("Syntax error in line %d", bi->len);
+    return -1;
+}
+
+int board_get_ptr_attr(board_comp_t *bc, char *attr, void **buf, void *def) {
+    int v;
+    if (board_get_int_attr(bc, attr, &v, -1) < 0) {
+        return -1;
+    }
+    *buf = v >= 0 ? (void *) v : def;
+    return 0;
+}
+
+int board_get_int_attr(board_comp_t *bc, char *attr, int *buf, int def) {
+    char str[BOARD_MAX_ATTR_VALUE_LEN_BYTES] = { 0 };
+    if (board_get_str_attr(bc, attr, str, "") < 0) {
+        return -1;
+    }
+    *buf = strnlen(str, sizeof(str)) > 0 ? strtol(str, NULL, 0) : def;
+    return 0;
+}
+
+int board_get_str_attr(board_comp_t *bc, char *attr, char *buf, char *def) {
+    int i;
+    char *value = def;
+    for (i = 0; i < bc->attrlen; i++) {
+        if (strncmp(bc->attr[i].name, attr, BOARD_MAX_ATTR_NAME_LEN_BYTES) == 0) {
+            value = bc->attr[i].value;
+            break;
+        }
+    }
+    strncpy(buf, value, BOARD_MAX_ATTR_VALUE_LEN_BYTES);
+    return 0;
+}
+
+int board_get_bool_attr(board_comp_t *bc, char *attr, bool *buf, bool def) {
     return -1;
 }

@@ -1,8 +1,12 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <generated/autoconf.h>
+
+#define BOARD_MAX_ATTR_NAME_LEN_BYTES 32
+#define BOARD_MAX_ATTR_VALUE_LEN_BYTES 64
 
 typedef struct {
     char *name;
@@ -40,3 +44,8 @@ extern board_t BOARD;
 int board_init(board_info_t *binfo);
 int board_parse_info(char *bi_start_addr, board_info_t *bi);
 int board_parse_and_initialize(board_info_t *bi);
+
+int board_get_ptr_attr(board_comp_t *bc, char *attr, void **buf, void *def);
+int board_get_int_attr(board_comp_t *bc, char *attr, int *buf, int def);
+int board_get_str_attr(board_comp_t *bc, char *attr, char *buf, char *def);
+int board_get_bool_attr(board_comp_t *bc, char *attr, bool *buf, bool def);

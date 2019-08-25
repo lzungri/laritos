@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 #include <generated/autoconf.h>
 #include "utils.h"
 

@@ -1,2 +1,2 @@
 obj-y += test.o
-obj-y += test2.o
+obj-y += pl011.o
