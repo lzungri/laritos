@@ -11,15 +11,15 @@ typedef enum {
     COMP_TYPE_LEN,
 } component_type_t;
 
-struct component_t;
+struct component;
 typedef struct {
-    int (*init)(struct component_t *c);
-    int (*deinit)(struct component_t *c);
+    int (*init)(struct component *c);
+    int (*deinit)(struct component *c);
 
     // TODO Power manager stuff
 } component_ops_t;
 
-typedef struct {
+typedef struct component {
     char id[MAX_COMPONENT_ID_LEN];
 
     component_type_t type;

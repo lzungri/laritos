@@ -141,7 +141,7 @@ int board_get_str_attr(board_comp_t *bc, char *attr, char *buf, char *def) {
             break;
         }
     }
-    strncpy(buf, value, BOARD_MAX_ATTR_VALUE_LEN_BYTES);
+    strncpy(buf, value, BOARD_MAX_ATTR_VALUE_LEN_BYTES - 1);
     return 0;
 }
 

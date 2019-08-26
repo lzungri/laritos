@@ -16,7 +16,7 @@ typedef volatile struct {
     uint32_t dr;
     // Receive Status Register/Error Clear Register, UARTRSR/UARTECR on page 3-6
     uint32_t rsr_ecr;
-    const uint8_t reserved0[12];
+    const uint8_t reserved0[16];
     // Flag Register, UARTFR on page 3-8
     const union {
         uint32_t v;

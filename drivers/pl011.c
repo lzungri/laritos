@@ -11,22 +11,32 @@
 static uart_t uarts[3];
 static uint8_t cur_uart;
 
-static int write(const void *buf, size_t n) {
+static int write(uart_t *uart, const void *buf, size_t n) {
+    pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
+    // Wait until there is space in the FIFO
+    while (pl011->fr.b.txff);
 
-
-    return -1;
+    const uint8_t *data = buf;
+    int i;
+    for (i = 0; i < n; i++) {
+        pl011->dr = data[i];
+    }
+    return n;
 }
 
-static int read(void *buf, size_t n) {
-
-
-
-    return -1;
+static int read(uart_t *uart, void *buf, size_t n) {
+    pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
+    int i;
+    uint8_t *data = buf;
+    // Read as long as there is some data in the FIFO and the amount read is < n
+    for (i = 0; i < n && !pl011->fr.b.rxfe; i++) {
+        data[i] = pl011->dr;
+    }
+    return i;
 }
 
 static int init(component_t *c) {
-    uart_t *uart = (uart_t *) c;
     return 0;
 }
 
