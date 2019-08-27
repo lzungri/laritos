@@ -7,6 +7,8 @@
 typedef enum {
     COMP_TYPE_UNKNOWN = 0,
     COMP_TYPE_UART,
+    COMP_TYPE_CHARDEV,
+    COMP_TYPE_LOGGER,
 
     COMP_TYPE_LEN,
 } component_type_t;
@@ -30,3 +32,5 @@ typedef struct component {
 int component_init(component_t *comp, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c));
 int component_register(component_t *comp);
+int component_unregister(component_t *comp);
+component_t *component_get_by_id(char *id);

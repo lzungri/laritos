@@ -3,7 +3,8 @@
 #include <stddef.h>
 
 #include <generated/autoconf.h>
-#include "utils.h"
+#include <utils.h>
+
 
 #ifndef KBUILD_MODNAME
 #error KBUILD_MODNAME macro not found
@@ -16,7 +17,7 @@ int __add_log_msg(char *level, char *tag, char *fmt, ...) __attribute__((__forma
 int log_flush(void);
 
 #ifdef CONFIG_LOG_FILE_AND_LINEN
-#define log(_level, _msg, ...) __add_log_msg(_level, KBUILD_MODNAME, __FILE__ ":" TOSTRING(__LINE__) " - " _msg "\n", ##__VA_ARGS__)
+#define log(_level, _msg, ...) __add_log_msg(_level, KBUILD_MODNAME, __FILE__ ":" TOSTRING(__LINE__) ": " _msg "\n", ##__VA_ARGS__)
 #else
 #define log(_level, _msg, ...) __add_log_msg(_level, KBUILD_MODNAME, _msg "\n", ##__VA_ARGS__)
 #endif

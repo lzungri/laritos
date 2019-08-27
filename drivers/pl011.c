@@ -4,6 +4,7 @@
 #include <uart.h>
 #include <drivers/pl011.h>
 #include <utils.h>
+#include <chardev.h>
 
 #define MAX_UARTS 3
 
@@ -11,8 +12,8 @@
 static uart_t uarts[3];
 static uint8_t cur_uart;
 
-static int write(uart_t *uart, const void *buf, size_t n) {
-    pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
+static int write(chardev_t *cd, const void *buf, size_t n) {
+    pl011_mm_t *pl011 = (pl011_mm_t *) ((uart_t *) cd)->baseaddr;
 
     // Wait until there is space in the FIFO
     while (pl011->fr.b.txff);
@@ -25,7 +26,8 @@ static int write(uart_t *uart, const void *buf, size_t n) {
     return n;
 }
 
-static int read(uart_t *uart, void *buf, size_t n) {
+static int read(chardev_t *cd, void *buf, size_t n) {
+    uart_t *uart = (uart_t *) cd;
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
     int i;
     uint8_t *data = buf;
@@ -36,14 +38,6 @@ static int read(uart_t *uart, void *buf, size_t n) {
     return i;
 }
 
-static int init(component_t *c) {
-    return 0;
-}
-
-static int deinit(component_t *c) {
-    return 0;
-}
-
 static int process(board_comp_t *comp) {
     if (cur_uart > ARRAYSIZE(uarts)) {
         error("Max number of uart components reached");
@@ -52,7 +46,7 @@ static int process(board_comp_t *comp) {
 
     uart_t *uart = &uarts[cur_uart];
 
-    if (uart_init(uart, comp, init, deinit, read, write) < 0){
+    if (uart_init(uart, comp, NULL, NULL, read, write) < 0){
         error("Failed to initialize '%s'", comp->id);
         return -1;
     }

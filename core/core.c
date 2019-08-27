@@ -2,6 +2,7 @@
 #include <board.h>
 #include <log.h>
 #include <string.h>
+#include <generated/utsrelease.h>
 
 
 laritos_t _laritos;
@@ -14,6 +15,7 @@ static void loop(void) {
 
 
 void kernel_entry(void)  {
+    info("-- laritOS " UTS_RELEASE " --");
     info("Initializing kernel");
 
     if (board_parse_and_initialize(&_laritos.bi) < 0) {

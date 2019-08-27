@@ -1,9 +1,14 @@
 #include <log.h>
 #include <stdarg.h>
-
-#include <circbuf.h>
 #include <printf.h>
+
+#include <board.h>
+#include <driver.h>
+#include <circbuf.h>
 #include <utils.h>
+#include <component.h>
+#include <chardev.h>
+
 
 static char logb[CONFIG_LOG_BUFSIZE_BYTES];
 
@@ -14,7 +19,7 @@ int __add_log_msg(char *level, char *tag, char *fmt, ...) {
     int ret = 0;
     char lineb[CONFIG_LOG_MAX_LINE_SIZE] = { 0 };
 
-    int nchars = snprintf(lineb, sizeof(lineb), "%s:%s:", level, tag);
+    int nchars = snprintf(lineb, sizeof(lineb), "[XXX.xxx] %s:%s: ", level, tag);
     // If the required number of chars is bigger than the size of the buffer, then truncate string
     if (nchars > sizeof(lineb)) {
         goto full_buf;
@@ -40,12 +45,62 @@ full_buf:
     return ret;
 }
 
+
+typedef struct {
+    component_t parent;
+    chardev_t *transport;
+} logger_t;
+
+// TODO Use dynamic memory instead
+static logger_t loggers[3];
+static uint8_t nloggers;
+
 int log_flush(void) {
-    // TODO Use board info to configure log transport (e.g. uartX)
+    if (nloggers == 0) {
+        return 0;
+    }
 
-    char buf[10] = { 0 };
-    circbuf_read(&logcb, buf, sizeof(buf));
+    int bread = 0;
+    char buf[CONFIG_LOG_MAX_LINE_SIZE * 5] = { 0 };
+    while ((bread = circbuf_read(&logcb, buf, sizeof(buf))) > 0) {
+        int i;
+        for (i = 0; i < nloggers; i++) {
+            chardev_t *cd = loggers[i].transport;
+            cd->ops.write(cd, buf, bread);
+        }
+    }
+    return 0;
+}
 
+static int process(board_comp_t *comp) {
+    if (nloggers > ARRAYSIZE(loggers)) {
+        error("Max number of loggers reached");
+        return -1;
+    }
+
+    logger_t *logger = &loggers[nloggers];
+
+    if (component_init((component_t *) logger, comp, COMP_TYPE_LOGGER, NULL, NULL) < 0) {
+        error("Failed to initialize logger '%s'", comp->id);
+        return -1;
+    }
+
+    char tp[BOARD_MAX_ATTR_VALUE_LEN_BYTES] = { 0 };
+    board_get_str_attr(comp, "transport", tp, "");
+    logger->transport = (chardev_t *) component_get_by_id(tp);
+    if (logger->transport == NULL) {
+        error("No transport found for logger '%s'", comp->id);
+        return -1;
+    }
+
+    if (component_register((component_t *) logger) < 0) {
+        error("Couldn't register logger '%s'", comp->id);
+        return -1;
+    }
+
+    nloggers++;
 
     return 0;
 }
+
+DEF_DRIVER_MANAGER(logger, process);

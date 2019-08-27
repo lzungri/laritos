@@ -2,9 +2,11 @@
 
 #include <board.h>
 #include <driver.h>
+#include <component.h>
 
 typedef struct {
     board_info_t bi;
+    component_t *components[CONFIG_MAX_COMPONENTS];
 
 } laritos_t;
 

@@ -103,8 +103,8 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
             cur++;
         }
 
-        if (bi->len >= CONFIG_BOARD_MAX_COMPONENTS) {
-            warn("Max number of board info components reached, max=%d", CONFIG_BOARD_MAX_COMPONENTS);
+        if (bi->len >= CONFIG_MAX_COMPONENTS) {
+            warn("Max number of board info components reached, max=%d", CONFIG_MAX_COMPONENTS);
             return 0;
         }
     }
@@ -132,11 +132,11 @@ int board_get_int_attr(board_comp_t *bc, char *attr, int *buf, int def) {
     return 0;
 }
 
-int board_get_str_attr(board_comp_t *bc, char *attr, char *buf, char *def) {
+int board_get_str_attr_idx(board_comp_t *bc, char *attr, char *buf, uint8_t index, char *def) {
     int i;
     char *value = def;
     for (i = 0; i < bc->attrlen; i++) {
-        if (strncmp(bc->attr[i].name, attr, BOARD_MAX_ATTR_NAME_LEN_BYTES) == 0) {
+        if (strncmp(bc->attr[i].name, attr, BOARD_MAX_ATTR_NAME_LEN_BYTES) == 0 && index-- == 0) {
             value = bc->attr[i].value;
             break;
         }
@@ -145,6 +145,6 @@ int board_get_str_attr(board_comp_t *bc, char *attr, char *buf, char *def) {
     return 0;
 }
 
-int board_get_bool_attr(board_comp_t *bc, char *attr, bool *buf, bool def) {
-    return -1;
+int board_get_str_attr(board_comp_t *bc, char *attr, char *buf, char *def) {
+    return board_get_str_attr_idx(bc, attr, buf, 0, def);
 }

@@ -1,5 +1,13 @@
 menu "Kernel"
 
+menu "Components"
+
+config MAX_COMPONENTS
+    int "Max number of components supported by laritOS"
+    default 32
+
+endmenu
+
 menu "Logging"
 
 menu "Log level"
@@ -36,7 +44,7 @@ config LOG_BUFSIZE_BYTES
 
 config LOG_FILE_AND_LINEN
     bool "Log file path and line number"
-    default y
+    default n
 
 endmenu
 
