@@ -19,7 +19,7 @@ int __add_log_msg(char *level, char *tag, char *fmt, ...) {
     int ret = 0;
     char lineb[CONFIG_LOG_MAX_LINE_SIZE] = { 0 };
 
-    int nchars = snprintf(lineb, sizeof(lineb), "[XXX.xxx] %s:%s: ", level, tag);
+    int nchars = snprintf(lineb, sizeof(lineb), "[XXX.xxx] %s %s: ", level, tag);
     // If the required number of chars is bigger than the size of the buffer, then truncate string
     if (nchars > sizeof(lineb)) {
         goto full_buf;

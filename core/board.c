@@ -1,6 +1,6 @@
+#include <log.h>
 #include <stddef.h>
 #include <board.h>
-#include <log.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -112,6 +112,19 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
 syntax_error:
     error("Syntax error in line %d", bi->len);
     return -1;
+}
+
+void board_dump_board_info(board_info_t *bi) {
+    debug("Board information:");
+    int i;
+    for (i = 0; i < bi->len; i++) {
+        board_comp_t *c = &bi->components[i];
+        debug("\t%s (driver=%s)", c->id, c->driver);
+        int j;
+        for (j = 0; j < c->attrlen; j++) {
+            debug("\t\t%s = %s", c->attr[j].name, c->attr[j].value);
+        }
+    }
 }
 
 int board_get_ptr_attr(board_comp_t *bc, char *attr, void **buf, void *def) {

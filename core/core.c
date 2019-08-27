@@ -23,7 +23,7 @@ void kernel_entry(void)  {
     }
 
 #ifdef CONFIG_LOG_LEVEL_DEBUG
-    debug("TODO: Dump board info struct");
+    board_dump_board_info(&_laritos.bi);
 #endif
 
     if (driver_process_board_components(&_laritos.bi) < 0) {
