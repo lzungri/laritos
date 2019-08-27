@@ -12,10 +12,10 @@ typedef struct {
 
 #define DEF_STATIC_CIRCBUF(_name, _buf, _size) \
     static circbuf_t _name = { \
-        .buf = _buf, \
-        .size = _size, \
-        .wptr = _buf, \
-        .rptr = _buf, \
+        .buf = (_buf), \
+        .size = (_size), \
+        .wptr = (_buf), \
+        .rptr = (_buf), \
     }
 
 int circbuf_write(circbuf_t *cb, void *buf, size_t n);

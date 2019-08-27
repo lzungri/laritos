@@ -100,6 +100,9 @@ static int process(board_comp_t *comp) {
 
     nloggers++;
 
+    // Now that we have a logger ready, flush all the previously buffered data
+    log_flush();
+
     return 0;
 }
 

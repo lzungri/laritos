@@ -12,7 +12,7 @@ typedef struct {
 #define DEF_DRIVER_MANAGER(_name, _process_func) \
     static driver_mgr_t _driver_mgr_ ## _name = { \
         .name = #_name, \
-        .process = _process_func, \
+        .process = (_process_func), \
     }; \
     driver_mgr_t *_driver_mgr_ ## _name ## _ptr __attribute__ ((section (".driver_mgrs"))) = &_driver_mgr_ ## _name;
 

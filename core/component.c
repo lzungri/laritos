@@ -63,11 +63,19 @@ int component_unregister(component_t *comp) {
 }
 
 component_t *component_get_by_id(char *id) {
-    int i;
-    for (i = 0; i < ARRAYSIZE(_laritos.components); i++) {
-        if (strncmp(_laritos.components[i]->id, id, MAX_COMPONENT_ID_LEN) == 0) {
-            return _laritos.components[i];
+    component_t *c;
+    for_each_component(c) {
+        if (strncmp(c->id, id, MAX_COMPONENT_ID_LEN) == 0) {
+            return c;
         }
     }
     return NULL;
+}
+
+void component_dump_registered_comps(void) {
+    component_t *c;
+    debug("Components:");
+    for_each_component(c) {
+        debug("\tid: %s, type: %d", c->id, c->type);
+    }
 }

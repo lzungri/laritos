@@ -37,8 +37,8 @@ extern char _binary_boardinfo_start[];
 
 #define BOARD(_name, _binit) \
     board_t BOARD = { \
-        .name = _name, \
-        .board_init = _binit, \
+        .name = (_name), \
+        .board_init = (_binit), \
     }
 
 extern board_t BOARD;

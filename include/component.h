@@ -29,8 +29,13 @@ typedef struct component {
 } component_t;
 
 
+#define for_each_component(_c) \
+    for (int i = 0; _c = _laritos.components[i], i < ARRAYSIZE(_laritos.components); i++) \
+        if (_c != NULL)
+
 int component_init(component_t *comp, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c));
 int component_register(component_t *comp);
 int component_unregister(component_t *comp);
 component_t *component_get_by_id(char *id);
+void component_dump_registered_comps(void);

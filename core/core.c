@@ -30,5 +30,9 @@ void kernel_entry(void)  {
         fatal("Error processing board components");
     }
 
+#ifdef CONFIG_LOG_LEVEL_DEBUG
+    component_dump_registered_comps();
+#endif
+
     loop();
 }
