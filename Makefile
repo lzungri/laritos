@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 0
-PATCHLEVEL = 0
-SUBLEVEL = 1
+PATCHLEVEL = 1
+SUBLEVEL = 0
 EXTRAVERSION =
 NAME = laritOS
 
@@ -877,7 +877,7 @@ ifdef building_out_of_srctree
 	fi;
 endif
 
-archprepare: scripts prepare3 outputmakefile $(version_h)
+archprepare: scripts prepare3 outputmakefile $(version_h) include/generated/utsrelease.h
 
 prepare0: archprepare
 	$(Q)$(MAKE) $(build)=.
@@ -891,6 +891,15 @@ prepare: prepare0
 # KERNELRELEASE can change from a few different places, meaning version.h
 # needs to be updated, so this check is forced on all builds
 
+uts_len := 64
+define filechk_utsrelease.h
+	if [ `echo -n "$(KERNELRELEASE)" | wc -c ` -gt $(uts_len) ]; then \
+	  echo '"$(KERNELRELEASE)" exceeds $(uts_len) characters' >&2;    \
+	  exit 1;                                                         \
+	fi;                                                               \
+	echo \#define UTS_RELEASE \"$(KERNELRELEASE)\"
+endef
+
 define filechk_version.h
 	echo \#define LINUX_VERSION_CODE $(shell                         \
 	expr $(VERSION) \* 65536 + 0$(PATCHLEVEL) \* 256 + 0$(SUBLEVEL)); \
@@ -900,6 +909,9 @@ endef
 $(version_h): FORCE
 	$(call filechk,version.h)
 	$(Q)rm -f $(old_version_h)
+
+include/generated/utsrelease.h: include/config/kernel.release FORCE
+	$(call filechk,utsrelease.h)
 
 ###
 # Cleaning is done on three levels.
