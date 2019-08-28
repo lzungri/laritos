@@ -13,16 +13,17 @@ static uart_t uarts[3];
 static uint8_t cur_uart;
 
 
-
-// TODO Implement blocking write/read
-
-
 static int write(chardev_t *cd, const void *buf, size_t n) {
     uart_t *uart = container_of(cd, uart_t, cdev);
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
-    // Wait until there is space in the FIFO
-    while (pl011->fr.b.txff);
+    if (cd->blocking) {
+        // Wait until there is space in the FIFO
+        while (pl011->fr.b.txff);
+    } else if (pl011->fr.b.txff) {
+        // No space left and non-blocking io mode, return
+        return 0;
+    }
 
     const uint8_t *data = buf;
     int i;
@@ -35,6 +36,12 @@ static int write(chardev_t *cd, const void *buf, size_t n) {
 static int read(chardev_t *cd, void *buf, size_t n) {
     uart_t *uart = container_of(cd, uart_t, cdev);
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
+
+    if (cd->blocking) {
+        // Wait until there is some data in the FIFO
+        while (pl011->fr.b.rxfe);
+    }
+
     int i;
     uint8_t *data = buf;
     // Read as long as there is some data in the FIFO and the amount read is < n

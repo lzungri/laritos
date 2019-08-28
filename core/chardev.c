@@ -18,5 +18,7 @@ int chardev_init(chardev_t *cd, board_comp_t *bcomp,
     }
     cd->ops.read = read;
     cd->ops.write = write;
+
+    board_get_bool_attr(bcomp, "blocking", &cd->blocking, false);
     return 0;
 }

@@ -161,3 +161,17 @@ int board_get_str_attr_idx(board_comp_t *bc, char *attr, char *buf, uint8_t inde
 int board_get_str_attr(board_comp_t *bc, char *attr, char *buf, char *def) {
     return board_get_str_attr_idx(bc, attr, buf, 0, def);
 }
+
+int board_get_bool_attr(board_comp_t *bc, char *attr, bool *buf, bool def) {
+    char str[BOARD_MAX_ATTR_VALUE_LEN_BYTES] = { 0 };
+    if (board_get_str_attr(bc, attr, str, "") < 0) {
+        return -1;
+    }
+    if (strnlen(str, sizeof(str)) <= 0) {
+        *buf = def;
+    } else {
+        *buf = strncmp(str, "yes", sizeof(str)) == 0 || strncmp(str, "true", sizeof(str)) == 0
+                || strncmp(str, "y", sizeof(str)) == 0 || strncmp(str, "1", sizeof(str)) == 0;
+    }
+    return 0;
+}

@@ -52,3 +52,4 @@ int board_get_ptr_attr(board_comp_t *bc, char *attr, void **buf, void *def);
 int board_get_int_attr(board_comp_t *bc, char *attr, int *buf, int def);
 int board_get_str_attr(board_comp_t *bc, char *attr, char *buf, char *def);
 int board_get_str_attr_idx(board_comp_t *bc, char *attr, char *buf, uint8_t index, char *def);
+int board_get_bool_attr(board_comp_t *bc, char *attr, bool *buf, bool def);

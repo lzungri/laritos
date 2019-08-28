@@ -1,6 +1,7 @@
 #pragma once
 
 #include <component.h>
+#include <stdbool.h>
 
 struct chardev;
 typedef struct {
@@ -12,6 +13,7 @@ typedef struct chardev {
     component_t parent;
 
     chardev_ops_t ops;
+    bool blocking;
 } chardev_t;
 
 int chardev_init(chardev_t *uart, board_comp_t *bcomp,

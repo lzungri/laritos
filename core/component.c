@@ -76,6 +76,6 @@ void component_dump_registered_comps(void) {
     component_t *c;
     debug("Components:");
     for_each_component(c) {
-        debug("\tid: %s, type: %d", c->id, c->type);
+        debug("\t%s, type: %d", c->id, c->type);
     }
 }
