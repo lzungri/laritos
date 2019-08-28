@@ -2,7 +2,7 @@
 
 #include <board.h>
 
-#define MAX_COMPONENT_ID_LEN 10
+#define COMPONENT_MAX_ID_LEN 32
 
 typedef enum {
     COMP_TYPE_UNKNOWN = 0,
@@ -22,7 +22,7 @@ typedef struct {
 } component_ops_t;
 
 typedef struct component {
-    char id[MAX_COMPONENT_ID_LEN];
+    char id[COMPONENT_MAX_ID_LEN];
 
     component_type_t type;
     component_ops_t ops;
@@ -33,7 +33,7 @@ typedef struct component {
     for (int i = 0; _c = _laritos.components[i], i < ARRAYSIZE(_laritos.components); i++) \
         if (_c != NULL)
 
-int component_init(component_t *comp, board_comp_t *bcomp, component_type_t type,
+int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c));
 int component_register(component_t *comp);
 int component_unregister(component_t *comp);

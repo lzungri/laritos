@@ -16,9 +16,9 @@ static int nop_deinit(component_t *c) {
     return 0;
 }
 
-int component_init(component_t *comp, board_comp_t *bcomp, component_type_t type,
+int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
-    strncpy(comp->id, bcomp->id, sizeof(comp->id) - 1);
+    strncpy(comp->id, id, sizeof(comp->id) - 1);
     comp->type = type;
     comp->ops.init = init == NULL ? nop_init : init;
     comp->ops.deinit = deinit == NULL ? nop_deinit : deinit;
@@ -65,7 +65,7 @@ int component_unregister(component_t *comp) {
 component_t *component_get_by_id(char *id) {
     component_t *c;
     for_each_component(c) {
-        if (strncmp(c->id, id, MAX_COMPONENT_ID_LEN) == 0) {
+        if (strncmp(c->id, id, COMPONENT_MAX_ID_LEN) == 0) {
             return c;
         }
     }

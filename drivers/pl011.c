@@ -12,8 +12,14 @@
 static uart_t uarts[3];
 static uint8_t cur_uart;
 
+
+
+// TODO Implement blocking write/read
+
+
 static int write(chardev_t *cd, const void *buf, size_t n) {
-    pl011_mm_t *pl011 = (pl011_mm_t *) ((uart_t *) cd)->baseaddr;
+    uart_t *uart = container_of(cd, uart_t, cdev);
+    pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
     // Wait until there is space in the FIFO
     while (pl011->fr.b.txff);
@@ -27,7 +33,7 @@ static int write(chardev_t *cd, const void *buf, size_t n) {
 }
 
 static int read(chardev_t *cd, void *buf, size_t n) {
-    uart_t *uart = (uart_t *) cd;
+    uart_t *uart = container_of(cd, uart_t, cdev);
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
     int i;
     uint8_t *data = buf;
@@ -43,19 +49,10 @@ static int process(board_comp_t *comp) {
         error("Max number of uart components reached");
         return -1;
     }
-
-    uart_t *uart = &uarts[cur_uart];
-
-    if (uart_init(uart, comp, NULL, NULL, read, write) < 0){
-        error("Failed to initialize '%s'", comp->id);
+    if (uart_init_and_register(&uarts[cur_uart], comp, NULL, NULL, read, write) < 0){
+        error("Failed to register '%s'", comp->id);
         return -1;
     }
-
-    if (uart_register(uart) < 0) {
-        error("Couldn't register uart '%s'", comp->id);
-        return -1;
-    }
-
     cur_uart++;
 
     return 0;

@@ -18,10 +18,12 @@ config LOG_LEVEL_ERROR
 
 config LOG_LEVEL_WARN
     bool "WARN"
+    default y
     select LOG_LEVEL_ERROR
 
 config LOG_LEVEL_INFO
     bool "INFO"
+    default y
     select LOG_LEVEL_WARN
 
 config LOG_LEVEL_DEBUG

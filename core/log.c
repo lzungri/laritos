@@ -80,7 +80,7 @@ static int process(board_comp_t *comp) {
 
     logger_t *logger = &loggers[nloggers];
 
-    if (component_init((component_t *) logger, comp, COMP_TYPE_LOGGER, NULL, NULL) < 0) {
+    if (component_init((component_t *) logger, comp->id, comp, COMP_TYPE_LOGGER, NULL, NULL) < 0) {
         error("Failed to initialize logger '%s'", comp->id);
         return -1;
     }
@@ -88,8 +88,8 @@ static int process(board_comp_t *comp) {
     char tp[BOARD_MAX_ATTR_VALUE_LEN_BYTES] = { 0 };
     board_get_str_attr(comp, "transport", tp, "");
     logger->transport = (chardev_t *) component_get_by_id(tp);
-    if (logger->transport == NULL) {
-        error("No transport found for logger '%s'", comp->id);
+    if (logger->transport == NULL || logger->transport->ops.write == NULL) {
+        error("No valid transport found for logger '%s'", comp->id);
         return -1;
     }
 
