@@ -1,6 +1,6 @@
+#include <log.h>
 #include <core.h>
 #include <board.h>
-#include <log.h>
 #include <string.h>
 #include <component.h>
 #include <inputdev.h>
@@ -10,7 +10,7 @@
 laritos_t _laritos;
 
 void kernel_entry(void)  {
-    info("-- laritOS " UTS_RELEASE " --");
+    log("I", "-- laritOS " UTS_RELEASE " --");
     info("Initializing kernel");
 
     if (board_parse_and_initialize(&_laritos.bi) < 0) {

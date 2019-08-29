@@ -27,31 +27,31 @@ int log_flush(void);
     while (1); \
 } while(0)
 
-#ifdef CONFIG_LOG_LEVEL_ERROR
+#if defined(CONFIG_LOG_LEVEL_ERROR) || defined(DEBUG)
 #define error(_msg, ...) log("E", _msg, ##__VA_ARGS__)
 #else
 #define error(_msg, ...)
 #endif
 
-#ifdef CONFIG_LOG_LEVEL_WARN
+#if defined(CONFIG_LOG_LEVEL_WARN) || defined(DEBUG)
 #define warn(_msg, ...) log("W", _msg, ##__VA_ARGS__)
 #else
 #define warn(_msg, ...)
 #endif
 
-#ifdef CONFIG_LOG_LEVEL_INFO
+#if defined(CONFIG_LOG_LEVEL_INFO) || defined(DEBUG)
 #define info(_msg, ...) log("I", _msg, ##__VA_ARGS__)
 #else
 #define info(_msg, ...)
 #endif
 
-#ifdef CONFIG_LOG_LEVEL_DEBUG
+#if defined(CONFIG_LOG_LEVEL_DEBUG) || defined(DEBUG)
 #define debug(_msg, ...) log("D", _msg, ##__VA_ARGS__)
 #else
 #define debug(_msg, ...)
 #endif
 
-#ifdef CONFIG_LOG_LEVEL_VERBOSE
+#if defined(CONFIG_LOG_LEVEL_VERBOSE) || defined(DEBUG)
 #define verbose(_msg, ...) log("V", _msg, ##__VA_ARGS__)
 #else
 #define verbose(_msg, ...)
