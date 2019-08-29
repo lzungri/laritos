@@ -28,7 +28,7 @@ int board_parse_and_initialize(board_info_t *bi) {
 }
 
 // TODO Check max attributes
-// TODO Check name/value max lenghts
+// TODO Check name/value max lengths
 int board_parse_info(char *bi_start_addr, board_info_t *bi) {
     if (bi_start_addr == NULL) {
         error("Board info address is NULL");
