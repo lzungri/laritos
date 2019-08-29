@@ -3,7 +3,7 @@ menu "Kernel"
 menu "Components"
 
 config MAX_COMPONENTS
-    int "Max number of components supported by laritOS"
+    int "Max number of components"
     default 32
 
 endmenu

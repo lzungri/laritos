@@ -7,7 +7,7 @@
 #include <circbuf.h>
 #include <utils.h>
 #include <component.h>
-#include <chardev.h>
+#include <stream.h>
 
 
 static char logb[CONFIG_LOG_BUFSIZE_BYTES];
@@ -48,7 +48,7 @@ full_buf:
 
 typedef struct {
     component_t parent;
-    chardev_t *transport;
+    stream_t *transport;
 } logger_t;
 
 // TODO Use dynamic memory instead
@@ -65,8 +65,8 @@ int log_flush(void) {
     while ((bread = circbuf_read(&logcb, buf, sizeof(buf))) > 0) {
         int i;
         for (i = 0; i < nloggers; i++) {
-            chardev_t *cd = loggers[i].transport;
-            cd->ops.write(cd, buf, bread);
+            stream_t *s = loggers[i].transport;
+            s->ops.write(s, buf, bread);
         }
     }
     return 0;
@@ -87,7 +87,7 @@ static int process(board_comp_t *comp) {
 
     char tp[BOARD_MAX_ATTR_VALUE_LEN_BYTES] = { 0 };
     board_get_str_attr(comp, "transport", tp, "");
-    logger->transport = (chardev_t *) component_get_by_id(tp);
+    logger->transport = (stream_t *) component_get_by_id(tp);
     if (logger->transport == NULL || logger->transport->ops.write == NULL) {
         error("No valid transport found for logger '%s'", comp->id);
         return -1;

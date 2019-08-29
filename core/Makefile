@@ -5,5 +5,6 @@ obj-y += log.o
 obj-y += circbuf.o
 obj-y += uart.o
 obj-y += component.o
-obj-y += chardev.o
+obj-y += stream.o
+obj-y += inputdev.o
 obj-y += libc/

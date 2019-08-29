@@ -7,7 +7,8 @@
 typedef enum {
     COMP_TYPE_UNKNOWN = 0,
     COMP_TYPE_UART,
-    COMP_TYPE_CHARDEV,
+    COMP_TYPE_STREAM,
+    COMP_TYPE_INPUTDEV,
     COMP_TYPE_LOGGER,
 
     COMP_TYPE_LEN,
@@ -29,9 +30,12 @@ typedef struct component {
 } component_t;
 
 
-#define for_each_component(_c) \
+#define for_each_filtered_component(_c, _filter) \
     for (int i = 0; _c = _laritos.components[i], i < ARRAYSIZE(_laritos.components); i++) \
-        if (_c != NULL)
+        if (_c != NULL && (_filter))
+
+#define for_each_component(_c) \
+    for_each_filtered_component(_c, true)
 
 int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c));

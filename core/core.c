@@ -2,17 +2,12 @@
 #include <board.h>
 #include <log.h>
 #include <string.h>
+#include <component.h>
+#include <inputdev.h>
 #include <generated/utsrelease.h>
 
 
 laritos_t _laritos;
-
-static void loop(void) {
-	while (1) {
-		asm("wfi");
-	}
-}
-
 
 void kernel_entry(void)  {
     info("-- laritOS " UTS_RELEASE " --");
@@ -34,5 +29,16 @@ void kernel_entry(void)  {
     component_dump_registered_comps();
 #endif
 
-    loop();
+    while (true) {
+        component_t *c;
+        for_each_filtered_component(c, c->type == COMP_TYPE_INPUTDEV) {
+            stream_t *s = ((inputdev_t *) c)->transport;
+            char buf[32];
+            int bread = 0;
+            if ((bread = s->ops.read(s, buf, sizeof(buf) - 1)) > 0) {
+                buf[bread] = '\0';
+                info("[%s]: %s", c->id, buf);
+            }
+        }
+    }
 }

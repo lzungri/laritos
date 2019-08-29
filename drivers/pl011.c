@@ -3,21 +3,22 @@
 #include <board.h>
 #include <uart.h>
 #include <drivers/pl011.h>
+#include <stream.h>
 #include <utils.h>
-#include <chardev.h>
 
 #define MAX_UARTS 3
 
 // TODO Use dynamic memory instead
-static uart_t uarts[3];
+static uart_t uarts[MAX_UARTS];
 static uint8_t cur_uart;
 
 
-static int write(chardev_t *cd, const void *buf, size_t n) {
-    uart_t *uart = container_of(cd, uart_t, cdev);
+static int write(stream_t *s, const void *buf, size_t n) {
+    uart_t *uart = container_of(s, uart_t, stream);
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
-    if (cd->blocking) {
+    // TODO Use interrupts
+    if (s->blocking) {
         // Wait until there is space in the FIFO
         while (pl011->fr.b.txff);
     } else if (pl011->fr.b.txff) {
@@ -33,11 +34,12 @@ static int write(chardev_t *cd, const void *buf, size_t n) {
     return n;
 }
 
-static int read(chardev_t *cd, void *buf, size_t n) {
-    uart_t *uart = container_of(cd, uart_t, cdev);
+static int read(stream_t *s, void *buf, size_t n) {
+    uart_t *uart = container_of(s, uart_t, stream);
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
-    if (cd->blocking) {
+    // TODO Use interrupts
+    if (s->blocking) {
         // Wait until there is some data in the FIFO
         while (pl011->fr.b.rxfe);
     }

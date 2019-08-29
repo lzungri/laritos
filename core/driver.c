@@ -58,13 +58,13 @@ static int search_drivermgr_and_process(board_info_t *bi, board_comp_t *comp) {
                 return -1;
             }
 
-            info("Processing driver '%s' for component '%s'", comp->driver, comp->id);
+            info("Processing component '%s' using driver '%s'", comp->id, comp->driver);
             if (d->process(comp) < 0) {
                 error("Couldn't process driver '%s' for component '%s'", d->name, comp->id);
                 return -1;
             }
             comp->processed = true;
-            debug("Driver '%s' processed", d->name);
+            debug("Component '%s' processed", comp->id);
 
             return 0;
         }
