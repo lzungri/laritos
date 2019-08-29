@@ -10,7 +10,7 @@ static int search_drivermgr_and_process(board_info_t *bi, board_comp_t *comp);
 static int search_drivermgr_and_process_by_comp_id(board_info_t *bi, char *cid) {
     int i;
     for (i = 0; i < bi->len; i++) {
-        if (strncmp(bi->components[i].id, cid, CONFIG_BOARD_MAX_NAME_LEN_BYTES) == 0) {
+        if (strncmp(bi->components[i].id, cid, CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES) == 0) {
             return search_drivermgr_and_process(bi, &bi->components[i]);
         }
     }
@@ -18,12 +18,12 @@ static int search_drivermgr_and_process_by_comp_id(board_info_t *bi, char *cid) 
 }
 
 static int process_dependencies(board_info_t *bi, board_comp_t *comp) {
-    char deps[CONFIG_BOARD_MAX_COMPONENT_ATTRS][CONFIG_BOARD_MAX_VALUE_LEN_BYTES] = { 0 };
+    char deps[CONFIG_BOARD_MAX_COMPONENT_ATTRS][CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
 
     int ndeps = 0;
     do {
         board_get_str_attr_idx(comp, "depends", deps[ndeps], ndeps, "");
-    } while(ndeps < CONFIG_BOARD_MAX_COMPONENT_ATTRS && strnlen(deps[ndeps++], CONFIG_BOARD_MAX_VALUE_LEN_BYTES) > 0);
+    } while(ndeps < CONFIG_BOARD_MAX_COMPONENT_ATTRS && strnlen(deps[ndeps++], CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES) > 0);
 
     ndeps--;
     if (ndeps > 0) {
@@ -52,7 +52,7 @@ static int search_drivermgr_and_process(board_info_t *bi, board_comp_t *comp) {
     for (dptr = __driver_mgrs_start; *dptr; dptr++) {
         driver_mgr_t *d = *dptr;
 
-        if (strncmp(comp->driver, d->name, CONFIG_BOARD_MAX_NAME_LEN_BYTES) == 0) {
+        if (strncmp(comp->driver, d->name, CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES) == 0) {
             if (process_dependencies(bi, comp) < 0) {
                 error("Failed to process dependencies for component '%s'", comp->id);
                 return -1;

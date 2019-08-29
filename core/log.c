@@ -85,7 +85,7 @@ static int process(board_comp_t *comp) {
         return -1;
     }
 
-    char tp[CONFIG_BOARD_MAX_VALUE_LEN_BYTES] = { 0 };
+    char tp[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
     board_get_str_attr(comp, "transport", tp, "");
     logger->transport = (stream_t *) component_get_by_id(tp);
     if (logger->transport == NULL || logger->transport->ops.write == NULL) {

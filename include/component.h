@@ -2,7 +2,7 @@
 
 #include <board.h>
 
-#define COMPONENT_MAX_ID_LEN 32
+#define COMPONENT_MAX_ID_LEN CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES
 
 typedef enum {
     COMP_TYPE_UNKNOWN = 0,

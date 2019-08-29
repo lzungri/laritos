@@ -27,8 +27,19 @@ int board_parse_and_initialize(board_info_t *bi) {
     return 0;
 }
 
-// TODO Check max attributes
-// TODO Check name/value max lengths
+/**
+ * Parses the board information and populates the board_info_t
+ *
+ * Board info syntax:
+ *      component1:driver1|attr1=attr1value,attrN=attrNvalue\n
+ *      component2:driver2|attr1=attr1value\n
+ *      component3:driver3\n
+ *
+ * @param bi_start_addr: Start address of the plain-text board info
+ * @param bi: Pointer to a board info struct
+ *
+ * @return 0 on success, < 0 on error
+ */
 int board_parse_info(char *bi_start_addr, board_info_t *bi) {
     if (bi_start_addr == NULL) {
         error("Board info address is NULL");
@@ -43,11 +54,24 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
     bool found_keyword = false;
 
     while (1) {
+        // Check for EOF
         if (*token == '\0') {
             return 0;
         }
 
+        if (bi->len >= CONFIG_MAX_COMPONENTS) {
+            error("Max number of board info components reached, max=%d", CONFIG_MAX_COMPONENTS);
+            return -1;
+        }
+
         board_comp_t *ci = &bi->components[bi->len];
+
+#define check_attr_limit() \
+    if (ci->attrlen >= CONFIG_BOARD_MAX_COMPONENT_ATTRS) { \
+        error("Max number of attributes for component '%s' reached", ci->id); \
+        return -1; \
+    }
+
         switch (*cur) {
             case ':':
                 if (!in_component) {
@@ -66,12 +90,14 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
                 if (in_component) {
                     goto syntax_error;
                 }
+                check_attr_limit();
                 ci->attr[ci->attrlen].name = token;
                 break;
             case ',':
                 if (in_component) {
                     goto syntax_error;
                 }
+                check_attr_limit();
                 ci->attr[ci->attrlen].value = token;
                 ci->attrlen++;
                 break;
@@ -80,6 +106,7 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
                 if (in_component) {
                     ci->driver = token;
                 } else {
+                    check_attr_limit();
                     ci->attr[ci->attrlen].value = token;
                     ci->attrlen++;
                 }
@@ -99,15 +126,15 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
                 *cur = '\0';
                 cur++;
             }
+            // Check current token length limit
+            if (strlen(token) > CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES - 1) {
+                error("Token '%s' exceeds maximum token length", token);
+                goto syntax_error;
+            }
             token = cur;
         } else {
             found_keyword = true;
             cur++;
-        }
-
-        if (bi->len >= CONFIG_MAX_COMPONENTS) {
-            warn("Max number of board info components reached, max=%d", CONFIG_MAX_COMPONENTS);
-            return 0;
         }
     }
 
@@ -139,7 +166,7 @@ int board_get_ptr_attr(board_comp_t *bc, char *attr, void **buf, void *def) {
 }
 
 int board_get_int_attr(board_comp_t *bc, char *attr, int *buf, int def) {
-    char str[CONFIG_BOARD_MAX_VALUE_LEN_BYTES] = { 0 };
+    char str[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
     if (board_get_str_attr(bc, attr, str, "") < 0) {
         return -1;
     }
@@ -151,12 +178,13 @@ int board_get_str_attr_idx(board_comp_t *bc, char *attr, char *buf, uint8_t inde
     int i;
     char *value = def;
     for (i = 0; i < bc->attrlen; i++) {
-        if (strncmp(bc->attr[i].name, attr, CONFIG_BOARD_MAX_NAME_LEN_BYTES) == 0 && index-- == 0) {
+        if (strncmp(bc->attr[i].name, attr, CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES) == 0 && index-- == 0) {
             value = bc->attr[i].value;
             break;
         }
     }
-    strncpy(buf, value, CONFIG_BOARD_MAX_VALUE_LEN_BYTES - 1);
+    strncpy(buf, value, CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES - 1);
+    buf[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES - 1] = '\0';
     return 0;
 }
 
@@ -165,7 +193,7 @@ int board_get_str_attr(board_comp_t *bc, char *attr, char *buf, char *def) {
 }
 
 int board_get_bool_attr(board_comp_t *bc, char *attr, bool *buf, bool def) {
-    char str[CONFIG_BOARD_MAX_VALUE_LEN_BYTES] = { 0 };
+    char str[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
     if (board_get_str_attr(bc, attr, str, "") < 0) {
         return -1;
     }

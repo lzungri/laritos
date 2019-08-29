@@ -34,6 +34,13 @@ size_t strnlen(const char *s, size_t maxlen) {
     return size;
 }
 
+
+size_t strlen(const char *s) {
+    size_t size;
+    for (size = 0; *s++ != '\0'; size++);
+    return size;
+}
+
 char *strncpy(char *dest, const char *src, size_t n) {
     size_t i;
     for (i = 0; i < n && src[i] != '\0'; i++) {
