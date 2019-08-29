@@ -1,5 +1,13 @@
 menu "Kernel"
 
+menu "Memory"
+
+config MEM_OS_STACK_SIZE
+    int "Stack size for the operating system (in bytes)"
+    default 8388608   # 8 MB
+
+endmenu
+
 menu "Components"
 
 config MAX_COMPONENTS

@@ -81,7 +81,7 @@ SECTIONS
     /* Stack located at the end of the ram */
     . = ALIGN(4);
     __stack_top = ORIGIN(ram) + LENGTH(ram);
-    /*__stack_end = __stacktop - STACK_SIZE */
+    __stack_end = __stack_top - CONFIG_MEM_OS_STACK_SIZE;
 
     /* ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack") */
 }
