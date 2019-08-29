@@ -27,6 +27,8 @@ int board_parse_and_initialize(board_info_t *bi) {
     return 0;
 }
 
+// TODO Check max attributes
+// TODO Check name/value max lenghts
 int board_parse_info(char *bi_start_addr, board_info_t *bi) {
     if (bi_start_addr == NULL) {
         error("Board info address is NULL");
@@ -137,7 +139,7 @@ int board_get_ptr_attr(board_comp_t *bc, char *attr, void **buf, void *def) {
 }
 
 int board_get_int_attr(board_comp_t *bc, char *attr, int *buf, int def) {
-    char str[BOARD_MAX_ATTR_VALUE_LEN_BYTES] = { 0 };
+    char str[CONFIG_BOARD_MAX_VALUE_LEN_BYTES] = { 0 };
     if (board_get_str_attr(bc, attr, str, "") < 0) {
         return -1;
     }
@@ -149,12 +151,12 @@ int board_get_str_attr_idx(board_comp_t *bc, char *attr, char *buf, uint8_t inde
     int i;
     char *value = def;
     for (i = 0; i < bc->attrlen; i++) {
-        if (strncmp(bc->attr[i].name, attr, BOARD_MAX_ATTR_NAME_LEN_BYTES) == 0 && index-- == 0) {
+        if (strncmp(bc->attr[i].name, attr, CONFIG_BOARD_MAX_NAME_LEN_BYTES) == 0 && index-- == 0) {
             value = bc->attr[i].value;
             break;
         }
     }
-    strncpy(buf, value, BOARD_MAX_ATTR_VALUE_LEN_BYTES - 1);
+    strncpy(buf, value, CONFIG_BOARD_MAX_VALUE_LEN_BYTES - 1);
     return 0;
 }
 
@@ -163,7 +165,7 @@ int board_get_str_attr(board_comp_t *bc, char *attr, char *buf, char *def) {
 }
 
 int board_get_bool_attr(board_comp_t *bc, char *attr, bool *buf, bool def) {
-    char str[BOARD_MAX_ATTR_VALUE_LEN_BYTES] = { 0 };
+    char str[CONFIG_BOARD_MAX_VALUE_LEN_BYTES] = { 0 };
     if (board_get_str_attr(bc, attr, str, "") < 0) {
         return -1;
     }

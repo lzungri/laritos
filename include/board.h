@@ -5,10 +5,6 @@
 
 #include <generated/autoconf.h>
 
-#define BOARD_MAX_ATTR_NAME_LEN_BYTES 32
-#define BOARD_MAX_ATTR_VALUE_LEN_BYTES 64
-#define BOARD_MAX_COMP_ID_LEN_BYTES BOARD_MAX_ATTR_VALUE_LEN_BYTES
-
 typedef struct {
     char *name;
     char *value;
