@@ -78,10 +78,12 @@ SECTIONS
         __bss_size = __bss_end - __bss_start;
     } > ram
 
-    /* Stack located at the end of the ram */
+    /* Stack located right after the .bss section in the ram */
     . = ALIGN(4);
-    __stack_top = ORIGIN(ram) + LENGTH(ram);
-    __stack_end = __stack_top - CONFIG_MEM_OS_STACK_SIZE;
+    __stack_end = .;
+    /* laritOS only use 5 processor modes, hence 5 different stacks  */
+    __stack_top = __stack_end + 5 * CONFIG_MEM_STACK_SIZE_PER_MODE;
+    __stack_size = __stack_top - __stack_end;
 
-    /* ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack") */
+    ASSERT(__stack_top < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS stacks")
 }

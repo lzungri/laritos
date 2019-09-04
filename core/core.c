@@ -38,6 +38,16 @@ void kernel_entry(void)  {
             if ((bread = s->ops.read(s, buf, sizeof(buf) - 1)) > 0) {
                 buf[bread] = '\0';
                 info("[%s]: %s", c->id, buf);
+
+
+                switch (buf[0]) {
+                case 's':
+                    asm("svc 1");
+                    break;
+                case 'r':
+                    asm("b 0");
+                    break;
+                }
             }
         }
     }

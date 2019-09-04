@@ -1,4 +1,8 @@
 menu "armv-7a options"
     depends on ARMV7_A
 
+config MEM_STACK_SIZE_PER_MODE
+    int "Stack size per processor mode (in bytes)"
+    default 4194304   # 4 MB
+
 endmenu
