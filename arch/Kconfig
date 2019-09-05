@@ -1,16 +1,33 @@
 menu "Architecture"
 
 choice
+    prompt "Bits"
+    default CPU_32_BITS
+
+config CPU_32_BITS
+    bool "32 bits"
+
+config CPU_64_BITS
+    bool "64 bits"
+
+endchoice
+
+choice
     prompt "Architecture select"
     default ARM
 
 config ARM
     bool "ARM architecture"
+    depends on CPU_32_BITS
 
 config AARCH64
     bool "AARCH64 architecture"
+    depends on CPU_64_BITS
 
 endchoice
+
+source "arch/arm/Kconfig"
+source "arch/aarch64/Kconfig"
 
 choice
     prompt "Instruction set"
@@ -35,8 +52,5 @@ config CPU_BIG_ENDIAN
     bool "Big endian"
 
 endchoice
-
-source "arch/arm/Kconfig"
-source "arch/aarch64/Kconfig"
 
 endmenu

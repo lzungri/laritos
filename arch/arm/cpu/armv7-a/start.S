@@ -40,7 +40,7 @@ init_stacks:
 
 
 copy_data_section:
-    # Copy .data section from flash into ram
+    # Copy OS .data section from flash into ram
     ldr r0, =__data_lma
     ldr r1, =__data_start
     ldr r2, =__data_end
@@ -56,7 +56,7 @@ flash_to_ram_loop:
 
 
 init_bss_section:
-    # Initialize (zero) bss section
+    # Initialize (zero) OS bss section
     ldr r0, =__bss_start
     ldr r1, =__bss_end
     mov r2, #0

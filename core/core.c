@@ -29,6 +29,13 @@ void kernel_entry(void)  {
     component_dump_registered_comps();
 #endif
 
+
+    // TODO: Delete this
+    // User mode
+    asm("msr cpsr_c, #0b11010000");
+    asm("movw sp, #0");
+    asm("movt sp, #0x4050");
+
     while (true) {
         component_t *c;
         for_each_filtered_component(c, c->type == COMP_TYPE_INPUTDEV) {
@@ -42,6 +49,13 @@ void kernel_entry(void)  {
 
                 switch (buf[0]) {
                 case 's':
+                    asm("mov r0, %[c]" : : [c] "r" (buf[0]));
+                    asm("mov r1, #2");
+                    asm("mov r2, #3");
+                    asm("mov r3, #4");
+                    asm("mov r4, #5");
+                    asm("mov r5, #6");
+                    asm("mov r6, #7");
                     asm("svc 1");
                     break;
                 case 'r':

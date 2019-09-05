@@ -38,7 +38,23 @@ _undef_handler:
     b undef_handler
 
 _svc_handler:
-    b svc_handler
+    # Save registers into the stack
+    stmfd sp!, {r0-r12, lr}
+
+    # Load the SVC instruction into r0 to get the service call number.
+    # The instruction is located 4 bytes behind the lr
+    ldr r0, [lr, #-4]
+    # Mask the service call number (e.g. svc 1 -> 0xef000001) and save it in
+    # r0 so that the svc_handler() gets it as the first argument
+    bic r0, r0, #0xff000000
+    # Set the stack pointer as the second argument for the handler
+    mov r1, sp
+    # Invoke the service call handler
+    bl svc_handler
+
+    # Pop the previously saved registers and continue execution in the svc caller
+    # context. ^ is used to restore the CPSR from the SPSR
+    ldmfd sp!, {r0-r12, pc}^
 
 _prefetch_handler:
     b prefetch_handler
