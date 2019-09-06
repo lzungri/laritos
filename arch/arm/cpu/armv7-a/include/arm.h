@@ -8,8 +8,7 @@
  * stack by the handlers
  */
 typedef struct {
-    int32_t r[12];
-    int32_t sp;
+    int32_t r[13];
     int32_t lr;
 } spregs_t;
 
@@ -41,7 +40,7 @@ typedef struct {
              * Bit[8]
              * Reserved, UNK/SBZP.
              */
-            uint8_t reserved2: 1;
+            uint8_t reserved1: 1;
             /**
              * LPAE, bit[9], if the implementation includes the Large Physical Address Extension
              * On taking a Data Abort exception, this bit is set to 0 to indicate use of the Short-descriptor
@@ -103,6 +102,65 @@ typedef struct {
     };
 } dfsr_reg_t;
 
+/**
+ * The IFSR holds status information about the last instruction fault
+ */
+typedef struct {
+    union {
+        uint32_t v;
+        struct {
+            /**
+             * FS, bits[10, 3:0]
+             * Fault status bits. For the valid encodings of these bits when using the Short-descriptor translation
+             * table format, see Table B3-23 on page B3-1415. All encodings not shown in the table are reserved.
+             */
+            uint8_t fs_l: 4;
+            /**
+             * Bits[8:4]
+             * Reserved, UNK/SBZP.
+             */
+            uint8_t reserved2: 4;
+            uint8_t reserved3: 1;
+            /**
+             * LPAE, bit[9], if the implementation includes the Large Physical Address Extension
+             * On taking an exception, this bit is set to 0 to indicate use of the Short-descriptor translation table
+             * format.
+             * Bits[9], if the implementation does not include the Large Physical Address Extension
+             */
+            bool lpae: 1;
+            /**
+             * FS, bits[10, 3:0]
+             * Fault status bits. For the valid encodings of these bits when using the Short-descriptor translation
+             * table format, see Table B3-23 on page B3-1415. All encodings not shown in the table are reserved.
+             */
+            uint8_t fs_h: 1;
+            /**
+             * Bit[11]
+             * Reserved, UNK/SBZP.
+             */
+            bool reserved1: 1;
+            /**
+             * ExT, bit[12] External abort type. This bit can provide an IMPLEMENTATION DEFINED classification of external
+             * aborts.
+             * For aborts other than external aborts this bit always returns 0.
+             * In an implementation that does not provide any classification of external aborts, this bit is
+             * UNK/SBZP.
+             */
+            bool ext: 1;
+            /**
+             * Bits[31:13] Reserved, UNK/SBZP.
+             */
+            uint32_t reserved0: 19;
+        } b;
+    };
+} ifsr_reg_t;
+
+
+static inline int32_t get_cpsr(void) {
+    int32_t cpsr;
+    asm("mrs %0, cpsr" : "=r" (cpsr));
+    return cpsr;
+}
 
 static inline int32_t get_spsr(void) {
     int32_t spsr;

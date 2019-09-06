@@ -33,9 +33,13 @@ static void user_shell(void) {
                     asm("mov r5, #6");
                     asm("mov r6, #7");
                     // abort
+//                    asm("movw r7, #0xffff");
+//                    asm("movt r7, #0xffff");
+//                    asm("str r6, [r7]");
+                    // prefetch
                     asm("movw r7, #0xffff");
                     asm("movt r7, #0xffff");
-                    asm("str r6, [r7]");
+                    asm("mov pc, r7");
                     // undef
                     asm(".word 0xffffffff");
                     asm("svc 1");

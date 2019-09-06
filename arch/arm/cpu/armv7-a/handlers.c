@@ -6,7 +6,7 @@
 #include <debug.h>
 #include <generated/autoconf.h>
 
-int svc_handler(int sysno, spregs_t *regs) {
+int svc_handler(int sysno, const spregs_t *regs) {
     syscall_params_t params = { 0 };
     int i;
     for (i = 0; i < CONFIG_SYSCALL_MAX_ARGS && i < ARRAYSIZE(regs->r); i++) {
@@ -16,10 +16,6 @@ int svc_handler(int sysno, spregs_t *regs) {
 }
 
 int undef_handler(void) {
-    return 0;
-}
-
-int prefetch_handler(void) {
     return 0;
 }
 
@@ -51,10 +47,10 @@ static char *fault_status_msg[32] = {
     [0b11000] = "Asynchronous parity error on memory access",
 };
 
-static void dump_regs(int32_t *regs, uint8_t nregs, int32_t pc, int32_t sp, int32_t lr, int32_t cpsr) {
+static void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, int32_t cpsr) {
     // TODO Use log_async
     log("I", "Registers:");
-    log("I", "   pc=0x%08lx sp=0x%08lx lr=0x%08lx cpsr=0x%08lx", pc, sp, lr, cpsr);
+    log("I", "   pc=0x%08lx lr=0x%08lx cpsr=0x%08lx", pc, lr, cpsr);
     int i;
     char buf[128] = { 0 };
     int written = 0;
@@ -67,13 +63,26 @@ static void dump_regs(int32_t *regs, uint8_t nregs, int32_t pc, int32_t sp, int3
     }
 }
 
-int abort_handler(int32_t faulty_pc, const dfsr_reg_t dfsr, spregs_t *regs) {
+int prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spregs_t *regs) {
+    // TODO: Replace with fatal_async
+    message_delimiter();
+    char *fs = fault_status_msg[ifsr.b.fs_h << 4 | ifsr.b.fs_l];
+    error("Instruction prefetch exception: %s", fs != NULL ? fs : "Unknown");
+    // cpsr is backed up in spsr during an exception
+    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
+    message_delimiter();
+
+    fatal("ABORT");
+    return 0;
+}
+
+int abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
     // TODO: Replace with fatal_async
     message_delimiter();
     char *fs = fault_status_msg[dfsr.b.fs_h << 4 | dfsr.b.fs_l];
-    error("Invalid %s access: %s", dfsr.b.wnr ? "write" : "read", fs != NULL ? fs : "Unknown");
+    error("Data abort exception. Invalid %s access: %s", dfsr.b.wnr ? "write" : "read", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
-    dump_regs(regs->r, ARRAYSIZE(regs->r), faulty_pc, regs->sp, regs->lr, get_spsr());
+    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
     message_delimiter();
 
     fatal("ABORT");

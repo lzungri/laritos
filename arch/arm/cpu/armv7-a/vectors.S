@@ -32,6 +32,7 @@ _vectors:
     .align 4
 
 _reset_handler:
+    # Initialize system and start the kernel
     b _start
 
 _undef_handler:
@@ -58,7 +59,25 @@ _svc_handler:
     ldmfd sp!, {r0-r12, pc}^
 
 _prefetch_handler:
-    b prefetch_handler
+    # Point to the offending instruction, so that the cpu reexecutes the instruction
+    # on return
+    sub lr, lr, #4
+
+    # Save registers into the stack
+    stmfd sp!, {r0-r12, lr}
+
+    # First arg: Offending instruction
+    mov r0, lr
+    # Second arg: Instruction fault status register (see ifsr_reg_t for more info)
+    mrc p15, 0, r1, c5, c0, 1
+    # Third arg: Stack pointer
+    mov r2, sp
+
+    bl prefetch_handler
+
+    # Pop the previously saved registers and continue execution in the caller context.
+    # ^ is used to restore the CPSR from the SPSR
+    ldmfd sp!, {r0-r12, pc}^
 
 _abort_handler:
     # According to ARM:
