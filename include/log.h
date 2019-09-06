@@ -24,7 +24,9 @@ int log_flush(void);
 
 #define fatal(_msg, ...)  do { \
     log("F", _msg, ##__VA_ARGS__); \
-    while (1); \
+    while (1) { \
+        asm("wfi"); \
+    } \
 } while(0)
 
 #if defined(CONFIG_LOG_LEVEL_ERROR) || defined(DEBUG)

@@ -52,15 +52,39 @@ _svc_handler:
     # Invoke the service call handler
     bl svc_handler
 
-    # Pop the previously saved registers and continue execution in the svc caller
-    # context. ^ is used to restore the CPSR from the SPSR
+    # Pop the previously saved registers and continue execution in the svc
+    # caller context.
+    # ^ is used to restore the CPSR from the SPSR
     ldmfd sp!, {r0-r12, pc}^
 
 _prefetch_handler:
     b prefetch_handler
 
 _abort_handler:
-    b abort_handler
+    # According to ARM:
+    # When a load or store instruction tries to access memory, the program
+    # counter has been updated. A stored value of (pc – 4) in lr_ABT points
+    # to the *second* instruction beyond the address where the exception was generated.
+
+    # Point to the offending instruction, so that the cpu reexecutes the instruction
+    # on return
+    sub lr, lr, #8
+
+    # Save registers into the stack
+    stmfd sp!, {r0-r12, lr}
+
+    # First arg: Offending instruction
+    mov r0, lr
+    # Second arg: Data fault status register (see dfsr_reg_t for more info)
+    mrc p15, 0, r1, c5, c0, 0
+    # Third arg: Stack pointer
+    mov r2, sp
+
+    bl abort_handler
+
+    # Pop the previously saved registers and continue execution in the caller context.
+    # ^ is used to restore the CPSR from the SPSR
+    ldmfd sp!, {r0-r12, pc}^
 
 _reserved_handler:
     b _reserved_handler

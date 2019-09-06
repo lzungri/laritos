@@ -56,6 +56,14 @@ config LOG_FILE_AND_LINEN
 
 endmenu
 
+menu "System calls"
+
+config SYSCALL_MAX_ARGS
+    int "Max number of arguments allowed for a system call"
+    default 6
+
+endmenu
+
 menu "Debugging"
 
 config DEBUG_INFO

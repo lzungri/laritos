@@ -1,15 +1,10 @@
 #pragma once
 
 #include <stdint.h>
+#include <generated/autoconf.h>
 
 typedef struct {
-    int32_t p0;
-    int32_t p1;
-    int32_t p2;
-    int32_t p3;
-    int32_t p4;
-    int32_t p5;
-    int32_t p6;
+    int32_t p[CONFIG_SYSCALL_MAX_ARGS];
 } syscall_params_t;
 
 int syscall(int sysno, syscall_params_t *params);

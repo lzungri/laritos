@@ -5,7 +5,7 @@
 int syscall(int sysno, syscall_params_t *params) {
     // TODO Use verbose_async
     verbose("syscall_%d(%lx, %lx, %lx, %lx, %lx, %lx, %lx)", sysno,
-            params->p0, params->p1, params->p2, params->p3,
-            params->p4, params->p5, params->p6);
+            params->p[0], params->p[1], params->p[2], params->p[3],
+            params->p[4], params->p[5], params->p[6]);
     return 0;
 }
