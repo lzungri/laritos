@@ -54,7 +54,7 @@ static void user_shell(void) {
 }
 
 void kernel_entry(void)  {
-    log("I", "-- laritOS " UTS_RELEASE " --");
+    log(true, "I", "-- laritOS " UTS_RELEASE " --");
     info("Initializing kernel");
 
     if (board_parse_and_initialize(&_laritos.bi) < 0) {

@@ -3,5 +3,5 @@
 #include <log.h>
 
 static inline void message_delimiter(void) {
-    log("I", "*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
+    log(false, "I", "*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
 }

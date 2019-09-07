@@ -1,6 +1,7 @@
 #include <log.h>
 #include <stdarg.h>
 #include <printf.h>
+#include <stdbool.h>
 
 #include <board.h>
 #include <driver.h>
@@ -15,7 +16,7 @@ static char logb[CONFIG_LOG_BUFSIZE_BYTES];
 DEF_STATIC_CIRCBUF(logcb, logb, sizeof(logb));
 
 
-int __add_log_msg(char *level, char *tag, char *fmt, ...) {
+int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
     int ret = 0;
     char lineb[CONFIG_LOG_MAX_LINE_SIZE] = { 0 };
 
@@ -35,13 +36,17 @@ int __add_log_msg(char *level, char *tag, char *fmt, ...) {
     }
 
     ret = circbuf_write(&logcb, lineb, nchars + nchars2);
-    log_flush();
+    if (sync) {
+        log_flush();
+    }
     return ret;
 
 full_buf:
     lineb[sizeof(lineb) - 1] = '\n';
     ret = circbuf_write(&logcb, lineb, sizeof(lineb));
-    log_flush();
+    if (sync) {
+        log_flush();
+    }
     return ret;
 }
 
