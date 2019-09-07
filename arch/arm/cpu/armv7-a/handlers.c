@@ -1,23 +1,10 @@
 #include <log.h>
-#include <syscall32.h>
+#include <syscall.h>
 #include <arm.h>
 #include <utils.h>
 #include <printf.h>
 #include <debug.h>
 #include <generated/autoconf.h>
-
-int svc_handler(int sysno, const spregs_t *regs) {
-    syscall_params_t params = { 0 };
-    int i;
-    for (i = 0; i < CONFIG_SYSCALL_MAX_ARGS && i < ARRAYSIZE(regs->r); i++) {
-        params.p[i] = regs->r[i];
-    }
-    return syscall(sysno, &params);
-}
-
-int undef_handler(void) {
-    return 0;
-}
 
 /**
  * Fault messages according to the armv7-a ARM document
@@ -61,6 +48,27 @@ static void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr
             log("I", "   %s", buf);
         }
     }
+}
+
+int svc_handler(int sysno, const spregs_t *regs) {
+    syscall_params_t params = { 0 };
+    int i;
+    for (i = 0; i < CONFIG_SYSCALL_MAX_ARGS && i < ARRAYSIZE(regs->r); i++) {
+        params.p[i] = regs->r[i];
+    }
+    return syscall(sysno, &params);
+}
+
+int undef_handler(int32_t pc, const spregs_t *regs) {
+    // TODO: Replace with fatal_async
+    message_delimiter();
+    error("Instruction 0x%08lx at 0x%08lx not recognized", *((uint32_t *) pc), pc);
+    // cpsr is backed up in spsr during an exception
+    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
+    message_delimiter();
+
+    fatal("ABORT");
+    return 0;
 }
 
 int prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spregs_t *regs) {

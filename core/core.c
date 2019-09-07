@@ -36,10 +36,10 @@ static void user_shell(void) {
 //                    asm("movw r7, #0xffff");
 //                    asm("movt r7, #0xffff");
 //                    asm("str r6, [r7]");
-                    // prefetch
-                    asm("movw r7, #0xffff");
-                    asm("movt r7, #0xffff");
-                    asm("mov pc, r7");
+//                    // prefetch
+//                    asm("movw r7, #0xffff");
+//                    asm("movt r7, #0xffff");
+//                    asm("mov pc, r7");
                     // undef
                     asm(".word 0xffffffff");
                     asm("svc 1");

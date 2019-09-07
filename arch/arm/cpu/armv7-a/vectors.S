@@ -36,7 +36,20 @@ _reset_handler:
     b _start
 
 _undef_handler:
-    b undef_handler
+    # Save registers into the stack
+    stmfd sp!, {r0-r12, lr}
+
+    # First arg: Offending instruction
+    sub r0, lr, #4
+    # Second arg: Stack pointer
+    mov r1, sp
+    # Invoke the service call handler
+    bl undef_handler
+
+    # Pop the previously saved registers and continue execution in the
+    # caller context.
+    # ^ is used to restore the CPSR from the SPSR
+    ldmfd sp!, {r0-r12, pc}^
 
 _svc_handler:
     # Save registers into the stack
