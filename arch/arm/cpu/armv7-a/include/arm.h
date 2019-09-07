@@ -155,15 +155,100 @@ typedef struct {
     };
 } ifsr_reg_t;
 
+/**
+ * The Current Program Status Register (CPSR) holds processor status and control information.
+ *
+ * Note: This is only intended to be used for parsing the cpsr register value read via the mrs
+ * instruction.
+ */
+typedef struct {
+    union {
+        uint32_t v;
+        struct {
+            /**
+             * Mode field. This field determines the current mode of the processor.
+             */
+            uint8_t mode: 5;
+            /**
+             * Thumb execution state bit. This bit and the J execution state bit, bit[24],
+             * determine the instruction set state of the processor, ARM, Thumb, Jazelle, or ThumbEE
+             */
+            bool thumb: 1;
+            /**
+             * FIQ mask bit
+             */
+            bool fiq: 1;
+            /**
+             * IRQ mask bit
+             */
+            bool irq: 1;
+            /**
+             * Asynchronous abort mask bit
+             */
+            bool async_abort: 1;
+            /**
+             * Endianness execution state bit
+             */
+            bool big_endian: 1;
+            /**
+             * IT[7:0], bits[15:10, 26:25]
+             */
+            uint8_t it0: 6;
+            /**
+             * Greater than or Equal flags, for the parallel addition and subtraction (SIMD) instructions
+             */
+            uint8_t ge: 4;
+            uint8_t reserved0 : 4;
+            /**
+             * Jazelle execution state bit. This bit and the T execution state bit, bit[5],
+             * determine the instruction set state of the processor, ARM, Thumb, Jazelle, or ThumbEE
+             */
+            bool jazelle: 1;
+            /**
+             * IT[7:0], bits[15:10, 26:25]
+             * If-Then execution state bits for the Thumb IT (If-Then) instruction
+             */
+            uint8_t it1: 2;
+            /**
+             * Cumulative saturation bit
+             */
+            bool q: 1;
+            /**
+             * Overflow condition flag
+             */
+            bool v: 1;
+            /**
+             * Carry condition flag
+             */
+            bool c: 1;
+            /**
+             * Zero condition flag
+             */
+            bool z: 1;
+            /**
+             * Negative condition flag
+             */
+            bool n: 1;
+        } b;
+    };
+} psr_t;
 
-static inline int32_t get_cpsr(void) {
-    int32_t cpsr;
-    asm("mrs %0, cpsr" : "=r" (cpsr));
+static inline const char *get_cpu_mode_str(uint8_t mode) {
+    static const char modes[16][4] = {
+        "usr", "fiq", "irq", "svc", "???", "???", "mon", "abt",
+        "???", "???", "hyp", "und", "???", "???", "???", "sys"
+    };
+    return modes[mode & 0xf];
+}
+
+static inline const psr_t get_cpsr(void) {
+    psr_t cpsr;
+    asm("mrs %0, cpsr" : "=r" (cpsr.v));
     return cpsr;
 }
 
-static inline int32_t get_spsr(void) {
-    int32_t spsr;
-    asm("mrs %0, spsr" : "=r" (spsr));
+static inline const psr_t get_spsr(void) {
+    psr_t spsr;
+    asm("mrs %0, spsr" : "=r" (spsr.v));
     return spsr;
 }

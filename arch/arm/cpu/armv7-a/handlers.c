@@ -5,6 +5,7 @@
 #include <printf.h>
 #include <debug.h>
 #include <generated/autoconf.h>
+#include "include/debug.h"
 
 /**
  * Fault messages according to the armv7-a ARM document
@@ -33,21 +34,6 @@ static char *fault_status_msg[32] = {
     [0b10110] = "Asynchronous external abort",
     [0b11000] = "Asynchronous parity error on memory access",
 };
-
-static void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, int32_t cpsr) {
-    log(false, "I", "Registers:");
-    log(false, "I", "   pc=0x%08lx lr=0x%08lx cpsr=0x%08lx", pc, lr, cpsr);
-    int i;
-    char buf[128] = { 0 };
-    int written = 0;
-    for (i = 0; i < nregs; i++) {
-        written += snprintf(buf + written, sizeof(buf) - written, "r%u=0x%08lx ", i, regs[i]);
-        if ((i + 1) % 4 == 0 || i == nregs - 1) {
-            written = 0;
-            log(false, "I", "   %s", buf);
-        }
-    }
-}
 
 int svc_handler(int sysno, const spregs_t *regs) {
     syscall_params_t params = { 0 };
@@ -94,6 +80,7 @@ int abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
 }
 
 int irq_handler(void) {
+    while(1);
     return 0;
 }
 
