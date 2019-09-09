@@ -74,27 +74,16 @@ void kernel_entry(void)  {
     component_dump_registered_comps();
 #endif
 
-    asm("mov r0, #0");
-    asm("mov r1, #1");
-    asm("mov r2, #2");
-    asm("mov r3, #3");
-    asm("mov r4, #4");
-    asm("mov r5, #5");
-    asm("mov r6, #6");
-    asm("mov r7, #7");
-    asm("mov r8, #8");
-    asm("mov r9, #9");
-    asm("mov r10, #10");
-    asm("mov r11, #11");
-    asm("mov r12, #12");
     dump_cur_state();
     // TODO: Delete this
     // User mode
-    asm("msr cpsr_c, #0b11010000");
+    asm("msr cpsr_c, #0b01010000");
     asm("movw sp, #0");
     asm("movt sp, #0x4050");
-    user_shell();
-//    while(1) {
+    dump_cur_state();
+    info("aaa");
+//    user_shell();
+    while(1) {
 //        asm("wfi");
-//    }
+    }
 }

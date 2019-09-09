@@ -36,7 +36,9 @@ init_stacks:
     msr cpsr_c, #0b11010011
     mov sp, r0
 
-    # Keep the processor in supervisor mode
+    # Keep the processor in supervisor mode but enable irq from now on.
+    # irq enabled / fiq disabled (0b010) | SVC mode (0b10011)
+    msr cpsr_c, #0b01010011
 
 
 copy_data_section:

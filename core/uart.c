@@ -43,7 +43,7 @@ int uart_register(uart_t *uart) {
 int uart_init_and_register(uart_t *uart, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),
         int (*read)(stream_t *s, void *buf, size_t n), int (*write)(stream_t *s, const void *buf, size_t n)) {
-    if (uart_init(uart, bcomp, NULL, NULL, read, write) < 0){
+    if (uart_init(uart, bcomp, init, deinit, read, write) < 0){
         error("Failed to initialize '%s'", bcomp->id);
         return -1;
     }

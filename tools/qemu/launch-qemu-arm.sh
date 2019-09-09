@@ -25,4 +25,4 @@ if [ -z "$CPU" ]; then
 fi
 
 set -x
-qemu-system-arm $DEBUG -M virt -smp 4 -m ${RAM_SIZE}M -cpu $CPU -nographic -drive if=pflash,file=${SCRIPT_DIR}/../../bin/laritos.img,format=raw
+qemu-system-arm $DEBUG -M virt -smp 4 -m ${RAM_SIZE}M -cpu $CPU -nographic -drive if=pflash,file=${SCRIPT_DIR}/../../bin/laritos.img,format=raw -d guest_errors,cpu_reset,int,unimp -D /tmp/qemu.log

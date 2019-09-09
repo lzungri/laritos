@@ -48,9 +48,25 @@ static int read(stream_t *s, void *buf, size_t n) {
     uint8_t *data = buf;
     // Read as long as there is some data in the FIFO and the amount read is < n
     for (i = 0; i < n && !pl011->fr.b.rxfe; i++) {
-        data[i] = pl011->dr;
+        // Only the last byte contains the actual data
+        data[i] = pl011->dr & 0xff;
     }
     return i;
+}
+
+static int init(component_t *c) {
+    uart_t *uart = (uart_t *) c;
+    pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
+
+    pl011->imsc = 0;
+    pl011->icr = 0xffff;
+
+    pl011->icr = 0xffff;
+    pl011->imsc = 0xf0;
+//    pl011->icr = 0x7f0;
+//    pl011->imsc = 0xff;
+
+    return 0;
 }
 
 static int process(board_comp_t *comp) {
@@ -58,7 +74,7 @@ static int process(board_comp_t *comp) {
         error("Max number of uart components reached");
         return -1;
     }
-    if (uart_init_and_register(&uarts[cur_uart], comp, NULL, NULL, read, write) < 0){
+    if (uart_init_and_register(&uarts[cur_uart], comp, init, NULL, read, write) < 0){
         error("Failed to register '%s'", comp->id);
         return -1;
     }

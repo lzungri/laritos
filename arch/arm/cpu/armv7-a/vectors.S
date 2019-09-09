@@ -31,9 +31,11 @@ _vectors:
 
     .align 4
 
+
 _reset_handler:
     # Initialize system and start the kernel
     b _start
+
 
 _undef_handler:
     # Save registers into the stack
@@ -50,6 +52,7 @@ _undef_handler:
     # caller context.
     # ^ is used to restore the CPSR from the SPSR
     ldmfd sp!, {r0-r12, pc}^
+
 
 _svc_handler:
     # Save registers into the stack
@@ -71,6 +74,7 @@ _svc_handler:
     # ^ is used to restore the CPSR from the SPSR
     ldmfd sp!, {r0-r12, pc}^
 
+
 _prefetch_handler:
     # Point to the offending instruction, so that the cpu reexecutes the instruction
     # on return
@@ -91,6 +95,7 @@ _prefetch_handler:
     # Pop the previously saved registers and continue execution in the caller context.
     # ^ is used to restore the CPSR from the SPSR
     ldmfd sp!, {r0-r12, pc}^
+
 
 _abort_handler:
     # According to ARM:
@@ -118,11 +123,33 @@ _abort_handler:
     # ^ is used to restore the CPSR from the SPSR
     ldmfd sp!, {r0-r12, pc}^
 
+
 _reserved_handler:
     b _reserved_handler
 
+
 _irq_handler:
-    b irq_handler
+    # According to ARM:
+    # After executing each instruction, the processor checks to see whether the interrupt
+    # pins are LOW and whether the interrupt disable bits in the CPSR are clear. As a
+    # result, IRQ or FIQ exceptions are generated only after the program counter has been
+    # updated. Storing (pc – 4) in lr_mode causes lr_mode to point two instructions beyond
+    # where the exception occurred. When the handler has finished, execution must continue
+    # from the instruction prior to the one pointed to by lr_mode
+    sub lr, lr, #4
+
+    # Save registers into the stack
+    stmfd sp!, {r0-r12, lr}
+
+    # Third arg: Stack pointer
+    mov r2, sp
+
+    bl irq_handler
+
+    # Pop the previously saved registers and continue execution in the caller context.
+    # ^ is used to restore the CPSR from the SPSR
+    ldmfd sp!, {r0-r12, pc}^
+
 
 _fiq_handler:
     b fiq_handler
