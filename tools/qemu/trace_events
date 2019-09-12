@@ -1,0 +1,7 @@
+#pl011_irq_state
+#pl011_read
+#pl011_read_fifo(int read_count) "FIFO read, read_count now %d"
+#pl011_write
+#pl011_can_receive
+#pl011_put_fifo
+#pl011_put_fifo_full
