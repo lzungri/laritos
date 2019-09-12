@@ -13,8 +13,8 @@ void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, psr_t
     log(false, "I", "Registers:");
     log(false, "I", "   pc=0x%08lx lr=0x%08lx cpsr=0x%08lx (%c%c%c%c%c%c%c%c %s)", pc, lr, cpsr.v,
             cpsr.b.n ? 'N' : '.', cpsr.b.z ? 'Z' : '.', cpsr.b.c ? 'C' : '.',
-            cpsr.b.v ? 'V' : '.', cpsr.b.q ? 'Q' : '.', cpsr.b.async_abort ? 'A' : '.',
-            cpsr.b.irq ? 'I' : '.', cpsr.b.fiq ? 'F' : '.', get_cpu_mode_str(cpsr.b.mode));
+            cpsr.b.v ? 'V' : '.', cpsr.b.q ? 'Q' : '.', cpsr.b.async_abort ? '.' : 'A',
+            cpsr.b.irq ? '.' : 'I', cpsr.b.fiq ? '.' : 'F', get_cpu_mode_str(cpsr.b.mode));
     int i;
     char buf[128] = { 0 };
     int written = 0;
