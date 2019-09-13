@@ -10,6 +10,7 @@ typedef enum {
     COMP_TYPE_STREAM,
     COMP_TYPE_INPUTDEV,
     COMP_TYPE_LOGGER,
+    COMP_TYPE_GIC,
 
     COMP_TYPE_LEN,
 } component_type_t;
