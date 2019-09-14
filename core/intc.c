@@ -12,11 +12,10 @@
         return -1; \
     }
 
-NOT_IMPL_FUNC(ni_enable_irq, intc_t *intc, irq_t irq);
-NOT_IMPL_FUNC(ni_disable_irq, intc_t *intc, irq_t irq);
+NOT_IMPL_FUNC(ni_set_irq_enable, intc_t *intc, irq_t irq, bool enabled);
 NOT_IMPL_FUNC(ni_set_irq_trigger_mode, intc_t *intc, irq_t irq, irq_trigger_mode_t mode);
 NOT_IMPL_FUNC(ni_set_irq_target_cpus, intc_t *intc, irq_t irq, cpubits_t bits);
-NOT_IMPL_FUNC(enable_int_signaling_to_this_cpu, intc_t *intc);
+NOT_IMPL_FUNC(ni_set_irq_signaling_cpu_enable, intc_t *intc, bool enabled);
 NOT_IMPL_FUNC(ni_set_priority_filter, intc_t *intc, uint8_t lowest_prio);
 
 static irqret_t handle_irq(intc_t *intc, irq_t irq) {
@@ -40,11 +39,10 @@ int intc_init(intc_t *comp, char *id, board_comp_t *bcomp,
     }
 
     comp->ops.handle_irq = handle_irq;
-    comp->ops.enable_irq = ni_enable_irq;
-    comp->ops.disable_irq = ni_disable_irq;
+    comp->ops.set_irq_enable = ni_set_irq_enable;
     comp->ops.set_irq_trigger_mode = ni_set_irq_trigger_mode;
     comp->ops.set_irq_target_cpus = ni_set_irq_target_cpus;
-    comp->ops.enable_int_signaling_to_this_cpu = enable_int_signaling_to_this_cpu;
+    comp->ops.set_irq_signaling_cpu_enable = ni_set_irq_signaling_cpu_enable;
     comp->ops.set_priority_filter = ni_set_priority_filter;
     comp->ops.add_irq_handler = add_irq_handler;
     comp->ops.remove_irq_handler = remove_irq_handler;

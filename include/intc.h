@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <component.h>
 #include <stdint.h>
 #include <cpu.h>
@@ -13,11 +14,10 @@ typedef struct {
     int (*add_irq_handler)(struct intc *intc, irq_t irq, irq_handler_t h, component_t *comp);
     int (*remove_irq_handler)(struct intc *intc, irq_t irq, irq_handler_t h);
 
-    int (*enable_irq)(struct intc *intc, irq_t irq);
-    int (*disable_irq)(struct intc *intc, irq_t irq);
+    int (*set_irq_enable)(struct intc *intc, irq_t irq, bool enabled);
     int (*set_irq_trigger_mode)(struct intc *intc, irq_t irq, irq_trigger_mode_t mode);
     int (*set_irq_target_cpus)(struct intc *intc, irq_t irq, cpubits_t bits);
-    int (*enable_int_signaling_to_this_cpu)(struct intc *intc);
+    int (*set_irq_signaling_cpu_enable)(struct intc *intc, bool enabled);
     /**
      * Provides an interrupt priority filter. Only interrupts with higher priority
      * than this value are signaled to the processor

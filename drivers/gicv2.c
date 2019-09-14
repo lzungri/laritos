@@ -1,5 +1,7 @@
 #define DEBUG
 #include <log.h>
+
+#include <stdbool.h>
 #include <driver.h>
 #include <board.h>
 #include <intc.h>
@@ -20,23 +22,19 @@ static uint8_t cur_gic;
         return -1; \
     }
 
-static int enable_irq(struct intc *intc, irq_t irq){
-    verbose("Enable irq %u", irq);
+static int set_irq_enable(struct intc *intc, irq_t irq, bool enabled){
+    verbose("Setting irq %u enabled state to %u", irq, enabled);
     gic_t *gic = (gic_t *) intc;
     CHECK_IRQ_NUMBER(irq);
-    // Note: Writing zeros has no effect on the other irqs (there is another register
-    // for clearing irqs)
-    gic->dist->set_enable[irq >> 3] = 1 << irq % 8;
-    return 0;
-}
-
-static int disable_irq(struct intc *intc, irq_t irq) {
-    verbose("Disable irq %u", irq);
-    gic_t *gic = (gic_t *) intc;
-    CHECK_IRQ_NUMBER(irq);
-    // Note: Writing zeros has no effect on the other irqs (there is another register
-    // for enabling irqs)
-    gic->dist->clear_enable[irq >> 3] = 1 << irq % 8;
+    if (enabled) {
+        // Note: Writing zeros has no effect on the other irqs (there is another register
+        // for clearing irqs)
+        gic->dist->set_enable[irq >> 3] = 1 << irq % 8;
+    } else {
+        // Note: Writing zeros has no effect on the other irqs (there is another register
+        // for enabling irqs)
+        gic->dist->clear_enable[irq >> 3] = 1 << irq % 8;
+    }
     return 0;
 }
 
@@ -61,11 +59,11 @@ static int set_irq_target_cpus(struct intc *intc, irq_t irq, cpubits_t bits) {
     return 0;
 }
 
-static int enable_int_signaling_to_this_cpu(struct intc *intc) {
-    verbose("Enable interrupt signaling to this (=%d) cpu", get_cpu_id());
+static int set_irq_signaling_cpu_enable(struct intc *intc, bool enabled) {
+    verbose("Setting interrupt signaling to cpu %d to %u", get_cpu_id(), enabled);
     gic_t *gic = (gic_t *) intc;
-    gic->cpu->ctrl.b.enable_group0 = 1;
-    gic->cpu->ctrl.b.enable_group1 = 1;
+    gic->cpu->ctrl.b.enable_group0 = enabled;
+    gic->cpu->ctrl.b.enable_group1 = enabled;
     return 0;
 }
 
@@ -112,11 +110,10 @@ static int process(board_comp_t *comp) {
     }
     intc->parent.stype = COMP_SUBTYPE_GIC;
     intc->ops.dispatch_irq = dispatch_irq;
-    intc->ops.enable_irq = enable_irq;
-    intc->ops.disable_irq = disable_irq;
+    intc->ops.set_irq_enable = set_irq_enable;
     intc->ops.set_irq_trigger_mode = set_irq_trigger_mode;
     intc->ops.set_irq_target_cpus = set_irq_target_cpus;
-    intc->ops.enable_int_signaling_to_this_cpu = enable_int_signaling_to_this_cpu;
+    intc->ops.set_irq_signaling_cpu_enable = set_irq_signaling_cpu_enable;
     intc->ops.set_priority_filter = set_priority_filter;
 
     board_get_ptr_attr(comp, "distaddr", (void **) &gic->dist, NULL);
