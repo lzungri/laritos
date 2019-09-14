@@ -156,52 +156,75 @@ void board_dump_board_info(board_info_t *bi) {
     }
 }
 
-int board_get_ptr_attr(board_comp_t *bc, char *attr, void **buf, void *def) {
+int board_get_ptr_attr(board_comp_t *bc, char *attr, void **buf) {
     int v;
-    if (board_get_int_attr(bc, attr, &v, -1) < 0) {
+    if (board_get_int_attr(bc, attr, &v) < 0 || v <= 0) {
         return -1;
     }
-    *buf = v >= 0 ? (void *) v : def;
+    *buf = (void *) v;
     return 0;
 }
 
-int board_get_int_attr(board_comp_t *bc, char *attr, int *buf, int def) {
+void board_get_ptr_attr_def(board_comp_t *bc, char *attr, void **buf, void *def) {
+    if (board_get_ptr_attr(bc, attr, buf) < 0) {
+        *buf = def;
+    }
+}
+
+int board_get_int_attr(board_comp_t *bc, char *attr, int *buf) {
     char str[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
-    if (board_get_str_attr(bc, attr, str, "") < 0) {
+    if (board_get_str_attr(bc, attr, str) < 0 || strnlen(str, sizeof(str)) < 0) {
         return -1;
     }
-    *buf = strnlen(str, sizeof(str)) > 0 ? strtol(str, NULL, 0) : def;
+    *buf = strtol(str, NULL, 0);
     return 0;
 }
 
-int board_get_str_attr_idx(board_comp_t *bc, char *attr, char *buf, uint8_t index, char *def) {
+void board_get_int_attr_def(board_comp_t *bc, char *attr, int *buf, int def) {
+    if (board_get_int_attr(bc, attr, buf) < 0) {
+        *buf = def;
+    }
+}
+
+int board_get_str_attr_idx(board_comp_t *bc, char *attr, char *buf, uint8_t index) {
     int i;
-    char *value = def;
     for (i = 0; i < bc->attrlen; i++) {
         if (strncmp(bc->attr[i].name, attr, CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES) == 0 && index-- == 0) {
-            value = bc->attr[i].value;
-            break;
+            strncpy(buf, bc->attr[i].value, CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES - 1);
+            buf[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES - 1] = '\0';
+            return 0;
         }
     }
-    strncpy(buf, value, CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES - 1);
-    buf[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES - 1] = '\0';
-    return 0;
+    return -1;
 }
 
-int board_get_str_attr(board_comp_t *bc, char *attr, char *buf, char *def) {
-    return board_get_str_attr_idx(bc, attr, buf, 0, def);
+void board_get_str_attr_idx_def(board_comp_t *bc, char *attr, char *buf, uint8_t index, char *def) {
+    if (board_get_str_attr_idx(bc, attr, buf, index) < 0) {
+        strncpy(buf, def, CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES - 1);
+        buf[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES - 1] = '\0';
+    }
 }
 
-int board_get_bool_attr(board_comp_t *bc, char *attr, bool *buf, bool def) {
+int board_get_str_attr(board_comp_t *bc, char *attr, char *buf) {
+    return board_get_str_attr_idx(bc, attr, buf, 0);
+}
+
+void board_get_str_attr_def(board_comp_t *bc, char *attr, char *buf, char *def) {
+    board_get_str_attr_idx_def(bc, attr, buf, 0, def);
+}
+
+int board_get_bool_attr(board_comp_t *bc, char *attr, bool *buf) {
     char str[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
-    if (board_get_str_attr(bc, attr, str, "") < 0) {
+    if (board_get_str_attr(bc, attr, str) < 0 || strnlen(str, sizeof(str)) <= 0) {
         return -1;
     }
-    if (strnlen(str, sizeof(str)) <= 0) {
-        *buf = def;
-    } else {
-        *buf = strncmp(str, "yes", sizeof(str)) == 0 || strncmp(str, "true", sizeof(str)) == 0
-                || strncmp(str, "y", sizeof(str)) == 0 || strncmp(str, "1", sizeof(str)) == 0;
-    }
+    *buf = strncmp(str, "yes", sizeof(str)) == 0 || strncmp(str, "true", sizeof(str)) == 0
+            || strncmp(str, "y", sizeof(str)) == 0 || strncmp(str, "1", sizeof(str)) == 0;
     return 0;
+}
+
+void board_get_bool_attr_def(board_comp_t *bc, char *attr, bool *buf, bool def) {
+    if (board_get_bool_attr(bc, attr, buf) < 0) {
+        *buf = def;
+    }
 }

@@ -22,7 +22,7 @@ static int process_dependencies(board_info_t *bi, board_comp_t *comp) {
 
     int ndeps = 0;
     do {
-        board_get_str_attr_idx(comp, "depends", deps[ndeps], ndeps, "");
+        board_get_str_attr_idx_def(comp, "depends", deps[ndeps], ndeps, "");
     } while(ndeps < CONFIG_BOARD_MAX_COMPONENT_ATTRS && strnlen(deps[ndeps++], CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES) > 0);
 
     ndeps--;

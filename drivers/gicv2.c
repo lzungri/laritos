@@ -118,13 +118,13 @@ static int process(board_comp_t *comp) {
     intc->ops.set_irq_enable_for_this_cpu = set_irq_enable_for_this_cpu;
     intc->ops.set_priority_filter = set_priority_filter;
 
-    board_get_ptr_attr(comp, "distaddr", (void **) &gic->dist, NULL);
+    board_get_ptr_attr_def(comp, "distaddr", (void **) &gic->dist, NULL);
     if (gic->dist == NULL) {
         error("No distributor address was specified in the board information for '%s'", comp->id);
         return -1;
     }
 
-    board_get_ptr_attr(comp, "cpuaddr", (void **) &gic->cpu, NULL);
+    board_get_ptr_attr_def(comp, "cpuaddr", (void **) &gic->cpu, NULL);
     if (gic->cpu == NULL) {
         error("No cpu address was specified in the board information for '%s'", comp->id);
         return -1;
@@ -137,6 +137,13 @@ static int process(board_comp_t *comp) {
     }
     debug("Max number of supported IRQs by GIC: %u", gic->num_irqs);
 
+    /**
+     * From GIC specification:
+     *  On power-up, or after a reset, a GIC implementation that supports interrupt
+     *  grouping is configured with:
+     *      * all interrupts assigned to Group 0
+     *      * the FIQ exception request disabled
+     */
     info("Enabling global interrupts for groups 0 and 1");
     gic->dist->ctrl.b.enable_group0 = 1;
     gic->dist->ctrl.b.enable_group1 = 1;

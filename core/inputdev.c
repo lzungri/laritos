@@ -23,7 +23,7 @@ static int process(board_comp_t *comp) {
     }
 
     char tp[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
-    board_get_str_attr(comp, "transport", tp, "");
+    board_get_str_attr_def(comp, "transport", tp, "");
     idev->transport = (stream_t *) component_get_by_id(tp);
     if (idev->transport == NULL || idev->transport->ops.read == NULL) {
         error("No valid transport found for inputdev '%s'", comp->id);

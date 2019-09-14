@@ -3,6 +3,7 @@
 #include <component.h>
 #include <board.h>
 #include <stream.h>
+#include <stdbool.h>
 
 int uart_init(uart_t *uart, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),
@@ -11,11 +12,18 @@ int uart_init(uart_t *uart, board_comp_t *bcomp,
         error("Failed to initialize '%s' uart component", bcomp->id);
         return -1;
     }
-    board_get_ptr_attr(bcomp, "baseaddr", &uart->baseaddr, NULL);
+    board_get_ptr_attr_def(bcomp, "baseaddr", &uart->baseaddr, NULL);
     if (uart->baseaddr == NULL) {
         error("No baseaddr was specified in the board information");
         return -1;
     }
+
+//    board_get_bool_attr_def(bcomp, "int", &uart->intio, false);
+//    if (uart->intio) {
+//        board_get_int_attr_def(bcomp, "irq", &uart->irq, 33);
+//
+//
+//    }
 
     // Initialize a character device to read/write the uart device
     if (stream_init((stream_t *) &uart->stream, bcomp, NULL, NULL, read, write) < 0) {
