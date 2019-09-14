@@ -234,17 +234,6 @@ typedef struct {
 } psr_t;
 
 /**
- * @return: Processor mode string for the given <mode>
- */
-static inline const char *get_cpu_mode_str(uint8_t mode) {
-    static const char modes[16][4] = {
-        "usr", "fiq", "irq", "svc", "???", "???", "mon", "abt",
-        "???", "???", "hyp", "und", "???", "???", "???", "sys"
-    };
-    return modes[mode & 0xf];
-}
-
-/**
  * Note: const because changing this value will have no effect on the actual register
  *
  * @return: Current program status register
