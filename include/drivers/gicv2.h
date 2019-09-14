@@ -36,6 +36,46 @@ typedef volatile struct {
 } gic_dist_ctrl_t;
 
 /**
+ * Provides information about the configuration of the GIC. It indicates:
+ *      * whether the GIC implements the Security Extensions
+ *      * the maximum number of interrupt IDs that the GIC supports
+ *      * the number of CPU interfaces implemented
+ *      * if the GIC implements the Security Extensions, the maximum number of
+ *        implemented Lockable Shared Peripheral Interrupts (LSPIs).
+ */
+typedef volatile struct {
+    union {
+        uint32_t v;
+        struct {
+            /**
+             * Indicates the maximum number of interrupts that the GIC supports. If ITLinesNumber=N, the
+             * maximum number of interrupts is 32(N+1). The interrupt ID range is from 0 to
+             * (number of IDs – 1). For example:
+             *      0b00011 Up to 128 interrupt lines, interrupt IDs 0-127
+             */
+            uint8_t nlines: 5;
+            /**
+             * Indicates the number of implemented CPU interfaces. The number of implemented CPU
+             * interfaces is one more than the value of this field, for example if this field is
+             * 0b011, there are four CPU interfaces
+             */
+            uint8_t ncpu: 3;
+            uint8_t reserved0: 2;
+            /**
+             * Indicates whether the GIC implements the Security Extensions
+             */
+            bool sec_ext: 1;
+            /**
+             * If the GIC implements the Security Extensions, the value of this field is the
+             * maximum number of implemented lockable SPIs, from 0 (0b00000) to 31 (0b11111)
+             */
+            uint8_t lspi: 5;
+            uint32_t reserved1: 16;
+        } b;
+    };
+} gic_dist_type_t;
+
+/**
  * The Distributor centralizes all interrupt sources, determines the priority of each
  * interrupt, and for each CPU interface forwards the interrupt with the highest priority
  * to the interface, for priority masking and preemption handling
@@ -49,7 +89,7 @@ typedef volatile struct {
     /**
      * Interrupt Controller Type Register
      */
-    const uint32_t type;
+    const gic_dist_type_t type;
     /**
      * Distributor Implementer Identification Register
      */
@@ -129,11 +169,37 @@ typedef volatile struct {
         uint32_t v;
         struct {
             /**
+             * Enable for the signaling of Group 0 interrupts by the CPU interface to
+             * the connected processor
+             */
+            bool enable_group0: 1;
+            /**
              * Enable for the signaling of Group 1 interrupts by the CPU interface to
              * the connected processor
              */
             bool enable_group1: 1;
-            uint8_t reserved0: 4;
+            /**
+             * When the highest priority pending interrupt is a Group 1 interrupt, determines both:
+             *      * whether a read of GICC_IAR acknowledges the interrupt, or returns a spurious
+             *      interrupt ID
+             *      * whether a read of GICC_HPPIR returns the ID of the highest priority pending
+             *      interrupt, or returns a spurious interrupt ID
+             */
+            bool ack_ctrl: 1;
+            /**
+             * Controls whether the CPU interface signals Group 0 interrupts to a target
+             * processor using the FIQ or the IRQ signal
+             *      0 Signal Group 0 interrupts using the IRQ signal.
+             *      1 Signal Group 0 interrupts using the FIQ signal.
+             *
+             * The GIC always signals Group 1 interrupts using the IRQ signal.
+             */
+            bool fiq_enable: 1;
+            /**
+             * Controls whether the GICC_BPR provides common control to Group 0 and
+             * Group 1 interrupts
+             */
+            bool cbpr: 1;
             /**
              * When the signaling of FIQs by the CPU interface is disabled, this bit partly
              * controls whether the bypass FIQ signal is signaled to the processor
@@ -221,4 +287,6 @@ typedef struct {
 
     gic_dist_t *dist;
     gic_cpu_t *cpu;
+
+    uint16_t num_irqs;
 } gic_t;
