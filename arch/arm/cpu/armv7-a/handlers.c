@@ -1,3 +1,4 @@
+#define DEBUG
 #include <log.h>
 #include <syscall.h>
 #include <arm.h>
@@ -105,8 +106,11 @@ int irq_handler(const spregs_t *regs) {
     component_t *c = NULL;
     for_each_component(c) {
         if (c->type == COMP_TYPE_INTC) {
+            verbose_sync(false, "Dispatching irq to int controller '%s'", c->id);
             intc_t *intc = (intc_t *) c;
-            switch (intc->ops.dispatch_irq(intc)) {
+            irqret_t ret = intc->ops.dispatch_irq(intc);
+            verbose_sync(false, "Interrupt controller '%s' returned %s", c->id, get_irqret_str(ret));
+            switch (ret) {
             case IRQ_RET_HANDLED:
                 return 0;
             case IRQ_RET_ERROR:
@@ -114,6 +118,7 @@ int irq_handler(const spregs_t *regs) {
                 return -1;
             case IRQ_RET_NOT_HANDLED:
             case IRQ_RET_HANDLED_KEEP_PROCESSING:
+            default:
                 break;
             }
         }

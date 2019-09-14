@@ -8,6 +8,8 @@
 #include <irq.h>
 #include <cpu.h>
 #include <drivers/gicv2.h>
+#include <math-utils.h>
+#include <generated/autoconf.h>
 
 #define MAX_GICS 1
 
@@ -17,12 +19,12 @@ static uint8_t cur_gic;
 
 
 #define CHECK_IRQ_NUMBER(_irq) \
-    if (_irq > gic->num_irqs) { \
-        error("Invalid irq %u, max_supported: %u", _irq, gic->num_irqs); \
+    if (_irq > min(gic->num_irqs, CONFIG_MAX_IRQS)) { \
+        error("Invalid irq %u, max_supported: %u", _irq, min(gic->num_irqs, CONFIG_MAX_IRQS)); \
         return -1; \
     }
 
-static int set_irq_enable(struct intc *intc, irq_t irq, bool enabled){
+static int set_irq_enable(intc_t *intc, irq_t irq, bool enabled){
     verbose("Setting irq %u enabled state to %u", irq, enabled);
     gic_t *gic = (gic_t *) intc;
     CHECK_IRQ_NUMBER(irq);
@@ -38,7 +40,7 @@ static int set_irq_enable(struct intc *intc, irq_t irq, bool enabled){
     return 0;
 }
 
-static int set_irq_trigger_mode(struct intc *intc, irq_t irq, irq_trigger_mode_t mode) {
+static int set_irq_trigger_mode(intc_t *intc, irq_t irq, irq_trigger_mode_t mode) {
     verbose("Set irq %u trigger mode to %u", irq, mode);
     gic_t *gic = (gic_t *) intc;
     CHECK_IRQ_NUMBER(irq);
@@ -51,7 +53,7 @@ static int set_irq_trigger_mode(struct intc *intc, irq_t irq, irq_trigger_mode_t
     return 0;
 }
 
-static int set_irq_target_cpus(struct intc *intc, irq_t irq, cpubits_t bits) {
+static int set_irq_target_cpus(intc_t *intc, irq_t irq, cpubits_t bits) {
     verbose("Set irq %u target cpus to 0x%lx", irq, bits);
     gic_t *gic = (gic_t *) intc;
     CHECK_IRQ_NUMBER(irq);
@@ -59,7 +61,7 @@ static int set_irq_target_cpus(struct intc *intc, irq_t irq, cpubits_t bits) {
     return 0;
 }
 
-static int set_irq_signaling_cpu_enable(struct intc *intc, bool enabled) {
+static int set_irq_enable_for_this_cpu(intc_t *intc, bool enabled) {
     verbose("Setting interrupt signaling to cpu %d to %u", get_cpu_id(), enabled);
     gic_t *gic = (gic_t *) intc;
     gic->cpu->ctrl.b.enable_group0 = enabled;
@@ -67,14 +69,14 @@ static int set_irq_signaling_cpu_enable(struct intc *intc, bool enabled) {
     return 0;
 }
 
-static int set_priority_filter(struct intc *intc, uint8_t lowest_prio) {
+static int set_priority_filter(intc_t *intc, uint8_t lowest_prio) {
     verbose("Set priority filter to %u", lowest_prio);
     gic_t *gic = (gic_t *) intc;
     gic->cpu->prio_mask.b.priority = lowest_prio;
     return 0;
 }
 
-static irqret_t dispatch_irq(struct intc *intc) {
+static irqret_t dispatch_irq(intc_t *intc) {
     if (intc->parent.stype != COMP_SUBTYPE_GIC) {
         return IRQ_RET_NOT_HANDLED;
     }
@@ -113,7 +115,7 @@ static int process(board_comp_t *comp) {
     intc->ops.set_irq_enable = set_irq_enable;
     intc->ops.set_irq_trigger_mode = set_irq_trigger_mode;
     intc->ops.set_irq_target_cpus = set_irq_target_cpus;
-    intc->ops.set_irq_signaling_cpu_enable = set_irq_signaling_cpu_enable;
+    intc->ops.set_irq_enable_for_this_cpu = set_irq_enable_for_this_cpu;
     intc->ops.set_priority_filter = set_priority_filter;
 
     board_get_ptr_attr(comp, "distaddr", (void **) &gic->dist, NULL);
@@ -133,7 +135,7 @@ static int process(board_comp_t *comp) {
         error("Invalid number of supported irqs");
         return -1;
     }
-    debug("Max number of supported IRQs: %u", gic->num_irqs);
+    debug("Max number of supported IRQs by GIC: %u", gic->num_irqs);
 
     info("Enabling global interrupts for groups 0 and 1");
     gic->dist->ctrl.b.enable_group0 = 1;
@@ -141,6 +143,8 @@ static int process(board_comp_t *comp) {
 
     info("Disabling irq priority filtering (prio=0xff)");
     intc->ops.set_priority_filter(intc, 0xff);
+
+    info("sizeof: %d", sizeof(intc_t));
 
     if (component_register((component_t *) gic) < 0) {
         error("Couldn't register gic '%s'", comp->id);

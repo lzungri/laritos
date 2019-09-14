@@ -64,6 +64,18 @@ config SYSCALL_MAX_ARGS
 
 endmenu
 
+menu "Interrupts"
+
+config MAX_IRQS
+    int "Max number of supported IRQs"
+    default 128
+
+config MAX_HANDLERS_PER_IRQ
+    int "Max number of handlers per IRQ"
+    default 2
+
+endmenu
+
 menu "Debugging"
 
 config DEBUG_INFO
