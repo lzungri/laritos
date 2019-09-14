@@ -249,6 +249,11 @@ typedef volatile struct {
         uint32_t v;
         struct {
             uint16_t id: 10;
+            /**
+             * For SGIs in a multiprocessor implementation, this field identifies the
+             * processor that requested the interrupt. It returns the number of the
+             * CPU interface that made the request
+             */
             uint8_t cpuid: 3;
             uint32_t reserved0: 19;
         } b;

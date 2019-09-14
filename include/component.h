@@ -10,10 +10,17 @@ typedef enum {
     COMP_TYPE_STREAM,
     COMP_TYPE_INPUTDEV,
     COMP_TYPE_LOGGER,
-    COMP_TYPE_GIC,
+    COMP_TYPE_INTC,
 
     COMP_TYPE_LEN,
 } component_type_t;
+
+typedef enum {
+    COMP_SUBTYPE_UNKNOWN = 0,
+    COMP_SUBTYPE_GIC,
+
+    COMP_SUBTYPE_LEN,
+} component_subtype_t;
 
 struct component;
 typedef struct {
@@ -27,6 +34,7 @@ typedef struct component {
     char id[COMPONENT_MAX_ID_LEN];
 
     component_type_t type;
+    component_subtype_t stype;
     component_ops_t ops;
 } component_t;
 

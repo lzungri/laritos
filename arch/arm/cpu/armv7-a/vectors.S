@@ -141,9 +141,8 @@ _irq_handler:
     # Save registers into the stack
     stmfd sp!, {r0-r12, lr}
 
-    # Third arg: Stack pointer
-    mov r2, sp
-
+    # First arg: Stack pointer
+    mov r0, sp
     bl irq_handler
 
     # Pop the previously saved registers and continue execution in the caller context.

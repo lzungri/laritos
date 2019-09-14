@@ -12,8 +12,9 @@ typedef enum {
 
 typedef enum {
     IRQ_RET_ERROR = -1,
-    IRQ_RET_HANDLED = 0,
-    IRQ_RET_HANDLED_KEEP_PROCESSING = 1,
+    IRQ_RET_HANDLED,
+    IRQ_RET_HANDLED_KEEP_PROCESSING,
+    IRQ_RET_NOT_HANDLED,
 } irqret_t;
 
 typedef uint16_t irq_t;

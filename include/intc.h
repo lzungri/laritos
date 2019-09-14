@@ -8,6 +8,11 @@
 
 struct intc;
 typedef struct {
+    irqret_t (*dispatch_irq)(struct intc *intc);
+    irqret_t (*handle_irq)(struct intc *intc, irq_t irq);
+    int (*add_irq_handler)(struct intc *intc, irq_t irq, irq_handler_t h, component_t *comp);
+    int (*remove_irq_handler)(struct intc *intc, irq_t irq, irq_handler_t h);
+
     int (*enable_irq)(struct intc *intc, irq_t irq);
     int (*disable_irq)(struct intc *intc, irq_t irq);
     int (*set_irq_trigger_mode)(struct intc *intc, irq_t irq, irq_trigger_mode_t mode);
@@ -20,8 +25,6 @@ typedef struct {
      * Note: Higher priority corresponds to a lower Priority field value
      */
     int (*set_priority_filter)(struct intc *intc, uint8_t lowest_prio);
-    int (*add_irq_handler)(struct intc *intc, irq_t irq, irq_handler_t h, component_t *comp);
-    int (*remove_irq_handler)(struct intc *intc, irq_t irq, irq_handler_t h, component_t *comp);
 } intc_ops_t;
 
 typedef struct intc{

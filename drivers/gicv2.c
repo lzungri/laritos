@@ -3,6 +3,7 @@
 #include <driver.h>
 #include <board.h>
 #include <intc.h>
+#include <irq.h>
 #include <cpu.h>
 #include <drivers/gicv2.h>
 
@@ -11,6 +12,7 @@
 // TODO Use dynamic memory instead
 static gic_t gics[MAX_GICS];
 static uint8_t cur_gic;
+
 
 #define CHECK_IRQ_NUMBER(_irq) \
     if (_irq > gic->num_irqs) { \
@@ -46,7 +48,7 @@ static int set_irq_trigger_mode(struct intc *intc, irq_t irq, irq_trigger_mode_t
     // ARM GIC v2 only supports edge and level configuration (no high <-> low granularity)
     uint8_t m = (mode == IRQ_TRIGGER_EDGE_HIGH_LOW || mode == IRQ_TRIGGER_EDGE_LOW_HIGH) ? 1 : 0;
     uint8_t current = gic->dist->cfg[irq >> 2];
-    uint8_t irq_subpos = (irq % 4) * 2
+    uint8_t irq_subpos = (irq % 4) * 2;
     gic->dist->cfg[irq >> 2] = (current & ~(2 << irq_subpos)) | (m * 2 << irq_subpos);
     return 0;
 }
@@ -74,6 +76,27 @@ static int set_priority_filter(struct intc *intc, uint8_t lowest_prio) {
     return 0;
 }
 
+static irqret_t dispatch_irq(struct intc *intc) {
+    if (intc->parent.stype != COMP_SUBTYPE_GIC) {
+        return IRQ_RET_NOT_HANDLED;
+    }
+
+    gic_t *gic = (gic_t *) intc;
+
+    // Acknowledge the GIC (pending->active) and grab the irq id
+    gic_cpu_int_ack_t ack = gic->cpu->int_ack;
+
+    irqret_t ret = intc->ops.handle_irq(intc, (irq_t) ack.b.id);
+    if (ret == IRQ_RET_ERROR) {
+        error_sync(false, "Error while handling irq %u", ack.b.id);
+    }
+
+    // Notify the GIC about the completion of the interrupt (active->inactive)
+    gic->cpu->end_int = ack;
+
+    return ret;
+}
+
 static int process(board_comp_t *comp) {
     if (cur_gic > ARRAYSIZE(gics)) {
         error("Max number of GICs components reached");
@@ -87,6 +110,8 @@ static int process(board_comp_t *comp) {
         error("Failed to initialize gic '%s'", comp->id);
         return -1;
     }
+    intc->parent.stype = COMP_SUBTYPE_GIC;
+    intc->ops.dispatch_irq = dispatch_irq;
     intc->ops.enable_irq = enable_irq;
     intc->ops.disable_irq = disable_irq;
     intc->ops.set_irq_trigger_mode = set_irq_trigger_mode;
@@ -114,9 +139,10 @@ static int process(board_comp_t *comp) {
     debug("Max number of supported IRQs: %u", gic->num_irqs);
 
     info("Enabling global interrupts for groups 0 and 1");
-    gic->dist->ctrl.v |= 0b11;
+    gic->dist->ctrl.b.enable_group0 = 1;
+    gic->dist->ctrl.b.enable_group1 = 1;
 
-    info("Removing irq priority filtering (prio=0xff)");
+    info("Disabling irq priority filtering (prio=0xff)");
     intc->ops.set_priority_filter(intc, 0xff);
 
     if (component_register((component_t *) gic) < 0) {

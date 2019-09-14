@@ -4,6 +4,10 @@
 #include <utils.h>
 #include <printf.h>
 #include <debug.h>
+#include <core.h>
+#include <component.h>
+#include <irq.h>
+#include <intc.h>
 #include <generated/autoconf.h>
 #include "include/debug.h"
 
@@ -41,6 +45,23 @@ int svc_handler(int sysno, const spregs_t *regs) {
     for (i = 0; i < CONFIG_SYSCALL_MAX_ARGS && i < ARRAYSIZE(regs->r); i++) {
         params.p[i] = regs->r[i];
     }
+
+
+
+
+    // TODO NO need to send a params struct, we can pass the args directly
+
+
+
+
+
+
+
+
+
+
+
+
     return syscall(sysno, &params);
 }
 
@@ -79,8 +100,24 @@ int abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
     return 0;
 }
 
-int irq_handler(void) {
-    while(1);
+int irq_handler(const spregs_t *regs) {
+    // TODO: Optimize this
+    component_t *c = NULL;
+    for_each_component(c) {
+        if (c->type == COMP_TYPE_INTC) {
+            intc_t *intc = (intc_t *) c;
+            switch (intc->ops.dispatch_irq(intc)) {
+            case IRQ_RET_HANDLED:
+                return 0;
+            case IRQ_RET_ERROR:
+                error_sync(false, "Error while dispatching irq with intc '%s'", c->id);
+                return -1;
+            case IRQ_RET_NOT_HANDLED:
+            case IRQ_RET_HANDLED_KEEP_PROCESSING:
+                break;
+            }
+        }
+    }
     return 0;
 }
 
