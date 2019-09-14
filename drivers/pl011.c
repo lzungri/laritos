@@ -58,14 +58,24 @@ static int init(component_t *c) {
     uart_t *uart = (uart_t *) c;
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
-    pl011->imsc = 0;
-    pl011->icr = 0xffff;
+    // Disable interrupts
+    pl011->imsc.v = 0;
+    // Clear flagged interrupts
+    pl011->icr.v = 0xffff;
+    // Enable Receive interrupt. Since FIFO is disabled by default, we
+    // will get an int for every input char
+    pl011->imsc.b.rxim = 1;
 
-    pl011->icr = 0xffff;
-    pl011->imsc = 0xf0;
-//    pl011->icr = 0x7f0;
-//    pl011->imsc = 0xff;
+    return 0;
+}
 
+static int deinit(component_t *c) {
+    uart_t *uart = (uart_t *) c;
+    pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
+    // Disable interrupts
+    pl011->imsc.v = 0;
+    // Clear flagged interrupts
+    pl011->icr.v = 0xffff;
     return 0;
 }
 
@@ -74,7 +84,7 @@ static int process(board_comp_t *comp) {
         error("Max number of uart components reached");
         return -1;
     }
-    if (uart_init_and_register(&uarts[cur_uart], comp, init, NULL, read, write) < 0){
+    if (uart_component_init_and_register(&uarts[cur_uart], comp, init, deinit, read, write) < 0){
         error("Failed to register '%s'", comp->id);
         return -1;
     }

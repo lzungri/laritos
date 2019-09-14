@@ -16,6 +16,6 @@ typedef struct stream {
     bool blocking;
 } stream_t;
 
-int stream_init(stream_t *stream, board_comp_t *bcomp,
+int stream_component_init(stream_t *stream, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),
         int (*read)(stream_t *s, void *buf, size_t n), int (*write)(stream_t *s, const void *buf, size_t n));

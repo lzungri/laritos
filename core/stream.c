@@ -5,7 +5,7 @@
 #include <stream.h>
 
 
-int stream_init(stream_t *s, board_comp_t *bcomp,
+int stream_component_init(stream_t *s, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),
         int (*read)(stream_t *s, void *buf, size_t n), int (*write)(stream_t *s, const void *buf, size_t n)) {
 
@@ -19,6 +19,6 @@ int stream_init(stream_t *s, board_comp_t *bcomp,
     s->ops.read = read;
     s->ops.write = write;
 
-    board_get_bool_attr(bcomp, "blocking", &s->blocking, false);
+    board_get_bool_attr_def(bcomp, "blocking", &s->blocking, false);
     return 0;
 }
