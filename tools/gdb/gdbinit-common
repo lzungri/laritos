@@ -13,12 +13,16 @@ winheight regs 13
 #set print pretty on
 set print array on
 
-define los_dump_log_buffer
-    tui disable
-    printf "%s", logb
+define wait_and_enable_tui
     printf "\nPress enter to return"
     shell read
     tui enable
+end
+
+define los_dump_log_buffer
+    tui disable
+    printf "%s", logb
+    wait_and_enable_tui
 end
 document los_dump_log_buffer
 Syntax: los_dump_log_buffer
