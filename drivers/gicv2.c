@@ -3,12 +3,13 @@
 
 #include <stdbool.h>
 #include <driver.h>
-#include <board.h>
 #include <intc.h>
 #include <irq.h>
 #include <cpu.h>
 #include <drivers/gicv2.h>
 #include <math-utils.h>
+#include <board-types.h>
+#include <board.h>
 #include <generated/autoconf.h>
 
 #define MAX_GICS 1
@@ -61,8 +62,8 @@ static int set_irq_target_cpus(intc_t *intc, irq_t irq, cpubits_t bits) {
     return 0;
 }
 
-static int set_irq_enable_for_this_cpu(intc_t *intc, bool enabled) {
-    verbose("Setting interrupt signaling to cpu %d to %u", get_cpu_id(), enabled);
+static int set_irqs_enable_for_this_cpu(intc_t *intc, bool enabled) {
+    verbose("Setting interrupts signaling to cpu %d to %u", get_cpu_id(), enabled);
     gic_t *gic = (gic_t *) intc;
     gic->cpu->ctrl.b.enable_group0 = enabled;
     gic->cpu->ctrl.b.enable_group1 = enabled;
@@ -97,38 +98,8 @@ static irqret_t dispatch_irq(intc_t *intc) {
     return ret;
 }
 
-static int process(board_comp_t *comp) {
-    if (cur_gic > ARRAYSIZE(gics)) {
-        error("Max number of GICs components reached");
-        return -1;
-    }
-
-    gic_t *gic = &gics[cur_gic];
-    intc_t *intc = (intc_t *) gic;
-
-    if (intc_init(intc, comp->id, comp, NULL, NULL) < 0) {
-        error("Failed to initialize gic '%s'", comp->id);
-        return -1;
-    }
-    intc->parent.stype = COMP_SUBTYPE_GIC;
-    intc->ops.dispatch_irq = dispatch_irq;
-    intc->ops.set_irq_enable = set_irq_enable;
-    intc->ops.set_irq_trigger_mode = set_irq_trigger_mode;
-    intc->ops.set_irq_target_cpus = set_irq_target_cpus;
-    intc->ops.set_irq_enable_for_this_cpu = set_irq_enable_for_this_cpu;
-    intc->ops.set_priority_filter = set_priority_filter;
-
-    board_get_ptr_attr_def(comp, "distaddr", (void **) &gic->dist, NULL);
-    if (gic->dist == NULL) {
-        error("No distributor address was specified in the board information for '%s'", comp->id);
-        return -1;
-    }
-
-    board_get_ptr_attr_def(comp, "cpuaddr", (void **) &gic->cpu, NULL);
-    if (gic->cpu == NULL) {
-        error("No cpu address was specified in the board information for '%s'", comp->id);
-        return -1;
-    }
+static int init(component_t *c) {
+    gic_t *gic = (gic_t *) c;
 
     gic->num_irqs = (gic->dist->type.b.nlines + 1) * 32;
     if (gic->num_irqs == 0) {
@@ -149,9 +120,57 @@ static int process(board_comp_t *comp) {
     gic->dist->ctrl.b.enable_group1 = 1;
 
     info("Disabling irq priority filtering (prio=0xff)");
-    intc->ops.set_priority_filter(intc, 0xff);
+    gic->parent.ops.set_priority_filter((intc_t *) gic, 0xff);
 
     info("sizeof: %d", sizeof(intc_t));
+    return 0;
+}
+
+static int deinit(component_t *c) {
+    gic_t *gic = (gic_t *) c;
+
+    info("Resetting irq priority filtering (prio=0)");
+    gic->parent.ops.set_priority_filter((intc_t *) gic, 0);
+
+    info("Disabling global interrupts for groups 0 and 1");
+    gic->dist->ctrl.b.enable_group0 = 0;
+    gic->dist->ctrl.b.enable_group1 = 0;
+
+    return 0;
+}
+
+static int process(board_comp_t *comp) {
+    if (cur_gic > ARRAYSIZE(gics)) {
+        error("Max number of GICs components reached");
+        return -1;
+    }
+
+    gic_t *gic = &gics[cur_gic];
+    intc_t *intc = (intc_t *) gic;
+
+    if (intc_init(intc, comp->id, comp, init, deinit) < 0) {
+        error("Failed to initialize gic '%s'", comp->id);
+        return -1;
+    }
+    intc->parent.stype = COMP_SUBTYPE_GIC;
+    intc->ops.dispatch_irq = dispatch_irq;
+    intc->ops.set_irq_enable = set_irq_enable;
+    intc->ops.set_irq_trigger_mode = set_irq_trigger_mode;
+    intc->ops.set_irq_target_cpus = set_irq_target_cpus;
+    intc->ops.set_irqs_enable_for_this_cpu = set_irqs_enable_for_this_cpu;
+    intc->ops.set_priority_filter = set_priority_filter;
+
+    board_get_ptr_attr_def(comp, "distaddr", (void **) &gic->dist, NULL);
+    if (gic->dist == NULL) {
+        error("No distributor address was specified in the board information for '%s'", comp->id);
+        return -1;
+    }
+
+    board_get_ptr_attr_def(comp, "cpuaddr", (void **) &gic->cpu, NULL);
+    if (gic->cpu == NULL) {
+        error("No cpu address was specified in the board information for '%s'", comp->id);
+        return -1;
+    }
 
     if (component_register((component_t *) gic) < 0) {
         error("Couldn't register gic '%s'", comp->id);

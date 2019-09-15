@@ -1,24 +1,13 @@
+
 #define DEBUG
 #include <log.h>
 
-#include <board.h>
+#include <board-types.h>
 #include <component.h>
 #include <intc.h>
 #include <irq.h>
 #include <utils.h>
 #include <generated/autoconf.h>
-
-#define NOT_IMPL_FUNC(_func, ...) \
-    static int _func(__VA_ARGS__) { \
-        error("Not Implemented"); \
-        return -1; \
-    }
-
-NOT_IMPL_FUNC(ni_set_irq_enable, intc_t *intc, irq_t irq, bool enabled);
-NOT_IMPL_FUNC(ni_set_irq_trigger_mode, intc_t *intc, irq_t irq, irq_trigger_mode_t mode);
-NOT_IMPL_FUNC(ni_set_irq_target_cpus, intc_t *intc, irq_t irq, cpubits_t bits);
-NOT_IMPL_FUNC(ni_set_irq_enable_for_this_cpu, intc_t *intc, bool enabled);
-NOT_IMPL_FUNC(ni_set_priority_filter, intc_t *intc, uint8_t lowest_prio);
 
 static irqret_t handle_irq(intc_t *intc, irq_t irq) {
     verbose("Handling irq %u with int controller '%s'", irq, intc->parent.id);
@@ -51,10 +40,17 @@ static irqret_t handle_irq(intc_t *intc, irq_t irq) {
  */
 static int add_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h, void *data) {
     verbose("Adding handler 0x%p(data=0x%p) for irq %u", h, data, irq);
+
     if (irq > CONFIG_MAX_IRQS) {
         error("Invalid irq %u, max_supported: %u", irq, CONFIG_MAX_IRQS);
         return -1;
     }
+
+    if (h == NULL) {
+        error("Handler for irq %u cannot be NULL", irq);
+        return -1;
+    }
+
     int i;
     for (i = 0; i < ARRAYSIZE(intc->handlers[0]); i++) {
         irq_handler_info_t *hi = &intc->handlers[irq][i];
@@ -86,6 +82,18 @@ static int remove_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h) {
     return 0;
 }
 
+#define NOT_IMPL_FUNC(_func, ...) \
+    static int _func(__VA_ARGS__) { \
+        error("Not Implemented"); \
+        return -1; \
+    }
+
+NOT_IMPL_FUNC(ni_set_irq_enable, intc_t *intc, irq_t irq, bool enabled);
+NOT_IMPL_FUNC(ni_set_irq_trigger_mode, intc_t *intc, irq_t irq, irq_trigger_mode_t mode);
+NOT_IMPL_FUNC(ni_set_irq_target_cpus, intc_t *intc, irq_t irq, cpubits_t bits);
+NOT_IMPL_FUNC(ni_set_irqs_enable_for_this_cpu, intc_t *intc, bool enabled);
+NOT_IMPL_FUNC(ni_set_priority_filter, intc_t *intc, uint8_t lowest_prio);
+
 int intc_init(intc_t *intc, char *id, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
     if (component_init((component_t *) intc, id, bcomp, COMP_TYPE_INTC, init, deinit) < 0) {
@@ -97,7 +105,7 @@ int intc_init(intc_t *intc, char *id, board_comp_t *bcomp,
     intc->ops.set_irq_enable = ni_set_irq_enable;
     intc->ops.set_irq_trigger_mode = ni_set_irq_trigger_mode;
     intc->ops.set_irq_target_cpus = ni_set_irq_target_cpus;
-    intc->ops.set_irq_enable_for_this_cpu = ni_set_irq_enable_for_this_cpu;
+    intc->ops.set_irqs_enable_for_this_cpu = ni_set_irqs_enable_for_this_cpu;
     intc->ops.set_priority_filter = ni_set_priority_filter;
     intc->ops.add_irq_handler = add_irq_handler;
     intc->ops.remove_irq_handler = remove_irq_handler;

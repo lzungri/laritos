@@ -18,7 +18,7 @@ typedef struct {
     int (*set_irq_enable)(struct intc *intc, irq_t irq, bool enabled);
     int (*set_irq_trigger_mode)(struct intc *intc, irq_t irq, irq_trigger_mode_t mode);
     int (*set_irq_target_cpus)(struct intc *intc, irq_t irq, cpubits_t bits);
-    int (*set_irq_enable_for_this_cpu)(struct intc *intc, bool enabled);
+    int (*set_irqs_enable_for_this_cpu)(struct intc *intc, bool enabled);
     /**
      * Provides an interrupt priority filter. Only interrupts with higher priority
      * than this value are signaled to the processor

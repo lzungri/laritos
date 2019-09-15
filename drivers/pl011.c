@@ -1,10 +1,12 @@
+#define DEBUG
 #include <log.h>
 #include <driver.h>
-#include <board.h>
 #include <uart.h>
 #include <drivers/pl011.h>
 #include <stream.h>
 #include <utils.h>
+#include <irq.h>
+#include <board-types.h>
 
 #define MAX_UARTS 3
 
@@ -38,6 +40,15 @@ static int read(stream_t *s, void *buf, size_t n) {
     uart_t *uart = container_of(s, uart_t, stream);
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
+
+
+//    if (uart->intio) {
+//
+//    }
+
+
+
+
     // TODO Use interrupts
     if (s->blocking) {
         // Wait until there is some data in the FIFO
@@ -54,7 +65,30 @@ static int read(stream_t *s, void *buf, size_t n) {
     return i;
 }
 
+static irqret_t irq_handler(irq_t irq, void *data) {
+    uart_t *uart = (uart_t *) data;
+    pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
+
+    // Check whether this is a received data interrupt (it should, since that
+    // is the only enabled irq)
+    if (pl011->mis.b.rxim) {
+        verbose_sync(false, "UART data received irq");
+
+        // TODO
+
+        // Clear rx interrupt
+        pl011->icr.b.rxim = 1;
+    }
+
+    return IRQ_RET_HANDLED;
+}
+
 static int init(component_t *c) {
+    if (uart_init(c) < 0) {
+        error("Failed to initialize uart for component '%s'", c->id);
+        return -1;
+    }
+
     uart_t *uart = (uart_t *) c;
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
@@ -62,9 +96,12 @@ static int init(component_t *c) {
     pl011->imsc.v = 0;
     // Clear flagged interrupts
     pl011->icr.v = 0xffff;
-    // Enable Receive interrupt. Since FIFO is disabled by default, we
-    // will get an int for every input char
-    pl011->imsc.b.rxim = 1;
+
+    if (uart->intio) {
+        // Enable Receive interrupt. Since FIFO is disabled by default, we
+        // will get an int for every input char
+        pl011->imsc.b.rxim = 1;
+    }
 
     return 0;
 }
@@ -76,7 +113,8 @@ static int deinit(component_t *c) {
     pl011->imsc.v = 0;
     // Clear flagged interrupts
     pl011->icr.v = 0xffff;
-    return 0;
+
+    return uart_deinit(c);
 }
 
 static int process(board_comp_t *comp) {
@@ -84,7 +122,9 @@ static int process(board_comp_t *comp) {
         error("Max number of uart components reached");
         return -1;
     }
-    if (uart_component_init_and_register(&uarts[cur_uart], comp, init, deinit, read, write) < 0){
+    uart_t *uart = &uarts[cur_uart];
+    uart->irq_handler = irq_handler;
+    if (uart_component_init_and_register(uart, comp, init, deinit, read, write) < 0){
         error("Failed to register '%s'", comp->id);
         return -1;
     }

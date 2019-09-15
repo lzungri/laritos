@@ -6,20 +6,24 @@
 #include <stdbool.h>
 #include <stream.h>
 #include <irq.h>
+#include <intc.h>
 
 typedef struct uart {
     component_t parent;
 
     void *baseaddr;
+
     irq_t irq;
     bool intio;
-    // TODO Implement
-    uint32_t baudrate;
-    // TODO Implement
-    bool fifo_enabled;
+    irq_trigger_mode_t irq_trigger;
+    intc_t *intc;
+    irq_handler_t irq_handler;
+
     stream_t stream;
 } uart_t;
 
+int uart_init(component_t *c);
+int uart_deinit(component_t *c);
 
 int uart_component_init(uart_t *uart, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),

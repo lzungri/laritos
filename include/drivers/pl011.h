@@ -1,6 +1,54 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
+
+/**
+ * The UARTIMSC Register is the interrupt mask set/clear register.
+ * It is a read/write register
+ */
+typedef volatile struct {
+    union {
+        uint32_t v;
+        struct {
+            // nUARTRI modem interrupt mask
+            bool rimim: 1;
+            // nUARTCTS modem interrupt mask
+            bool ctsmim: 1;
+            // nUARTDCD modem interrupt mask
+            bool dcdmim: 1;
+            // nUARTDSR modem interrupt mask
+            bool dsrmim: 1;
+            /**
+             * Receive interrupt mask
+             *
+             * The receive interrupt changes state when one of the following events occurs:
+             *      * If the FIFOs are enabled and the receive FIFO reaches the programmed trigger
+             * level. When this happens, the receive interrupt is asserted HIGH. The receive
+             * interrupt is cleared by reading data from the receive FIFO until it becomes less
+             * than the trigger level, or by clearing the interrupt.
+             *      * If the FIFOs are disabled (have a depth of one location) and data is received
+             * thereby filling the location, the receive interrupt is asserted HIGH. The receive
+             * interrupt is cleared by performing a single read of the receive FIFO, or by clearing
+             * the interrupt.
+             */
+            bool rxim: 1;
+            // Transmit interrupt mask
+            bool txim: 1;
+            // Receive timeout interrupt mask
+            bool rtim: 1;
+            // Framing error interrupt mask
+            bool feim: 1;
+            // Parity error interrupt mask
+            bool peim: 1;
+            // Break error interrupt mask
+            bool beim: 1;
+            // Overrun error interrupt mask
+            bool oeim: 1;
+            uint32_t reserved: 21;
+        } b;
+    };
+} int_mask_ctrl_t;
 
 /* Register map for the UART PL011.
  *
@@ -65,19 +113,19 @@ typedef volatile struct {
     // Fractional Baud Rate Register, UARTFBRD on page 3-10
     uint32_t fbdr;
     // Line Control Register, UARTLCR_H on page 3-12
-    uint32_t lcr_H;
+    uint32_t lcr_h;
     // Control Register, UARTCR on page 3-15
     uint32_t cr;
     // Interrupt FIFO Level Select Register, UARTIFLS on page 3-17
     uint32_t ifls;
     // Interrupt Mask Set/Clear Register, UARTIMSC on page 3-17
-    uint32_t imsc;
+    int_mask_ctrl_t imsc;
     //Raw Interrupt Status Register, UARTRIS on page 3-19
-    const uint32_t ris;
+    const int_mask_ctrl_t ris;
     // Masked Interrupt Status Register, UARTMIS on page 3-20
-    const uint32_t mis;
+    const int_mask_ctrl_t mis;
     // Interrupt Clear Register, UARTICR on page 3-21
-    uint32_t icr;
+    int_mask_ctrl_t icr;
     // DMA Control Register, UARTDMACR on page 3-22
     uint32_t dmacr;
 } pl011_mm_t;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <board.h>
+#include <board-types.h>
 
 #define COMPONENT_MAX_ID_LEN CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES
 
