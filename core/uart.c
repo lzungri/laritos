@@ -12,10 +12,14 @@
 int uart_init(component_t *c) {
     uart_t *uart = (uart_t *) c;
     intc_t *intc;
+    // Setup irq stuff if using interrupt-driven io
     if (uart->intio) {
         intc = uart->intc;
         intc->ops.set_irq_enable(intc, uart->irq, true);
-        intc->ops.set_irq_trigger_mode(intc, uart->irq, uart->irq_trigger);
+        if (intc->ops.set_irq_trigger_mode(intc, uart->irq, uart->irq_trigger) < 0) {
+            error("Failed to set trigger mode for irq %u", uart->irq);
+            goto error_irq_enable;
+        }
         if (intc->ops.set_irq_target_cpus(intc, uart->irq, BIT_FOR_CPU(0)) < 0) {
             error("Failed to set the irq targets");
             goto error_irq_enable;
