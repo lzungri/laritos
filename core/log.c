@@ -3,12 +3,13 @@
 #include <printf.h>
 #include <stdbool.h>
 
-#include <board.h>
 #include <driver.h>
 #include <circbuf.h>
 #include <utils.h>
 #include <component.h>
 #include <stream.h>
+#include <board-types.h>
+#include <board.h>
 
 
 static char logb[CONFIG_LOG_BUFSIZE_BYTES];

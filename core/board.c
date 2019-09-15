@@ -1,10 +1,13 @@
 #include <log.h>
 #include <stddef.h>
-#include <board.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <strtoxl.h>
+#include <irq.h>
+#include <board-types.h>
+#include <board.h>
+#include <component.h>
 
 int board_init(board_info_t *bi) {
     debug("Initializing board");
@@ -227,4 +230,38 @@ void board_get_bool_attr_def(board_comp_t *bc, char *attr, bool *buf, bool def) 
     if (board_get_bool_attr(bc, attr, buf) < 0) {
         *buf = def;
     }
+}
+
+int board_get_irq_trigger_attr(board_comp_t *bc, char *attr, irq_trigger_mode_t *buf) {
+    char str[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
+    if (board_get_str_attr(bc, attr, str) < 0 || strnlen(str, sizeof(str)) <= 0) {
+        return -1;
+    }
+    if (strncmp(str, "level_hi", sizeof(str)) == 0) {
+        *buf = IRQ_TRIGGER_LEVEL_HIGH;
+    } else if (strncmp(str, "level_low", sizeof(str)) == 0) {
+        *buf = IRQ_TRIGGER_LEVEL_LOW;
+    } else if (strncmp(str, "edge_hi_lo", sizeof(str)) == 0) {
+        *buf = IRQ_TRIGGER_EDGE_HIGH_LOW;
+    } else if (strncmp(str, "edge_lo_hi", sizeof(str)) == 0) {
+        *buf = IRQ_TRIGGER_EDGE_LOW_HIGH;
+    } else {
+        return -1;
+    }
+    return 0;
+}
+
+void board_get_irq_trigger_attr_def(board_comp_t *bc, char *attr, irq_trigger_mode_t *buf, irq_trigger_mode_t def) {
+    if (board_get_irq_trigger_attr(bc, attr, buf) < 0) {
+        *buf = def;
+    }
+}
+
+int board_get_component_attr(board_comp_t *bc, char *attr, component_t **buf) {
+    char str[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
+    if (board_get_str_attr(bc, attr, str) < 0 || strnlen(str, sizeof(str)) <= 0) {
+        return -1;
+    }
+    *buf = component_get_by_id(str);
+    return 0;
 }

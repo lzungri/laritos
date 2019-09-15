@@ -1,7 +1,7 @@
 #pragma once
 
+#include <board-types.h>
 #include <component.h>
-#include <board.h>
 #include <stream.h>
 
 typedef struct inputdev {

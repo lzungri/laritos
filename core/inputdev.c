@@ -1,7 +1,8 @@
 #include <log.h>
 #include <driver.h>
-#include <board.h>
 #include <inputdev.h>
+#include <board-types.h>
+#include <board.h>
 
 
 #define MAX_INPUTDEVS 3

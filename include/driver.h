@@ -1,6 +1,7 @@
 #pragma once
 
-#include <board.h>
+#include <board-types.h>
+
 #include <generated/autoconf.h>
 
 typedef struct {

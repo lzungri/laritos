@@ -1,8 +1,9 @@
 #include <log.h>
 #include <component.h>
-#include <board.h>
 #include <printf.h>
 #include <stream.h>
+#include <board-types.h>
+#include <board.h>
 
 
 int stream_component_init(stream_t *s, board_comp_t *bcomp,
