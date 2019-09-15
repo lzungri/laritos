@@ -13,12 +13,20 @@ winheight regs 13
 #set print pretty on
 set print array on
 
+define los_dump_log_buffer
+    printf "%s", logb
+end
+document los_dump_log_buffer
+Syntax: los_dump_log_buffer
+Print the raw log circular buffer.
+end
 
 
 
-# --------------------------------------------------
+
 
 # Taken from https://github.com/gdbinit/Gdbinit/blob/master/gdbinit
+# --------------------------------------------------
 
 define flags
 # conditional flags are
@@ -127,7 +135,7 @@ define flags
     # TODO: GE bit ?
     printf ")\n"
 end
-document flagsarm
-Syntax: flagsarm
+document flags
+Syntax: flags
 | Auxiliary function to set ARM cpu flags.
 end
