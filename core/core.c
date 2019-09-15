@@ -1,11 +1,12 @@
 #include <log.h>
 #include <core.h>
-#include <board.h>
 #include <string.h>
 #include <component.h>
 #include <inputdev.h>
 #include <generated/utsrelease.h>
 #include <debug.h>
+#include <board-types.h>
+#include <board.h>
 
 
 laritos_t _laritos;
@@ -41,7 +42,7 @@ static void user_shell(void) {
 //                    asm("mov pc, r7");
                     // undef
 //                    asm(".word 0xffffffff");
-                    dump_cur_state();
+//                    dump_cur_state();
 
                     asm("svc 1");
                     break;
@@ -51,6 +52,7 @@ static void user_shell(void) {
                 }
             }
         }
+        asm("wfi");
     }
 }
 
@@ -74,16 +76,10 @@ void kernel_entry(void)  {
     component_dump_registered_comps();
 #endif
 
-    dump_cur_state();
     // TODO: Delete this
     // User mode
     asm("msr cpsr_c, #0b01010000");
     asm("movw sp, #0");
     asm("movt sp, #0x4050");
-    dump_cur_state();
-    info("aaa");
-//    user_shell();
-    while(1) {
-//        asm("wfi");
-    }
+    user_shell();
 }
