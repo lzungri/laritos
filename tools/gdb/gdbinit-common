@@ -1,5 +1,5 @@
 # If you want to use this gdbinit, run gdb with:
-#   gdb-multiarch bin/laritos.elf -nx -ex "source tools/gdb/gdbinit-common"
+#   gdb-multiarch -q bin/laritos.elf -nx -ex "source tools/gdb/gdbinit-common"
 
 set history save on
 
@@ -14,17 +14,31 @@ winheight regs 13
 set print array on
 
 define los_dump_log_buffer
+    tui disable
     printf "%s", logb
+    printf "\nPress enter to return"
+    shell read
+    tui enable
 end
 document los_dump_log_buffer
 Syntax: los_dump_log_buffer
 Print the raw log circular buffer.
 end
 
+define los_dump_all_regs
+    tui disable
+    info registers
+    tui enable
+end
+document los_dump_all_regs
+Syntax: los_dump_all_regs
+Dump all the registers
+end
 
 
 
 
+# --------------------------------------------------
 # Taken from https://github.com/gdbinit/Gdbinit/blob/master/gdbinit
 # --------------------------------------------------
 
