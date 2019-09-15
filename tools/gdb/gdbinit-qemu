@@ -1,0 +1,8 @@
+# To use this gdbinit, run gdb with:
+#   gdb-multiarch bin/laritos.elf -nx -ex "source tools/gdb/gdbinit-common" -ex "source tools/gdb/gdbinit-qemu"
+
+# To remove the annoying "type <return> to continue..."
+set pagination off
+target remote :1234
+set pagination on
+

@@ -1,0 +1,132 @@
+# If you want to use this gdbinit, run gdb with:
+#   gdb-multiarch bin/laritos.elf -nx -ex "source tools/gdb/gdbinit-common"
+
+set history save on
+
+tui enable
+layout src
+layout regs
+focus cmd
+winheight src 30
+winheight regs 13
+
+#set print pretty on
+set print array on
+
+
+
+
+# --------------------------------------------------
+
+# Taken from https://github.com/gdbinit/Gdbinit/blob/master/gdbinit
+
+define flagsarm
+# conditional flags are
+# negative/less than (N), bit 31 of CPSR
+# zero (Z), bit 30
+# Carry/Borrow/Extend (C), bit 29
+# Overflow (V), bit 28
+    # negative/less than (N), bit 31 of CPSR
+    if (($cpsr >> 0x1f) & 1)
+        printf "N "
+        set $_n_flag = 1
+    else
+        printf "n "
+        set $_n_flag = 0
+    end
+    # zero (Z), bit 30
+    if (($cpsr >> 0x1e) & 1)
+        printf "Z "
+        set $_z_flag = 1
+    else
+        printf "z "
+        set $_z_flag = 0
+    end
+    # Carry/Borrow/Extend (C), bit 29
+    if (($cpsr >> 0x1d) & 1)
+        printf "C "
+        set $_c_flag = 1
+    else
+        printf "c "
+        set $_c_flag = 0
+    end
+    # Overflow (V), bit 28
+    if (($cpsr >> 0x1c) & 1)
+        printf "V "
+        set $_v_flag = 1
+    else
+        printf "v "
+        set $_v_flag = 0
+    end
+    # Sticky overflow (Q), bit 27    
+    if (($cpsr >> 0x1b) & 1)
+        printf "Q "
+        set $_q_flag = 1
+    else
+        printf "q "
+        set $_q_flag = 0
+    end
+    # Java state bit (J), bit 24
+    # When T=1:
+    # J = 0 The processor is in Thumb state.
+    # J = 1 The processor is in ThumbEE state.
+    if (($cpsr >> 0x18) & 1)
+        printf "J "
+        set $_j_flag = 1
+    else
+        printf "j "
+        set $_j_flag = 0
+    end
+    # Data endianness bit (E), bit 9
+    if (($cpsr >> 9) & 1)
+        printf "E "
+        set $_e_flag = 1
+    else
+        printf "e "
+        set $_e_flag = 0
+    end
+    # Imprecise abort disable bit (A), bit 8
+    # The A bit is set to 1 automatically. It is used to disable imprecise data aborts. 
+    # It might not be writable in the Nonsecure state if the AW bit in the SCR register is reset.
+    if (($cpsr >> 8) & 1)
+        printf "A "
+        set $_a_flag = 1
+    else
+        printf "a "
+        set $_a_flag = 0
+    end
+    # IRQ disable bit (I), bit 7
+    # When the I bit is set to 1, IRQ interrupts are disabled.
+    if (($cpsr >> 7) & 1)
+        printf "I "
+        set $_i_flag = 1
+    else
+        printf "i "
+        set $_i_flag = 0
+    end
+    # FIQ disable bit (F), bit 6
+    # When the F bit is set to 1, FIQ interrupts are disabled. 
+    # FIQ can be nonmaskable in the Nonsecure state if the FW bit in SCR register is reset.
+    if (($cpsr >> 6) & 1)
+        printf "F "
+        set $_f_flag = 1
+    else
+        printf "f "
+        set $_f_flag = 0
+    end
+    # Thumb state bit (F), bit 5
+    # if 1 then the processor is executing in Thumb state or ThumbEE state depending on the J bit
+    if (($cpsr >> 5) & 1)
+        printf "T "
+        set $_t_flag = 1
+    else
+        printf "t "
+        set $_t_flag = 0
+    end
+    # TODO: GE bit ?
+    printf "\n"
+end
+document flagsarm
+Syntax: flagsarm
+| Auxiliary function to set ARM cpu flags.
+end
