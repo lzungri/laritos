@@ -1,6 +1,8 @@
+
+#define DEBUG
 #include <log.h>
 
-#include <board.h>
+#include <board-types.h>
 #include <component.h>
 #include <string.h>
 #include <core.h>
@@ -28,31 +30,37 @@ int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_t
 int component_register(component_t *comp) {
     debug("Registering component '%s' of type %d", comp->id, comp->type);
 
-    if (comp->ops.init(comp) < 0) {
-        error("Couldn't initialize component '%s'", comp->id);
-        return -1;
-    }
-
     int i;
     for (i = 0; i < ARRAYSIZE(_laritos.components); i++) {
         if (_laritos.components[i] == NULL) {
             _laritos.components[i] = comp;
-            info("Component '%s' of type %d registered successfully", comp->id, comp->type);
-            return 0;
+            break;
         }
     }
 
-    error("Failed to register component '%s'. Max number of components reached", comp->id);
-    if (comp->ops.deinit(comp) < 0) {
-        error("Couldn't de-initialize component '%s'", comp->id);
+    if (i >= ARRAYSIZE(_laritos.components)) {
+        error("Failed to register component '%s'. Max number of components reached", comp->id);
+        return -1;
     }
-    return -1;
+
+    verbose("Initializing component '%s'", comp->id);
+    if (comp->ops.init(comp) < 0) {
+        error("Couldn't initialize component '%s'", comp->id);
+        _laritos.components[i] = NULL;
+        return -1;
+    }
+    info("Component '%s' of type %d registered successfully", comp->id, comp->type);
+    return 0;
 }
 
 int component_unregister(component_t *comp) {
     int i;
     for (i = 0; i < ARRAYSIZE(_laritos.components); i++) {
         if (_laritos.components[i] == comp) {
+            verbose("De-initializing component '%s'", comp->id);
+            if (comp->ops.deinit(comp) < 0) {
+                error("Couldn't de-initialize component '%s'", comp->id);
+            }
             _laritos.components[i] = NULL;
             info("Component '%s' of type %d unregistered", comp->id, comp->type);
             return 0;
