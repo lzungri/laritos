@@ -31,5 +31,5 @@ static inline const char *get_irqret_str(irqret_t ret) {
         "IRQ_RET_ERROR", "IRQ_RET_HANDLED", "IRQ_RET_HANDLED_KEEP_PROCESSING", "IRQ_RET_NOT_HANDLED",
     };
     ret += 1;
-    return ret < ARRAYSIZE(str) && ret >= 0 ? str[ret] : "???";
+    return ret < ARRAYSIZE(str) && ret >= 0 && str[ret] != NULL ? str[ret] : "???";
 }
