@@ -4,6 +4,14 @@
 #include <stdbool.h>
 #include <intc.h>
 
+typedef enum {
+    ARCH_REV_UNKNOWN,
+    ARCH_REV_GICV1,
+    ARCH_REV_GICV2,
+    ARCH_REV_GICV3,
+    ARCH_REV_GICV4,
+} arch_rev_t;
+
 /**
  * Controls the generation of SGIs
  */
@@ -74,6 +82,21 @@ typedef volatile struct {
         } b;
     };
 } gic_dist_type_t;
+
+/**
+ * Provides a four-bit architecturally-defined architecture revision
+ * field. The remaining bits of the register are IMPLEMENTATION DEFINED
+ */
+typedef volatile struct {
+    union {
+        uint32_t v;
+        struct {
+            uint8_t reserved0: 4;
+            arch_rev_t arch_rev: 4;
+            uint32_t reserved1: 24;
+        } b;
+    };
+} perip_id2_t;
 
 /**
  * The Distributor centralizes all interrupt sources, determines the priority of each
@@ -158,6 +181,12 @@ typedef volatile struct {
      * SGI Set-Pending Registers
      */
     uint8_t sgi_set_pending[16];
+    uint8_t reserved2[184];
+    /**
+     * Provides a four-bit architecturally-defined architecture revision field.
+     * The remaining bits of the register are IMPLEMENTATION DEFINED
+     */
+    perip_id2_t perip_id2;
 } gic_dist_t;
 
 

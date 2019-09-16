@@ -101,6 +101,12 @@ static irqret_t dispatch_irq(intc_t *intc) {
 static int init(component_t *c) {
     gic_t *gic = (gic_t *) c;
 
+    // Check gic architecture version
+    if (gic->dist->perip_id2.b.arch_rev != ARCH_REV_GICV2) {
+        error("Invalid GIC architecture revision, expected gicv2");
+        return -1;
+    }
+
     gic->num_irqs = (gic->dist->type.b.nlines + 1) * 32;
     if (gic->num_irqs == 0) {
         error("Invalid number of supported irqs");
