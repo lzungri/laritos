@@ -39,7 +39,35 @@ Syntax: los_dump_all_regs
 Dump all the registers
 end
 
-define los_dump_circular_buffer_x
+define los_dump_circbuf_pointers
+    set $__cb = $arg0
+    printf "buf=%p, wptr=%p, rptr=%p, dlen=%5u\n", $__cb->buf, $__cb->wptr, $__cb->rptr, $__cb->datalen
+end
+document los_dump_circbuf_pointers
+Syntax: los_dump_circbuf_pointers <cbptr>
+Dump the pointer of a cirbular buffer
+Example of usage:
+b circbuf_write
+commands
+silent
+printf "WRITE   "
+set pagination off
+los_dump_circbuf_pointers &logcb
+set pagination on
+continue
+<end>
+b circbuf_read
+commands
+silent
+printf "READ    "
+set pagination off
+los_dump_circbuf_pointers &logcb
+set pagination on
+continue
+<end>
+end
+
+define los_dump_circbuf_x
     set $__i = 0
     set $__cb = $arg0
     set $__ptr = (unsigned char *) $__cb->buf
@@ -65,19 +93,19 @@ define los_dump_circular_buffer_x
         end
         printf "%02x ", $__ptr[$__i]
         if ( $__i % 80 == 0)
-            printf "\n"
+            printf "\r\n"
         end
         set $__i++
     end
-    printf "\n"
+    printf "\r\n"
     wait_and_enable_tui
 end
-document los_dump_circular_buffer_x
-Syntax: los_dump_circular_buffer <cbptr>
+document los_dump_circbuf_x
+Syntax: los_dump_circbuf_x <cbptr>
 Dump the values (as hex) and pointers (read=green, write=red, both=yellow) of a circular buffer
 end
 
-define los_dump_circular_buffer_c
+define los_dump_circbuf_c
     set $__i = 0
     set $__cb = $arg0
     set $__ptr = (unsigned char *) $__cb->buf
@@ -104,11 +132,11 @@ define los_dump_circular_buffer_c
         printf "%c", $__ptr[$__i] == '\0' ? '.' : $__ptr[$__i]
         set $__i++
     end
-    printf "\n"
+    printf "\r\n"
     wait_and_enable_tui
 end
-document los_dump_circular_buffer_c
-Syntax: los_dump_circular_buffer <cbptr>
+document los_dump_circbuf_c
+Syntax: los_dump_circbuf_c <cbptr>
 Dump the values (as chars) and pointers (read=green, write=red, both=yellow) of a circular buffer.
 end
 
