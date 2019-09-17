@@ -32,8 +32,9 @@ int circbuf_write(circbuf_t *cb, void *buf, size_t n) {
     char *new_wptr;
     if (nbytes_left > 0) {
         new_wptr = (char *) cb->buf + nbytes_left;
-        // Update the read pointer if the write pointer passes over it
-        if (new_wptr > (char *) cb->rptr || cb->wptr <= cb->rptr) {
+        // Update the read pointer if the write pointer passes over it and there was data
+        // available for reading
+        if (new_wptr > (char *) cb->rptr || (cb->wptr <= cb->rptr && cb->datalen > 0)) {
             cb->rptr = new_wptr;
         }
         cb->wptr = new_wptr;
