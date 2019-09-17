@@ -1,8 +1,9 @@
 #include <stddef.h>
 #include <string.h>
 #include <math-utils.h>
-
 #include <circbuf.h>
+
+#include <stdint.h>
 
 int circbuf_write(circbuf_t *cb, void *buf, size_t n) {
     if (cb == NULL || buf == NULL) {
@@ -28,19 +29,25 @@ int circbuf_write(circbuf_t *cb, void *buf, size_t n) {
     memcpy(cb->buf, (char *) buf + nbytes_right, nbytes_left);
 
     // Update pointers
+    char *new_wptr;
     if (nbytes_left > 0) {
-        cb->wptr = (char *) cb->buf + nbytes_left;
-        if (cb->wptr > cb->rptr) {
-            cb->rptr = cb->wptr;
+        new_wptr = (char *) cb->buf + nbytes_left;
+        // Update the read pointer if the write pointer passes over it
+        if (new_wptr > (char *) cb->rptr || cb->wptr <= cb->rptr) {
+            cb->rptr = new_wptr;
         }
+        cb->wptr = new_wptr;
     } else {
-        char *new_wptr = (char *) cb->wptr + nbytes_right;
-        if (cb->wptr < cb->rptr && new_wptr > (char *) cb->rptr) {
+        new_wptr = (char *) cb->wptr + nbytes_right;
+        // Update read ptr only if there is some data left to read
+        if ((cb->wptr <= cb->rptr && cb->datalen > 0) && new_wptr > (char *) cb->rptr) {
             cb->rptr = new_wptr;
         }
         cb->wptr = new_wptr;
     }
 
+
+    // Update the amount of data available for reading
     cb->datalen += n;
     if (cb->datalen > cb->size) {
         cb->datalen = cb->size;
