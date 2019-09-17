@@ -39,6 +39,78 @@ Syntax: los_dump_all_regs
 Dump all the registers
 end
 
+define los_dump_circular_buffer_x
+    set $__i = 0
+    set $__cb = $arg0
+    set $__ptr = (unsigned char *) $__cb->buf
+    tui disable
+    printf "Available data: %d\n", $__cb->datalen
+    printf "Size: %d\n", $__cb->size
+    while ($__i < $__cb->size)
+        set $__rptr = &$__ptr[$__i] == $__cb->rptr
+        set $__wptr = &$__ptr[$__i] == $__cb->wptr
+        if ( $__wptr || $__rptr )
+            echo \033[30m
+            if ($__wptr)
+                echo \033[101m
+            end
+            if ($__rptr)
+                echo \033[102m
+            end
+            if ($__rptr && $__wptr)
+                echo \033[103m
+            end
+        else
+            echo \033[0m
+        end
+        printf "%02x ", $__ptr[$__i]
+        if ( $__i % 80 == 0)
+            printf "\n"
+        end
+        set $__i++
+    end
+    printf "\n"
+    wait_and_enable_tui
+end
+document los_dump_circular_buffer_x
+Syntax: los_dump_circular_buffer <cbptr>
+Dump the values (as hex) and pointers (read=green, write=red, both=yellow) of a circular buffer
+end
+
+define los_dump_circular_buffer_c
+    set $__i = 0
+    set $__cb = $arg0
+    set $__ptr = (unsigned char *) $__cb->buf
+    tui disable
+    printf "Available data: %d\n", $__cb->datalen
+    printf "Size: %d\n", $__cb->size
+    while ($__i < $__cb->size)
+        set $__rptr = &$__ptr[$__i] == $__cb->rptr
+        set $__wptr = &$__ptr[$__i] == $__cb->wptr
+        if ( $__wptr || $__rptr )
+            echo \033[30m
+            if ($__wptr)
+                echo \033[101m
+            end
+            if ($__rptr)
+                echo \033[102m
+            end
+            if ($__rptr && $__wptr)
+                echo \033[103m
+            end
+        else
+            echo \033[0m
+        end
+        printf "%c", $__ptr[$__i] == '\0' ? '.' : $__ptr[$__i]
+        set $__i++
+    end
+    printf "\n"
+    wait_and_enable_tui
+end
+document los_dump_circular_buffer_c
+Syntax: los_dump_circular_buffer <cbptr>
+Dump the values (as chars) and pointers (read=green, write=red, both=yellow) of a circular buffer.
+end
 
 
 
