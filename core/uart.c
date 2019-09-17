@@ -80,7 +80,7 @@ int uart_component_init(uart_t *uart, board_comp_t *bcomp,
         uart->irq = irq;
         board_get_irq_trigger_attr_def(bcomp, "trigger", &uart->irq_trigger, IRQ_TRIGGER_LEVEL_HIGH);
 
-        if (board_get_component_attr(bcomp, "intc", (component_t **) &uart->intc) < 0 || uart->intc == NULL) {
+        if (board_get_component_attr(bcomp, "intc", (component_t **) &uart->intc) < 0) {
             error("invalid or no interrupt controller specified in the board info");
             return -1;
         }

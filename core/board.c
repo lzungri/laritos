@@ -263,5 +263,5 @@ int board_get_component_attr(board_comp_t *bc, char *attr, component_t **buf) {
         return -1;
     }
     *buf = component_get_by_id(str);
-    return 0;
+    return *buf != NULL ? 0 : -1;
 }
