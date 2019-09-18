@@ -5,56 +5,34 @@
 #include <stdbool.h>
 #include <irq.h>
 #include <intc.h>
+#include <cpu.h>
 #include <board-types.h>
 #include <board.h>
+#include <circbuf.h>
+#include <utils.h>
 
 
 int uart_init(component_t *c) {
     uart_t *uart = (uart_t *) c;
-    intc_t *intc;
+
+    circbuf_init(&uart->cb, uart->rxbuf, ARRAYSIZE(uart->rxbuf));
+
     // Setup irq stuff if using interrupt-driven io
     if (uart->intio) {
-        intc = uart->intc;
-        intc->ops.set_irq_enable(intc, uart->irq, true);
-        if (intc->ops.set_irq_trigger_mode(intc, uart->irq, uart->irq_trigger) < 0) {
-            error("Failed to set trigger mode for irq %u", uart->irq);
-            goto error_irq_enable;
-        }
-        if (intc->ops.set_irq_target_cpus(intc, uart->irq, BIT_FOR_CPU(0)) < 0) {
-            error("Failed to set the irq targets");
-            goto error_irq_enable;
-        }
-        if (intc->ops.set_irqs_enable_for_this_cpu(intc, true) < 0) {
-            error("Failed to enable irqs for this cpu");
-            goto error_target;
-        }
-        if (intc->ops.add_irq_handler(intc, uart->irq, uart->irq_handler, c) < 0) {
-            error("Failed to add handler 0x%p for irq %u", uart->irq_handler, uart->irq);
-            goto error_handler;
+        if (intc_enable_irq_with_handler(uart->intc,
+                uart->irq, uart->irq_trigger, uart->irq_handler, c) < 0) {
+            error("Failed to enable irq %u with handler 0x%p", uart->irq, uart->irq_handler);
+            return -1;
         }
     }
-
     return 0;
-
-error_handler:
-    intc->ops.set_irqs_enable_for_this_cpu(intc, false);
-error_target:
-    intc->ops.set_irq_target_cpus(intc, uart->irq, 0);
-error_irq_enable:
-    intc->ops.set_irq_enable(intc, uart->irq, false);
-    return -1;
 }
 
 int uart_deinit(component_t *c) {
     uart_t *uart = (uart_t *) c;
-    if (uart->intio) {
-        intc_t *intc = uart->intc;
-        intc->ops.remove_irq_handler(intc, uart->irq, uart->irq_handler);
-        intc->ops.set_irqs_enable_for_this_cpu(intc, false);
-        intc->ops.set_irq_target_cpus(intc, uart->irq, 0);
-        intc->ops.set_irq_enable(intc, uart->irq, false);
-    }
-    return 0;
+    return uart->intio ?
+            intc_disable_irq_with_handler(uart->intc, uart->irq, uart->irq_handler) :
+            0;
 }
 
 int uart_component_init(uart_t *uart, board_comp_t *bcomp,
@@ -64,6 +42,7 @@ int uart_component_init(uart_t *uart, board_comp_t *bcomp,
         error("Failed to initialize '%s' uart component", bcomp->id);
         return -1;
     }
+
     board_get_ptr_attr_def(bcomp, "baseaddr", &uart->baseaddr, NULL);
     if (uart->baseaddr == NULL) {
         error("No baseaddr was specified in the board information");

@@ -1,3 +1,11 @@
 menu "Drivers"
 
+menu "UART"
+
+config UART_BUF_SIZE
+    int "Buffer size for holding received data for uart devices (in bytes)"
+    default 32
+
+endmenu
+
 endmenu

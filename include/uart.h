@@ -7,6 +7,8 @@
 #include <stream.h>
 #include <irq.h>
 #include <intc.h>
+#include <circbuf.h>
+#include <generated/autoconf.h>
 
 typedef struct uart {
     component_t parent;
@@ -18,6 +20,8 @@ typedef struct uart {
     irq_trigger_mode_t irq_trigger;
     intc_t *intc;
     irq_handler_t irq_handler;
+    uint8_t rxbuf[CONFIG_UART_BUF_SIZE];
+    circbuf_t cb;
 
     stream_t stream;
 } uart_t;
