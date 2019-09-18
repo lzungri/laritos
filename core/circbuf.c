@@ -6,9 +6,8 @@
 #include <stdint.h>
 
 int circbuf_init(circbuf_t *cb, void *buf, uint32_t size) {
-    cb->buf = buf;
-    cb->rptr = buf;
-    cb->wptr = buf;
+    cb->buf = (uint8_t *) buf;
+    cb->head = 0;
     cb->datalen = 0;
     cb->size = size;
     return 0;
@@ -27,39 +26,18 @@ int circbuf_write(circbuf_t *cb, void *buf, size_t n) {
         n = cb->size;
     }
 
-    char *endptr = (char *) cb->buf + cb->size;
-
+    uint32_t windex = (cb->head + cb->datalen) % cb->size;
+    uint32_t nbytes_right = min(n, cb->size - windex);
     // Write the right area
-    uint32_t nbytes_right = min(n, endptr - (char *) cb->wptr);
-    memcpy(cb->wptr, buf, nbytes_right);
-
+    memcpy(&cb->buf[windex], buf, nbytes_right);
     // Write the left area
-    uint32_t nbytes_left = n - nbytes_right;
-    memcpy(cb->buf, (char *) buf + nbytes_right, nbytes_left);
-
-    // Update pointers
-    char *new_wptr;
-    if (nbytes_left > 0) {
-        new_wptr = (char *) cb->buf + nbytes_left;
-        // Update the read pointer if the write pointer passes over it and there was data
-        // available for reading
-        if (new_wptr > (char *) cb->rptr || (cb->wptr <= cb->rptr && cb->datalen > 0)) {
-            cb->rptr = new_wptr;
-        }
-        cb->wptr = new_wptr;
-    } else {
-        new_wptr = (char *) cb->wptr + nbytes_right;
-        // Update read ptr only if there is some data left to read
-        if ((cb->wptr <= cb->rptr && cb->datalen > 0) && new_wptr > (char *) cb->rptr) {
-            cb->rptr = new_wptr;
-        }
-        cb->wptr = new_wptr;
-    }
-
+    memcpy(cb->buf, (uint8_t *) buf + nbytes_right, n - nbytes_right);
 
     // Update the amount of data available for reading
     cb->datalen += n;
     if (cb->datalen > cb->size) {
+        // Move the head in case we overwrote old non-read data
+        cb->head = (cb->head + (cb->datalen - cb->size)) % cb->size;
         cb->datalen = cb->size;
     }
 
@@ -79,30 +57,14 @@ int circbuf_read(circbuf_t *cb, void *buf, size_t n) {
         n = cb->datalen;
     }
 
-    if (cb->wptr > cb->rptr) {
-        uint32_t nbytes = min(n, (char *) cb->wptr - (char *) cb->rptr);
-        memcpy(buf, cb->rptr, nbytes);
-        cb->rptr = (char *) cb->rptr + nbytes;
-        cb->datalen -= nbytes;
-        return nbytes;
-    }
-
-    char *endptr = (char *) cb->buf + cb->size;
-
     // Read the right area
-    uint32_t nbytes_right = min(n, endptr - (char *) cb->rptr);
-    memcpy(buf, cb->rptr, nbytes_right);
-
+    uint32_t nbytes_right = min(n, cb->size - cb->head);
+    memcpy(buf, &cb->buf[cb->head], nbytes_right);
     // Read the left area
-    uint32_t nbytes_left = min(n - nbytes_right, (char *) cb->wptr - (char *) cb->buf);
-    memcpy((char *) buf + nbytes_right, cb->buf, nbytes_left);
+    memcpy((char *) buf + nbytes_right, cb->buf, n - nbytes_right);
 
-    if (nbytes_left > 0) {
-        cb->rptr = (char *) cb->buf + nbytes_left;
-    } else {
-        cb->rptr = (char *) cb->rptr + nbytes_right;
-    }
+    cb->head = (cb->head + n) % cb->size;
+    cb->datalen -= n;
 
-    cb->datalen -= nbytes_left + nbytes_right;
-    return nbytes_left + nbytes_right;
+    return n;
 }

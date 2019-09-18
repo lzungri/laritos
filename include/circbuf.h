@@ -3,19 +3,17 @@
 #include <stdint.h>
 
 typedef struct {
-    void *buf;
+    uint8_t *buf;
     uint32_t size;
-    void *wptr;
-    void *rptr;
+    uint32_t head;
     uint32_t datalen;
 } circbuf_t;
 
 #define DEF_STATIC_CIRCBUF(_name, _buf, _size) \
     static circbuf_t _name = { \
-        .buf = (_buf), \
+        .buf = (uint8_t *) (_buf), \
         .size = (_size), \
-        .wptr = (_buf), \
-        .rptr = (_buf), \
+        .head = 0, \
     }
 
 int circbuf_init(circbuf_t *cb, void *buf, uint32_t size);
