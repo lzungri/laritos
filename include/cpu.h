@@ -9,5 +9,5 @@ typedef uint32_t cpubits_t;
 
 static inline int get_cpu_id(void) {
     // TODO
-    return -1;
+    return 0;
 }
