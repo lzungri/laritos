@@ -19,10 +19,17 @@ static int write(stream_t *s, const void *buf, size_t n) {
     uart_t *uart = container_of(s, uart_t, stream);
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
-    // TODO Use interrupts
     if (s->blocking) {
         // Wait until there is space in the FIFO
-        while (pl011->fr.b.txff);
+        while (pl011->fr.b.txff) {
+            if (uart->intio) {
+                // Enable Transmit interrupt to detect FIFO space availability
+                pl011->imsc.b.txim = 1;
+                // TODO Replace with a nice synchro mechanism
+                // Any interrupt will wake the cpu up
+                asm("wfi");
+            }
+        }
     } else if (pl011->fr.b.txff) {
         // No space left and non-blocking io mode, return
         return 0;
@@ -36,20 +43,37 @@ static int write(stream_t *s, const void *buf, size_t n) {
     return n;
 }
 
+static int readall_into_circbuf(uart_t *uart) {
+    pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
+    // Read as long as there is some data in the FIFO
+    while (!pl011->fr.b.rxfe) {
+        // Only the last byte contains the actual data
+        uint8_t data = (uint8_t) (pl011->dr & 0xff);
+        if (circbuf_write(&uart->cb, &data, sizeof(data)) <= 0) {
+            error_sync(false, "Couldn't write '%c' into uart circular buffer", data);
+            return -1;
+        }
+    }
+    return 0;
+}
+
 static int read(stream_t *s, void *buf, size_t n) {
     uart_t *uart = container_of(s, uart_t, stream);
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
+    // If using interrupt-driven io, read from circular buffer
+    if (uart->intio) {
+        if (s->blocking) {
+            // Wait until there is some data in the buffer
+            while (uart->cb.datalen == 0) {
+                // TODO Replace with a nice synchro mechanism
+                // Any interrupt (rx int is enabled) will wake the cpu up
+                asm("wfi");
+            }
+        }
+        return circbuf_read(&uart->cb, buf, n);
+    }
 
-
-//    if (uart->intio) {
-//
-//    }
-
-
-
-
-    // TODO Use interrupts
     if (s->blocking) {
         // Wait until there is some data in the FIFO
         while (pl011->fr.b.rxfe);
@@ -69,17 +93,27 @@ static irqret_t irq_handler(irq_t irq, void *data) {
     uart_t *uart = (uart_t *) data;
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
-    // Check whether this is a received data interrupt (it should, since that
-    // is the only enabled irq)
+    // Check whether this is a receive int
     if (pl011->mis.b.rxim) {
         verbose_sync(false, "UART data received irq");
-
-        // TODO
-
+        if (readall_into_circbuf(uart) < 0) {
+            error_sync(false, "Couldn't read data");
+            return IRQ_RET_ERROR;
+        }
         // Clear rx interrupt
         pl011->icr.b.rxim = 1;
     }
 
+    // Check whether this is a transmit int
+    if (pl011->mis.b.txim) {
+        verbose_sync(false, "UART data transmitted irq");
+
+        // Disable tx interrupt. It will be enabled when FIFO is full and we
+        // want to wait until it becomes available for writing
+        pl011->imsc.b.txim = 0;
+        // Clear tx interrupt
+        pl011->icr.b.txim = 1;
+    }
     return IRQ_RET_HANDLED;
 }
 

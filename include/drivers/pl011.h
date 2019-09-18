@@ -33,7 +33,19 @@ typedef volatile struct {
              * the interrupt.
              */
             bool rxim: 1;
-            // Transmit interrupt mask
+            /**
+             * Transmit interrupt mask
+             *
+             * The transmit interrupt changes state when one of the following events occurs:
+             *      * If the FIFOs are enabled and the transmit FIFO is equal to or lower than the
+             *      programmed trigger level then the transmit interrupt is asserted HIGH. The
+             *      transmit interrupt is cleared by writing data to the transmit FIFO until it becomes
+             *      greater than the trigger level, or by clearing the interrupt.
+             *      * If the FIFOs are disabled (have a depth of one location) and there is no data
+             *      present in the transmitters single location, the transmit interrupt is asserted HIGH.
+             *      It is cleared by performing a single write to the transmit FIFO, or by clearing the
+             *      interrupt
+             */
             bool txim: 1;
             // Receive timeout interrupt mask
             bool rtim: 1;
