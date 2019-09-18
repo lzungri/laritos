@@ -5,6 +5,15 @@
 
 #include <stdint.h>
 
+int circbuf_init(circbuf_t *cb, void *buf, uint32_t size) {
+    cb->buf = buf;
+    cb->rptr = buf;
+    cb->wptr = buf;
+    cb->datalen = 0;
+    cb->size = size;
+    return 0;
+}
+
 int circbuf_write(circbuf_t *cb, void *buf, size_t n) {
     if (cb == NULL || buf == NULL) {
         return -1;

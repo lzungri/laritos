@@ -18,5 +18,6 @@ typedef struct {
         .rptr = (_buf), \
     }
 
+int circbuf_init(circbuf_t *cb, void *buf, uint32_t size);
 int circbuf_write(circbuf_t *cb, void *buf, size_t n);
 int circbuf_read(circbuf_t *cb, void *buf, size_t n);
