@@ -86,6 +86,9 @@ static irqret_t dispatch_irq(intc_t *intc) {
 
     // Acknowledge the GIC (pending->active) and grab the irq id
     gic_cpu_int_ack_t ack = gic->cpu->int_ack;
+    if (ack.b.id == GICV2_SPURIOUS_INT_ID) {
+        return IRQ_RET_NOT_HANDLED;
+    }
 
     irqret_t ret = intc->ops.handle_irq(intc, (irq_t) ack.b.id);
     if (ret == IRQ_RET_ERROR) {
@@ -128,7 +131,6 @@ static int init(component_t *c) {
     info("Disabling irq priority filtering (prio=0xff)");
     gic->parent.ops.set_priority_filter((intc_t *) gic, 0xff);
 
-    info("sizeof: %d", sizeof(intc_t));
     return 0;
 }
 
