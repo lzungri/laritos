@@ -11,7 +11,7 @@ void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, psr_t
     v.v = 1;
 
     log(false, "I", "Registers:");
-    log(false, "I", "   pc=0x%08lx lr=0x%08lx cpsr=0x%08lx (%c%c%c%c%c%c%c%c %s)", pc, lr, cpsr.v,
+    log(false, "I", "   pc=0x%08lx lr=0x%08lx cpsr=0x%08lx (%c%c%c%c%c%c%c%c %s mode)", pc, lr, cpsr.v,
             cpsr.b.n ? 'N' : '.', cpsr.b.z ? 'Z' : '.', cpsr.b.c ? 'C' : '.',
             cpsr.b.v ? 'V' : '.', cpsr.b.q ? 'Q' : '.', cpsr.b.async_abort ? '.' : 'A',
             cpsr.b.irq ? '.' : 'I', cpsr.b.fiq ? '.' : 'F', get_cpu_mode_str(cpsr.b.mode));
