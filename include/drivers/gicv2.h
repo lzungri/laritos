@@ -4,6 +4,20 @@
 #include <stdbool.h>
 #include <intc.h>
 
+/**
+ * A read of the GICC_IAR returns the interrupt ID of the highest priority
+ * pending interrupt for the CPU interface. The
+ * read returns a spurious interrupt ID of 1023 if any of the following apply:
+ *      * forwarding of interrupts by the Distributor to the CPU interface is
+ *      disabled
+ *      * signaling of interrupts by the CPU interface to the connected processor
+ *      is disabled
+ *      * no pending interrupt on the CPU interface has sufficient priority for
+ *      the interface to signal it to the processor
+ */
+#define GICV2_SPURIOUS_INT_ID 1023
+
+
 typedef enum {
     ARCH_REV_UNKNOWN,
     ARCH_REV_GICV1,
