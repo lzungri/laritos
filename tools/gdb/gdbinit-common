@@ -41,7 +41,7 @@ end
 
 define los_dump_circbuf_pointers
     set $__cb = $arg0
-    printf "buf=%p, wptr=%p, rptr=%p, dlen=%5u\n", $__cb->buf, $__cb->wptr, $__cb->rptr, $__cb->datalen
+    printf "buf=%p, head=%u, dlen=%5u\n", $__cb->buf, $__cb->head, $__cb->datalen
 end
 document los_dump_circbuf_pointers
 Syntax: los_dump_circbuf_pointers <cbptr>
@@ -50,21 +50,21 @@ Example of usage:
 b circbuf_write
 commands
 silent
-printf "WRITE   "
+printf "write(%5u bytes)   ", n
 set pagination off
 los_dump_circbuf_pointers &logcb
 set pagination on
 continue
-<end>
+\end
 b circbuf_read
 commands
 silent
-printf "READ    "
+printf "read (%5u bytes)   ", n
 set pagination off
 los_dump_circbuf_pointers &logcb
 set pagination on
 continue
-<end>
+\end
 end
 
 define los_dump_circbuf_x
@@ -75,19 +75,9 @@ define los_dump_circbuf_x
     printf "Available data: %d\n", $__cb->datalen
     printf "Size: %d\n", $__cb->size
     while ($__i < $__cb->size)
-        set $__rptr = &$__ptr[$__i] == $__cb->rptr
-        set $__wptr = &$__ptr[$__i] == $__cb->wptr
-        if ( $__wptr || $__rptr )
+        if ( $__i == $__cb->head )
             echo \033[30m
-            if ($__wptr)
-                echo \033[101m
-            end
-            if ($__rptr)
-                echo \033[102m
-            end
-            if ($__rptr && $__wptr)
-                echo \033[103m
-            end
+            echo \033[102m
         else
             echo \033[0m
         end
@@ -102,30 +92,20 @@ define los_dump_circbuf_x
 end
 document los_dump_circbuf_x
 Syntax: los_dump_circbuf_x <cbptr>
-Dump the values (as hex) and pointers (read=green, write=red, both=yellow) of a circular buffer
+Dump the values (as hex) and pointers (head=green) of a circular buffer
 end
 
 define los_dump_circbuf_c
     set $__i = 0
     set $__cb = $arg0
-    set $__ptr = (unsigned char *) $__cb->buf
+    set $__ptr = $__cb->buf
     tui disable
     printf "Available data: %d\n", $__cb->datalen
     printf "Size: %d\n", $__cb->size
     while ($__i < $__cb->size)
-        set $__rptr = &$__ptr[$__i] == $__cb->rptr
-        set $__wptr = &$__ptr[$__i] == $__cb->wptr
-        if ( $__wptr || $__rptr )
+        if ( $__i == $__cb->head )
             echo \033[30m
-            if ($__wptr)
-                echo \033[101m
-            end
-            if ($__rptr)
-                echo \033[102m
-            end
-            if ($__rptr && $__wptr)
-                echo \033[103m
-            end
+            echo \033[102m
         else
             echo \033[0m
         end
@@ -137,7 +117,7 @@ define los_dump_circbuf_c
 end
 document los_dump_circbuf_c
 Syntax: los_dump_circbuf_c <cbptr>
-Dump the values (as chars) and pointers (read=green, write=red, both=yellow) of a circular buffer.
+Dump the values (as chars) and pointers (head=green) of a circular buffer.
 end
 
 
