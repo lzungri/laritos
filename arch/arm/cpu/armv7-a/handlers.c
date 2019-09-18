@@ -41,29 +41,7 @@ static char *fault_status_msg[32] = {
 };
 
 int svc_handler(int sysno, const spregs_t *regs) {
-    syscall_params_t params = { 0 };
-    int i;
-    for (i = 0; i < CONFIG_SYSCALL_MAX_ARGS && i < ARRAYSIZE(regs->r); i++) {
-        params.p[i] = regs->r[i];
-    }
-
-
-
-
-    // TODO NO need to send a params struct, we can pass the args directly
-
-
-
-
-
-
-
-
-
-
-
-
-    return syscall(sysno, &params);
+    return syscall(sysno, regs->r[0], regs->r[1], regs->r[2], regs->r[3], regs->r[4], regs->r[5]);
 }
 
 int undef_handler(int32_t pc, const spregs_t *regs) {
