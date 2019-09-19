@@ -5,14 +5,6 @@
 
 #include <stdint.h>
 
-int circbuf_init(circbuf_t *cb, void *buf, uint32_t size) {
-    cb->buf = (uint8_t *) buf;
-    cb->head = 0;
-    cb->datalen = 0;
-    cb->size = size;
-    return 0;
-}
-
 int circbuf_write(circbuf_t *cb, void *buf, size_t n) {
     if (cb == NULL || buf == NULL) {
         return -1;
