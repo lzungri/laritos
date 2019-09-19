@@ -4,9 +4,9 @@
 #include <component/hwcomp.h>
 #include <component/stream.h>
 #include <drivers/pl011.h>
-#include <utils.h>
 #include <irq.h>
 #include <board-types.h>
+#include <utils/utils.h>
 
 #define MAX_UARTS 3
 

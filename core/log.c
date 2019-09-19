@@ -5,11 +5,11 @@
 
 #include <driver.h>
 #include <circbuf.h>
-#include <utils.h>
 #include <component/component.h>
 #include <component/stream.h>
 #include <board-types.h>
 #include <board.h>
+#include <utils/utils.h>
 
 
 static char logb[CONFIG_LOG_BUFSIZE_BYTES];

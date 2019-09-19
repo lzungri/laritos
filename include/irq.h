@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <utils.h>
+#include <utils/utils.h>
 
 typedef enum {
     IRQ_TRIGGER_EDGE_LOW_HIGH = 1,

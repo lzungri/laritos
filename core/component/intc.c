@@ -5,7 +5,7 @@
 #include <component/hwcomp.h>
 #include <component/intc.h>
 #include <irq.h>
-#include <utils.h>
+#include <utils/utils.h>
 #include <generated/autoconf.h>
 
 static irqret_t handle_irq(intc_t *intc, irq_t irq) {

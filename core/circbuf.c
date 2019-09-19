@@ -1,9 +1,9 @@
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
-#include <math-utils.h>
+#include <utils/math.h>
 #include <circbuf.h>
 
-#include <stdint.h>
 
 int circbuf_write(circbuf_t *cb, void *buf, size_t n) {
     if (cb == NULL || buf == NULL) {

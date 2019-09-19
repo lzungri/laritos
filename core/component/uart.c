@@ -10,7 +10,7 @@
 #include <component/intc.h>
 #include <component/stream.h>
 #include <component/uart.h>
-#include <utils.h>
+#include <utils/utils.h>
 
 
 int uart_init(component_t *c) {

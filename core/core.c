@@ -4,9 +4,9 @@
 #include <component/component.h>
 #include <component/inputdev.h>
 #include <generated/utsrelease.h>
-#include <debug.h>
 #include <board-types.h>
 #include <board.h>
+#include <utils/debug.h>
 
 
 laritos_t _laritos;

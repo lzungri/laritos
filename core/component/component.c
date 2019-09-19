@@ -4,7 +4,7 @@
 #include <component/component.h>
 #include <string.h>
 #include <core.h>
-#include <utils.h>
+#include <utils/utils.h>
 
 static int nop_init(component_t *c) {
     // Nothing

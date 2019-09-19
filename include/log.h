@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include <generated/autoconf.h>
-#include <utils.h>
+#include <utils/utils.h>
 
 
 #ifndef KBUILD_MODNAME

@@ -7,9 +7,10 @@
 #include <irq.h>
 #include <cpu.h>
 #include <drivers/gicv2.h>
-#include <math-utils.h>
 #include <board-types.h>
 #include <board.h>
+#include <utils/math.h>
+
 #include <generated/autoconf.h>
 
 #define MAX_GICS 1
