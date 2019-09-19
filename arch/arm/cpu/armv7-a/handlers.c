@@ -1,5 +1,4 @@
 #include <log.h>
-#include <syscall.h>
 #include <arm.h>
 #include <utils.h>
 #include <printf.h>
@@ -10,6 +9,7 @@
 #include <irq.h>
 #include <generated/autoconf.h>
 #include "include/debug.h"
+#include <syscall/syscall.h>
 
 /**
  * Fault messages according to the armv7-a ARM document
