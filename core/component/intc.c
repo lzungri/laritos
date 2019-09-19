@@ -1,9 +1,9 @@
 #include <log.h>
 
 #include <board-types.h>
-#include <component.h>
-#include <hwcomp.h>
-#include <intc.h>
+#include <component/component.h>
+#include <component/hwcomp.h>
+#include <component/intc.h>
 #include <irq.h>
 #include <utils.h>
 #include <generated/autoconf.h>

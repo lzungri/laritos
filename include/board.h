@@ -1,7 +1,7 @@
 #pragma once
 
 #include <board-types.h>
-#include <component.h>
+#include <component/component.h>
 
 int board_init(board_info_t *binfo);
 int board_parse_info(char *bi_start_addr, board_info_t *bi);

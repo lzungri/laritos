@@ -1,7 +1,6 @@
 #include <log.h>
-
 #include <string.h>
-#include <hwcomp.h>
+#include <component/hwcomp.h>
 
 int hwcomp_init(hwcomp_t *comp, char *id, board_comp_t *bcomp, component_subtype_t stype,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {

@@ -5,9 +5,9 @@
 #include <printf.h>
 #include <debug.h>
 #include <core.h>
-#include <component.h>
+#include <component/component.h>
+#include <component/intc.h>
 #include <irq.h>
-#include <intc.h>
 #include <generated/autoconf.h>
 #include "include/debug.h"
 

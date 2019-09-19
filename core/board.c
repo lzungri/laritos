@@ -7,7 +7,7 @@
 #include <irq.h>
 #include <board-types.h>
 #include <board.h>
-#include <component.h>
+#include <component/component.h>
 
 int board_init(board_info_t *bi) {
     debug("Initializing board");

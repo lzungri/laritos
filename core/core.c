@@ -1,8 +1,8 @@
 #include <log.h>
 #include <core.h>
 #include <string.h>
-#include <component.h>
-#include <inputdev.h>
+#include <component/component.h>
+#include <component/inputdev.h>
 #include <generated/utsrelease.h>
 #include <debug.h>
 #include <board-types.h>

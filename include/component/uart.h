@@ -1,14 +1,15 @@
 #pragma once
 
 #include <stddef.h>
-#include <component.h>
-#include <hwcomp.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <stream.h>
 #include <irq.h>
-#include <intc.h>
 #include <circbuf.h>
+#include <component/component.h>
+#include <component/hwcomp.h>
+#include <component/intc.h>
+#include <component/stream.h>
+
 #include <generated/autoconf.h>
 
 typedef struct uart {

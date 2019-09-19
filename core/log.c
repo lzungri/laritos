@@ -6,8 +6,8 @@
 #include <driver.h>
 #include <circbuf.h>
 #include <utils.h>
-#include <component.h>
-#include <stream.h>
+#include <component/component.h>
+#include <component/stream.h>
 #include <board-types.h>
 #include <board.h>
 

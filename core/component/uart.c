@@ -1,15 +1,15 @@
 #include <log.h>
-#include <uart.h>
-#include <component.h>
-#include <hwcomp.h>
-#include <stream.h>
 #include <stdbool.h>
 #include <irq.h>
-#include <intc.h>
 #include <cpu.h>
 #include <board-types.h>
 #include <board.h>
 #include <circbuf.h>
+#include <component/component.h>
+#include <component/hwcomp.h>
+#include <component/intc.h>
+#include <component/stream.h>
+#include <component/uart.h>
 #include <utils.h>
 
 

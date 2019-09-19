@@ -2,7 +2,8 @@
 
 #include <stdbool.h>
 #include <driver.h>
-#include <intc.h>
+#include <component/intc.h>
+#include <component/hwcomp.h>
 #include <irq.h>
 #include <cpu.h>
 #include <drivers/gicv2.h>

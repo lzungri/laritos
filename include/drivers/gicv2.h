@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <intc.h>
+#include <component/intc.h>
 
 /**
  * A read of the GICC_IAR returns the interrupt ID of the highest priority

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <board-types.h>
-#include <component.h>
-#include <stream.h>
+#include <component/component.h>
+#include <component/stream.h>
 
 typedef struct inputdev {
     component_t parent;

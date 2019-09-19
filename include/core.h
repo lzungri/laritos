@@ -2,7 +2,7 @@
 
 #include <board-types.h>
 #include <driver.h>
-#include <component.h>
+#include <component/component.h>
 
 typedef struct {
     board_info_t bi;

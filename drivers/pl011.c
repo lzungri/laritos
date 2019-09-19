@@ -1,9 +1,9 @@
 #include <log.h>
 #include <driver.h>
-#include <uart.h>
-#include <hwcomp.h>
+#include <component/uart.h>
+#include <component/hwcomp.h>
+#include <component/stream.h>
 #include <drivers/pl011.h>
-#include <stream.h>
 #include <utils.h>
 #include <irq.h>
 #include <board-types.h>

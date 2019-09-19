@@ -1,12 +1,12 @@
 #pragma once
 
+#include <component/component.h>
+#include <component/component.h>
+#include <component/hwcomp.h>
 #include <stdbool.h>
-#include <component.h>
 #include <stdint.h>
 #include <cpu.h>
 #include <irq.h>
-#include <component.h>
-#include <hwcomp.h>
 #include <generated/autoconf.h>
 
 struct intc;

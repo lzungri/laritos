@@ -1,6 +1,6 @@
 #pragma once
 
-#include <component.h>
+#include <component/component.h>
 #include <stdbool.h>
 
 struct stream;
