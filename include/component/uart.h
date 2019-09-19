@@ -4,12 +4,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <irq.h>
-#include <circbuf.h>
 #include <component/component.h>
 #include <component/hwcomp.h>
 #include <component/intc.h>
 #include <component/stream.h>
-
+#include <dstruct/circbuf.h>
 #include <generated/autoconf.h>
 
 typedef struct uart {

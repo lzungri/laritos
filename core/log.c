@@ -3,12 +3,12 @@
 #include <printf.h>
 #include <stdbool.h>
 
-#include <circbuf.h>
 #include <component/component.h>
 #include <component/stream.h>
 #include <board-types.h>
 #include <board.h>
 #include <driver/driver.h>
+#include <dstruct/circbuf.h>
 #include <utils/utils.h>
 
 

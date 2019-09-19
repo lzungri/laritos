@@ -1,8 +1,8 @@
+#include <dstruct/circbuf.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 #include <utils/math.h>
-#include <circbuf.h>
 
 
 int circbuf_write(circbuf_t *cb, void *buf, size_t n) {

@@ -4,12 +4,12 @@
 #include <cpu.h>
 #include <board-types.h>
 #include <board.h>
-#include <circbuf.h>
 #include <component/component.h>
 #include <component/hwcomp.h>
 #include <component/intc.h>
 #include <component/stream.h>
 #include <component/uart.h>
+#include <dstruct/circbuf.h>
 #include <utils/utils.h>
 
 
