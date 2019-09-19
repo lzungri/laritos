@@ -1,11 +1,11 @@
 #include <log.h>
-#include <driver.h>
 #include <component/uart.h>
 #include <component/hwcomp.h>
 #include <component/stream.h>
-#include <drivers/pl011.h>
 #include <irq.h>
 #include <board-types.h>
+#include <driver/driver.h>
+#include <driver/pl011.h>
 #include <utils/utils.h>
 
 #define MAX_UARTS 3

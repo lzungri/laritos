@@ -1,14 +1,14 @@
 #include <log.h>
 
 #include <stdbool.h>
-#include <driver.h>
 #include <component/intc.h>
 #include <component/hwcomp.h>
 #include <irq.h>
 #include <cpu.h>
-#include <drivers/gicv2.h>
 #include <board-types.h>
 #include <board.h>
+#include <driver/driver.h>
+#include <driver/gicv2.h>
 #include <utils/math.h>
 
 #include <generated/autoconf.h>

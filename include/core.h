@@ -1,8 +1,8 @@
 #pragma once
 
 #include <board-types.h>
-#include <driver.h>
 #include <component/component.h>
+#include <driver/driver.h>
 
 typedef struct {
     board_info_t bi;

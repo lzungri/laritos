@@ -1,10 +1,10 @@
 #include <log.h>
-#include <driver.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <board-types.h>
 #include <board.h>
+#include <driver/driver.h>
 
 static int search_drivermgr_and_process(board_info_t *bi, board_comp_t *comp);
 
