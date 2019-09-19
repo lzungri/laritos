@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <component.h>
+#include <hwcomp.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stream.h>
@@ -11,7 +12,7 @@
 #include <generated/autoconf.h>
 
 typedef struct uart {
-    component_t parent;
+    hwcomp_t parent;
 
     void *baseaddr;
 

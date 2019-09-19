@@ -32,27 +32,27 @@ static void user_shell(void) {
                     asm("mov r4, #5");
                     asm("mov r5, #6");
                     asm("mov r6, #7");
+                    asm("svc 1");
+                    break;
+                case 'r':
+                    asm("b 0");
+                    break;
+                case 'e':
                     // abort
-//                    asm("movw r7, #0xffff");
-//                    asm("movt r7, #0xffff");
-//                    asm("str r6, [r7]");
-//                    // prefetch
+                    asm("movw r7, #0xffff");
+                    asm("movt r7, #0xffff");
+                    asm("str r6, [r7]");
+                    // prefetch
 //                    asm("movw r7, #0xffff");
 //                    asm("movt r7, #0xffff");
 //                    asm("mov pc, r7");
                     // undef
 //                    asm(".word 0xffffffff");
 //                    dump_cur_state();
-
-                    asm("svc 1");
-                    break;
-                case 'r':
-                    asm("b 0");
                     break;
                 }
             }
         }
-        asm("wfi");
     }
 }
 

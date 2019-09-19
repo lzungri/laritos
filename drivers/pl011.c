@@ -2,6 +2,7 @@
 #include <log.h>
 #include <driver.h>
 #include <uart.h>
+#include <hwcomp.h>
 #include <drivers/pl011.h>
 #include <stream.h>
 #include <utils.h>
@@ -162,6 +163,7 @@ static int process(board_comp_t *comp) {
         error("Failed to register '%s'", comp->id);
         return -1;
     }
+    hwcomp_set_info((hwcomp_t *) uart, "PrimeCell UART (pl011)", "ARM", "AMBA compliant SoC");
     cur_uart++;
 
     return 0;

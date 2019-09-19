@@ -6,10 +6,12 @@
 
 typedef enum {
     COMP_TYPE_UNKNOWN = 0,
-    COMP_TYPE_UART,
+    COMP_TYPE_HW,
     COMP_TYPE_STREAM,
     COMP_TYPE_INPUTDEV,
     COMP_TYPE_LOGGER,
+
+    // TODO Move this to a subtype
     COMP_TYPE_INTC,
 
     COMP_TYPE_LEN,
@@ -17,6 +19,7 @@ typedef enum {
 
 typedef enum {
     COMP_SUBTYPE_UNKNOWN = 0,
+    COMP_SUBTYPE_UART,
     COMP_SUBTYPE_GIC,
 
     COMP_SUBTYPE_LEN,

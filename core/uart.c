@@ -1,6 +1,7 @@
 #include <log.h>
 #include <uart.h>
 #include <component.h>
+#include <hwcomp.h>
 #include <stream.h>
 #include <stdbool.h>
 #include <irq.h>
@@ -38,7 +39,7 @@ int uart_deinit(component_t *c) {
 int uart_component_init(uart_t *uart, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),
         int (*read)(stream_t *s, void *buf, size_t n), int (*write)(stream_t *s, const void *buf, size_t n)) {
-    if (component_init((component_t *) uart, bcomp->id, bcomp, COMP_TYPE_UART, init, deinit) < 0) {
+    if (hwcomp_init((hwcomp_t *) uart, bcomp->id, bcomp, COMP_SUBTYPE_UART, init, deinit) < 0) {
         error("Failed to initialize '%s' uart component", bcomp->id);
         return -1;
     }
@@ -75,12 +76,12 @@ int uart_component_init(uart_t *uart, board_comp_t *bcomp,
 
 int uart_component_register(uart_t *uart) {
     if (component_register((component_t *) &uart->stream) < 0) {
-        error("Failed to register '%s' uart stream", uart->parent.id);
+        error("Failed to register '%s' uart stream", uart->parent.parent.id);
         return -1;
     }
 
     if (component_register((component_t *) uart) < 0) {
-        error("Failed to register '%s' uart component", uart->parent.id);
+        error("Failed to register '%s' uart component", uart->parent.parent.id);
         component_unregister((component_t *) &uart->stream);
         return -1;
     }

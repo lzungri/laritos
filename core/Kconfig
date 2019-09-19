@@ -12,6 +12,10 @@ config MAX_COMPONENTS
     int "Max number of components"
     default 32
 
+config HWCOMP_HWINFO_SIZE
+    int "Max size for each hardware info field"
+    default 32
+
 endmenu
 
 menu "Logging"
