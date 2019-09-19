@@ -398,6 +398,7 @@ USERINCLUDE    := -include $(srctree)/include/kconfig.h
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 LINUXINCLUDE    :=  $(if $(building_out_of_srctree),-I$(srctree)/include) \
+		$(if $(building_out_of_srctree),-I$(srctree)/include/libc) \
 		-I$(objtree)/include \
 		$(USERINCLUDE)
 
