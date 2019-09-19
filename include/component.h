@@ -11,16 +11,13 @@ typedef enum {
     COMP_TYPE_INPUTDEV,
     COMP_TYPE_LOGGER,
 
-    // TODO Move this to a subtype
-    COMP_TYPE_INTC,
-
     COMP_TYPE_LEN,
 } component_type_t;
 
 typedef enum {
     COMP_SUBTYPE_UNKNOWN = 0,
     COMP_SUBTYPE_UART,
-    COMP_SUBTYPE_GIC,
+    COMP_SUBTYPE_INTC,
 
     COMP_SUBTYPE_LEN,
 } component_subtype_t;

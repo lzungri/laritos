@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 #include <syscall.h>
 #include <arm.h>
@@ -83,7 +82,7 @@ int irq_handler(const spregs_t *regs) {
     // TODO: Optimize this
     component_t *c = NULL;
     for_each_component(c) {
-        if (c->type == COMP_TYPE_INTC) {
+        if (c->stype == COMP_SUBTYPE_INTC) {
             verbose_sync(false, "Dispatching irq to int controller '%s'", c->id);
             intc_t *intc = (intc_t *) c;
             irqret_t ret = intc->ops.dispatch_irq(intc);

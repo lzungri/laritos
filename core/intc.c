@@ -1,9 +1,8 @@
-
-#define DEBUG
 #include <log.h>
 
 #include <board-types.h>
 #include <component.h>
+#include <hwcomp.h>
 #include <intc.h>
 #include <irq.h>
 #include <utils.h>
@@ -96,7 +95,7 @@ NOT_IMPL_FUNC(ni_set_priority_filter, intc_t *intc, uint8_t lowest_prio);
 
 int intc_init(intc_t *intc, char *id, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
-    if (component_init((component_t *) intc, id, bcomp, COMP_TYPE_INTC, init, deinit) < 0) {
+    if (hwcomp_init((hwcomp_t *) intc, id, bcomp, COMP_SUBTYPE_INTC, init, deinit) < 0) {
         error("Couldn't initialize intc '%s' component", id);
         return -1;
     }

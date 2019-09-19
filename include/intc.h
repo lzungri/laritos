@@ -6,6 +6,7 @@
 #include <cpu.h>
 #include <irq.h>
 #include <component.h>
+#include <hwcomp.h>
 #include <generated/autoconf.h>
 
 struct intc;
@@ -34,7 +35,7 @@ typedef struct {
 } irq_handler_info_t;
 
 typedef struct intc{
-    component_t parent;
+    hwcomp_t parent;
     intc_ops_t ops;
 
     irq_handler_info_t handlers[CONFIG_MAX_IRQS][CONFIG_MAX_HANDLERS_PER_IRQ];

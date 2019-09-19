@@ -1,5 +1,3 @@
-
-#define DEBUG
 #include <log.h>
 
 #include <board-types.h>

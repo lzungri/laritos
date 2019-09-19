@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <stdbool.h>
@@ -78,15 +77,13 @@ static int set_priority_filter(intc_t *intc, uint8_t lowest_prio) {
 }
 
 static irqret_t dispatch_irq(intc_t *intc) {
-    if (intc->parent.stype != COMP_SUBTYPE_GIC) {
-        return IRQ_RET_NOT_HANDLED;
-    }
-
     gic_t *gic = (gic_t *) intc;
 
     // Acknowledge the GIC (pending->active) and grab the irq id
     gic_cpu_int_ack_t ack = gic->cpu->int_ack;
     if (ack.b.id == GICV2_SPURIOUS_INT_ID) {
+        // No pending interrupt right now or the int was raised by a
+        // different interrupt controller
         return IRQ_RET_NOT_HANDLED;
     }
 
@@ -160,13 +157,14 @@ static int process(board_comp_t *comp) {
         error("Failed to initialize gic '%s'", comp->id);
         return -1;
     }
-    intc->parent.stype = COMP_SUBTYPE_GIC;
     intc->ops.dispatch_irq = dispatch_irq;
     intc->ops.set_irq_enable = set_irq_enable;
     intc->ops.set_irq_trigger_mode = set_irq_trigger_mode;
     intc->ops.set_irq_target_cpus = set_irq_target_cpus;
     intc->ops.set_irqs_enable_for_this_cpu = set_irqs_enable_for_this_cpu;
     intc->ops.set_priority_filter = set_priority_filter;
+
+    hwcomp_set_info((hwcomp_t *) intc, "GICv2", "ARM", "Generic Interrupt Controller version 2");
 
     board_get_ptr_attr_def(comp, "distaddr", (void **) &gic->dist, NULL);
     if (gic->dist == NULL) {
