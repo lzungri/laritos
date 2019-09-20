@@ -1,17 +1,17 @@
-#include <dstruct/circbuf.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 #include <utils/math.h>
+#include <dstruct/circbuf.h>
 
 // TODO Use spinlocks
-int circbuf_write(circbuf_t *cb, const void *buf, size_t n) {
+static int do_circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
     if (cb == NULL || buf == NULL) {
         return -1;
     }
 
     if (n < 0) {
-        n = 0;
+        return 0;
     }
 
     if (n > cb->size) {
@@ -36,17 +36,35 @@ int circbuf_write(circbuf_t *cb, const void *buf, size_t n) {
     return n;
 }
 
-int circbuf_read(circbuf_t *cb, void *buf, size_t n) {
+int circbuf_write(circbuf_t *cb, const void *buf, size_t n) {
+    return do_circbuf_write(cb, buf, n, false);
+}
+
+int circbuf_blocking_write(circbuf_t *cb, const void *buf, size_t n) {
+    // TODO Implement
+    return -1;
+}
+
+static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking) {
     if (n < 0 || cb == NULL || buf == NULL) {
         return -1;
     }
 
     if (n < 0) {
-        n = 0;
+        return 0;
     }
 
     if (n > cb->datalen) {
         n = cb->datalen;
+    }
+
+    if (blocking) {
+        // Wait until there is some data in the buffer
+        while (cb->datalen == 0) {
+            // TODO Replace with a nice synchro mechanism
+            // Any interrupt will wake the cpu up
+            asm("wfi");
+        }
     }
 
     // Read the right area
@@ -61,6 +79,15 @@ int circbuf_read(circbuf_t *cb, void *buf, size_t n) {
     return n;
 }
 
-int circbuf_peek(circbuf_t *cb, void *buf, size_t n) {
+int circbuf_read(circbuf_t *cb, void *buf, size_t n) {
+    return do_circbuf_read(cb, buf, n, false);
+}
 
+int circbuf_blocking_read(circbuf_t *cb, void *buf, size_t n) {
+    return do_circbuf_read(cb, buf, n, true);
+}
+
+int circbuf_peek(circbuf_t *cb, void *buf, size_t n) {
+    // TODO Implement
+    return -1;
 }

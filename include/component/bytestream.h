@@ -8,8 +8,7 @@ struct bytestream;
 typedef struct {
     int (*_put)(struct bytestream *bs, const void *buf, size_t n);
     int (*_transmit)(struct bytestream *bs, const void *buf, size_t n);
-    void (*_tx_ready)(struct bytestream *s);
-    void (*_tx_notready)(struct bytestream *s);
+    void (*_tx_ready_update)(struct bytestream *s, bool ready);
 } bytestream_ops_t;
 
 typedef struct bytestream {

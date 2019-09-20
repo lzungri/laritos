@@ -19,9 +19,8 @@ typedef struct stream {
 } stream_t;
 
 static inline int stream_component_init(stream_t *s, board_comp_t *bcomp, char *id,
-        int (*init)(component_t *c), int (*deinit)(component_t *c),
         int (*read)(stream_t *s, void *buf, size_t n), int (*write)(stream_t *s, const void *buf, size_t n)) {
-    if (component_init((component_t *) s, id, bcomp, COMP_TYPE_STREAM, init, deinit) < 0) {
+    if (component_init((component_t *) s, id, bcomp, COMP_TYPE_STREAM, NULL, NULL) < 0) {
         error("Failed to initialize '%s' stream component", bcomp->id);
         return -1;
     }

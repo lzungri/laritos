@@ -20,7 +20,7 @@ static int transmit(bytestream_t *s, const void *buf, size_t n) {
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
     if (pl011->fr.b.txff) {
-        uart->bs.ops._tx_notready(&uart->bs);
+        uart->bs.ops._tx_ready_update(&uart->bs, false);
         // Enable Transmit interrupt to detect FIFO space availability
         pl011->imsc.b.txim = 1;
         // No space left, return
@@ -73,7 +73,7 @@ static irqret_t irq_handler(irq_t irq, void *data) {
         pl011->imsc.b.txim = 0;
         // Clear tx interrupt
         pl011->icr.b.txim = 1;
-        uart->bs.ops._tx_ready(&uart->bs);
+        uart->bs.ops._tx_ready_update(&uart->bs, true);
     }
     return IRQ_RET_HANDLED;
 }
@@ -96,7 +96,7 @@ static int init(component_t *c) {
     // will get an int for every input char
     pl011->imsc.b.rxim = 1;
 
-    uart->bs.ops._tx_ready(&uart->bs);
+    uart->bs.ops._tx_ready_update(&uart->bs, true);
 
     return 0;
 }
