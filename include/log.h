@@ -39,6 +39,7 @@ int log_flush(void);
 } while(0)
 
 #define fatal(_msg, ...) fatal_sync(true, _msg, ##__VA_ARGS__)
+#define fatal_async(_msg, ...) fatal_sync(false, _msg, ##__VA_ARGS__)
 
 #if defined(CONFIG_LOG_LEVEL_ERROR) || defined(DEBUG)
 #define error_sync(_sync, _msg, ...) log(_sync, "E", _msg, ##__VA_ARGS__)
@@ -47,6 +48,7 @@ int log_flush(void);
 #endif
 
 #define error(_msg, ...) error_sync(true, _msg, ##__VA_ARGS__)
+#define error_async(_msg, ...) error_sync(false, _msg, ##__VA_ARGS__)
 
 #if defined(CONFIG_LOG_LEVEL_WARN) || defined(DEBUG)
 #define warn_sync(_sync, _msg, ...) log(_sync, "W", _msg, ##__VA_ARGS__)
@@ -55,6 +57,7 @@ int log_flush(void);
 #endif
 
 #define warn(_msg, ...) warn_sync(true, _msg, ##__VA_ARGS__)
+#define warn_async(_msg, ...) warn_sync(false, _msg, ##__VA_ARGS__)
 
 #if defined(CONFIG_LOG_LEVEL_INFO) || defined(DEBUG)
 #define info_sync(_sync, _msg, ...) log(_sync, "I", _msg, ##__VA_ARGS__)
@@ -63,6 +66,7 @@ int log_flush(void);
 #endif
 
 #define info(_msg, ...) info_sync(true, _msg, ##__VA_ARGS__)
+#define info_async(_msg, ...) info_sync(false, _msg, ##__VA_ARGS__)
 
 #if defined(CONFIG_LOG_LEVEL_DEBUG) || defined(DEBUG)
 #define debug_sync(_sync, _msg, ...) log(_sync, "D", _msg, ##__VA_ARGS__)
@@ -71,6 +75,7 @@ int log_flush(void);
 #endif
 
 #define debug(_msg, ...) debug_sync(true, _msg, ##__VA_ARGS__)
+#define debug_async(_msg, ...) debug_sync(false, _msg, ##__VA_ARGS__)
 
 #if defined(CONFIG_LOG_LEVEL_VERBOSE) || defined(DEBUG)
 #define verbose_sync(_sync, _msg, ...) log(_sync, "V", _msg, ##__VA_ARGS__)
@@ -79,3 +84,4 @@ int log_flush(void);
 #endif
 
 #define verbose(_msg, ...) verbose_sync(true, _msg, ##__VA_ARGS__)
+#define verbose_async(_msg, ...) verbose_sync(false, _msg, ##__VA_ARGS__)

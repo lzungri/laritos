@@ -91,7 +91,7 @@ static irqret_t dispatch_irq(intc_t *intc) {
 
     irqret_t ret = intc->ops.handle_irq(intc, (irq_t) ack.b.id);
     if (ret == IRQ_RET_ERROR) {
-        error_sync(false, "Error while handling irq %u", ack.b.id);
+        error_async("Error while handling irq %u", ack.b.id);
     }
 
     // Notify the GIC about the completion of the interrupt (active->inactive)
@@ -166,7 +166,7 @@ static int process(board_comp_t *comp) {
     intc->ops.set_irqs_enable_for_this_cpu = set_irqs_enable_for_this_cpu;
     intc->ops.set_priority_filter = set_priority_filter;
 
-    hwcomp_set_info((hwcomp_t *) intc, "GICv2", "ARM", "Generic Interrupt Controller version 2");
+    hwcomp_set_info((hwcomp_t *) intc, "GICv2", "ARM", "Generic Interrupt Controller v2");
 
     board_get_ptr_attr_def(comp, "distaddr", (void **) &gic->dist, NULL);
     if (gic->dist == NULL) {

@@ -151,10 +151,10 @@ void board_dump_board_info(board_info_t *bi) {
     int i;
     for (i = 0; i < bi->len; i++) {
         board_comp_t *c = &bi->components[i];
-        debug("\t%s (driver=%s)", c->id, c->driver);
+        debug("   %s (driver=%s)", c->id, c->driver);
         int j;
         for (j = 0; j < c->attrlen; j++) {
-            debug("\t\t%s: %s", c->attr[j].name, c->attr[j].value);
+            debug("      %s: %s", c->attr[j].name, c->attr[j].value);
         }
     }
 }

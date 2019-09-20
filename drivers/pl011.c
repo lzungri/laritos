@@ -42,7 +42,7 @@ static inline int put_into_bytestream(uart_t *uart) {
         // Only the last byte contains the actual data
         uint8_t data = (uint8_t) (pl011->dr & 0xff);
         if (uart->bs.ops._put(&uart->bs, &data, sizeof(data)) < sizeof(data)) {
-            error_sync(false, "Couldn't write '%c' into uart bytestream", data);
+            error_async("Couldn't write '%c' into uart bytestream", data);
             return -1;
         }
     }
@@ -55,9 +55,9 @@ static irqret_t irq_handler(irq_t irq, void *data) {
 
     // RECEIVE interrupt
     if (pl011->mis.b.rxim) {
-        verbose_sync(false, "UART data received irq");
+        verbose_async("UART data received irq");
         if (put_into_bytestream(uart) < 0) {
-            error_sync(false, "Couldn't read data");
+            error_async("Couldn't read data");
             return IRQ_RET_ERROR;
         }
         // Clear rx interrupt
@@ -66,7 +66,7 @@ static irqret_t irq_handler(irq_t irq, void *data) {
 
     // TRANSMIT interrupt
     if (pl011->mis.b.txim) {
-        verbose_sync(false, "UART data transmitted irq");
+        verbose_async("UART data transmitted irq");
 
         // Disable tx interrupt. It will be enabled when FIFO is full and we
         // want to wait until it becomes available for writing

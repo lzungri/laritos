@@ -45,7 +45,7 @@ int svc_handler(int sysno, const spregs_t *regs) {
 
 int undef_handler(int32_t pc, const spregs_t *regs) {
     message_delimiter();
-    error_sync(false, "Instruction 0x%08lx at 0x%08lx not recognized", *((uint32_t *) pc), pc);
+    error_async("Instruction 0x%08lx at 0x%08lx not recognized", *((uint32_t *) pc), pc);
     // cpsr is backed up in spsr during an exception
     dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
     message_delimiter();
@@ -57,7 +57,7 @@ int undef_handler(int32_t pc, const spregs_t *regs) {
 int prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spregs_t *regs) {
     message_delimiter();
     char *fs = fault_status_msg[ifsr.b.fs_h << 4 | ifsr.b.fs_l];
-    error_sync(false, "Instruction prefetch exception: %s", fs != NULL ? fs : "Unknown");
+    error_async("Instruction prefetch exception: %s", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
     dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
     message_delimiter();
@@ -69,7 +69,7 @@ int prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spregs_t *regs) {
 int abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
     message_delimiter();
     char *fs = fault_status_msg[dfsr.b.fs_h << 4 | dfsr.b.fs_l];
-    error_sync(false, "Data abort exception. Invalid %s access: %s", dfsr.b.wnr ? "write" : "read", fs != NULL ? fs : "Unknown");
+    error_async("Data abort exception. Invalid %s access: %s", dfsr.b.wnr ? "write" : "read", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
     dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
     message_delimiter();
@@ -83,15 +83,15 @@ int irq_handler(const spregs_t *regs) {
     component_t *c = NULL;
     for_each_component(c) {
         if (c->stype == COMP_SUBTYPE_INTC) {
-            verbose_sync(false, "Dispatching irq to int controller '%s'", c->id);
+            verbose_async("Dispatching irq to int controller '%s'", c->id);
             intc_t *intc = (intc_t *) c;
             irqret_t ret = intc->ops.dispatch_irq(intc);
-            verbose_sync(false, "Interrupt controller '%s' returned %s", c->id, get_irqret_str(ret));
+            verbose_async("Interrupt controller '%s' returned %s", c->id, get_irqret_str(ret));
             switch (ret) {
             case IRQ_RET_HANDLED:
                 return 0;
             case IRQ_RET_ERROR:
-                error_sync(false, "Error while dispatching irq with intc '%s'", c->id);
+                error_async("Error while dispatching irq with intc '%s'", c->id);
                 return -1;
             case IRQ_RET_NOT_HANDLED:
             case IRQ_RET_HANDLED_KEEP_PROCESSING:

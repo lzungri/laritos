@@ -48,12 +48,12 @@ static int bytestream_put(bytestream_t *bs, const void *buf, size_t n) {
 }
 
 static void bytestream_txready(bytestream_t *bs) {
-    verbose_sync(false, "Transmit line is ready");
+    verbose_async("Transmit line is ready");
     bs->txready = true;
 }
 
 static void bytestream_txnotready(bytestream_t *bs) {
-    verbose_sync(false, "Transmit line not ready");
+    verbose_async("Transmit line not ready");
     bs->txready = false;
 }
 

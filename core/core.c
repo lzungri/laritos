@@ -73,7 +73,7 @@ void kernel_entry(void)  {
     }
 
 #ifdef CONFIG_LOG_LEVEL_DEBUG
-    component_dump_registered_comps();
+    dump_registered_comps();
 #endif
 
     // TODO: Delete this

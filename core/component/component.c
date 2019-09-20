@@ -77,11 +77,3 @@ component_t *component_get_by_id(char *id) {
     }
     return NULL;
 }
-
-void component_dump_registered_comps(void) {
-    component_t *c;
-    debug("Components:");
-    for_each_component(c) {
-        debug("\t%s, type: %d", c->id, c->type);
-    }
-}
