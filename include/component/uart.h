@@ -7,7 +7,7 @@
 #include <component/component.h>
 #include <component/hwcomp.h>
 #include <component/intc.h>
-#include <component/stream.h>
+#include <component/bytestream.h>
 #include <dstruct/circbuf.h>
 #include <generated/autoconf.h>
 
@@ -24,7 +24,7 @@ typedef struct uart {
     uint8_t rxbuf[CONFIG_UART_BUF_SIZE];
     circbuf_t cb;
 
-    stream_t stream;
+    bytestream_t bs;
 } uart_t;
 
 int uart_init(component_t *c);
@@ -32,8 +32,8 @@ int uart_deinit(component_t *c);
 
 int uart_component_init(uart_t *uart, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),
-        int (*read)(stream_t *s, void *buf, size_t n), int (*write)(stream_t *s, const void *buf, size_t n));
+        int (*transmit)(bytestream_t *s, const void *buf, size_t n));
 int uart_component_register(uart_t *uart);
 int uart_component_init_and_register(uart_t *uart, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),
-        int (*read)(stream_t *s, void *buf, size_t n), int (*write)(stream_t *s, const void *buf, size_t n));
+        int (*transmit)(bytestream_t *s, const void *buf, size_t n));

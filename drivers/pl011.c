@@ -15,23 +15,15 @@ static uart_t uarts[MAX_UARTS];
 static uint8_t cur_uart;
 
 
-static int write(stream_t *s, const void *buf, size_t n) {
-    uart_t *uart = container_of(s, uart_t, stream);
+static int transmit(bytestream_t *s, const void *buf, size_t n) {
+    uart_t *uart = container_of(s, uart_t, bs);
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
-    if (s->blocking) {
-        // Wait until there is space in the FIFO
-        while (pl011->fr.b.txff) {
-            if (uart->intio) {
-                // Enable Transmit interrupt to detect FIFO space availability
-                pl011->imsc.b.txim = 1;
-                // TODO Replace with a nice synchro mechanism
-                // Any interrupt will wake the cpu up
-                asm("wfi");
-            }
-        }
-    } else if (pl011->fr.b.txff) {
-        // No space left and non-blocking io mode, return
+    if (pl011->fr.b.txff) {
+        uart->bs.ops._tx_notready(&uart->bs);
+        // Enable Transmit interrupt to detect FIFO space availability
+        pl011->imsc.b.txim = 1;
+        // No space left, return
         return 0;
     }
 
@@ -43,60 +35,28 @@ static int write(stream_t *s, const void *buf, size_t n) {
     return n;
 }
 
-static int readall_into_circbuf(uart_t *uart) {
+static inline int put_into_bytestream(uart_t *uart) {
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
     // Read as long as there is some data in the FIFO
     while (!pl011->fr.b.rxfe) {
         // Only the last byte contains the actual data
         uint8_t data = (uint8_t) (pl011->dr & 0xff);
-        if (circbuf_write(&uart->cb, &data, sizeof(data)) <= 0) {
-            error_sync(false, "Couldn't write '%c' into uart circular buffer", data);
+        if (uart->bs.ops._put(&uart->bs, &data, sizeof(data)) < sizeof(data)) {
+            error_sync(false, "Couldn't write '%c' into uart bytestream", data);
             return -1;
         }
     }
     return 0;
 }
 
-static int read(stream_t *s, void *buf, size_t n) {
-    uart_t *uart = container_of(s, uart_t, stream);
-    pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
-
-    // If using interrupt-driven io, read from circular buffer
-    if (uart->intio) {
-        if (s->blocking) {
-            // Wait until there is some data in the buffer
-            while (uart->cb.datalen == 0) {
-                // TODO Replace with a nice synchro mechanism
-                // Any interrupt (rx int is enabled) will wake the cpu up
-                asm("wfi");
-            }
-        }
-        return circbuf_read(&uart->cb, buf, n);
-    }
-
-    if (s->blocking) {
-        // Wait until there is some data in the FIFO
-        while (pl011->fr.b.rxfe);
-    }
-
-    int i;
-    uint8_t *data = buf;
-    // Read as long as there is some data in the FIFO and the amount read is < n
-    for (i = 0; i < n && !pl011->fr.b.rxfe; i++) {
-        // Only the last byte contains the actual data
-        data[i] = pl011->dr & 0xff;
-    }
-    return i;
-}
-
 static irqret_t irq_handler(irq_t irq, void *data) {
     uart_t *uart = (uart_t *) data;
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
-    // Check whether this is a receive int
+    // RECEIVE interrupt
     if (pl011->mis.b.rxim) {
         verbose_sync(false, "UART data received irq");
-        if (readall_into_circbuf(uart) < 0) {
+        if (put_into_bytestream(uart) < 0) {
             error_sync(false, "Couldn't read data");
             return IRQ_RET_ERROR;
         }
@@ -104,7 +64,7 @@ static irqret_t irq_handler(irq_t irq, void *data) {
         pl011->icr.b.rxim = 1;
     }
 
-    // Check whether this is a transmit int
+    // TRANSMIT interrupt
     if (pl011->mis.b.txim) {
         verbose_sync(false, "UART data transmitted irq");
 
@@ -113,6 +73,7 @@ static irqret_t irq_handler(irq_t irq, void *data) {
         pl011->imsc.b.txim = 0;
         // Clear tx interrupt
         pl011->icr.b.txim = 1;
+        uart->bs.ops._tx_ready(&uart->bs);
     }
     return IRQ_RET_HANDLED;
 }
@@ -131,11 +92,11 @@ static int init(component_t *c) {
     // Clear flagged interrupts
     pl011->icr.v = 0xffff;
 
-    if (uart->intio) {
-        // Enable Receive interrupt. Since FIFO is disabled by default, we
-        // will get an int for every input char
-        pl011->imsc.b.rxim = 1;
-    }
+    // Enable Receive interrupt. Since FIFO is disabled by default, we
+    // will get an int for every input char
+    pl011->imsc.b.rxim = 1;
+
+    uart->bs.ops._tx_ready(&uart->bs);
 
     return 0;
 }
@@ -158,7 +119,7 @@ static int process(board_comp_t *comp) {
     }
     uart_t *uart = &uarts[cur_uart];
     uart->irq_handler = irq_handler;
-    if (uart_component_init_and_register(uart, comp, init, deinit, read, write) < 0){
+    if (uart_component_init_and_register(uart, comp, init, deinit, transmit) < 0){
         error("Failed to register '%s'", comp->id);
         return -1;
     }

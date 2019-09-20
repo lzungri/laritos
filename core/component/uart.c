@@ -7,7 +7,7 @@
 #include <component/component.h>
 #include <component/hwcomp.h>
 #include <component/intc.h>
-#include <component/stream.h>
+#include <component/bytestream.h>
 #include <component/uart.h>
 #include <dstruct/circbuf.h>
 #include <utils/utils.h>
@@ -15,8 +15,6 @@
 
 int uart_init(component_t *c) {
     uart_t *uart = (uart_t *) c;
-
-    circbuf_init(&uart->cb, uart->rxbuf, ARRAYSIZE(uart->rxbuf));
 
     // Setup irq stuff if using interrupt-driven io
     if (uart->intio) {
@@ -31,14 +29,15 @@ int uart_init(component_t *c) {
 
 int uart_deinit(component_t *c) {
     uart_t *uart = (uart_t *) c;
-    return uart->intio ?
-            intc_disable_irq_with_handler(uart->intc, uart->irq, uart->irq_handler) :
-            0;
+    if (uart->intio) {
+        return intc_disable_irq_with_handler(uart->intc, uart->irq, uart->irq_handler);
+    }
+    return 0;
 }
 
 int uart_component_init(uart_t *uart, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),
-        int (*read)(stream_t *s, void *buf, size_t n), int (*write)(stream_t *s, const void *buf, size_t n)) {
+        int (*transmit)(bytestream_t *s, const void *buf, size_t n)) {
     if (hwcomp_init((hwcomp_t *) uart, bcomp->id, bcomp, COMP_SUBTYPE_UART, init, deinit) < 0) {
         error("Failed to initialize '%s' uart component", bcomp->id);
         return -1;
@@ -66,23 +65,23 @@ int uart_component_init(uart_t *uart, board_comp_t *bcomp,
         }
     }
 
-    // Initialize a stream device to read/write the uart device
-    if (stream_component_init((stream_t *) &uart->stream, bcomp, NULL, NULL, read, write) < 0) {
-        error("Failed to initialize uart stream");
+    // Initialize a bytestream device to read/write the uart device
+    if (bytestream_component_init(&uart->bs, bcomp, uart->rxbuf, sizeof(uart->rxbuf), transmit) < 0) {
+        error("Failed to initialize uart bytestream");
         return -1;
     }
     return 0;
 }
 
 int uart_component_register(uart_t *uart) {
-    if (component_register((component_t *) &uart->stream) < 0) {
-        error("Failed to register '%s' uart stream", uart->parent.parent.id);
+    if (component_register((component_t *) &uart->bs) < 0) {
+        error("Failed to register '%s' uart bytestream", uart->parent.parent.id);
         return -1;
     }
 
     if (component_register((component_t *) uart) < 0) {
         error("Failed to register '%s' uart component", uart->parent.parent.id);
-        component_unregister((component_t *) &uart->stream);
+        component_unregister((component_t *) &uart->bs);
         return -1;
     }
 
@@ -91,8 +90,8 @@ int uart_component_register(uart_t *uart) {
 
 int uart_component_init_and_register(uart_t *uart, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),
-        int (*read)(stream_t *s, void *buf, size_t n), int (*write)(stream_t *s, const void *buf, size_t n)) {
-    if (uart_component_init(uart, bcomp, init, deinit, read, write) < 0){
+        int (*transmit)(bytestream_t *s, const void *buf, size_t n)) {
+    if (uart_component_init(uart, bcomp, init, deinit, transmit) < 0){
         error("Failed to initialize '%s'", bcomp->id);
         return -1;
     }

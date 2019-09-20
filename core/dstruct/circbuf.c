@@ -4,8 +4,8 @@
 #include <string.h>
 #include <utils/math.h>
 
-
-int circbuf_write(circbuf_t *cb, void *buf, size_t n) {
+// TODO Use spinlocks
+int circbuf_write(circbuf_t *cb, const void *buf, size_t n) {
     if (cb == NULL || buf == NULL) {
         return -1;
     }
@@ -59,4 +59,8 @@ int circbuf_read(circbuf_t *cb, void *buf, size_t n) {
     cb->datalen -= n;
 
     return n;
+}
+
+int circbuf_peek(circbuf_t *cb, void *buf, size_t n) {
+
 }

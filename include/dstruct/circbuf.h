@@ -18,8 +18,9 @@ typedef struct {
         .head = 0, \
     }
 
-int circbuf_write(circbuf_t *cb, void *buf, size_t n);
+int circbuf_write(circbuf_t *cb, const void *buf, size_t n);
 int circbuf_read(circbuf_t *cb, void *buf, size_t n);
+int circbuf_peek(circbuf_t *cb, void *buf, size_t n);
 
 static inline int circbuf_init(circbuf_t *cb, void *buf, uint32_t size) {
     cb->buf = (uint8_t *) buf;
