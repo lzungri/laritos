@@ -9,7 +9,7 @@
 #include <generated/autoconf.h>
 
 static irqret_t handle_irq(intc_t *intc, irq_t irq) {
-    verbose("Handling irq %u with int controller '%s'", irq, intc->parent.id);
+    verbose("Handling irq %u with int controller '%s'", irq, ((component_t *) intc)->id);
 
     irqret_t ret = IRQ_RET_NOT_HANDLED;
     int i;
