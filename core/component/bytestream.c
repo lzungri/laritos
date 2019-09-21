@@ -10,48 +10,29 @@
 
 static int bytestream_read(stream_t *s, void *buf, size_t n) {
     bytestream_t *bs = (bytestream_t *) s;
-    if (s->blocking) {
-        return circbuf_blocking_read(&bs->cb, buf, n);
-    }
-    return circbuf_read(&bs->cb, buf, n);
+    return circbuf_read(&bs->rxcb, buf, n, s->blocking);
 }
 
 static int bytestream_write(struct stream *s, const void *buf, size_t n) {
     if (n == 0) {
         return 0;
     }
-
     bytestream_t *bs = (bytestream_t *) s;
-    if (!s->blocking) {
-        return bs->txready ? bs->ops._transmit(bs, buf, n) : 0;
+    int ret;
+    if ((ret = circbuf_write(&bs->txcb, buf, n, s->blocking)) <= 0) {
+        return ret;
     }
-
-    int sent = 0;
-    while (!bs->txready || (sent += bs->ops._transmit(bs, (uint8_t *) buf + sent, n - sent)) < n) {
-        if (!bs->txready) {
-            // TODO Replace with a nice synchro mechanism
-            // Any interrupt will wake the cpu up
-            asm("wfi");
-        }
-    }
-    return sent;
+    bs->ops.transmit_data(bs);
+    return ret;
 }
 
 static int bytestream_put(bytestream_t *bs, const void *buf, size_t n) {
-    return circbuf_write(&bs->cb, buf, n);
+    return circbuf_nb_write(&bs->rxcb, buf, n);
 }
 
-static void bytestream_txready_update(bytestream_t *bs, bool ready) {
-    verbose_async("Transmit line is %sready", ready ? "" : "not ");
-    bs->txready = ready;
-}
-
-static int bytestream_transmit_nop(bytestream_t *s, const void *buf, size_t n) {
-    return -1;
-}
-
-int bytestream_component_init(bytestream_t *bs, board_comp_t *bcomp, void *buf, size_t size,
-        int (*transmit)(bytestream_t *s, const void *buf, size_t n)) {
+int bytestream_component_init(bytestream_t *bs, board_comp_t *bcomp,
+        void *rxbuf, size_t rxsize, void *txbuf, size_t txsize,
+        int (*transmit_data)(bytestream_t *s)) {
     stream_t *s = (stream_t *) bs;
     char id[COMPONENT_MAX_ID_LEN] = { 0 };
     snprintf(id, sizeof(id), "bytestream@%s", bcomp->id);
@@ -62,8 +43,9 @@ int bytestream_component_init(bytestream_t *bs, board_comp_t *bcomp, void *buf, 
     ((component_t *) bs)->stype = COMP_SUBTYPE_BYTESTREAM;
 
     bs->ops._put = bytestream_put;
-    bs->ops._tx_ready_update = bytestream_txready_update;
-    bs->ops._transmit = transmit != NULL ? transmit : bytestream_transmit_nop;
+    bs->ops.transmit_data = transmit_data;
 
-    return circbuf_init(&bs->cb, buf, size);
+    circbuf_init(&bs->rxcb, rxbuf, rxsize);
+    circbuf_init(&bs->txcb, txbuf, txsize);
+    return 0;
 }

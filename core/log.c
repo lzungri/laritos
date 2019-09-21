@@ -36,7 +36,7 @@ int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
         goto full_buf;
     }
 
-    ret = circbuf_write(&logcb, lineb, nchars + nchars2);
+    ret = circbuf_nb_write(&logcb, lineb, nchars + nchars2);
     if (sync) {
         log_flush();
     }
@@ -44,7 +44,7 @@ int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
 
 full_buf:
     lineb[sizeof(lineb) - 1] = '\n';
-    ret = circbuf_write(&logcb, lineb, sizeof(lineb));
+    ret = circbuf_nb_write(&logcb, lineb, sizeof(lineb));
     if (sync) {
         log_flush();
     }
@@ -68,7 +68,7 @@ int log_flush(void) {
 
     int bread = 0;
     char buf[CONFIG_LOG_MAX_LINE_SIZE * 5] = { 0 };
-    while ((bread = circbuf_read(&logcb, buf, sizeof(buf))) > 0) {
+    while ((bread = circbuf_nb_read(&logcb, buf, sizeof(buf))) > 0) {
         int i;
         for (i = 0; i < nloggers; i++) {
             stream_t *s = loggers[i].transport;

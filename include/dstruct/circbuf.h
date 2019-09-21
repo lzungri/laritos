@@ -18,10 +18,10 @@ typedef struct {
         .head = 0, \
     }
 
-int circbuf_write(circbuf_t *cb, const void *buf, size_t n);
-int circbuf_blocking_write(circbuf_t *cb, const void *buf, size_t n);
-int circbuf_read(circbuf_t *cb, void *buf, size_t n);
-int circbuf_blocking_read(circbuf_t *cb, void *buf, size_t n);
+int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking);
+int circbuf_nb_write(circbuf_t *cb, const void *buf, size_t n);
+int circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking);
+int circbuf_nb_read(circbuf_t *cb, void *buf, size_t n);
 int circbuf_peek(circbuf_t *cb, void *buf, size_t n);
 
 static inline int circbuf_init(circbuf_t *cb, void *buf, uint32_t size) {

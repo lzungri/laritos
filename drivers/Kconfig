@@ -2,9 +2,13 @@ menu "Drivers"
 
 menu "UART"
 
-config UART_BUF_SIZE
-    int "Buffer size for holding received data for uart devices (in bytes)"
-    default 32
+config UART_RXBUF_SIZE
+    int "UART buffer size for holding received data (in bytes)"
+    default 512
+
+config UART_TXBUF_SIZE
+    int "UART buffer size for holding data to be transmitted (in bytes)"
+    default 1024
 
 endmenu
 

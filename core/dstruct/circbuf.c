@@ -5,7 +5,7 @@
 #include <dstruct/circbuf.h>
 
 // TODO Use spinlocks
-static int do_circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
+int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
     if (cb == NULL || buf == NULL) {
         return -1;
     }
@@ -16,6 +16,13 @@ static int do_circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool block
 
     if (n > cb->size) {
         n = cb->size;
+    }
+
+    if (blocking) {
+        while (n > cb->size - cb->datalen) {
+            // TODO Implement some sync mechanism here
+            asm("wfi");
+        }
     }
 
     uint32_t windex = (cb->head + cb->datalen) % cb->size;
@@ -36,16 +43,11 @@ static int do_circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool block
     return n;
 }
 
-int circbuf_write(circbuf_t *cb, const void *buf, size_t n) {
-    return do_circbuf_write(cb, buf, n, false);
+int circbuf_nb_write(circbuf_t *cb, const void *buf, size_t n) {
+    return circbuf_write(cb, buf, n, false);
 }
 
-int circbuf_blocking_write(circbuf_t *cb, const void *buf, size_t n) {
-    // TODO Implement
-    return -1;
-}
-
-static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking) {
+int circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking) {
     if (n < 0 || cb == NULL || buf == NULL) {
         return -1;
     }
@@ -79,12 +81,8 @@ static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking) {
     return n;
 }
 
-int circbuf_read(circbuf_t *cb, void *buf, size_t n) {
-    return do_circbuf_read(cb, buf, n, false);
-}
-
-int circbuf_blocking_read(circbuf_t *cb, void *buf, size_t n) {
-    return do_circbuf_read(cb, buf, n, true);
+int circbuf_nb_read(circbuf_t *cb, void *buf, size_t n) {
+    return circbuf_read(cb, buf, n, false);
 }
 
 int circbuf_peek(circbuf_t *cb, void *buf, size_t n) {

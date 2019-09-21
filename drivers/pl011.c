@@ -15,24 +15,25 @@ static uart_t uarts[MAX_UARTS];
 static uint8_t cur_uart;
 
 
-static int transmit(bytestream_t *s, const void *buf, size_t n) {
-    uart_t *uart = container_of(s, uart_t, bs);
+static int transmit_data(bytestream_t *bs) {
+    uart_t *uart = container_of(bs, uart_t, bs);
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
     if (pl011->fr.b.txff) {
-        uart->bs.ops._tx_ready_update(&uart->bs, false);
         // Enable Transmit interrupt to detect FIFO space availability
         pl011->imsc.b.txim = 1;
         // No space left, return
         return 0;
     }
 
-    const uint8_t *data = buf;
-    int i;
-    for (i = 0; i < n; i++) {
-        pl011->dr = data[i];
+    uint8_t data;
+    uint32_t sent = 0;
+    // TODO Implement this using peek and check for txff flags as well
+    while (circbuf_nb_read(&bs->txcb, &data, sizeof(data)) > 0) {
+        pl011->dr = data;
+        sent += sizeof(data);
     }
-    return n;
+    return sent;
 }
 
 static inline int put_into_bytestream(uart_t *uart) {
@@ -73,7 +74,9 @@ static irqret_t irq_handler(irq_t irq, void *data) {
         pl011->imsc.b.txim = 0;
         // Clear tx interrupt
         pl011->icr.b.txim = 1;
-        uart->bs.ops._tx_ready_update(&uart->bs, true);
+
+        // Retry sending the data
+        transmit_data(&uart->bs);
     }
     return IRQ_RET_HANDLED;
 }
@@ -96,8 +99,6 @@ static int init(component_t *c) {
     // will get an int for every input char
     pl011->imsc.b.rxim = 1;
 
-    uart->bs.ops._tx_ready_update(&uart->bs, true);
-
     return 0;
 }
 
@@ -119,7 +120,7 @@ static int process(board_comp_t *comp) {
     }
     uart_t *uart = &uarts[cur_uart];
     uart->irq_handler = irq_handler;
-    if (uart_component_init_and_register(uart, comp, init, deinit, transmit) < 0){
+    if (uart_component_init_and_register(uart, comp, init, deinit, transmit_data) < 0){
         error("Failed to register '%s'", comp->id);
         return -1;
     }
