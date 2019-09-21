@@ -18,14 +18,14 @@ static inline void dump_cur_state(void) {
 
 static inline void dump_registered_comps(void) {
     component_t *c;
-    debug("Components:");
+    log(false, "I", "Components:");
     for_each_component(c) {
-        debug("   %s, type: %d, subtype: %d", c->id, c->type, c->stype);
+        log(false, "I", "   %s, type: %d, subtype: %d", c->id, c->type, c->stype);
         if (c->type == COMP_TYPE_HW) {
             hwcomp_t *hw = (hwcomp_t *) c;
-            debug("      product: %s", hw->product);
-            debug("      vendor: %s", hw->vendor);
-            debug("      description: %s", hw->description);
+            log(false, "I", "      product: %s", hw->product);
+            log(false, "I", "      vendor: %s", hw->vendor);
+            log(false, "I", "      description: %s", hw->description);
         }
     }
 }
