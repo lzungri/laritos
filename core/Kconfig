@@ -1,22 +1,8 @@
 menu "Kernel"
 
-menu "Memory"
-
-
-
-endmenu
-
-menu "Components"
-
-config MAX_COMPONENTS
-    int "Max number of components"
-    default 32
-
-config HWCOMP_HWINFO_SIZE
-    int "Max size for each hardware info field"
-    default 32
-
-endmenu
+source "core/component/Kconfig"
+source "core/syscall/Kconfig"
+source "core/libc/Kconfig"
 
 menu "Logging"
 
@@ -57,14 +43,6 @@ config LOG_BUFSIZE_BYTES
 config LOG_FILE_AND_LINEN
     bool "Log file path and line number"
     default n
-
-endmenu
-
-menu "System calls"
-
-config SYSCALL_MAX_ARGS
-    int "Max number of arguments allowed for a system call"
-    default 6
 
 endmenu
 
