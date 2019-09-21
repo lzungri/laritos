@@ -72,7 +72,7 @@ int log_flush(void) {
         int i;
         for (i = 0; i < nloggers; i++) {
             stream_t *s = loggers[i].transport;
-            s->ops.write(s, buf, bread);
+            s->ops.write(s, buf, bread, false);
         }
     }
     return 0;

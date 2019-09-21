@@ -18,7 +18,7 @@ static void user_shell(void) {
             stream_t *s = ((inputdev_t *) c)->transport;
             char buf[32];
             int bread = 0;
-            if ((bread = s->ops.read(s, buf, sizeof(buf) - 1)) > 0) {
+            if ((bread = s->ops.read(s, buf, sizeof(buf) - 1, true)) > 0) {
                 buf[bread] = '\0';
                 info("[%s]: %s", c->id, buf);
 

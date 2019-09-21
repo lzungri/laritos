@@ -8,18 +8,18 @@
 #include <component/stream.h>
 #include <component/bytestream.h>
 
-static int bytestream_read(stream_t *s, void *buf, size_t n) {
+static int bytestream_read(stream_t *s, void *buf, size_t n, bool blocking) {
     bytestream_t *bs = (bytestream_t *) s;
-    return circbuf_read(&bs->rxcb, buf, n, s->blocking);
+    return circbuf_read(&bs->rxcb, buf, n, blocking);
 }
 
-static int bytestream_write(struct stream *s, const void *buf, size_t n) {
+static int bytestream_write(struct stream *s, const void *buf, size_t n, bool blocking) {
     if (n == 0) {
         return 0;
     }
     bytestream_t *bs = (bytestream_t *) s;
     int ret;
-    if ((ret = circbuf_write(&bs->txcb, buf, n, s->blocking)) <= 0) {
+    if ((ret = circbuf_write(&bs->txcb, buf, n, blocking)) <= 0) {
         return ret;
     }
     bs->ops.transmit_data(bs);
