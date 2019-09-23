@@ -19,16 +19,14 @@ int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
     }
 
     ctx_t ctx;
+    spinlock_ctx_save(&cb->lock, &ctx);
     if (blocking) {
-        spinlock_ctx_save(&cb->lock, &ctx);
         while (n > cb->size - cb->datalen) {
             spinlock_ctx_restore(&cb->lock, &ctx);
             // TODO Implement a better sync mechanism here
             asm("wfi");
             spinlock_ctx_save(&cb->lock, &ctx);
         }
-    } else {
-        spinlock_ctx_save(&cb->lock, &ctx);
     }
 
     uint32_t windex = (cb->head + cb->datalen) % cb->size;
@@ -64,13 +62,9 @@ static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking, bo
         return 0;
     }
 
-    if (n > cb->datalen) {
-        n = cb->datalen;
-    }
-
     ctx_t ctx;
+    spinlock_ctx_save(&cb->lock, &ctx);
     if (blocking) {
-        spinlock_ctx_save(&cb->lock, &ctx);
         // Wait until there is some data in the buffer
         while (cb->datalen == 0) {
             spinlock_ctx_restore(&cb->lock, &ctx);
@@ -79,8 +73,10 @@ static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking, bo
             asm("wfi");
             spinlock_ctx_save(&cb->lock, &ctx);
         }
-    } else {
-        spinlock_ctx_save(&cb->lock, &ctx);
+    }
+
+    if (n > cb->datalen) {
+        n = cb->datalen;
     }
 
     // Read the right area
