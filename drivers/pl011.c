@@ -28,10 +28,16 @@ static int transmit_data(bytestream_t *bs) {
 
     uint8_t data;
     uint32_t sent = 0;
-    // TODO Implement this using peek and check for txff flags as well
-    while (circbuf_nb_read(&bs->txcb, &data, sizeof(data)) > 0) {
+    while (circbuf_peek(&bs->txcb, &data, sizeof(data)) > 0) {
+        if (pl011->fr.b.txff) {
+            // Enable Transmit interrupt to detect FIFO space availability
+            pl011->imsc.b.txim = 1;
+            circbuf_peek_complete(&bs->txcb, false);
+            break;
+        }
         pl011->dr = data;
         sent += sizeof(data);
+        circbuf_peek_complete(&bs->txcb, true);
     }
     return sent;
 }

@@ -1,10 +1,10 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <sync/sync.h>
 #include <utils/math.h>
 #include <dstruct/circbuf.h>
 
-// TODO Use spinlocks
 int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
     if (cb == NULL || buf == NULL) {
         return -1;
@@ -18,11 +18,17 @@ int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
         n = cb->size;
     }
 
+    ctx_t ctx;
     if (blocking) {
+        spinlock_ctx_save(&cb->lock, &ctx);
         while (n > cb->size - cb->datalen) {
-            // TODO Implement some sync mechanism here
+            spinlock_ctx_restore(&cb->lock, &ctx);
+            // TODO Implement a better sync mechanism here
             asm("wfi");
+            spinlock_ctx_save(&cb->lock, &ctx);
         }
+    } else {
+        spinlock_ctx_save(&cb->lock, &ctx);
     }
 
     uint32_t windex = (cb->head + cb->datalen) % cb->size;
@@ -40,6 +46,8 @@ int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
         cb->datalen = cb->size;
     }
 
+    spinlock_ctx_restore(&cb->lock, &ctx);
+
     return n;
 }
 
@@ -47,7 +55,7 @@ int circbuf_nb_write(circbuf_t *cb, const void *buf, size_t n) {
     return circbuf_write(cb, buf, n, false);
 }
 
-int circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking) {
+static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking, bool peek) {
     if (n < 0 || cb == NULL || buf == NULL) {
         return -1;
     }
@@ -60,13 +68,19 @@ int circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking) {
         n = cb->datalen;
     }
 
+    ctx_t ctx;
     if (blocking) {
+        spinlock_ctx_save(&cb->lock, &ctx);
         // Wait until there is some data in the buffer
         while (cb->datalen == 0) {
+            spinlock_ctx_restore(&cb->lock, &ctx);
             // TODO Replace with a nice synchro mechanism
             // Any interrupt will wake the cpu up
             asm("wfi");
+            spinlock_ctx_save(&cb->lock, &ctx);
         }
+    } else {
+        spinlock_ctx_save(&cb->lock, &ctx);
     }
 
     // Read the right area
@@ -75,17 +89,35 @@ int circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking) {
     // Read the left area
     memcpy((char *) buf + nbytes_right, cb->buf, n - nbytes_right);
 
-    cb->head = (cb->head + n) % cb->size;
-    cb->datalen -= n;
+    if (peek && n > 0) {
+        cb->peek_ctx = ctx;
+        cb->peek_size = n;
+    } else {
+        cb->head = (cb->head + n) % cb->size;
+        cb->datalen -= n;
+        spinlock_ctx_restore(&cb->lock, &ctx);
+    }
 
     return n;
 }
 
+int circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking) {
+    return do_circbuf_read(cb, buf, n, blocking, false);
+}
+
 int circbuf_nb_read(circbuf_t *cb, void *buf, size_t n) {
-    return circbuf_read(cb, buf, n, false);
+    return do_circbuf_read(cb, buf, n, false, false);
 }
 
 int circbuf_peek(circbuf_t *cb, void *buf, size_t n) {
-    // TODO Implement
-    return -1;
+    return do_circbuf_read(cb, buf, n, false, true);
+}
+
+int circbuf_peek_complete(circbuf_t *cb, bool commit) {
+    if (commit) {
+        cb->head = (cb->head + cb->peek_size) % cb->size;
+        cb->datalen -= cb->peek_size;
+    }
+    spinlock_ctx_restore(&cb->lock, &cb->peek_ctx);
+    return 0;
 }
