@@ -65,6 +65,7 @@ static irqret_t irq_handler(irq_t irq, void *data) {
         verbose_async("UART data received irq");
         if (put_into_bytestream(uart) < 0) {
             error_async("Couldn't read data");
+            pl011->icr.b.rxim = 1;
             return IRQ_RET_ERROR;
         }
         // Clear rx interrupt
