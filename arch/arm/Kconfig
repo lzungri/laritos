@@ -11,9 +11,11 @@ config SYS_CPU_CORTEX_A15
 
 config SYS_CPU_CORTEX_A9
     bool "cortex-a9"
+    select ARMV7_A
 
 config SYS_CPU_GENERIC_ARMV7A
     bool "generic-armv7a"
+    select ARMV7_A
 
 endchoice
 

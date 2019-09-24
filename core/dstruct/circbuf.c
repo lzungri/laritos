@@ -1,9 +1,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include <sync/sync.h>
 #include <utils/math.h>
 #include <dstruct/circbuf.h>
+#include <sync/spinlock.h>
 
 int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
     if (cb == NULL || buf == NULL) {
@@ -18,7 +18,7 @@ int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
         n = cb->size;
     }
 
-    ctx_t ctx;
+    spinctx_t ctx;
     spinlock_ctx_save(&cb->lock, &ctx);
     if (blocking) {
         while (n > cb->size - cb->datalen) {
@@ -62,7 +62,7 @@ static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking, bo
         return 0;
     }
 
-    ctx_t ctx;
+    spinctx_t ctx;
     spinlock_ctx_save(&cb->lock, &ctx);
     if (blocking) {
         // Wait until there is some data in the buffer

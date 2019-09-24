@@ -4,11 +4,6 @@
 # This file is included by the global makefile so that you can add your own
 # architecture-specific flags and dependencies.
 #
-# This file is subject to the terms and conditions of the GNU General Public
-# License.  See the file "COPYING" in the main directory of this archive
-# for more details.
-#
-# Copyright (C) 1995-2001 by Russell King
 
 LDFLAGS_laritos	:= --no-undefined -X --pic-veneer
 
@@ -46,4 +41,16 @@ KBUILD_AFLAGS	+=$(CFLAGS_ABI) $(AFLAGS_ISA) $(arch-y) -msoft-float
 
 CHECKFLAGS	+= -D__arm__
 
-core-y += arch/arm/cpu/
+# Select target cpu
+cpu-$(CONFIG_SYS_CPU_GENERIC_ARMV7A) = armv7-a
+cpu-$(CONFIG_SYS_CPU_CORTEX_A9) = cortex-a9
+cpu-$(CONFIG_SYS_CPU_CORTEX_A15) = cortex-a15
+KBUILD_CFLAGS += -I$(srctree)/arch/arm/cpu/$(cpu-y)/include
+
+# Select target cpu family
+cpu-family-$(CONFIG_ARMV7_A) = armv7-a
+cpu-family-$(CONFIG_ARMV8_A) = armv8-a
+KBUILD_CFLAGS += -I$(srctree)/arch/arm/cpu/$(cpu-family-y)/include
+
+# Add cpu dir to the core builder
+core-y += arch/arm/cpu/$(cpu-y)/

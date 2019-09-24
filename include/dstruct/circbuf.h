@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <sync/sync.h>
+#include <sync/spinlock.h>
 
 typedef struct {
     uint8_t *buf;
@@ -11,7 +11,7 @@ typedef struct {
     uint32_t head;
     uint32_t datalen;
     spinlock_t lock;
-    ctx_t peek_ctx;
+    spinctx_t peek_ctx;
     size_t peek_size;
 } circbuf_t;
 
