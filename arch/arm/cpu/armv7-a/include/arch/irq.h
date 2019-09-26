@@ -1,6 +1,6 @@
 #pragma once
 
-#include <arm.h>
+#include <arch/cpu.h>
 
 typedef psr_t irqctx_t;
 

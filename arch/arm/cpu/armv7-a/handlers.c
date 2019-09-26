@@ -1,5 +1,4 @@
 #include <log.h>
-#include <arm.h>
 #include <printf.h>
 #include <core.h>
 #include <component/component.h>
@@ -10,6 +9,8 @@
 #include <utils/utils.h>
 #include <utils/debug.h>
 #include <arch/debug.h>
+#include <arch/cpu.h>
+#include <arch/stack.h>
 
 /**
  * Fault messages according to the armv7-a ARM document

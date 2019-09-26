@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <arm.h>
+#include <arch/cpu.h>
 
 /**
  * @return: Processor mode string for the given <mode>
