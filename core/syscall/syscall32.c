@@ -1,3 +1,4 @@
+#define DEBUG
 #include <log.h>
 #include <syscall/syscall32.h>
 

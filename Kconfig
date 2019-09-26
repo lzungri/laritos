@@ -1,8 +1,3 @@
-# SPDX-License-Identifier: GPL-2.0
-#
-# For a description of the syntax of this configuration file,
-# see Documentation/kbuild/kconfig-language.rst.
-#
 mainmenu "laritOS/$(ARCH) $(KERNELVERSION) Configuration"
 
 source "scripts/Kconfig.include"

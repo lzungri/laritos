@@ -1,15 +1,6 @@
 menu "Drivers"
 
-menu "UART"
-
-config UART_RXBUF_SIZE
-    int "UART buffer size for holding received data (in bytes)"
-    default 512
-
-config UART_TXBUF_SIZE
-    int "UART buffer size for holding data to be transmitted (in bytes)"
-    default 1024
-
-endmenu
+source "drivers/intc/Kconfig"
+source "drivers/uart/Kconfig"
 
 endmenu

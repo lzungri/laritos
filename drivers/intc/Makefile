@@ -1,0 +1,1 @@
+obj-y += gicv2.o
