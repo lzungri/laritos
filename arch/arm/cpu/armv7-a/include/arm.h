@@ -244,6 +244,10 @@ static inline const psr_t get_cpsr(void) {
     return cpsr;
 }
 
+static inline void set_cpsr(psr_t *psr) {
+    asm("msr cpsr, %0" : : "r" (psr->v));
+}
+
 /**
  * Note: const because changing this value will have no effect on the actual register
  *
