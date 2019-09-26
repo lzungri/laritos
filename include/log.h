@@ -30,6 +30,8 @@ int log_flush(void);
 #define log(_sync, _level, _msg, ...) __add_log_msg(_sync, _level, KBUILD_MODNAME, _msg "\n", ##__VA_ARGS__)
 #endif
 
+#define log_always(_msg, ...) log(true, "I", _msg, ##__VA_ARGS__)
+#define log_always_async(_msg, ...) log(false, "I", _msg, ##__VA_ARGS__)
 
 #define fatal_sync(_sync, _msg, ...)  do { \
     log(_sync, "F", _msg, ##__VA_ARGS__); \

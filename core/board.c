@@ -147,14 +147,14 @@ syntax_error:
 }
 
 void board_dump_board_info(board_info_t *bi) {
-    debug("%s board information:", BOARD.name);
+    log_always("%s board information:", BOARD.name);
     int i;
     for (i = 0; i < bi->len; i++) {
         board_comp_t *c = &bi->components[i];
-        debug("   %s (driver=%s)", c->id, c->driver);
+        log_always("   %s (driver=%s)", c->id, c->driver);
         int j;
         for (j = 0; j < c->attrlen; j++) {
-            debug("      %s: %s", c->attr[j].name, c->attr[j].value);
+            log_always("      %s: %s", c->attr[j].name, c->attr[j].value);
         }
     }
 }

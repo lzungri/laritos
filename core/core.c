@@ -8,10 +8,9 @@
 #include <board.h>
 #include <utils/debug.h>
 
-
 laritos_t _laritos;
 
-static void user_shell(void) {
+static void shell(void) {
     while (true) {
         component_t *c;
         for_each_filtered_component(c, c->type == COMP_TYPE_INPUTDEV) {
@@ -32,6 +31,7 @@ static void user_shell(void) {
                     asm("mov r4, #5");
                     asm("mov r5, #6");
                     asm("mov r6, #7");
+                    dump_cur_state();
                     asm("svc 1");
                     break;
                 case 'r':
@@ -57,7 +57,7 @@ static void user_shell(void) {
 }
 
 void kernel_entry(void)  {
-    log(true, "I", "-- laritOS " UTS_RELEASE " --");
+    log_always("-- laritOS " UTS_RELEASE " --");
     info("Initializing kernel");
 
     if (board_parse_and_initialize(&_laritos.bi) < 0) {
@@ -76,10 +76,5 @@ void kernel_entry(void)  {
     dump_registered_comps();
 #endif
 
-    // TODO: Delete this
-    // User mode
-    asm("msr cpsr_c, #0b01010000");
-    asm("movw sp, #0");
-    asm("movt sp, #0x4050");
-    user_shell();
+    shell();
 }
