@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <utils/utils.h>
+#include <arch/irq.h>
 
 typedef enum {
     IRQ_TRIGGER_EDGE_LOW_HIGH = 1,
@@ -32,4 +33,20 @@ static inline const char *get_irqret_str(irqret_t ret) {
     };
     ret += 1;
     return ret < ARRAYSIZE(str) && ret >= 0 && str[ret] != NULL ? str[ret] : "???";
+}
+
+static inline int disable_local_irq(void) {
+    return arch_disable_local_irq();
+}
+
+static inline int enable_local_irq(void) {
+    return arch_enable_local_irq();
+}
+
+static inline int disable_local_irq_save_ctx(irqctx_t *ctx) {
+    return arch_disable_local_irq_save_ctx(ctx);
+}
+
+static inline int local_irq_restore_ctx(irqctx_t *ctx) {
+    return arch_local_irq_restore_ctx(ctx);
 }
