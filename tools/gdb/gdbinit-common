@@ -196,29 +196,29 @@ define flags
     # The A bit is set to 1 automatically. It is used to disable imprecise data aborts. 
     # It might not be writable in the Nonsecure state if the AW bit in the SCR register is reset.
     if (($cpsr >> 8) & 1)
-        printf "A"
+        printf "."
         set $_a_flag = 1
     else
-        printf "."
+        printf "A"
         set $_a_flag = 0
     end
     # IRQ disable bit (I), bit 7
     # When the I bit is set to 1, IRQ interrupts are disabled.
     if (($cpsr >> 7) & 1)
-        printf "I"
+        printf "."
         set $_i_flag = 1
     else
-        printf "."
+        printf "I"
         set $_i_flag = 0
     end
     # FIQ disable bit (F), bit 6
     # When the F bit is set to 1, FIQ interrupts are disabled. 
     # FIQ can be nonmaskable in the Nonsecure state if the FW bit in SCR register is reset.
     if (($cpsr >> 6) & 1)
-        printf "F"
+        printf "."
         set $_f_flag = 1
     else
-        printf "."
+        printf "F"
         set $_f_flag = 0
     end
     # Thumb state bit (F), bit 5
@@ -231,7 +231,42 @@ define flags
         set $_t_flag = 0
     end
     # TODO: GE bit ?
-    printf ")\n"
+    printf ") "
+
+    set $mode = $cpsr & 0xf
+    set $modestr = "???"
+    if ($mode == 0)
+        set $modestr = "usr"
+    else
+        if ($mode == 1)
+            set $modestr = "fiq"
+        else
+            if ($mode == 2)
+                set $modestr = "irq"
+            else
+                if ($mode == 3)
+                    set $modestr = "svc"
+                else
+                    if ($mode == 6)
+                        set $modestr = "mon"
+                    else
+                        if ($mode == 7)
+                            set $modestr = "abt"
+                        else
+                            if ($mode == 10)
+                                set $modestr = "hyp"
+                            else
+                                if ($mode == 11)
+                                    set $modestr = "und"
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    printf "%c%c%c mode\n", $modestr[0], $modestr[1], $modestr[2]
 end
 document flags
 Syntax: flags
