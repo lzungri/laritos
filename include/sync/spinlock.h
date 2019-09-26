@@ -1,24 +1,31 @@
 #pragma once
 
 #include <stdint.h>
+#include <irq.h>
+#include <sync/cmpxchg.h>
 #include <arch/spinlock.h>
 
-// TODO: Implement
-typedef uint16_t spinlock_t;
-
-// TODO Implement this using real sync mechanism!
 static inline int spinlock_init(spinlock_t *lock) {
-    *lock = 0;
+    arch_spinlock_set(lock, 0);
     return 0;
 }
 
-static inline int spinlock_ctx_save(spinlock_t *lock, spinctx_t *ctx) {
-    while(*lock != 0);
-    *lock = 1;
-    return *lock;
+static inline int spinlock_acquire(spinlock_t *lock, irqctx_t *ctx) {
+    // Only disable irq locally. If the irq is handled by another processor,
+    // it doesn't block the cur processor holding the lock, thus it can
+    // eventually release it
+    if (disable_local_irq_save_ctx(ctx) < 0) {
+        return -1;
+    }
+    if (arch_spinlock_acquire(lock) < 0) {
+        local_irq_restore_ctx(ctx);
+        return -1;
+    }
+    return 0;
 }
 
-static inline int spinlock_ctx_restore(spinlock_t *lock, spinctx_t *ctx) {
-    *lock = 0;
-    return *lock;
+static inline int spinlock_release(spinlock_t *lock, irqctx_t *ctx) {
+    arch_spinlock_release(lock);
+    return local_irq_restore_ctx(ctx);
 }
+

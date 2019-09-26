@@ -11,7 +11,7 @@ typedef struct {
     uint32_t head;
     uint32_t datalen;
     spinlock_t lock;
-    spinctx_t peek_ctx;
+    irqctx_t peek_ctx;
     size_t peek_size;
 } circbuf_t;
 

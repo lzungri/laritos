@@ -18,14 +18,14 @@ int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
         n = cb->size;
     }
 
-    spinctx_t ctx;
-    spinlock_ctx_save(&cb->lock, &ctx);
+    irqctx_t ctx;
+    spinlock_acquire(&cb->lock, &ctx);
     if (blocking) {
         while (n > cb->size - cb->datalen) {
-            spinlock_ctx_restore(&cb->lock, &ctx);
+            spinlock_release(&cb->lock, &ctx);
             // TODO Implement a better sync mechanism here
             asm("wfi");
-            spinlock_ctx_save(&cb->lock, &ctx);
+            spinlock_acquire(&cb->lock, &ctx);
         }
     }
 
@@ -44,7 +44,7 @@ int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
         cb->datalen = cb->size;
     }
 
-    spinlock_ctx_restore(&cb->lock, &ctx);
+    spinlock_release(&cb->lock, &ctx);
 
     return n;
 }
@@ -62,16 +62,16 @@ static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking, bo
         return 0;
     }
 
-    spinctx_t ctx;
-    spinlock_ctx_save(&cb->lock, &ctx);
+    irqctx_t ctx;
+    spinlock_acquire(&cb->lock, &ctx);
     if (blocking) {
         // Wait until there is some data in the buffer
         while (cb->datalen == 0) {
-            spinlock_ctx_restore(&cb->lock, &ctx);
+            spinlock_release(&cb->lock, &ctx);
             // TODO Replace with a nice synchro mechanism
             // Any interrupt will wake the cpu up
             asm("wfi");
-            spinlock_ctx_save(&cb->lock, &ctx);
+            spinlock_acquire(&cb->lock, &ctx);
         }
     }
 
@@ -91,7 +91,7 @@ static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking, bo
     } else {
         cb->head = (cb->head + n) % cb->size;
         cb->datalen -= n;
-        spinlock_ctx_restore(&cb->lock, &ctx);
+        spinlock_release(&cb->lock, &ctx);
     }
 
     return n;
@@ -114,6 +114,6 @@ int circbuf_peek_complete(circbuf_t *cb, bool commit) {
         cb->head = (cb->head + cb->peek_size) % cb->size;
         cb->datalen -= cb->peek_size;
     }
-    spinlock_ctx_restore(&cb->lock, &cb->peek_ctx);
+    spinlock_release(&cb->lock, &cb->peek_ctx);
     return 0;
 }
