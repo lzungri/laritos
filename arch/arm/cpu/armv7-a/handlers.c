@@ -6,10 +6,10 @@
 #include <component/intc.h>
 #include <irq.h>
 #include <generated/autoconf.h>
-#include "include/debug.h"
 #include <syscall/syscall.h>
 #include <utils/utils.h>
 #include <utils/debug.h>
+#include <arch/debug.h>
 
 /**
  * Fault messages according to the armv7-a ARM document
@@ -67,6 +67,14 @@ int prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spregs_t *regs) {
 }
 
 int abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
+    /**
+     * From ARM ARM document:
+     * After taking a Data Abort exception, the state of the exclusive monitors is UNKNOWN. Therefore,
+     * ARM strongly recommends that the abort handler performs a CLREX instruction, or a dummy STREX
+     * instruction, to clear the exclusive monitor state.
+     */
+    asm("clrex");
+
     message_delimiter();
     char *fs = fault_status_msg[dfsr.b.fs_h << 4 | dfsr.b.fs_l];
     error_async("Data abort exception. Invalid %s access: %s", dfsr.b.wnr ? "write" : "read", fs != NULL ? fs : "Unknown");
@@ -81,23 +89,21 @@ int abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
 int irq_handler(const spregs_t *regs) {
     // TODO: Optimize this
     component_t *c = NULL;
-    for_each_component(c) {
-        if (c->stype == COMP_SUBTYPE_INTC) {
-            verbose_async("Dispatching irq to int controller '%s'", c->id);
-            intc_t *intc = (intc_t *) c;
-            irqret_t ret = intc->ops.dispatch_irq(intc);
-            verbose_async("Interrupt controller '%s' returned %s", c->id, get_irqret_str(ret));
-            switch (ret) {
-            case IRQ_RET_HANDLED:
-                return 0;
-            case IRQ_RET_ERROR:
-                error_async("Error while dispatching irq with intc '%s'", c->id);
-                return -1;
-            case IRQ_RET_NOT_HANDLED:
-            case IRQ_RET_HANDLED_KEEP_PROCESSING:
-            default:
-                break;
-            }
+    for_each_filtered_component(c, c->stype == COMP_SUBTYPE_INTC) {
+        verbose_async("Dispatching irq to int controller '%s'", c->id);
+        intc_t *intc = (intc_t *) c;
+        irqret_t ret = intc->ops.dispatch_irq(intc);
+        verbose_async("Interrupt controller '%s' returned %s", c->id, get_irqret_str(ret));
+        switch (ret) {
+        case IRQ_RET_HANDLED:
+            return 0;
+        case IRQ_RET_ERROR:
+            error_async("Error while dispatching irq with intc '%s'", c->id);
+            return -1;
+        case IRQ_RET_NOT_HANDLED:
+        case IRQ_RET_HANDLED_KEEP_PROCESSING:
+        default:
+            break;
         }
     }
     return 0;
