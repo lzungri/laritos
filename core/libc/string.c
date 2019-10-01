@@ -18,6 +18,20 @@ void *memset(void *buf, int c, size_t count) {
     return buf;
 }
 
+int memcmp(const void *buf1, const void *buf2, size_t n) {
+    const char *p1 = buf1;
+    const char *p2 = buf2;
+    while(n-- > 0) {
+        if (*p1 != *p2) {
+            return *p1 - *p2;
+        } else {
+            p1++;
+            p2++;
+        }
+    }
+    return 0;
+}
+
 int strncmp(const char *s1, const char *s2, size_t n) {
     while(n-- > 0 && !(*s1 == '\0' && *s2 == '\0')) {
         int8_t diff = *s1++ - *s2++;
@@ -50,4 +64,46 @@ char *strncpy(char *dest, const char *src, size_t n) {
         dest[i] = '\0';
     }
     return dest;
+}
+
+char *strchr(const char *str, char c) {
+    while (*str != c) {
+        if (!*str++) {
+            return NULL;
+        }
+    }
+    return (char *) str;
+}
+
+char *strrchr(const char *s, char c) {
+    char *ret = NULL;
+    do {
+        if (*s == c) {
+            ret = (char *) s;
+        }
+    } while (*s++);
+    return ret;
+}
+
+char *strstr(const char *str, const char *substr, size_t n) {
+    char *match = NULL;
+    char *ss = (char *) substr;
+
+    if (*ss == '\0') {
+        return (char *) &str[strnlen(str, n)];
+    }
+
+    while (n-- > 0 && *str != '\0' && *ss != '\0') {
+        if (*str == *ss) {
+            if (match == NULL) {
+                match = (char *) str;
+            }
+            ss++;
+        } else if (match != NULL) {
+            match = NULL;
+            ss = (char *) substr;
+        }
+        str++;
+    }
+    return *ss == '\0' ? match : NULL;
 }
