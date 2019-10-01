@@ -22,15 +22,18 @@ static int process_dependencies(board_info_t *bi, board_comp_t *comp) {
     char deps[CONFIG_BOARD_MAX_COMPONENT_ATTRS][CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
 
     int ndeps = 0;
-    do {
-        board_get_str_attr_idx_def(comp, "depends", deps[ndeps], ndeps, "");
-    } while(ndeps < CONFIG_BOARD_MAX_COMPONENT_ATTRS && strnlen(deps[ndeps++], CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES) > 0);
+    board_comp_attr_t *attr;
+    for_each_bc_attr(comp, attr) {
+        char *pos;
+        if ((pos = strrchr(attr->value, '@')) != NULL) {
+            strncpy(deps[ndeps++], pos + 1, sizeof(deps[0]));
+        }
+    }
 
-    ndeps--;
     if (ndeps > 0) {
         int i;
         for (i = 0; i < ndeps; i++) {
-            debug("'%s' depends on '%s'", comp->id, deps[i]);
+            verbose("'%s' depends on '%s'", comp->id, deps[i]);
             if (search_drivermgr_and_process_by_comp_id(bi, deps[i]) < 0) {
                 error("Error while processing component dependency '%s'", deps[i]);
                 return -1;
@@ -59,7 +62,7 @@ static int search_drivermgr_and_process(board_info_t *bi, board_comp_t *comp) {
                 return -1;
             }
 
-            debug("Processing driver '%s' for component '%s'", comp->driver, comp->id);
+            verbose("Processing driver '%s' for component '%s'", comp->driver, comp->id);
             if (d->process(comp) < 0) {
                 error("Couldn't process driver '%s' for component '%s'", d->name, comp->id);
                 return -1;
@@ -88,4 +91,3 @@ int driver_process_board_components(board_info_t *bi) {
     }
     return -nerrors;
 }
-

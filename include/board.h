@@ -21,3 +21,6 @@ void board_get_bool_attr_def(board_comp_t *bc, char *attr, bool *buf, bool def);
 int board_get_irq_trigger_attr(board_comp_t *bc, char *attr, irq_trigger_mode_t *buf);
 void board_get_irq_trigger_attr_def(board_comp_t *bc, char *attr, irq_trigger_mode_t *buf, irq_trigger_mode_t def);
 int board_get_component_attr(board_comp_t *bc, char *attr, component_t **buf);
+
+#define for_each_bc_attr(_bc, _attr) \
+    for (_attr = (_bc)->attr; _attr - (_bc)->attr < (_bc)->attrlen; _attr++)

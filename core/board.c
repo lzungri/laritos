@@ -262,6 +262,6 @@ int board_get_component_attr(board_comp_t *bc, char *attr, component_t **buf) {
     if (board_get_str_attr(bc, attr, str) < 0 || strnlen(str, sizeof(str)) <= 0) {
         return -1;
     }
-    *buf = component_get_by_id(str);
+    *buf = component_get_by_id(*str == '@' ? str + 1 : str);
     return *buf != NULL ? 0 : -1;
 }
