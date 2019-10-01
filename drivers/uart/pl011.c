@@ -89,12 +89,12 @@ static irqret_t irq_handler(irq_t irq, void *data) {
 }
 
 static int init(component_t *c) {
-    if (uart_init(c) < 0) {
+    uart_t *uart = (uart_t *) c;
+    if (uart_init(uart) < 0) {
         error("Failed to initialize uart for component '%s'", c->id);
         return -1;
     }
 
-    uart_t *uart = (uart_t *) c;
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
     // Disable interrupts
@@ -117,7 +117,7 @@ static int deinit(component_t *c) {
     // Clear flagged interrupts
     pl011->icr.v = 0xffff;
 
-    return uart_deinit(c);
+    return uart_deinit(uart);
 }
 
 static int process(board_comp_t *comp) {

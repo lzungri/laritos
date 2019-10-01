@@ -13,13 +13,11 @@
 #include <utils/utils.h>
 
 
-int uart_init(component_t *c) {
-    uart_t *uart = (uart_t *) c;
-
+int uart_init(uart_t *uart) {
     // Setup irq stuff if using interrupt-driven io
     if (uart->intio) {
         if (intc_enable_irq_with_handler(uart->intc,
-                uart->irq, uart->irq_trigger, uart->irq_handler, c) < 0) {
+                uart->irq, uart->irq_trigger, uart->irq_handler, uart) < 0) {
             error("Failed to enable irq %u with handler 0x%p", uart->irq, uart->irq_handler);
             return -1;
         }
@@ -27,8 +25,7 @@ int uart_init(component_t *c) {
     return 0;
 }
 
-int uart_deinit(component_t *c) {
-    uart_t *uart = (uart_t *) c;
+int uart_deinit(uart_t *uart) {
     if (uart->intio) {
         return intc_disable_irq_with_handler(uart->intc, uart->irq, uart->irq_handler);
     }

@@ -27,8 +27,8 @@ typedef struct uart {
     bytestream_t bs;
 } uart_t;
 
-int uart_init(component_t *c);
-int uart_deinit(component_t *c);
+int uart_init(uart_t *uart);
+int uart_deinit(uart_t *uart);
 
 int uart_component_init(uart_t *uart, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),
