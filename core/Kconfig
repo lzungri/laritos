@@ -64,7 +64,7 @@ config DEBUG_INFO
     bool "Add debugging info"
     default y
 
-config CC_DISABLE_OPTIMIZATIONS
+config DEBUG_CC_DISABLE_OPTIMIZATIONS
     bool "Disable optimizations"
     default y
 
@@ -72,7 +72,7 @@ endmenu
 
 menu "Benchmarking"
 
-config STACK_USAGE
+config BENCHM_STACK_USAGE
     bool "Output stack usage info on a per-function basis"
     default n
 

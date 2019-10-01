@@ -594,7 +594,7 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, format-truncation)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 
-ifndef CONFIG_CC_DISABLE_OPTIMIZATIONS
+ifndef CONFIG_DEBUG_CC_DISABLE_OPTIMIZATIONS
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
@@ -631,7 +631,7 @@ stackp-flags-$(CONFIG_STACKPROTECTOR_STRONG)      := -fstack-protector-strong
 KBUILD_CFLAGS += $(stackp-flags-y)
 
 # Benchmarking flags
-benchmarking-flags-$(CONFIG_STACK_USAGE) += -fstack-usage
+benchmarking-flags-$(CONFIG_BENCHM_STACK_USAGE) += -fstack-usage
 KBUILD_CFLAGS += $(benchmarking-flags-y)
 
 ifdef CONFIG_CC_IS_CLANG
