@@ -130,7 +130,7 @@ static int process(board_comp_t *comp) {
         error("Failed to register '%s'", comp->id);
         return -1;
     }
-    component_set_info((component_t *) uart, "PrimeCell UART (pl011)", "ARM", "AMBA compliant SoC");
+    component_set_info((component_t *) uart, "PrimeCell UART (pl011)", "ARM", "UART AMBA compliant SoC");
     cur_uart++;
 
     return 0;
