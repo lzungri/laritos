@@ -40,11 +40,11 @@ static char *fault_status_msg[32] = {
     [0b11000] = "Asynchronous parity error on memory access",
 };
 
-int svc_handler(int sysno, const spregs_t *regs) {
+int _svc_handler(int sysno, const spregs_t *regs) {
     return syscall(sysno, regs->r[0], regs->r[1], regs->r[2], regs->r[3], regs->r[4], regs->r[5]);
 }
 
-int undef_handler(int32_t pc, const spregs_t *regs) {
+int _undef_handler(int32_t pc, const spregs_t *regs) {
     message_delimiter();
     error_async("Instruction 0x%08lx at 0x%08lx not recognized", *((uint32_t *) pc), pc);
     // cpsr is backed up in spsr during an exception
@@ -55,7 +55,7 @@ int undef_handler(int32_t pc, const spregs_t *regs) {
     return 0;
 }
 
-int prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spregs_t *regs) {
+int _prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spregs_t *regs) {
     message_delimiter();
     char *fs = fault_status_msg[ifsr.b.fs_h << 4 | ifsr.b.fs_l];
     error_async("Instruction prefetch exception: %s", fs != NULL ? fs : "Unknown");
@@ -67,7 +67,7 @@ int prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spregs_t *regs) {
     return 0;
 }
 
-int abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
+int _abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
     /**
      * From ARM ARM document:
      * After taking a Data Abort exception, the state of the exclusive monitors is UNKNOWN. Therefore,
@@ -87,7 +87,7 @@ int abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
     return 0;
 }
 
-int irq_handler(const spregs_t *regs) {
+int _irq_handler(const spregs_t *regs) {
     // TODO: Optimize this
     component_t *c = NULL;
     for_each_filtered_component(c, c->type == COMP_TYPE_INTC) {
@@ -110,6 +110,6 @@ int irq_handler(const spregs_t *regs) {
     return 0;
 }
 
-int fiq_handler(void) {
+int _fiq_handler(void) {
     return 0;
 }

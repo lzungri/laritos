@@ -6,38 +6,38 @@ _vectors:
      * is only expected to occur for signaling power-up, or for resetting
      * if the processor is already powered up. A soft reset can be done by
      * branching to the reset vector */
-    ldr pc, =_reset_handler
+    ldr pc, =asm_reset_handler
     /* Occurs if neither the processor, nor any attached coprocessor, recognizes
      * the currently executing instruction */
-    ldr pc, =_undef_handler
+    ldr pc, =asm_undef_handler
     /* This is a user-defined synchronous interrupt instruction. It enables
      * a program running in User mode, for example, to request privileged
      * operations that run in Supervisor mode, such as an RTOS function */
-    ldr pc, =_svc_handler
+    ldr pc, =asm_svc_handler
     /* Occurs when the processor attempts to execute an instruction that was
      * not fetched, because the address was illegal */
-    ldr pc, =_prefetch_handler
+    ldr pc, =asm_prefetch_handler
     /* Occurs when a data transfer instruction attempts to load or store data
      * at an illegal address */
-    ldr pc, =_abort_handler
-    ldr pc, =_reserved_handler
+    ldr pc, =asm_abort_handler
+    ldr pc, =asm_reserved_handler
     /* Occurs when the processor external interrupt request pin is asserted
      * (LOW) and the I bit in the CPSR is clear */
-    ldr pc, =_irq_handler
+    ldr pc, =asm_irq_handler
     /* Occurs when the processor external fast interrupt request pin is asserted
      * (LOW) and the F bit in the CPSR is clear */
-    ldr pc, =_fiq_handler
+    ldr pc, =asm_fiq_handler
 
 
     .align 4
 
 
-_reset_handler:
+asm_reset_handler:
     # Initialize system and start the kernel
     b _start
 
 
-_undef_handler:
+asm_undef_handler:
     # Save registers into the stack
     stmfd sp!, {r0-r12, lr}
 
@@ -46,7 +46,7 @@ _undef_handler:
     # Second arg: Stack pointer
     mov r1, sp
     # Invoke the service call handler
-    bl undef_handler
+    bl _undef_handler
 
     # Pop the previously saved registers and continue execution in the
     # caller context.
@@ -54,7 +54,7 @@ _undef_handler:
     ldmfd sp!, {r0-r12, pc}^
 
 
-_svc_handler:
+asm_svc_handler:
     # Save registers into the stack
     stmfd sp!, {r0-r12, lr}
 
@@ -67,7 +67,7 @@ _svc_handler:
     # Set the stack pointer as the second argument for the handler
     mov r1, sp
     # Invoke the service call handler
-    bl svc_handler
+    bl _svc_handler
 
     # Pop the previously saved registers and continue execution in the svc
     # caller context.
@@ -75,7 +75,7 @@ _svc_handler:
     ldmfd sp!, {r0-r12, pc}^
 
 
-_prefetch_handler:
+asm_prefetch_handler:
     # Point to the offending instruction, so that the cpu reexecutes the instruction
     # on return
     sub lr, lr, #4
@@ -90,14 +90,14 @@ _prefetch_handler:
     # Third arg: Stack pointer
     mov r2, sp
 
-    bl prefetch_handler
+    bl _prefetch_handler
 
     # Pop the previously saved registers and continue execution in the caller context.
     # ^ is used to restore the CPSR from the SPSR
     ldmfd sp!, {r0-r12, pc}^
 
 
-_abort_handler:
+asm_abort_handler:
     # According to ARM:
     # When a load or store instruction tries to access memory, the program
     # counter has been updated. A stored value of (pc – 4) in lr_ABT points
@@ -117,18 +117,18 @@ _abort_handler:
     # Third arg: Stack pointer
     mov r2, sp
 
-    bl abort_handler
+    bl _abort_handler
 
     # Pop the previously saved registers and continue execution in the caller context.
     # ^ is used to restore the CPSR from the SPSR
     ldmfd sp!, {r0-r12, pc}^
 
 
-_reserved_handler:
-    b _reserved_handler
+asm_reserved_handler:
+    b asm_reserved_handler
 
 
-_irq_handler:
+asm_irq_handler:
     # According to ARM:
     # After executing each instruction, the processor checks to see whether the interrupt
     # pins are LOW and whether the interrupt disable bits in the CPSR are clear. As a
@@ -143,12 +143,12 @@ _irq_handler:
 
     # First arg: Stack pointer
     mov r0, sp
-    bl irq_handler
+    bl _irq_handler
 
     # Pop the previously saved registers and continue execution in the caller context.
     # ^ is used to restore the CPSR from the SPSR
     ldmfd sp!, {r0-r12, pc}^
 
 
-_fiq_handler:
-    b fiq_handler
+asm_fiq_handler:
+    b _fiq_handler
