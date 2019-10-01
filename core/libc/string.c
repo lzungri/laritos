@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdint.h>
+#include <utils/math.h>
 
 void *memcpy(void *dest, const void *src, size_t n) {
     char *d = dest;
@@ -21,7 +22,7 @@ void *memset(void *buf, int c, size_t count) {
 int memcmp(const void *buf1, const void *buf2, size_t n) {
     const char *p1 = buf1;
     const char *p2 = buf2;
-    while(n-- > 0) {
+    while (n-- > 0) {
         if (*p1 != *p2) {
             return *p1 - *p2;
         } else {
@@ -33,7 +34,7 @@ int memcmp(const void *buf1, const void *buf2, size_t n) {
 }
 
 int strncmp(const char *s1, const char *s2, size_t n) {
-    while(n-- > 0 && !(*s1 == '\0' && *s2 == '\0')) {
+    while (n-- > 0 && !(*s1 == '\0' && *s2 == '\0')) {
         int8_t diff = *s1++ - *s2++;
         if (diff) {
             return diff;
@@ -86,24 +87,16 @@ char *strrchr(const char *s, char c) {
 }
 
 char *strstr(const char *str, const char *substr, size_t n) {
-    char *match = NULL;
-    char *ss = (char *) substr;
-
-    if (*ss == '\0') {
+    if (*substr == '\0') {
         return (char *) &str[strnlen(str, n)];
     }
 
-    while (n-- > 0 && *str != '\0' && *ss != '\0') {
-        if (*str == *ss) {
-            if (match == NULL) {
-                match = (char *) str;
-            }
-            ss++;
-        } else if (match != NULL) {
-            match = NULL;
-            ss = (char *) substr;
+    n = min(n, strlen(substr));
+    while (*str != '\0') {
+        if (memcmp(str, substr, n) == 0) {
+            return (char *) str;
         }
         str++;
     }
-    return *ss == '\0' ? match : NULL;
+    return NULL;
 }
