@@ -38,7 +38,7 @@ typedef struct intc{
     hwcomp_t parent;
     intc_ops_t ops;
 
-    irq_handler_info_t handlers[CONFIG_MAX_IRQS][CONFIG_MAX_HANDLERS_PER_IRQ];
+    irq_handler_info_t handlers[CONFIG_INT_MAX_IRQS][CONFIG_INT_MAX_HANDLERS_PER_IRQ];
 } intc_t;
 
 

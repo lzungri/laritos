@@ -40,8 +40,8 @@ static irqret_t handle_irq(intc_t *intc, irq_t irq) {
 static int add_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h, void *data) {
     verbose("Adding handler 0x%p(data=0x%p) for irq %u", h, data, irq);
 
-    if (irq > CONFIG_MAX_IRQS) {
-        error("Invalid irq %u, max_supported: %u", irq, CONFIG_MAX_IRQS);
+    if (irq > CONFIG_INT_MAX_IRQS) {
+        error("Invalid irq %u, max_supported: %u", irq, CONFIG_INT_MAX_IRQS);
         return -1;
     }
 
@@ -65,8 +65,8 @@ static int add_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h, void *data)
 
 static int remove_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h) {
     verbose("Removing handler 0x%p for irq %u", h, irq);
-    if (irq > CONFIG_MAX_IRQS) {
-        error("Invalid irq %u, max_supported: %u", irq, CONFIG_MAX_IRQS);
+    if (irq > CONFIG_INT_MAX_IRQS) {
+        error("Invalid irq %u, max_supported: %u", irq, CONFIG_INT_MAX_IRQS);
         return -1;
     }
     int i;

@@ -21,8 +21,8 @@ static uint8_t cur_gic;
 
 
 #define CHECK_IRQ_NUMBER(_irq) \
-    if (_irq > min(gic->num_irqs, CONFIG_MAX_IRQS)) { \
-        error("Invalid irq %u, max_supported: %u", _irq, min(gic->num_irqs, CONFIG_MAX_IRQS)); \
+    if (_irq > min(gic->num_irqs, CONFIG_INT_MAX_IRQS)) { \
+        error("Invalid irq %u, max_supported: %u", _irq, min(gic->num_irqs, CONFIG_INT_MAX_IRQS)); \
         return -1; \
     }
 
