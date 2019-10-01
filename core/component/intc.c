@@ -8,7 +8,7 @@
 #include <generated/autoconf.h>
 
 static irqret_t handle_irq(intc_t *intc, irq_t irq) {
-    verbose("Handling irq %u with int controller '%s'", irq, ((component_t *) intc)->id);
+    verbose_async("Handling irq %u with int controller '%s'", irq, ((component_t *) intc)->id);
 
     irqret_t ret = IRQ_RET_NOT_HANDLED;
     int i;
@@ -16,7 +16,7 @@ static irqret_t handle_irq(intc_t *intc, irq_t irq) {
         irq_handler_info_t *hi = &intc->handlers[irq][i];
         if (hi->h != NULL) {
             ret = hi->h(irq, hi->data);
-            verbose("irq %u processed with handler 0x%p(data=0x%p) = %s", irq, hi->h, hi->data, get_irqret_str(ret));
+            verbose_async("irq %u processed with handler 0x%p(data=0x%p) = %s", irq, hi->h, hi->data, get_irqret_str(ret));
             switch (ret) {
             case IRQ_RET_ERROR:
                 error_async("Failed to process irq %u with handler 0x%p(data=0x%p)", irq, hi->h, hi->data);
