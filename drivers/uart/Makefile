@@ -1,1 +1,1 @@
-obj-y += pl011.o
+obj-$(CONFIG_UART_ARM_PL011) += pl011.o

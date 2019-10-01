@@ -1,1 +1,1 @@
-obj-y += gicv2.o
+obj-$(CONFIG_INTC_ARM_GICV2) += gicv2.o

@@ -8,4 +8,8 @@ config UART_TXBUF_SIZE
     int "UART buffer size for holding data to be transmitted (in bytes)"
     default 1024
 
+config UART_ARM_PL011
+    bool "ARM PrimeCell UART (pl011)"
+    default n
+
 endmenu

@@ -1,0 +1,7 @@
+menu "Interrupt controller"
+
+config INTC_ARM_GICV2
+    bool "ARM generic interrupt controller v2"
+    default n
+
+endmenu
