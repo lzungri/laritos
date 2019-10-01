@@ -25,10 +25,9 @@ int memcmp(const void *buf1, const void *buf2, size_t n) {
     while (n-- > 0) {
         if (*p1 != *p2) {
             return *p1 - *p2;
-        } else {
-            p1++;
-            p2++;
         }
+        p1++;
+        p2++;
     }
     return 0;
 }
