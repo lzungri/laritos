@@ -68,6 +68,13 @@ int component_unregister(component_t *comp) {
     return -1;
 }
 
+int component_set_info(component_t *comp, char *product, char *vendor, char *description) {
+    strncpy(comp->product, product, sizeof(comp->product) - 1);
+    strncpy(comp->vendor, vendor, sizeof(comp->vendor) - 1);
+    strncpy(comp->description, description, sizeof(comp->description) - 1);
+    return 0;
+}
+
 component_t *component_get_by_id(char *id) {
     component_t *c;
     for_each_component(c) {

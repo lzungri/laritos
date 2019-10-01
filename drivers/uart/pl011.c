@@ -1,6 +1,5 @@
 #include <log.h>
 #include <component/uart.h>
-#include <component/hwcomp.h>
 #include <component/stream.h>
 #include <irq.h>
 #include <board-types.h>
@@ -131,7 +130,7 @@ static int process(board_comp_t *comp) {
         error("Failed to register '%s'", comp->id);
         return -1;
     }
-    hwcomp_set_info((hwcomp_t *) uart, "PrimeCell UART (pl011)", "ARM", "AMBA compliant SoC");
+    component_set_info((component_t *) uart, "PrimeCell UART (pl011)", "ARM", "AMBA compliant SoC");
     cur_uart++;
 
     return 0;

@@ -1,12 +1,10 @@
 #pragma once
 
-#include <component/component.h>
-#include <component/component.h>
-#include <component/hwcomp.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <cpu.h>
 #include <irq.h>
+#include <component/component.h>
 #include <generated/autoconf.h>
 
 struct intc;
@@ -35,7 +33,7 @@ typedef struct {
 } irq_handler_info_t;
 
 typedef struct intc{
-    hwcomp_t parent;
+    component_t parent;
     intc_ops_t ops;
 
     irq_handler_info_t handlers[CONFIG_INT_MAX_IRQS][CONFIG_INT_MAX_HANDLERS_PER_IRQ];

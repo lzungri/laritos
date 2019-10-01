@@ -6,7 +6,7 @@
 
 typedef struct {
     board_info_t bi;
-    component_t *components[CONFIG_MAX_COMPONENTS];
+    component_t *components[CONFIG_COMP_MAX];
 
 } laritos_t;
 

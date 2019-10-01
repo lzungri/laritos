@@ -6,24 +6,15 @@
 
 typedef enum {
     COMP_TYPE_UNKNOWN = 0,
-    COMP_TYPE_HW,
-    COMP_TYPE_STREAM,
-
-    // TODO Move this to subtypes?
+    COMP_TYPE_UART,
+    COMP_TYPE_INTC,
+    COMP_TYPE_RTC,
+    COMP_TYPE_BYTESTREAM,
     COMP_TYPE_INPUTDEV,
     COMP_TYPE_LOGGER,
 
     COMP_TYPE_LEN,
 } component_type_t;
-
-typedef enum {
-    COMP_SUBTYPE_UNKNOWN = 0,
-    COMP_SUBTYPE_UART,
-    COMP_SUBTYPE_INTC,
-    COMP_SUBTYPE_BYTESTREAM,
-
-    COMP_SUBTYPE_LEN,
-} component_subtype_t;
 
 struct component;
 typedef struct {
@@ -37,7 +28,10 @@ typedef struct component {
     char id[COMPONENT_MAX_ID_LEN];
 
     component_type_t type;
-    component_subtype_t stype;
+    char product[CONFIG_COMP_INFO_SIZE];
+    char vendor[CONFIG_COMP_INFO_SIZE];
+    char description[CONFIG_COMP_INFO_SIZE];
+
     component_ops_t ops;
 } component_t;
 
@@ -55,3 +49,5 @@ int component_register(component_t *comp);
 int component_unregister(component_t *comp);
 component_t *component_get_by_id(char *id);
 void component_dump_registered_comps(void);
+int component_set_info(component_t *c, char *product, char *vendor, char *description);
+

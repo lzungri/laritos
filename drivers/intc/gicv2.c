@@ -2,7 +2,6 @@
 
 #include <stdbool.h>
 #include <component/intc.h>
-#include <component/hwcomp.h>
 #include <irq.h>
 #include <cpu.h>
 #include <board-types.h>
@@ -166,7 +165,7 @@ static int process(board_comp_t *comp) {
     intc->ops.set_irqs_enable_for_this_cpu = set_irqs_enable_for_this_cpu;
     intc->ops.set_priority_filter = set_priority_filter;
 
-    hwcomp_set_info((hwcomp_t *) intc, "GICv2", "ARM", "Generic Interrupt Controller v2");
+    component_set_info((component_t *) intc, "GICv2", "ARM", "Generic Interrupt Controller v2");
 
     board_get_ptr_attr_def(comp, "distaddr", (void **) &gic->dist, NULL);
     if (gic->dist == NULL) {

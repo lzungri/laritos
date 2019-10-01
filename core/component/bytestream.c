@@ -36,11 +36,10 @@ int bytestream_component_init(bytestream_t *bs, board_comp_t *bcomp,
     stream_t *s = (stream_t *) bs;
     char id[COMPONENT_MAX_ID_LEN] = { 0 };
     snprintf(id, sizeof(id), "bytestream@%s", bcomp->id);
-    if (stream_component_init(s, bcomp, id, bytestream_read, bytestream_write) < 0) {
+    if (stream_component_init(s, bcomp, id, COMP_TYPE_BYTESTREAM, bytestream_read, bytestream_write) < 0) {
         error("Failed to initialize '%s' stream component", id);
         return -1;
     }
-    ((component_t *) bs)->stype = COMP_SUBTYPE_BYTESTREAM;
 
     bs->ops._put = bytestream_put;
     bs->ops.transmit_data = transmit_data;

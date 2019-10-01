@@ -1,11 +1,11 @@
 menu "Components"
 
-config MAX_COMPONENTS
+config COMP_MAX
     int "Max number of components"
     default 32
 
-config HWCOMP_HWINFO_SIZE
-    int "Max size for each hardware info field"
+config COMP_INFO_SIZE
+    int "Max size for each component info field"
     default 32
 
 endmenu

@@ -5,7 +5,6 @@
 #include <board-types.h>
 #include <board.h>
 #include <component/component.h>
-#include <component/hwcomp.h>
 #include <component/intc.h>
 #include <component/bytestream.h>
 #include <component/uart.h>
@@ -35,7 +34,7 @@ int uart_deinit(uart_t *uart) {
 int uart_component_init(uart_t *uart, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c),
         int (*transmit)(bytestream_t *bs)) {
-    if (hwcomp_init((hwcomp_t *) uart, bcomp->id, bcomp, COMP_SUBTYPE_UART, init, deinit) < 0) {
+    if (component_init((component_t *) uart, bcomp->id, bcomp, COMP_TYPE_UART, init, deinit) < 0) {
         error("Failed to initialize '%s' uart component", bcomp->id);
         return -1;
     }
@@ -75,12 +74,12 @@ int uart_component_init(uart_t *uart, board_comp_t *bcomp,
 
 int uart_component_register(uart_t *uart) {
     if (component_register((component_t *) &uart->bs) < 0) {
-        error("Failed to register '%s' uart bytestream", uart->parent.parent.id);
+        error("Failed to register '%s' uart bytestream", uart->parent.id);
         return -1;
     }
 
     if (component_register((component_t *) uart) < 0) {
-        error("Failed to register '%s' uart component", uart->parent.parent.id);
+        error("Failed to register '%s' uart component", uart->parent.id);
         component_unregister((component_t *) &uart->bs);
         return -1;
     }

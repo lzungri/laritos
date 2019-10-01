@@ -20,7 +20,7 @@ typedef struct {
 } board_comp_t;
 
 typedef struct {
-    board_comp_t components[CONFIG_MAX_COMPONENTS];
+    board_comp_t components[CONFIG_COMP_MAX];
     uint8_t len;
 } board_info_t;
 

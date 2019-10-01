@@ -1,8 +1,8 @@
 #pragma once
 
 #include <log.h>
+#include <string.h>
 #include <component/component.h>
-#include <component/hwcomp.h>
 
 static inline void message_delimiter(void) {
     log(false, "I", "*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
@@ -20,12 +20,15 @@ static inline void dump_registered_comps(void) {
     component_t *c;
     log_always("Components:");
     for_each_component(c) {
-        log_always("   %s, type: %d, subtype: %d", c->id, c->type, c->stype);
-        if (c->type == COMP_TYPE_HW) {
-            hwcomp_t *hw = (hwcomp_t *) c;
-            log_always("      product: %s", hw->product);
-            log_always("      vendor: %s", hw->vendor);
-            log_always("      description: %s", hw->description);
+        log_always("   %s, type: %d", c->id, c->type);
+        if (strnlen(c->product, sizeof(c->product)) > 0) {
+            log_always("      product: %s", c->product);
+        }
+        if (strnlen(c->vendor, sizeof(c->vendor)) > 0) {
+            log_always("      vendor: %s", c->vendor);
+        }
+        if (strnlen(c->description, sizeof(c->description)) > 0) {
+            log_always("      description: %s", c->description);
         }
     }
 }
