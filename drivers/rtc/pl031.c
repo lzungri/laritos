@@ -53,8 +53,13 @@ static int set_enable(timer_comp_t *t, bool enable) {
     return 0;
 }
 
-static int set_expiration(timer_comp_t *t, int64_t secs, int64_t ns, timer_exp_type_t type) {
+static int set_expiration(timer_comp_t *t, int64_t secs, int32_t ns, timer_exp_type_t type) {
     rtc_t *rtc = (rtc_t *) t;
+
+    // ns must be lower to a second
+    if (abs(ns) > NSEC_PER_SEC - 1) {
+        ns = (NSEC_PER_SEC - 1) * sign(ns);
+    }
 
     int32_t exp = secs + NS_TO_SEC(ns);
     switch (type) {

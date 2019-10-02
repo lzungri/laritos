@@ -15,7 +15,18 @@ typedef struct {
     int (*get_remaining)(struct timer_comp *t, int64_t *v);
     int (*reset)(struct timer_comp *t);
     int (*set_enable)(struct timer_comp *t, bool enable);
-    int (*set_expiration)(struct timer_comp *t, int64_t secs, int64_t ns, timer_exp_type_t type);
+
+    /**
+     * Set the expiration time for the timer
+     *
+     * @param t: Timer reference
+     * @param secs: Seconds (can be negative)
+     * @param ns: Nanoseconds [-999999999, 999999999]
+     * @param type: Whether the specified expiration time is absolute or relative
+     *
+     * @return 0 on success, <0 on error
+     */
+    int (*set_expiration)(struct timer_comp *t, int64_t secs, int32_t ns, timer_exp_type_t type);
 } timer_comp_ops_t;
 
 typedef struct timer_comp {

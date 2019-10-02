@@ -29,7 +29,7 @@ DEF_NOT_IMPL_FUNC(ni_set_value, timer_comp_t *t, uint64_t v);
 DEF_NOT_IMPL_FUNC(ni_get_remaining, timer_comp_t *t, int64_t *v);
 DEF_NOT_IMPL_FUNC(ni_reset, timer_comp_t *t);
 DEF_NOT_IMPL_FUNC(ni_set_enable, timer_comp_t *t, bool enable);
-DEF_NOT_IMPL_FUNC(ni_set_expiration, timer_comp_t *t, int64_t secs, int64_t ns, timer_exp_type_t type);
+DEF_NOT_IMPL_FUNC(ni_set_expiration, timer_comp_t *t, int64_t secs, int32_t ns, timer_exp_type_t type);
 
 int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
