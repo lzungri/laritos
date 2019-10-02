@@ -29,6 +29,12 @@ static int set_value(timer_comp_t *t, uint64_t v) {
     return 0;
 }
 
+static int get_remaining(timer_comp_t *t, int64_t *v) {
+    rtc_t *rtc = (rtc_t *) t;
+    *v = rtc->mm->match - rtc->mm->data;
+    return 0;
+}
+
 static int reset(timer_comp_t *t) {
     rtc_t *rtc = (rtc_t *) t;
     // According to the pl031 doc, writing 1 to ctrl reg will reset the rtc value,
@@ -107,6 +113,7 @@ static int process(board_comp_t *comp) {
     t->irq_handler = irq_handler;
     t->ops.get_value = get_value;
     t->ops.set_value = set_value;
+    t->ops.get_remaining = get_remaining;
     t->ops.reset = reset;
     t->ops.set_enable = set_enable;
     t->ops.set_expiration = set_expiration;

@@ -12,6 +12,7 @@ struct timer_comp;
 typedef struct {
     int (*get_value)(struct timer_comp *t, uint64_t *v);
     int (*set_value)(struct timer_comp *t, uint64_t v);
+    int (*get_remaining)(struct timer_comp *t, int64_t *v);
     int (*reset)(struct timer_comp *t);
     int (*set_enable)(struct timer_comp *t, bool enable);
     int (*set_expiration)(struct timer_comp *t, int64_t secs, int64_t ns, timer_exp_type_t type);

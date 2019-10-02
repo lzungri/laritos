@@ -26,6 +26,7 @@ int timer_deinit(timer_comp_t *t) {
 
 DEF_NOT_IMPL_FUNC(ni_get_value, timer_comp_t *t, uint64_t *v);
 DEF_NOT_IMPL_FUNC(ni_set_value, timer_comp_t *t, uint64_t v);
+DEF_NOT_IMPL_FUNC(ni_get_remaining, timer_comp_t *t, int64_t *v);
 DEF_NOT_IMPL_FUNC(ni_reset, timer_comp_t *t);
 DEF_NOT_IMPL_FUNC(ni_set_enable, timer_comp_t *t, bool enable);
 DEF_NOT_IMPL_FUNC(ni_set_expiration, timer_comp_t *t, int64_t secs, int64_t ns, timer_exp_type_t type);
@@ -40,6 +41,7 @@ int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t 
 
     t->ops.get_value = ni_get_value;
     t->ops.set_value = ni_set_value;
+    t->ops.get_remaining = ni_get_remaining;
     t->ops.reset = ni_reset;
     t->ops.set_enable = ni_set_enable;
     t->ops.set_expiration = ni_set_expiration;
