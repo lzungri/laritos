@@ -24,7 +24,7 @@ static irqret_t irq_handler(irq_t irq, void *data) {
 }
 
 static int init(component_t *c) {
-    timer_t *t = (timer_t *) c;
+    timer_comp_t *t = (timer_comp_t *) c;
 
     if (timer_init(t) < 0) {
         error("Failed to initialize timer for component '%s'", c->id);
@@ -39,7 +39,7 @@ static int init(component_t *c) {
 }
 
 static int deinit(component_t *c) {
-    timer_t *t = (timer_t *) c;
+    timer_comp_t *t = (timer_comp_t *) c;
     return timer_deinit(t);
 }
 
@@ -50,7 +50,7 @@ static int process(board_comp_t *comp) {
     }
 
     rtc_t *rtc = &rtcs[cur_rtc];
-    timer_t *t = (timer_t *) rtc;
+    timer_comp_t *t = (timer_comp_t *) rtc;
 
     t->irq_handler = irq_handler;
     if (timer_component_init(t, comp, COMP_TYPE_RTC, init, deinit) < 0) {

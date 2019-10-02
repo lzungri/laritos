@@ -59,7 +59,7 @@ typedef volatile struct {
 } pl031_mm_t;
 
 typedef struct {
-    timer_t parent;
+    timer_comp_t parent;
 
     pl031_mm_t *mm;
 } rtc_t;

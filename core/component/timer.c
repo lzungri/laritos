@@ -3,7 +3,7 @@
 #include <component/component.h>
 #include <component/timer.h>
 
-int timer_init(timer_t *t) {
+int timer_init(timer_comp_t *t) {
     // Setup irq stuff if using interrupt-driven io
     if (t->intio) {
         if (intc_enable_irq_with_handler(t->intc,
@@ -15,14 +15,14 @@ int timer_init(timer_t *t) {
     return 0;
 }
 
-int timer_deinit(timer_t *t) {
+int timer_deinit(timer_comp_t *t) {
     if (t->intio) {
         return intc_disable_irq_with_handler(t->intc, t->irq, t->irq_handler);
     }
     return 0;
 }
 
-int timer_component_init(timer_t *t, board_comp_t *bcomp, component_type_t type,
+int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
 
     if (component_init((component_t *) t, bcomp->id, bcomp, type, init, deinit) < 0) {
