@@ -5,6 +5,7 @@
 #include <component/intc.h>
 #include <irq.h>
 #include <utils/utils.h>
+#include <utils/function.h>
 #include <generated/autoconf.h>
 
 static irqret_t handle_irq(intc_t *intc, irq_t irq) {
@@ -80,17 +81,11 @@ static int remove_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h) {
     return 0;
 }
 
-#define NOT_IMPL_FUNC(_func, ...) \
-    static int _func(__VA_ARGS__) { \
-        error_async(TOSTRING(_func) "() not Implemented"); \
-        return -1; \
-    }
-
-NOT_IMPL_FUNC(ni_set_irq_enable, intc_t *intc, irq_t irq, bool enabled);
-NOT_IMPL_FUNC(ni_set_irq_trigger_mode, intc_t *intc, irq_t irq, irq_trigger_mode_t mode);
-NOT_IMPL_FUNC(ni_set_irq_target_cpus, intc_t *intc, irq_t irq, cpubits_t bits);
-NOT_IMPL_FUNC(ni_set_irqs_enable_for_this_cpu, intc_t *intc, bool enabled);
-NOT_IMPL_FUNC(ni_set_priority_filter, intc_t *intc, uint8_t lowest_prio);
+DEF_NOT_IMPL_FUNC(ni_set_irq_enable, intc_t *intc, irq_t irq, bool enabled);
+DEF_NOT_IMPL_FUNC(ni_set_irq_trigger_mode, intc_t *intc, irq_t irq, irq_trigger_mode_t mode);
+DEF_NOT_IMPL_FUNC(ni_set_irq_target_cpus, intc_t *intc, irq_t irq, cpubits_t bits);
+DEF_NOT_IMPL_FUNC(ni_set_irqs_enable_for_this_cpu, intc_t *intc, bool enabled);
+DEF_NOT_IMPL_FUNC(ni_set_priority_filter, intc_t *intc, uint8_t lowest_prio);
 
 int intc_init(intc_t *intc, char *id, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
