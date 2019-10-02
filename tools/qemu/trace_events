@@ -4,6 +4,12 @@
 #pl011_can_receive
 #pl011_put_fifo
 #pl011_put_fifo_full
+
+#pl031_read
+#pl031_write
+#pl031_irq_state
+#pl031_set_alarm
+
 #gic_*
 #gic_set_irq
 #gic_enable_irq
