@@ -174,6 +174,21 @@ void board_get_ptr_attr_def(board_comp_t *bc, char *attr, void **buf, void *def)
     }
 }
 
+long board_get_long_attr(board_comp_t *bc, char *attr, long *buf) {
+    char str[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
+    if (board_get_str_attr(bc, attr, str) < 0 || strnlen(str, sizeof(str)) < 0) {
+        return -1;
+    }
+    *buf = strtol(str, NULL, 0);
+    return 0;
+}
+
+void board_get_long_attr_def(board_comp_t *bc, char *attr, long *buf, long def) {
+    if (board_get_long_attr(bc, attr, buf) < 0) {
+        *buf = def;
+    }
+}
+
 int board_get_int_attr(board_comp_t *bc, char *attr, int *buf) {
     char str[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
     if (board_get_str_attr(bc, attr, str) < 0 || strnlen(str, sizeof(str)) < 0) {

@@ -10,6 +10,8 @@ void board_dump_board_info(board_info_t *bi);
 
 int board_get_ptr_attr(board_comp_t *bc, char *attr, void **buf);
 void board_get_ptr_attr_def(board_comp_t *bc, char *attr, void **buf, void *def);
+long board_get_long_attr(board_comp_t *bc, char *attr, long *buf);
+void board_get_long_attr_def(board_comp_t *bc, char *attr, long *buf, long def);
 int board_get_int_attr(board_comp_t *bc, char *attr, int *buf);
 void board_get_int_attr_def(board_comp_t *bc, char *attr, int *buf, int def);
 int board_get_str_attr(board_comp_t *bc, char *attr, char *buf);
