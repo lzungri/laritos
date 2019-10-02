@@ -82,7 +82,7 @@ static int remove_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h) {
 
 #define NOT_IMPL_FUNC(_func, ...) \
     static int _func(__VA_ARGS__) { \
-        error("Not Implemented"); \
+        error_async(TOSTRING(_func) "() not Implemented"); \
         return -1; \
     }
 
