@@ -3,10 +3,13 @@
 #include <string.h>
 #include <component/component.h>
 #include <component/inputdev.h>
-#include <generated/utsrelease.h>
+#include <component/timer.h>
+#include <timer.h>
 #include <board-types.h>
 #include <board.h>
 #include <utils/debug.h>
+#include <generated/utsrelease.h>
+
 
 laritos_t _laritos;
 
@@ -24,6 +27,7 @@ static void shell(void) {
 
                 switch (buf[0]) {
                 case 's':
+                    // system call
                     asm("mov r0, %[c]" : : [c] "r" (buf[0]));
                     asm("mov r1, #2");
                     asm("mov r2, #3");
@@ -31,24 +35,47 @@ static void shell(void) {
                     asm("mov r4, #5");
                     asm("mov r5, #6");
                     asm("mov r6, #7");
-                    dump_cur_state();
                     asm("svc 1");
                     break;
                 case 'r':
+                    // reset
                     asm("b 0");
                     break;
-                case 'e':
-                    // abort
+                case 'd':
+                    // data abort exc
                     asm("movw r7, #0xffff");
                     asm("movt r7, #0xffff");
                     asm("str r6, [r7]");
-                    // prefetch
-//                    asm("movw r7, #0xffff");
-//                    asm("movt r7, #0xffff");
-//                    asm("mov pc, r7");
-                    // undef
-//                    asm(".word 0xffffffff");
-//                    dump_cur_state();
+                    break;
+                case 'p':
+                    // prefetch exc
+                    asm("movw r7, #0xffff");
+                    asm("movt r7, #0xffff");
+                    asm("mov pc, r7");
+                    break;
+                case 'u':
+                    // undef exc
+                    asm(".word 0xffffffff");
+                    break;
+                case 't':;
+                    // rtc timer status
+                    component_t *c1;
+                    for_each_filtered_component(c1, c1->type == COMP_TYPE_RTC) {
+                        timer_comp_t *t = (timer_comp_t *) c1;
+                        int64_t v;
+                        t->ops.get_value(t, &v);
+                        log_always("rtc value: %lu", (uint32_t) v);
+                        t->ops.get_remaining(t, &v);
+                        log_always("rtc remaining: %ld", (int32_t) v);
+                    }
+                    break;
+                case 'e':;
+                    // rtc timer expiration
+                    component_t *c2;
+                    for_each_filtered_component(c2, c2->type == COMP_TYPE_RTC) {
+                        timer_comp_t *t = (timer_comp_t *) c2;
+                        t->ops.set_expiration(t, 5, 0, TIMER_EXP_RELATIVE);
+                    }
                     break;
                 }
             }
