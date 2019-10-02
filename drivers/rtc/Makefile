@@ -1,0 +1,1 @@
+obj-$(CONFIG_RTC_ARM_PL031) += pl031.o

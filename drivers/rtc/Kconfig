@@ -1,0 +1,7 @@
+menu "RTC"
+
+config RTC_ARM_PL031
+    bool "ARM PrimeCell RTC (pl031)"
+    default n
+
+endmenu
