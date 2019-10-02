@@ -761,8 +761,10 @@ LDFLAGS_laritos += --build-id
 LDFLAGS_laritos += -nostdlib
 GNU_LIBGCC_A := $(shell $(CC) -print-file-name=libgcc.a)
 # -lgcc: From gcc doc, When you specify -nostdlib or -nodefaultlibs you should usually specify -lgcc as well.
-#		This ensures that you have no unresolved references to internal GCC library subroutines (e.g. __aeabi_uidivmod for arm-none-eabi-)
-# -no-whole-archive: Only include those objects referenced by the program, otherwise it will fail when searching for symbols not (yet?) implemented
+#		This ensures that you have no unresolved references to internal GCC library subroutines
+#	    (e.g. __aeabi_uidivmod for arm-none-eabi-)
+# -no-whole-archive: Only include those objects referenced by the program, otherwise it will fail when searching
+# 	    for symbols not (yet?) implemented
 # 		in laritOS, (e.g. malloc(), abort())
 LDFLAGS_laritos += --no-whole-archive -L $(dir $(GNU_LIBGCC_A)) -lgcc
 
@@ -770,6 +772,9 @@ ifeq ($(CONFIG_STRIP_ASM_SYMS),y)
 LDFLAGS_laritos	+= $(call ld-option, -X,)
 endif
 
+# Disable msg: "libgcc.a(_udivmoddi4.o) uses 4-byte wchar_t yet the output is to use 2-byte wchar_t; use of
+# wchar_t values across objects may fail"
+LDFLAGS_laritos	+= --no-wchar-size-warning
 
 
 # ---------------
