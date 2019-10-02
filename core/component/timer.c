@@ -2,6 +2,7 @@
 #include <board.h>
 #include <component/component.h>
 #include <component/timer.h>
+#include <utils/function.h>
 
 int timer_init(timer_comp_t *t) {
     // Setup irq stuff if using interrupt-driven io
@@ -22,6 +23,13 @@ int timer_deinit(timer_comp_t *t) {
     return 0;
 }
 
+
+DEF_NOT_IMPL_FUNC(ni_get_value, timer_comp_t *t, uint64_t *v);
+DEF_NOT_IMPL_FUNC(ni_set_value, timer_comp_t *t, uint64_t v);
+DEF_NOT_IMPL_FUNC(ni_reset, timer_comp_t *t);
+DEF_NOT_IMPL_FUNC(ni_set_enable, timer_comp_t *t, bool enable);
+DEF_NOT_IMPL_FUNC(ni_set_expiration, timer_comp_t *t, int64_t secs, int64_t ns, timer_exp_type_t type);
+
 int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
 
@@ -29,6 +37,12 @@ int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t 
         error("Failed to initialize '%s' timer component", bcomp->id);
         return -1;
     }
+
+    t->ops.get_value = ni_get_value;
+    t->ops.set_value = ni_set_value;
+    t->ops.reset = ni_reset;
+    t->ops.set_enable = ni_set_enable;
+    t->ops.set_expiration = ni_set_expiration;
 
     board_get_bool_attr_def(bcomp, "intio", &t->intio, false);
     if (t->intio) {
@@ -45,6 +59,8 @@ int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t 
             return -1;
         }
     }
+
+    board_get_long_attr_def(bcomp, "res", (long *) &t->resolution_ns, 0);
 
     return 0;
 }

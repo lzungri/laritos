@@ -10,10 +10,11 @@
 
 struct timer_comp;
 typedef struct {
-    int (*get_current_value)(struct timer_comp *t, uint64_t *v);
+    int (*get_value)(struct timer_comp *t, uint64_t *v);
+    int (*set_value)(struct timer_comp *t, uint64_t v);
     int (*reset)(struct timer_comp *t);
     int (*set_enable)(struct timer_comp *t, bool enable);
-    int (*set_expiration)(struct timer_comp *t, uint64_t secs, uint64_t ns, timer_exp_type_t type);
+    int (*set_expiration)(struct timer_comp *t, int64_t secs, int64_t ns, timer_exp_type_t type);
 } timer_comp_ops_t;
 
 typedef struct timer_comp {
