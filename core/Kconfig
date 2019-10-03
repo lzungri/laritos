@@ -64,10 +64,6 @@ config DEBUG_INFO
     bool "Add debugging info"
     default y
 
-config DEBUG_CC_DISABLE_OPTIMIZATIONS
-    bool "Disable optimizations"
-    default y
-
 endmenu
 
 menu "Benchmarking"
@@ -77,4 +73,21 @@ config BENCHM_STACK_USAGE
     default n
 
 endmenu
+
+menu "Compiler"
+
+config CC_DISABLE_OPTIMIZATIONS
+    bool "Disable optimizations"
+    default y
+
+config CC_USE_SHORT_WCHAR
+    bool "Use short unsigned int as wchar_t"
+    default n
+
+config CC_OPTIMIZE_FOR_SIZE
+    bool "Optimize for size"
+    default n
+
+endmenu
+
 endmenu

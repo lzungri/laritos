@@ -405,9 +405,16 @@ LINUXINCLUDE    :=  $(if $(building_out_of_srctree),-I$(srctree)/include) \
 KBUILD_AFLAGS   := -D__ASSEMBLY__ -fno-PIE
 
 KBUILD_CFLAGS   := -Wall -Wundef -Werror=strict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE \
+		   -fno-strict-aliasing -fno-common -fno-PIE \
 		   -Werror=implicit-function-declaration -Werror=implicit-int \
 		   -Wno-format-security -std=gnu11
+
+ifdef CONFIG_CC_USE_SHORT_WCHAR
+KBUILD_CFLAGS += -fshort-wchar
+else
+KBUILD_CFLAGS += -fno-short-wchar
+endif
+
 # -ffreestanding: Assert that compilation targets a freestanding environment.  This implies -fno-builtin.
 # 		A freestanding environment is one in which the standard library may not exist, and program startup may
 # 		not necessarily be at "main".  The most obvious example is an OS kernel.  This is equivalent to -fno-hosted.
@@ -594,7 +601,7 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, format-truncation)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 
-ifndef CONFIG_DEBUG_CC_DISABLE_OPTIMIZATIONS
+ifndef CONFIG_CC_DISABLE_OPTIMIZATIONS
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
