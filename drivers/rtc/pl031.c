@@ -1,8 +1,8 @@
 #include <log.h>
 #include <irq.h>
-#include <time.h>
 #include <board-types.h>
 #include <board.h>
+#include <time/time.h>
 #include <driver/driver.h>
 #include <driver/pl031.h>
 #include <utils/utils.h>

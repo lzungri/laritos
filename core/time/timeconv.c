@@ -29,7 +29,6 @@
  */
 
 #include <time/time.h>
-#include <linux/module.h>
 
 /*
  * Nonzero if YEAR is a leap year (every 4 years,
@@ -64,23 +63,13 @@ static const unsigned short __mon_yday[2][13] = {
 	{0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366}
 };
 
-/**
- * time64_to_tm - converts the calendar time to local broken-down time
- *
- * @totalsecs	the number of seconds elapsed since 00:00:00 on January 1, 1970,
- *		Coordinated Universal Time (UTC).
- * @offset	offset seconds adding to totalsecs.
- * @result	pointer to struct tm variable to receive broken-down time
- */
-void time64_to_tm(time64_t totalsecs, int offset, struct tm *result)
+int epoch_to_calendar(const uint64_t secs, calendar_t *c)
 {
 	long days, rem, y;
-	int remainder;
 	const unsigned short *ip;
 
-	days = div_s64_rem(totalsecs, SECS_PER_DAY, &remainder);
-	rem = remainder;
-	rem += offset;
+	days = secs / SECS_PER_DAY;
+	rem = secs % SECS_PER_DAY;
 	while (rem < 0) {
 		rem += SECS_PER_DAY;
 		--days;
@@ -90,15 +79,15 @@ void time64_to_tm(time64_t totalsecs, int offset, struct tm *result)
 		++days;
 	}
 
-	result->tm_hour = rem / SECS_PER_HOUR;
+	c->hour = rem / SECS_PER_HOUR;
 	rem %= SECS_PER_HOUR;
-	result->tm_min = rem / 60;
-	result->tm_sec = rem % 60;
+	c->min = rem / 60;
+	c->sec = rem % 60;
 
 	/* January 1, 1970 was a Thursday. */
-	result->tm_wday = (4 + days) % 7;
-	if (result->tm_wday < 0)
-		result->tm_wday += 7;
+	c->wday = (4 + days) % 7;
+	if (c->wday < 0)
+		c->wday += 7;
 
 	y = 1970;
 
@@ -111,16 +100,17 @@ void time64_to_tm(time64_t totalsecs, int offset, struct tm *result)
 		y = yg;
 	}
 
-	result->tm_year = y - 1900;
+	c->year = y - 1900;
 
-	result->tm_yday = days;
+	c->yday = days;
 
 	ip = __mon_yday[__isleap(y)];
 	for (y = 11; days < ip[y]; y--)
 		continue;
 	days -= ip[y];
 
-	result->tm_mon = y;
-	result->tm_mday = days + 1;
+	c->mon = y;
+	c->mday = days + 1;
+
+	return 0;
 }
-EXPORT_SYMBOL(time64_to_tm);
