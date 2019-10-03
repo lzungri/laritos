@@ -3,13 +3,15 @@
 #include <printf.h>
 #include <stdbool.h>
 
-#include <component/component.h>
-#include <component/stream.h>
 #include <board-types.h>
 #include <board.h>
 #include <driver/driver.h>
 #include <dstruct/circbuf.h>
 #include <utils/utils.h>
+#include <time/time.h>
+#include <component/timer.h>
+#include <component/component.h>
+#include <component/stream.h>
 
 
 static char logb[CONFIG_LOG_BUFSIZE_BYTES];
@@ -21,7 +23,16 @@ int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
     int ret = 0;
     char lineb[CONFIG_LOG_MAX_LINE_SIZE] = { 0 };
 
-    int nchars = snprintf(lineb, sizeof(lineb), "[XXX.xxx] %s %s: ", level, tag);
+    time_t curt = { 0 };
+    calendar_t cal = { 0 };
+    // Check error status, e.g. rtc may not be initialized yet
+    if (rtc_gettime(&curt) >= 0) {
+        epoch_to_calendar(curt.secs, &cal);
+    }
+
+    // TODO: Add msecs resolution
+    int nchars = snprintf(lineb, sizeof(lineb), "[%02d/%02d %02d:%02d:%02d] %s %s: ",
+            cal.mon + 1, cal.mday, cal.hour, cal.min, cal.sec, level, tag);
     // If the required number of chars is bigger than the size of the buffer, then truncate string
     if (nchars > sizeof(lineb)) {
         goto full_buf;
