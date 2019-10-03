@@ -35,7 +35,7 @@ typedef struct component {
     component_ops_t ops;
 } component_t;
 
-
+// TODO Optimize this
 #define for_each_filtered_component(_c, _filter) \
     for (int i = 0; _c = _laritos.components[i], i < ARRAYSIZE(_laritos.components); i++) \
         if (_c != NULL && (_filter))
