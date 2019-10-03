@@ -25,7 +25,7 @@ int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) __attribute
 int log_flush(void);
 
 #ifdef CONFIG_LOG_FILE_AND_LINEN
-#define log(_sync, _level, _msg, ...) __add_log_msg(_sync, _level, KBUILD_MODNAME, __FILE__ ":" TOSTRING(__LINE__) ": " _msg "\n", ##__VA_ARGS__)
+#define log(_sync, _level, _msg, ...) __add_log_msg(_sync, _level, KBUILD_MODNAME, __FILE__ ":" TOSTRING(__LINE__) " " _msg "\n", ##__VA_ARGS__)
 #else
 #define log(_sync, _level, _msg, ...) __add_log_msg(_sync, _level, KBUILD_MODNAME, _msg "\n", ##__VA_ARGS__)
 #endif

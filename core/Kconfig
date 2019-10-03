@@ -4,48 +4,6 @@ source "core/component/Kconfig"
 source "core/syscall/Kconfig"
 source "core/libc/Kconfig"
 
-menu "Logging"
-
-menu "Log level"
-
-config LOG_LEVEL_ERROR
-    bool "ERROR"
-    default y
-
-config LOG_LEVEL_WARN
-    bool "WARN"
-    default y
-    select LOG_LEVEL_ERROR
-
-config LOG_LEVEL_INFO
-    bool "INFO"
-    default y
-    select LOG_LEVEL_WARN
-
-config LOG_LEVEL_DEBUG
-    bool "DEBUG"
-    select LOG_LEVEL_INFO
-
-config LOG_LEVEL_VERBOSE
-    bool "VERBOSE"
-    select LOG_LEVEL_DEBUG
-
-endmenu
-
-config LOG_MAX_LINE_SIZE
-    int "Max number of character per log line (longer messages will be truncated)"
-    default 128
-
-config LOG_BUFSIZE_BYTES
-    int "Log buffer size in bytes"
-    default 2048
-
-config LOG_FILE_AND_LINEN
-    bool "Log file path and line number"
-    default n
-
-endmenu
-
 menu "Interrupts"
 
 config INT_MAX_IRQS
@@ -55,38 +13,6 @@ config INT_MAX_IRQS
 config INT_MAX_HANDLERS_PER_IRQ
     int "Max number of handlers per IRQ"
     default 2
-
-endmenu
-
-menu "Debugging"
-
-config DEBUG_INFO
-    bool "Add debugging info"
-    default y
-
-endmenu
-
-menu "Benchmarking"
-
-config BENCHM_STACK_USAGE
-    bool "Output stack usage info on a per-function basis"
-    default n
-
-endmenu
-
-menu "Compiler"
-
-config CC_DISABLE_OPTIMIZATIONS
-    bool "Disable optimizations"
-    default y
-
-config CC_USE_SHORT_WCHAR
-    bool "Use short unsigned int as wchar_t"
-    default n
-
-config CC_OPTIMIZE_FOR_SIZE
-    bool "Optimize for size"
-    default n
 
 endmenu
 
