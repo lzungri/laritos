@@ -4,6 +4,7 @@
 #include <component/component.h>
 #include <component/inputdev.h>
 #include <component/timer.h>
+#include <time/time.h>
 #include <timer.h>
 #include <board-types.h>
 #include <board.h>
@@ -57,14 +58,25 @@ static void shell(void) {
                     // undef exc
                     asm(".word 0xffffffff");
                     break;
+                case 'c':;
+                    time_t time = { 0 };
+                    rtc_gettime(&time);
+
+                    calendar_t c = { 0 };
+                    epoch_to_calendar(time.secs, &c);
+                    log_always("calendar: %02d/%02d/%ld %02d:%02d:%02d",
+                            c.mon + 1, c.mday, c.year + 1900, c.hour, c.min, c.sec);
+                    break;
                 case 't':;
                     // rtc timer status
+                    time_t t = { 0 };
+                    rtc_gettime(&t);
+                    log_always("rtc_gettime(): %lu", (uint32_t) t.secs);
+
                     component_t *c1;
                     for_each_filtered_component(c1, c1->type == COMP_TYPE_RTC) {
                         timer_comp_t *t = (timer_comp_t *) c1;
                         int64_t v;
-                        t->ops.get_value(t, &v);
-                        log_always("rtc value: %lu", (uint32_t) v);
                         t->ops.get_remaining(t, &v);
                         log_always("rtc remaining: %ld", (int32_t) v);
                     }
