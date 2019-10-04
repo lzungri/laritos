@@ -63,7 +63,7 @@ static int set_irq_target_cpus(intc_t *intc, irq_t irq, cpubits_t bits) {
 }
 
 static int set_irqs_enable_for_this_cpu(intc_t *intc, bool enabled) {
-    verbose("Setting interrupts signaling to cpu %d to %u", get_cpu_id(), enabled);
+    verbose("Setting interrupts signaling to cpu %d to %u", cpu_get_id(), enabled);
     gic_t *gic = (gic_t *) intc;
     gic->cpu->ctrl.b.enable_group0 = enabled;
     gic->cpu->ctrl.b.enable_group1 = enabled;

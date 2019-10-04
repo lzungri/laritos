@@ -17,7 +17,7 @@ int intc_enable_irq_with_handler(intc_t *intc, irq_t irq, irq_trigger_mode_t tmo
         error("Couldn't enable irq %u", irq);
         goto error_irq_enable;
     }
-    if (intc->ops.set_irq_target_cpus(intc, irq, BIT_FOR_CPU(get_cpu_id())) < 0) {
+    if (intc->ops.set_irq_target_cpus(intc, irq, BIT_FOR_CPU(cpu_get_id())) < 0) {
         error("Failed to set the irq targets");
         goto error_target;
     }
