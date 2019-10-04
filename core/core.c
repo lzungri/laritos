@@ -59,11 +59,8 @@ static void shell(void) {
                     asm(".word 0xffffffff");
                     break;
                 case 'c':;
-                    time_t time = { 0 };
-                    rtc_gettime(&time);
-
                     calendar_t c = { 0 };
-                    epoch_to_calendar(time.secs, &c);
+                    rtc_get_localtime_calendar(&c);
                     log_always("calendar: %02d/%02d/%ld %02d:%02d:%02d",
                             c.mon + 1, c.mday, c.year + 1900, c.hour, c.min, c.sec);
                     break;
@@ -114,6 +111,11 @@ void kernel_entry(void)  {
 #ifdef CONFIG_LOG_LEVEL_DEBUG
     dump_registered_comps();
 #endif
+
+    info("Setting default timezone as PDT");
+    if (set_timezone(TZ_PST, true) < 0) {
+        error("Couldn't set default timezone");
+    }
 
     shell();
 }
