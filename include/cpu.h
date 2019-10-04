@@ -1,6 +1,9 @@
 #pragma once
 
 #include <stdint.h>
+#include <core.h>
+#include <component/cpu.h>
+#include <component/component.h>
 
 typedef uint32_t cpubits_t;
 
@@ -10,4 +13,16 @@ typedef uint32_t cpubits_t;
 static inline int cpu_get_id(void) {
     // TODO
     return 0;
+}
+
+static inline cpu_comp_t *cpu(void) {
+    // TODO Optimize this
+    component_t *c;
+    for_each_filtered_component(c, c->type == COMP_TYPE_CPU) {
+        cpu_comp_t *cpu = (cpu_comp_t *) c;
+        if (cpu->id == cpu_get_id()) {
+            return cpu;
+        }
+    }
+    return NULL;
 }
