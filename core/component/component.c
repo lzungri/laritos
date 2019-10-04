@@ -84,3 +84,25 @@ component_t *component_get_by_id(char *id) {
     }
     return NULL;
 }
+
+// TODO Optimize
+static inline bool is_comp_type_present(component_type_t t) {
+    component_t *c;
+    for_each_filtered_component(c, c->type == t) {
+        return true;
+    }
+    return false;
+}
+
+bool component_are_mandatory_comps_present(void) {
+    component_type_t mand[] = { COMP_TYPE_CPU, COMP_TYPE_RTC };
+    int i;
+    for (i = 0; i < ARRAYSIZE(mand); i++) {
+        if (is_comp_type_present(mand[i])) {
+            continue;
+        }
+        info("No type %d component was found", mand[i]);
+        return false;
+    }
+    return true;
+}

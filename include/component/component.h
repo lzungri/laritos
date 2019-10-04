@@ -1,11 +1,13 @@
 #pragma once
 
+#include <stdbool.h>
 #include <board-types.h>
 
 #define COMPONENT_MAX_ID_LEN CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES
 
 typedef enum {
     COMP_TYPE_UNKNOWN = 0,
+    COMP_TYPE_CPU,
     COMP_TYPE_UART,
     COMP_TYPE_INTC,
     COMP_TYPE_RTC,
@@ -50,4 +52,5 @@ int component_unregister(component_t *comp);
 component_t *component_get_by_id(char *id);
 void component_dump_registered_comps(void);
 int component_set_info(component_t *c, char *product, char *vendor, char *description);
+bool component_are_mandatory_comps_present(void);
 
