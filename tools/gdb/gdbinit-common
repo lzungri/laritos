@@ -2,6 +2,7 @@
 #   gdb-multiarch -q bin/laritos.elf -nx -ex "source tools/gdb/gdbinit-common"
 
 set history save on
+set history size unlimited
 
 tui enable
 layout src
