@@ -1,9 +1,10 @@
 #include <log.h>
 
+#include <irq.h>
 #include <board-types.h>
+#include <cpu.h>
 #include <component/component.h>
 #include <component/intc.h>
-#include <irq.h>
 #include <utils/utils.h>
 #include <utils/function.h>
 #include <generated/autoconf.h>
@@ -21,10 +22,6 @@ int intc_enable_irq_with_handler(intc_t *intc, irq_t irq, irq_trigger_mode_t tmo
         error("Failed to set the irq targets");
         goto error_target;
     }
-    if (intc->ops.set_irqs_enable_for_this_cpu(intc, true) < 0) {
-        error("Failed to enable irqs for this cpu");
-        goto error_cpu_enable;
-    }
     if (intc->ops.add_irq_handler(intc, irq, h, data) < 0) {
         error("Failed to add handler 0x%p for irq %u", h, irq);
         goto error_handler;
@@ -33,8 +30,6 @@ int intc_enable_irq_with_handler(intc_t *intc, irq_t irq, irq_trigger_mode_t tmo
     return 0;
 
 error_handler:
-    intc->ops.set_irqs_enable_for_this_cpu(intc, false);
-error_cpu_enable:
     intc->ops.set_irq_target_cpus(intc, irq, 0);
 error_target:
     intc->ops.set_irq_enable(intc, irq, false);
