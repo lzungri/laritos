@@ -1,6 +1,7 @@
 #include <log.h>
-#include <core.h>
 #include <string.h>
+#include <core.h>
+#include <cpu.h>
 #include <component/component.h>
 #include <component/inputdev.h>
 #include <component/timer.h>
@@ -112,9 +113,18 @@ void kernel_entry(void)  {
     dump_registered_comps();
 #endif
 
+    if (!component_are_mandatory_comps_present()) {
+        fatal("Not all mandatory board components were found");
+    }
+
     info("Setting default timezone as PDT");
     if (set_timezone(TZ_PST, true) < 0) {
         error("Couldn't set default timezone");
+    }
+
+    cpu_comp_t *c = cpu();
+    if (c->ops.set_irqs_enable(c, true) < 0) {
+        fatal("Failed to enable irqs for cpu %u", c->id);
     }
 
     shell();
