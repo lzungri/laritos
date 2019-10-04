@@ -3,5 +3,6 @@ menu "Drivers"
 source "drivers/intc/Kconfig"
 source "drivers/uart/Kconfig"
 source "drivers/rtc/Kconfig"
+source "drivers/cpu/Kconfig"
 
 endmenu
