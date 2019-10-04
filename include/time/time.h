@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define SECS_PER_HOUR (60 * 60)
 #define SECS_PER_DAY (SECS_PER_HOUR * 24)
@@ -27,6 +28,14 @@
 #define NS_TO_MS(_ns) ((_ns) / NSEC_PER_MSEC)
 #define NS_TO_US(_ns) ((_ns) / NSEC_PER_USEC)
 
+
+typedef enum {
+    TZ_PST = -8,
+    TZ_MST = -7,
+    TZ_CST = -6,
+    TZ_EST = -5,
+    TZ_ARGENTINA = -3,
+} timezone_t;
 
 typedef struct {
     uint64_t secs;
@@ -57,14 +66,6 @@ typedef struct {
 } calendar_t;
 
 int rtc_gettime(time_t *t);
-
-/**
- * Converts the calendar time to local broken-down time
- *
- * Note: This function was imported from Linux and adapted to laritos
- *
- * @param secs: the number of seconds elapsed since 00:00:00 on January 1, 1970,
- *              Coordinated Universal Time (UTC).
- * @return: 0 on success, <0 on error
- */
-int epoch_to_calendar(const uint64_t secs, calendar_t *c);
+int rtc_get_localtime_calendar(calendar_t *c);
+int set_timezone(timezone_t t, bool daylight);
+int get_localtime_offset(void);

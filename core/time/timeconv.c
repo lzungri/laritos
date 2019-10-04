@@ -63,13 +63,14 @@ static const unsigned short __mon_yday[2][13] = {
 	{0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366}
 };
 
-int epoch_to_calendar(const uint64_t secs, calendar_t *c)
+static int epoch_to_calendar(const uint64_t secs, int offset, calendar_t *c)
 {
 	long days, rem, y;
 	const unsigned short *ip;
 
 	days = secs / SECS_PER_DAY;
 	rem = secs % SECS_PER_DAY;
+	rem += offset;
 	while (rem < 0) {
 		rem += SECS_PER_DAY;
 		--days;
@@ -113,4 +114,12 @@ int epoch_to_calendar(const uint64_t secs, calendar_t *c)
 	c->mday = days + 1;
 
 	return 0;
+}
+
+int epoch_to_utc_calendar(const uint64_t secs, calendar_t *c) {
+    return epoch_to_calendar(secs, 0, c);
+}
+
+int epoch_to_localtime_calendar(const uint64_t secs, calendar_t *c) {
+    return epoch_to_calendar(secs, get_localtime_offset(), c);
 }
