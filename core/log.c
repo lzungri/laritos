@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <printf.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <board-types.h>
 #include <board.h>
@@ -23,11 +24,9 @@ int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
     int ret = 0;
     char lineb[CONFIG_LOG_MAX_LINE_SIZE] = { 0 };
 
-    time_t curt = { 0 };
     calendar_t cal = { 0 };
-    // Check error status, e.g. rtc may not be initialized yet
-    if (rtc_gettime(&curt) >= 0) {
-        epoch_to_calendar(curt.secs, &cal);
+    if (rtc_get_localtime_calendar(&cal) < 0) {
+        memset(&cal, 0, sizeof(cal));
     }
 
     // TODO: Add msecs resolution
