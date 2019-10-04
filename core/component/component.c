@@ -47,7 +47,7 @@ int component_register(component_t *comp) {
         _laritos.components[i] = NULL;
         return -1;
     }
-    info("Component '%s' of type %d registered successfully", comp->id, comp->type);
+    info("'%s' component (type %d) registered", comp->id, comp->type);
     return 0;
 }
 
