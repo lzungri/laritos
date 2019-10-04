@@ -45,12 +45,12 @@ CHECKFLAGS	+= -D__arm__
 cpu-$(CONFIG_SYS_CPU_GENERIC_ARMV7A) = armv7-a
 cpu-$(CONFIG_SYS_CPU_CORTEX_A9) = cortex-a9
 cpu-$(CONFIG_SYS_CPU_CORTEX_A15) = cortex-a15
-KBUILD_CFLAGS += -I$(srctree)/arch/arm/cpu/$(cpu-y)/include
+KBUILD_CFLAGS += -I$(srctree)/arch/arm/$(cpu-y)/include
 
 # Select target cpu family
 cpu-family-$(CONFIG_ARMV7_A) = armv7-a
 cpu-family-$(CONFIG_ARMV8_A) = armv8-a
-KBUILD_CFLAGS += -I$(srctree)/arch/arm/cpu/$(cpu-family-y)/include
+KBUILD_CFLAGS += -I$(srctree)/arch/arm/$(cpu-family-y)/include
 
 # Add cpu dir to the core builder
-core-y += arch/arm/cpu/$(cpu-y)/
+core-y += arch/arm/$(cpu-y)/

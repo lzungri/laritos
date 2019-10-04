@@ -1,2 +1,0 @@
-source "arch/arm/cpu/cortex-a15/Kconfig"
-source "arch/arm/cpu/armv7-a/Kconfig"
