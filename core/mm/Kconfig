@@ -1,0 +1,12 @@
+menu "Memory Manager"
+
+choice
+    prompt "Manager"
+    default MM_FREELIST
+
+config MM_FREELIST
+    bool "Simple freelist memory manager"
+
+endchoice
+
+endmenu

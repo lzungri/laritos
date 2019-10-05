@@ -1,0 +1,1 @@
+obj-$(CONFIG_MM_FREELIST) += freelist.o

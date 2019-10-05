@@ -3,6 +3,7 @@ menu "Kernel"
 source "core/component/Kconfig"
 source "core/syscall/Kconfig"
 source "core/libc/Kconfig"
+source "core/mm/Kconfig"
 
 menu "Interrupts"
 
