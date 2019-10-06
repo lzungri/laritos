@@ -78,7 +78,14 @@ SECTIONS
         __bss_size = __bss_end - __bss_start;
     } > ram
 
-    /* Stack located right after the .bss section in the ram */
+    /* Heap located right after the .bss section in the ram */
+    . = ALIGN(4);
+    __heap_start = .;
+    __heap_end = __heap_start + CONFIG_MEM_HEAP_SIZE;
+    . = __heap_end;
+    ASSERT(__heap_end < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS heap")
+
+    /* Stack located right after the heap (ram) */
     . = ALIGN(4);
     __stack_end = .;
     /* laritOS only use 5 processor modes, hence 5 different stacks  */
