@@ -2,6 +2,7 @@
 #include <string.h>
 #include <core.h>
 #include <cpu.h>
+#include <mm/heap.h>
 #include <component/component.h>
 #include <component/inputdev.h>
 #include <component/timer.h>
@@ -87,6 +88,14 @@ static void shell(void) {
                         t->ops.set_expiration(t, 5, 0, TIMER_EXP_RELATIVE);
                     }
                     break;
+                case 'm':;
+                    char *p = malloc(10);
+                    char *p2 = malloc(20);
+                    char *p3 = malloc(30);
+                    free(p2);
+                    free(p);
+                    free(p3);
+                    break;
                 }
             }
         }
@@ -115,6 +124,10 @@ void kernel_entry(void)  {
 
     if (!component_are_mandatory_comps_present()) {
         fatal("Not all mandatory board components were found");
+    }
+
+    if (initialize_heap(__heap_start, CONFIG_MEM_HEAP_SIZE) < 0) {
+        fatal("Failed to initialize heap of size %d at 0x%p", CONFIG_MEM_HEAP_SIZE, __heap_start);
     }
 
     info("Setting default timezone as PDT");
