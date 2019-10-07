@@ -99,3 +99,9 @@ char *strstr(const char *str, const char *substr, size_t n) {
     }
     return NULL;
 }
+
+
+// TODO Create macro for this
+#ifdef CONFIG_TEST_STRING
+#include <tests/core/libc/string.c>
+#endif
