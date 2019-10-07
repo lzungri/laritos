@@ -11,6 +11,24 @@
 #error KBUILD_MODNAME macro not found
 #endif
 
+#ifdef CONFIG_LOG_USE_COLORS
+#define RESTORE_COLOR "\e[39m"
+#define FATAL_COLOR "\e[38;5;196m"
+#define ERROR_COLOR "\e[91m"
+#define WARN_COLOR "\e[93m"
+#define INFO_COLOR "\e[92m"
+#define DEBUG_COLOR "\e[94m"
+#define VERBOSE_COLOR "\e[38;5;244m"
+#else
+#define RESTORE_COLOR ""
+#define FATAL_COLOR ""
+#define ERROR_COLOR ""
+#define WARN_COLOR ""
+#define INFO_COLOR ""
+#define DEBUG_COLOR ""
+#define VERBOSE_COLOR ""
+#endif
+
 /**
  * Adds a formatted string into the log circular buffer.
  *
@@ -30,11 +48,12 @@ int log_flush(void);
 #define log(_sync, _level, _msg, ...) __add_log_msg(_sync, _level, KBUILD_MODNAME, _msg "\n", ##__VA_ARGS__)
 #endif
 
-#define log_always(_msg, ...) log(true, "I", _msg, ##__VA_ARGS__)
-#define log_always_async(_msg, ...) log(false, "I", _msg, ##__VA_ARGS__)
+#define log_always(_msg, ...) log(true, INFO_COLOR "I", _msg RESTORE_COLOR, ##__VA_ARGS__)
+#define log_always_async(_msg, ...) log(false, INFO_COLOR "I", _msg RESTORE_COLOR, ##__VA_ARGS__)
+
 
 #define fatal_sync(_sync, _msg, ...)  do { \
-    log(_sync, "F", _msg, ##__VA_ARGS__); \
+    log(_sync, FATAL_COLOR "F", _msg RESTORE_COLOR, ##__VA_ARGS__); \
     while (1) { \
         asm("wfi"); \
     } \
@@ -43,8 +62,9 @@ int log_flush(void);
 #define fatal(_msg, ...) fatal_sync(true, _msg, ##__VA_ARGS__)
 #define fatal_async(_msg, ...) fatal_sync(false, _msg, ##__VA_ARGS__)
 
+
 #if defined(CONFIG_LOG_LEVEL_ERROR) || defined(DEBUG)
-#define error_sync(_sync, _msg, ...) log(_sync, "E", _msg, ##__VA_ARGS__)
+#define error_sync(_sync, _msg, ...) log(_sync, ERROR_COLOR "E", _msg RESTORE_COLOR, ##__VA_ARGS__)
 #else
 #define error_sync(_sync, _msg, ...)
 #endif
@@ -52,8 +72,9 @@ int log_flush(void);
 #define error(_msg, ...) error_sync(true, _msg, ##__VA_ARGS__)
 #define error_async(_msg, ...) error_sync(false, _msg, ##__VA_ARGS__)
 
+
 #if defined(CONFIG_LOG_LEVEL_WARN) || defined(DEBUG)
-#define warn_sync(_sync, _msg, ...) log(_sync, "W", _msg, ##__VA_ARGS__)
+#define warn_sync(_sync, _msg, ...) log(_sync, WARN_COLOR "W", _msg RESTORE_COLOR, ##__VA_ARGS__)
 #else
 #define warn_sync(_sync, _msg, ...)
 #endif
@@ -61,8 +82,9 @@ int log_flush(void);
 #define warn(_msg, ...) warn_sync(true, _msg, ##__VA_ARGS__)
 #define warn_async(_msg, ...) warn_sync(false, _msg, ##__VA_ARGS__)
 
+
 #if defined(CONFIG_LOG_LEVEL_INFO) || defined(DEBUG)
-#define info_sync(_sync, _msg, ...) log(_sync, "I", _msg, ##__VA_ARGS__)
+#define info_sync(_sync, _msg, ...) log(_sync, INFO_COLOR "I", _msg RESTORE_COLOR, ##__VA_ARGS__)
 #else
 #define info_sync(_sync, _msg, ...)
 #endif
@@ -70,8 +92,9 @@ int log_flush(void);
 #define info(_msg, ...) info_sync(true, _msg, ##__VA_ARGS__)
 #define info_async(_msg, ...) info_sync(false, _msg, ##__VA_ARGS__)
 
+
 #if defined(CONFIG_LOG_LEVEL_DEBUG) || defined(DEBUG)
-#define debug_sync(_sync, _msg, ...) log(_sync, "D", _msg, ##__VA_ARGS__)
+#define debug_sync(_sync, _msg, ...) log(_sync, DEBUG_COLOR "D", _msg RESTORE_COLOR, ##__VA_ARGS__)
 #else
 #define debug_sync(_sync, _msg, ...)
 #endif
@@ -79,8 +102,9 @@ int log_flush(void);
 #define debug(_msg, ...) debug_sync(true, _msg, ##__VA_ARGS__)
 #define debug_async(_msg, ...) debug_sync(false, _msg, ##__VA_ARGS__)
 
+
 #if defined(CONFIG_LOG_LEVEL_VERBOSE) || defined(DEBUG)
-#define verbose_sync(_sync, _msg, ...) log(_sync, "V", _msg, ##__VA_ARGS__)
+#define verbose_sync(_sync, _msg, ...) log(_sync, VERBOSE_COLOR "V", _msg RESTORE_COLOR, ##__VA_ARGS__)
 #else
 #define verbose_sync(_sync, _msg, ...)
 #endif

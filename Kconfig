@@ -44,6 +44,10 @@ config LOG_FILE_AND_LINEN
     bool "Log file path and line number"
     default n
 
+config LOG_USE_COLORS
+    bool "Enable log coloring"
+    default y
+
 endmenu
 
 menu "Debugging"
