@@ -3,6 +3,7 @@
 #include <log.h>
 #include <string.h>
 #include <component/component.h>
+#include <mm/heap.h>
 
 static inline void message_delimiter(void) {
     log(false, "I", "*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
@@ -14,6 +15,7 @@ static inline void dump_cur_state(void) {
     extern void dump_all_regs(void);
     dump_all_regs();
     // TODO: Dump kernel info
+    heap_dump_info();
 }
 
 static inline void dump_registered_comps(void) {

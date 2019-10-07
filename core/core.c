@@ -126,7 +126,7 @@ void kernel_entry(void)  {
         fatal("Not all mandatory board components were found");
     }
 
-    if (initialize_heap(__heap_start, CONFIG_MEM_HEAP_SIZE) < 0) {
+    if (heap_initialize(__heap_start, CONFIG_MEM_HEAP_SIZE) < 0) {
         fatal("Failed to initialize heap of size %d at 0x%p", CONFIG_MEM_HEAP_SIZE, __heap_start);
     }
 
