@@ -15,11 +15,11 @@ static inline int cpu_get_id(void) {
     return 0;
 }
 
-static inline cpu_comp_t *cpu(void) {
+static inline cpu_t *cpu(void) {
     // TODO Optimize this
     component_t *c;
     for_each_filtered_component(c, c->type == COMP_TYPE_CPU) {
-        cpu_comp_t *cpu = (cpu_comp_t *) c;
+        cpu_t *cpu = (cpu_t *) c;
         if (cpu->id == cpu_get_id()) {
             return cpu;
         }

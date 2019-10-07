@@ -8,11 +8,11 @@
 #define MAX_CPUS 4
 
 // TODO Use dynamic memory instead
-static cpu_comp_t cpus[MAX_CPUS];
+static cpu_t cpus[MAX_CPUS];
 static uint8_t curcpu;
 
 
-static int set_irqs_enable(cpu_comp_t *c, bool enabled) {
+static int set_irqs_enable(cpu_t *c, bool enabled) {
     if (cpu_get_id() != c->id) {
         error("Cannot enable/disable irqs on behalf of other processor");
         return -1;
@@ -26,7 +26,7 @@ static int process(board_comp_t *comp) {
         return -1;
     }
 
-    cpu_comp_t *cpu = &cpus[curcpu];
+    cpu_t *cpu = &cpus[curcpu];
     if (cpu_component_init(cpu, comp, NULL, NULL) < 0){
         error("Failed to register '%s'", comp->id);
         return -1;

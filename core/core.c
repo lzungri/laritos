@@ -135,7 +135,7 @@ void kernel_entry(void)  {
         error("Couldn't set default timezone");
     }
 
-    cpu_comp_t *c = cpu();
+    cpu_t *c = cpu();
     if (c->ops.set_irqs_enable(c, true) < 0) {
         fatal("Failed to enable irqs for cpu %u", c->id);
     }
