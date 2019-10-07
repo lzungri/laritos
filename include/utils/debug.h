@@ -6,7 +6,7 @@
 #include <mm/heap.h>
 
 static inline void message_delimiter(void) {
-    log(false, "I", "*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
+    log_always_async("*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
 }
 
 static inline void dump_cur_state(void) {

@@ -10,8 +10,8 @@ void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, psr_t
     psr_t v = cpsr;
     v.v = 1;
 
-    log(false, "I", "Registers:");
-    log(false, "I", "   pc=0x%08lx lr=0x%08lx cpsr=0x%08lx (%c%c%c%c%c%c%c%c %s mode)", pc, lr, cpsr.v,
+    log_always_async("Registers:");
+    log_always_async("   pc=0x%08lx lr=0x%08lx cpsr=0x%08lx (%c%c%c%c%c%c%c%c %s mode)", pc, lr, cpsr.v,
             cpsr.b.n ? 'N' : '.', cpsr.b.z ? 'Z' : '.', cpsr.b.c ? 'C' : '.',
             cpsr.b.v ? 'V' : '.', cpsr.b.q ? 'Q' : '.', cpsr.b.async_abort ? '.' : 'A',
             cpsr.b.irq ? '.' : 'I', cpsr.b.fiq ? '.' : 'F', get_cpu_mode_str(cpsr.b.mode));
@@ -22,7 +22,7 @@ void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, psr_t
         written += snprintf(buf + written, sizeof(buf) - written, "r%u=0x%08lx ", i, regs[i]);
         if ((i + 1) % 4 == 0 || i == nregs - 1) {
             written = 0;
-            log(false, "I", "   %s", buf);
+            log_always_async("   %s", buf);
         }
     }
 }
