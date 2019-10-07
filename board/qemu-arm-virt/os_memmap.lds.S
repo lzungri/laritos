@@ -38,6 +38,12 @@ SECTIONS
         /* Mark the end of the drivers array with a NULL pointer */
         LONG(0);
 
+        . = ALIGN(4);
+        __tests_start = ABSOLUTE(.);
+        KEEP(*(.test));
+        /* Mark the end of the tests array with a NULL pointer */
+        LONG(0);
+
         /* ARM stuff */
         *(.glue*);
         *(.vfp11_veneer);
