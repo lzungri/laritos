@@ -12,6 +12,9 @@
 #include <board.h>
 #include <utils/debug.h>
 #include <generated/utsrelease.h>
+#ifdef CONFIG_TEST_ENABLED
+#include <test/test.h>
+#endif
 
 
 laritos_t _laritos;
@@ -139,6 +142,16 @@ void kernel_entry(void)  {
     if (c->ops.set_irqs_enable(c, true) < 0) {
         fatal("Failed to enable irqs for cpu %u", c->id);
     }
+
+#ifdef CONFIG_TEST_ENABLED
+    info("Running test cases");
+    if (test_run(__tests_start) < 0) {
+        fatal("Error executing test cases");
+    }
+    while (1) {
+        asm("wfi");
+    }
+#endif
 
     shell();
 }
