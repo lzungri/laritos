@@ -1,0 +1,6 @@
+menu "Tests"
+    depends on TEST_ENABLED
+
+source "test/tests/core/Kconfig"
+
+endmenu

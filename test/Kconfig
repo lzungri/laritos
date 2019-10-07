@@ -1,0 +1,10 @@
+menu "Testing"
+
+config TEST_ENABLED
+    bool "Enable kernel testing"
+    default n
+
+source "test/fwk/Kconfig"
+source "test/tests/Kconfig"
+
+endmenu

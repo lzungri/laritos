@@ -1,0 +1,5 @@
+menu "Core"
+
+source "test/tests/core/libc/Kconfig"
+
+endmenu

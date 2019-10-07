@@ -401,6 +401,9 @@ LINUXINCLUDE    :=  $(if $(building_out_of_srctree),-I$(srctree)/include) \
 		$(if $(building_out_of_srctree),-I$(srctree)/include/libc) \
 		-I$(objtree)/include \
 		$(USERINCLUDE)
+ifdef CONFIG_TEST_ENABLED
+LINUXINCLUDE += $(if $(building_out_of_srctree),-I$(srctree)/test/)
+endif
 
 KBUILD_AFLAGS   := -D__ASSEMBLY__ -fno-PIE
 
@@ -799,6 +802,8 @@ export KBUILD_IMAGE ?= laritos
 PHONY += prepare0
 
 core-y += core/ board/
+core-$(CONFIG_TEST_ENABLED) += test/
+
 drivers-y += drivers/
 
 laritos-dirs := $(patsubst %/,%,$(filter %/, $(init-y) $(core-y) $(drivers-y) $(libs-y)))

@@ -1,0 +1,7 @@
+menu "libc"
+
+config TEST_STRING
+    bool "string.c"
+    default n
+
+endmenu
