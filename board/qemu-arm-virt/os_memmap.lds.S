@@ -64,6 +64,7 @@ SECTIONS
         __data_end = ABSOLUTE(.);
         __data_size = __data_end - __data_start;
      } > ram AT > flash
+    ASSERT(__data_end < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS .data")
 
      /* Variable used to transfer the .data section from flash to ram */
      __data_lma = LOADADDR(.data);
@@ -77,6 +78,7 @@ SECTIONS
         __bss_end = ABSOLUTE(.);
         __bss_size = __bss_end - __bss_start;
     } > ram
+    ASSERT(__bss_end < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS .bss")
 
     /* Heap located right after the .bss section in the ram */
     . = ALIGN(4);
