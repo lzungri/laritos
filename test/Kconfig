@@ -3,7 +3,6 @@ menu "Testing"
 config TEST_ENABLED
     bool "Enable kernel testing"
     default n
-    select LOG_FILE_AND_LINEN
 
 source "test/fwk/Kconfig"
 source "test/tests/Kconfig"
