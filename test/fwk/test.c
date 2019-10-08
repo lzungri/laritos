@@ -42,11 +42,10 @@ int test_run(test_descriptor_t *tests[]) {
 
     info("--------------------------------------------------");
     info("Test summary:");
-    info("  Failed: %3u", ctx.failed);
-    info("  Error:  %3u", ctx.error);
-    info("  Passed: %3u", ctx.passed);
-    info("  -----------");
-    info("  Total:  %3u", ctx.failed + ctx.error + ctx.passed);
+    info("   Failed: %3u", ctx.failed);
+    info("   Error:  %3u", ctx.error);
+    info("   Passed: %3u", ctx.passed);
+    info("   Total:  %3u", ctx.failed + ctx.error + ctx.passed);
     info("--------------------------------------------------");
 
     return 0;

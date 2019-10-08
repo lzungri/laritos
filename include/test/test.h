@@ -43,7 +43,7 @@ int test_run(test_descriptor_t *tests[]);
  *
  * @param _test: Test name
  */
-#define DEF_TEST(_test) \
+#define T(_test) \
     static testres_t _test(void); \
     static test_descriptor_t _test_desc_ ## _test = { \
         .name = #_test, \
@@ -53,7 +53,7 @@ int test_run(test_descriptor_t *tests[]);
     test_descriptor_t * _testdesc_ ## _test ## _ptr __attribute__ ((section (".test"))) = &_test_desc_ ## _test; \
     static testres_t _test(void)
 
-#define DEF_TEST_END \
+#define TEND \
         return TEST_PASS;\
     }
 

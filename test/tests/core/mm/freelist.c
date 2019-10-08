@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <test/test.h>
 
-DEF_TEST(freelist_heap_reports_the_right_available_space) {
+T(freelist_heap_reports_the_right_available_space) {
     uint32_t avail = heap_get_available();
 
     char *p = malloc(0);
@@ -20,9 +20,9 @@ DEF_TEST(freelist_heap_reports_the_right_available_space) {
     tassert(heap_get_available() == 0);
     free(p);
     tassert(heap_get_available() == avail);
-DEF_TEST_END
+TEND
 
-DEF_TEST(freelist_malloc_returns_null_when_cannot_satisfy_mem_req) {
+T(freelist_malloc_returns_null_when_cannot_satisfy_mem_req) {
     uint32_t avail = heap_get_available();
 
     char *p = malloc(avail + 1);
@@ -42,5 +42,5 @@ DEF_TEST(freelist_malloc_returns_null_when_cannot_satisfy_mem_req) {
     p2 = malloc(1);
     tassert(p != NULL);
     tassert(heap_get_available() == avail - 1 - sizeof(fl_node_t));
-DEF_TEST_END
+TEND
 
