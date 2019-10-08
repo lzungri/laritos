@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 0
-PATCHLEVEL = 1
+PATCHLEVEL = 3
 SUBLEVEL = 0
 EXTRAVERSION =
 NAME = laritOS
@@ -402,7 +402,7 @@ LINUXINCLUDE    :=  $(if $(building_out_of_srctree),-I$(srctree)/include) \
 		-I$(objtree)/include \
 		$(USERINCLUDE)
 ifdef CONFIG_TEST_ENABLED
-LINUXINCLUDE += $(if $(building_out_of_srctree),-I$(srctree)/test/)
+LINUXINCLUDE += $(if $(building_out_of_srctree),-I$(srctree)/test/tests)
 endif
 
 KBUILD_AFLAGS   := -D__ASSEMBLY__ -fno-PIE
