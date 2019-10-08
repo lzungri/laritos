@@ -6,7 +6,6 @@
 #define MAX_FILEPATH_LEN 255
 
 int test_run(test_descriptor_t *tests[]) {
-    info("--------------------------------------------------");
     info("Tests:");
 
     test_ctx_t ctx = { 0 };
@@ -22,24 +21,26 @@ int test_run(test_descriptor_t *tests[]) {
 
         if (strncmp(td->fpath, fpath, MAX_FILEPATH_LEN) != 0) {
             fpath = td->fpath;
-            info("  %s:", fpath);
+            info("--------------------------------------------------");
+            info("%s:", fpath);
         }
         switch(td->func()) {
         case TEST_ERROR:
-            error("    [ERROR] %s", td->name);
+            error("   [ERROR] %s", td->name);
             ctx.error++;
             break;
         case TEST_FAIL:
-            error("    [FAIL] %s", td->name);
+            error("   [FAIL] %s", td->name);
             ctx.failed++;
             break;
         case TEST_PASS:
-            info("    [PASS] %s", td->name);
+            info("   [PASS] %s", td->name);
             ctx.passed++;
             break;
         }
     }
 
+    info("--------------------------------------------------");
     info("Test summary:");
     info("  Failed: %3u", ctx.failed);
     info("  Error:  %3u", ctx.error);
