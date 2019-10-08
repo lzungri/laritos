@@ -1,5 +1,10 @@
 menu "Core"
 
+config TEST_CORE_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_LIBC_ALL
+
 source "test/tests/core/libc/Kconfig"
 
 endmenu

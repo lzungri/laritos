@@ -34,6 +34,11 @@ extern test_descriptor_t *__tests_start[];
 int test_run(test_descriptor_t *tests[]);
 
 
+/**
+ * Defines a test case function and registers into the test cases array
+ *
+ * @param _test: Test name
+ */
 #define DEF_TEST(_test) \
     static testres_t _test(void); \
     static test_descriptor_t _test_desc_ ## _test = { \

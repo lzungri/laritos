@@ -1,5 +1,10 @@
 menu "libc"
 
+config TEST_CORE_LIBC_ALL
+    bool "Select all"
+    default n
+    select TEST_STRING
+
 config TEST_STRING
     bool "string.c"
     default n
