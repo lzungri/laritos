@@ -1,0 +1,12 @@
+menu "Memory manager"
+
+config TEST_CORE_MM_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_MM_FREELIST
+
+config TEST_CORE_MM_FREELIST
+    bool "freelist.c"
+    default n
+
+endmenu

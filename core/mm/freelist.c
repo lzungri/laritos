@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 #include <log.h>
 
 #include <stddef.h>
@@ -173,5 +173,12 @@ void heap_dump_info(void) {
     log_always("  Available: %lu bytes", heap_get_available());
     log_always("  Number of free blocks: %lu", blocks);
     log_always("  Max free block size: %lu", maxs);
-    log_always("  Min free block size: %lu", mins);
+    log_always("  Min free block size: %lu", blocks > 0 ? mins : 0);
 }
+
+
+
+#ifdef CONFIG_TEST_CORE_MM_FREELIST
+#include __FILE__
+#endif
+

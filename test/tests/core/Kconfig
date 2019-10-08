@@ -4,7 +4,9 @@ config TEST_CORE_ALL
     bool "Select all"
     default n
     select TEST_CORE_LIBC_ALL
+    select TEST_CORE_MM_ALL
 
 source "test/tests/core/libc/Kconfig"
+source "test/tests/core/mm/Kconfig"
 
 endmenu
