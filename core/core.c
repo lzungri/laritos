@@ -114,6 +114,10 @@ void kernel_entry(void)  {
         while(1);
     }
 
+    if (heap_initialize(__heap_start, CONFIG_MEM_HEAP_SIZE) < 0) {
+        while(1);
+    }
+
     log_always("-- laritOS " UTS_RELEASE " --");
     info("Initializing kernel");
 
@@ -135,10 +139,6 @@ void kernel_entry(void)  {
 
     if (!component_are_mandatory_comps_present()) {
         fatal("Not all mandatory board components were found");
-    }
-
-    if (heap_initialize(__heap_start, CONFIG_MEM_HEAP_SIZE) < 0) {
-        fatal("Failed to initialize heap of size %d at 0x%p", CONFIG_MEM_HEAP_SIZE, __heap_start);
     }
 
     info("Setting default timezone as PDT");
