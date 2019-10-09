@@ -88,9 +88,8 @@ int _abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
 }
 
 int _irq_handler(const spregs_t *regs) {
-    // TODO: Optimize this
     component_t *c = NULL;
-    for_each_filtered_component(c, c->type == COMP_TYPE_INTC) {
+    for_each_component_type(c, COMP_TYPE_INTC) {
         verbose_async("Dispatching irq to int controller '%s'", c->id);
         intc_t *intc = (intc_t *) c;
         irqret_t ret = intc->ops.dispatch_irq(intc);

@@ -5,6 +5,15 @@
 #include <string.h>
 #include <core.h>
 #include <utils/utils.h>
+#include <dstruct/list.h>
+
+int component_init_global_context() {
+    int i;
+    for (i = 0; i < ARRAYSIZE(_laritos.comps); i++) {
+        INIT_LIST_HEAD(&_laritos.comps[i]);
+    }
+    return 0;
+}
 
 static int nop_init(component_t *c) {
     // Nothing
@@ -22,29 +31,18 @@ int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_t
     comp->type = type;
     comp->ops.init = init == NULL ? nop_init : init;
     comp->ops.deinit = deinit == NULL ? nop_deinit : deinit;
+    INIT_LIST_HEAD(&comp->list);
     return 0;
 }
 
 int component_register(component_t *comp) {
     debug("Registering component '%s' of type %d", comp->id, comp->type);
-
-    int i;
-    for (i = 0; i < ARRAYSIZE(_laritos.components); i++) {
-        if (_laritos.components[i] == NULL) {
-            _laritos.components[i] = comp;
-            break;
-        }
-    }
-
-    if (i >= ARRAYSIZE(_laritos.components)) {
-        error("Failed to register component '%s'. Max number of components reached", comp->id);
-        return -1;
-    }
+    list_add(&comp->list, &_laritos.comps[comp->type]);
 
     verbose("Initializing component '%s'", comp->id);
     if (comp->ops.init(comp) < 0) {
         error("Couldn't initialize component '%s'", comp->id);
-        _laritos.components[i] = NULL;
+        list_del(&comp->list);
         return -1;
     }
     info("'%s' component (type %d) registered", comp->id, comp->type);
@@ -52,20 +50,13 @@ int component_register(component_t *comp) {
 }
 
 int component_unregister(component_t *comp) {
-    int i;
-    for (i = 0; i < ARRAYSIZE(_laritos.components); i++) {
-        if (_laritos.components[i] == comp) {
-            verbose("De-initializing component '%s'", comp->id);
-            if (comp->ops.deinit(comp) < 0) {
-                error("Couldn't de-initialize component '%s'", comp->id);
-            }
-            _laritos.components[i] = NULL;
-            info("Component '%s' of type %d unregistered", comp->id, comp->type);
-            return 0;
-        }
+    verbose("De-initializing component '%s'", comp->id);
+    if (comp->ops.deinit(comp) < 0) {
+        error("Couldn't de-initialize component '%s'", comp->id);
     }
-    error("Couldn't find and unregister component '%s'", comp->id);
-    return -1;
+    list_del(&comp->list);
+    info("Component '%s' of type %d unregistered", comp->id, comp->type);
+    return 0;
 }
 
 int component_set_info(component_t *comp, char *product, char *vendor, char *description) {
@@ -85,13 +76,8 @@ component_t *component_get_by_id(char *id) {
     return NULL;
 }
 
-// TODO Optimize
 static inline bool is_comp_type_present(component_type_t t) {
-    component_t *c;
-    for_each_filtered_component(c, c->type == t) {
-        return true;
-    }
-    return false;
+    return !list_empty(&_laritos.comps[t]);
 }
 
 bool component_are_mandatory_comps_present(void) {

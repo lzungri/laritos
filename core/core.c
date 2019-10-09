@@ -22,7 +22,7 @@ laritos_t _laritos;
 static void shell(void) {
     while (true) {
         component_t *c;
-        for_each_filtered_component(c, c->type == COMP_TYPE_INPUTDEV) {
+        for_each_component_type(c, COMP_TYPE_INPUTDEV) {
             stream_t *s = ((inputdev_t *) c)->transport;
             char buf[32];
             int bread = 0;
@@ -76,7 +76,7 @@ static void shell(void) {
                     log_always("rtc_gettime(): %lu", (uint32_t) t.secs);
 
                     component_t *c1;
-                    for_each_filtered_component(c1, c1->type == COMP_TYPE_RTC) {
+                    for_each_component_type(c1, COMP_TYPE_RTC) {
                         timer_comp_t *t = (timer_comp_t *) c1;
                         int64_t v;
                         t->ops.get_remaining(t, &v);
@@ -86,7 +86,7 @@ static void shell(void) {
                 case 'e':;
                     // rtc timer expiration
                     component_t *c2;
-                    for_each_filtered_component(c2, c2->type == COMP_TYPE_RTC) {
+                    for_each_component_type(c2, COMP_TYPE_RTC) {
                         timer_comp_t *t = (timer_comp_t *) c2;
                         t->ops.set_expiration(t, 5, 0, TIMER_EXP_RELATIVE);
                     }
@@ -105,13 +105,16 @@ static void shell(void) {
     }
 }
 
+static int initialize_global_context(void) {
+    return component_init_global_context();
+}
+
 void kernel_entry(void)  {
+    if (initialize_global_context() < 0) {
+        while(1);
+    }
+
     log_always("-- laritOS " UTS_RELEASE " --");
-
-#ifdef CONFIG_TEST_ENABLED
-    log_always("***** Running in test mode *****");
-#endif
-
     info("Initializing kernel");
 
     if (board_parse_and_initialize(&_laritos.bi) < 0) {
@@ -149,7 +152,7 @@ void kernel_entry(void)  {
     }
 
 #ifdef CONFIG_TEST_ENABLED
-    info("Running test cases");
+    log_always("***** Running in test mode *****");
     if (test_run(__tests_start) < 0) {
         fatal("Error executing test cases");
     }

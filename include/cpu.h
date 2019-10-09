@@ -16,9 +16,8 @@ static inline int cpu_get_id(void) {
 }
 
 static inline cpu_t *cpu(void) {
-    // TODO Optimize this
     component_t *c;
-    for_each_filtered_component(c, c->type == COMP_TYPE_CPU) {
+    for_each_component_type(c, COMP_TYPE_CPU) {
         cpu_t *cpu = (cpu_t *) c;
         if (cpu->id == cpu_get_id()) {
             return cpu;
