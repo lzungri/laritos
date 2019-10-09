@@ -35,7 +35,6 @@ static inline void dump_freelist(void) {
     list_for_each_entry(pos, &freelist, list) {
         log_always("   [0x%p, size=%lu]", pos, pos->size);
     }
-    heap_dump_info();
 }
 #endif
 
