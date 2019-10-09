@@ -14,6 +14,12 @@ winheight regs 13
 #set print pretty on
 set print array on
 
+macro define offset_of(_type, _memb) \
+      ((long)(&((_type *)0)->_memb))
+
+macro define container_of(_ptr, _type, _memb) \
+      ((_type *)((void *)(_ptr) - offset_of(_type, _memb)))
+
 define wait_and_enable_tui
     printf "\nPress enter to return"
     shell read
