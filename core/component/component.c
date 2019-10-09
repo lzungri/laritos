@@ -6,6 +6,7 @@
 #include <core.h>
 #include <utils/utils.h>
 #include <dstruct/list.h>
+#include <mm/heap.h>
 
 int component_init_global_context() {
     int i;
@@ -23,6 +24,15 @@ static int nop_init(component_t *c) {
 static int nop_deinit(component_t *c) {
     // Nothing
     return 0;
+}
+
+void *component_alloc(size_t size) {
+    component_t *c = calloc(1, size);
+    if (c == NULL) {
+        return NULL;
+    }
+    c->ops.free = (void *(*)(component_t *))free;
+    return c;
 }
 
 int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_type_t type,
@@ -51,10 +61,14 @@ int component_register(component_t *comp) {
 
 int component_unregister(component_t *comp) {
     verbose("De-initializing component '%s'", comp->id);
+    list_del(&comp->list);
     if (comp->ops.deinit(comp) < 0) {
         error("Couldn't de-initialize component '%s'", comp->id);
     }
-    list_del(&comp->list);
+    if (comp->ops.free != NULL) {
+        verbose("Freeing component '%s'", comp->id);
+        comp->ops.free(comp);
+    }
     info("Component '%s' of type %d unregistered", comp->id, comp->type);
     return 0;
 }

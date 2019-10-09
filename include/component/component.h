@@ -24,6 +24,14 @@ typedef struct {
     int (*init)(struct component *c);
     int (*deinit)(struct component *c);
 
+    /**
+     * Component deallocation callback
+     * Note: Can be NULL (e.g. for statically allocated components)
+     *
+     * @param c: Component to deallocate
+     */
+    void *(*free)(struct component *c);
+
     // TODO Power manager stuff
 } component_ops_t;
 
@@ -51,6 +59,7 @@ typedef struct component {
         list_for_each_entry(_c, &_laritos.comps[__i], list)
 
 int component_init_global_context(void);
+void *component_alloc(size_t size);
 int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c));
 int component_register(component_t *comp);
