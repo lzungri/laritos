@@ -1,9 +1,5 @@
 menu "Components"
 
-config COMP_MAX
-    int "Max number of components"
-    default 32
-
 config COMP_INFO_SIZE
     int "Max size for each component info field"
     default 32

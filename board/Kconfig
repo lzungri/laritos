@@ -1,13 +1,5 @@
 menu "Board"
 
-config BOARD_MAX_COMPONENT_ATTRS
-    int "Max number of attributes per component in the board info (*.bi)"
-    default 10
-
-config BOARD_INFO_MAX_TOKEN_LEN_BYTES
-    int "Maximum length in bytes for board properties names/ids/values (includes '\0')"
-    default 32
-
 config BOARD_QEMU_ARM_VIRT
     bool "QEMU ARM Board"
     depends on ARM

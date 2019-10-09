@@ -62,8 +62,8 @@ int board_parse_info(char *bi_start_addr, board_info_t *bi) {
             return 0;
         }
 
-        if (bi->len >= CONFIG_COMP_MAX) {
-            error("Max number of board info components reached, max=%d", CONFIG_COMP_MAX);
+        if (bi->len >= ARRAYSIZE(bi->components)) {
+            error("Max number of board info components reached, max=%d", ARRAYSIZE(bi->components));
             return -1;
         }
 
