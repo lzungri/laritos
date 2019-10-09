@@ -8,9 +8,7 @@
 #include <mm/heap.h>
 #include <utils/utils.h>
 #include <utils/math.h>
-
-// TODO Try to lock in time-sensitive funcs, then lock in the merge func
-// TODO Lock!
+#include <sync/spinlock.h>
 
 typedef struct {
     struct list_head list;
@@ -18,12 +16,16 @@ typedef struct {
     char data[];
 } fl_node_t;
 
-
 /**
  * List of free blocks.
  * Ascending order to simplify the merging process
  */
 static LIST_HEAD(freelist);
+
+/**
+ * Freelist lock
+ */
+spinlock_t lock;
 
 
 #ifdef DEBUG
@@ -38,6 +40,9 @@ static inline void dump_freelist(void) {
 #endif
 
 int heap_initialize(void *start, uint32_t size) {
+    irqctx_t ctx;
+    spinlock_acquire(&lock, &ctx);
+
     fl_node_t *whole = (fl_node_t *) start;
     whole->size = size - sizeof(fl_node_t);
     INIT_LIST_HEAD(&whole->list);
@@ -45,6 +50,8 @@ int heap_initialize(void *start, uint32_t size) {
 #ifdef DEBUG
     dump_freelist();
 #endif
+
+    spinlock_release(&lock, &ctx);
     return 0;
 }
 
@@ -54,6 +61,9 @@ void *malloc(size_t size) {
     }
 
     verbose("malloc(%d)", size);
+
+    irqctx_t ctx;
+    spinlock_acquire(&lock, &ctx);
 
     fl_node_t *best = NULL;
     fl_node_t *pos = NULL;
@@ -88,6 +98,8 @@ void *malloc(size_t size) {
     dump_freelist();
 #endif
 
+    spinlock_release(&lock, &ctx);
+
     return best != NULL ? best->data : NULL;
 }
 
@@ -120,6 +132,9 @@ void free(void *ptr) {
         return;
     }
 
+    irqctx_t ctx;
+    spinlock_acquire(&lock, &ctx);
+
     fl_node_t *node = container_of(ptr, fl_node_t, data);
     verbose("Freeing ptr=0x%p, block [0x%p, size=%lu]", ptr, node, node->size);
 
@@ -138,6 +153,8 @@ end:
     dump_freelist();
 #endif
     merge();
+
+    spinlock_release(&lock, &ctx);
 }
 
 void *calloc(size_t nmemb, size_t size) {
@@ -151,15 +168,23 @@ void *calloc(size_t nmemb, size_t size) {
 }
 
 uint32_t heap_get_available(void) {
+    irqctx_t ctx;
+    spinlock_acquire(&lock, &ctx);
+
     uint32_t avail = 0;
     fl_node_t *block;
     list_for_each_entry(block, &freelist, list) {
         avail += block->size;
     }
+
+    spinlock_release(&lock, &ctx);
     return avail;
 }
 
 void heap_dump_info(void) {
+    irqctx_t ctx;
+    spinlock_acquire(&lock, &ctx);
+
     uint32_t blocks = 0;
     uint32_t maxs = 0;
     uint32_t mins = 0xffffffff;
@@ -169,6 +194,9 @@ void heap_dump_info(void) {
         maxs = max(maxs, block->size);
         mins = min(mins, block->size);
     }
+
+    spinlock_release(&lock, &ctx);
+
     log_always("Heap information:");
     log_always("  Available: %lu bytes", heap_get_available());
     log_always("  Number of free blocks: %lu", blocks);
