@@ -107,6 +107,11 @@ static void shell(void) {
 
 void kernel_entry(void)  {
     log_always("-- laritOS " UTS_RELEASE " --");
+
+#ifdef CONFIG_TEST_ENABLED
+    log_always("***** Running in test mode *****");
+#endif
+
     info("Initializing kernel");
 
     if (board_parse_and_initialize(&_laritos.bi) < 0) {

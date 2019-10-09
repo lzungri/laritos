@@ -181,4 +181,3 @@ void heap_dump_info(void) {
 #ifdef CONFIG_TEST_CORE_MM_FREELIST
 #include __FILE__
 #endif
-
