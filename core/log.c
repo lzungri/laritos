@@ -10,6 +10,8 @@
 #include <dstruct/circbuf.h>
 #include <utils/utils.h>
 #include <time/time.h>
+#include <mm/heap.h>
+#include <dstruct/list.h>
 #include <component/timer.h>
 #include <component/component.h>
 #include <component/stream.h>
@@ -67,21 +69,17 @@ typedef struct {
     stream_t *transport;
 } logger_t;
 
-// TODO Use dynamic memory instead
-static logger_t loggers[3];
-static uint8_t nloggers;
-
 int log_flush(void) {
-    if (nloggers == 0) {
+    if (!component_any_of(COMP_TYPE_LOGGER)) {
         return 0;
     }
 
     int bread = 0;
     char buf[CONFIG_LOG_MAX_LINE_SIZE * 5] = { 0 };
     while ((bread = circbuf_nb_read(&logcb, buf, sizeof(buf))) > 0) {
-        int i;
-        for (i = 0; i < nloggers; i++) {
-            stream_t *s = loggers[i].transport;
+        component_t *c;
+        for_each_component_type(c, COMP_TYPE_LOGGER) {
+            stream_t *s = ((logger_t *) c)->transport;
             s->ops.write(s, buf, bread, false);
         }
     }
@@ -89,35 +87,36 @@ int log_flush(void) {
 }
 
 static int process(board_comp_t *comp) {
-    if (nloggers > ARRAYSIZE(loggers)) {
-        error("Max number of loggers reached");
+    logger_t *logger = component_alloc(sizeof(logger_t));
+    if (logger == NULL) {
+        error("Failed to allocate memory for '%s'", comp->id);
         return -1;
     }
 
-    logger_t *logger = &loggers[nloggers];
-
     if (component_init((component_t *) logger, comp->id, comp, COMP_TYPE_LOGGER, NULL, NULL) < 0) {
         error("Failed to initialize logger '%s'", comp->id);
-        return -1;
+        goto fail;
     }
 
     if (board_get_component_attr(comp, "transport", (component_t **) &logger->transport) < 0 ||
             logger->transport->ops.write == NULL) {
         error("No valid transport found for logger '%s'", comp->id);
-        return -1;
+        goto fail;
     }
 
     if (component_register((component_t *) logger) < 0) {
         error("Couldn't register logger '%s'", comp->id);
-        return -1;
+        goto fail;
     }
-
-    nloggers++;
 
     // Now that we have a logger ready, flush all the previously buffered data
     log_flush();
 
     return 0;
+
+fail:
+    free(logger);
+    return -1;
 }
 
 DEF_DRIVER_MANAGER(logger, process);
