@@ -98,6 +98,7 @@ static void shell(void) {
                     free(p2);
                     free(p);
                     free(p3);
+                    heap_dump_info();
                     break;
                 }
             }
