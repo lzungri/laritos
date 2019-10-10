@@ -120,6 +120,7 @@ void kernel_entry(void)  {
 
     log_always("-- laritOS " UTS_RELEASE " --");
     info("Initializing kernel");
+    info("Heap of %u bytes initialized at 0x%p", CONFIG_MEM_HEAP_SIZE, __heap_start);
 
     if (board_parse_and_initialize(&_laritos.bi) < 0) {
         fatal("Couldn't initialize board");

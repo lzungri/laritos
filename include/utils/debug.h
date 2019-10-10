@@ -22,7 +22,7 @@ static inline void dump_registered_comps(void) {
     component_t *c;
     log_always("Components:");
     for_each_component(c) {
-        log_always("   %s, type: %d", c->id, c->type);
+        log_always("   %s@0x%p, type: %d", c->id, c, c->type);
         if (strnlen(c->product, sizeof(c->product)) > 0) {
             log_always("      product: %s", c->product);
         }
