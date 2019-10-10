@@ -67,4 +67,5 @@ int component_unregister(component_t *comp);
 component_t *component_get_by_id(char *id);
 void component_dump_registered_comps(void);
 int component_set_info(component_t *c, char *product, char *vendor, char *description);
+bool component_any_of(component_type_t t);
 bool component_are_mandatory_comps_present(void);

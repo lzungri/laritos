@@ -90,7 +90,7 @@ component_t *component_get_by_id(char *id) {
     return NULL;
 }
 
-static inline bool is_comp_type_present(component_type_t t) {
+bool component_any_of(component_type_t t) {
     return !list_empty(&_laritos.comps[t]);
 }
 
@@ -98,7 +98,7 @@ bool component_are_mandatory_comps_present(void) {
     component_type_t mand[] = { COMP_TYPE_CPU, COMP_TYPE_RTC };
     int i;
     for (i = 0; i < ARRAYSIZE(mand); i++) {
-        if (is_comp_type_present(mand[i])) {
+        if (component_any_of(mand[i])) {
             continue;
         }
         info("No type %d component was found", mand[i]);
