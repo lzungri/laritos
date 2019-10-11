@@ -30,7 +30,7 @@ static inline void free(void *ptr) {
 #endif
 
 __attribute__((always_inline)) static inline void *calloc(size_t nmemb, size_t size) {
-    // Very basic implementation
+    // Pretty basic implementation
     size_t n = size * nmemb;
     void *ptr = malloc(n);
     if (ptr != NULL) {
