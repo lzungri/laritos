@@ -41,6 +41,7 @@ static void shell(void) {
                     asm("mov r4, #5");
                     asm("mov r5, #6");
                     asm("mov r6, #7");
+                    dump_cur_state();
                     asm("svc 1");
                     break;
                 case 'r':
@@ -99,6 +100,14 @@ static void shell(void) {
                     free(p);
                     free(p3);
                     heap_dump_info();
+                    break;
+                case 'h':;
+                    char *ptr = malloc(10);
+                    ptr[10] = 0xCA;
+                    ptr[11] = 0xCA;
+                    ptr[12] = 0xCA;
+                    ptr[13] = 0xCA;
+                    free(ptr);
                     break;
                 }
             }
