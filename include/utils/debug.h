@@ -3,18 +3,25 @@
 #include <log.h>
 #include <string.h>
 #include <component/component.h>
-#include <mm/heap.h>
+#include <arch/debug.h>
 
 static inline void message_delimiter(void) {
     log_always_async("*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
 }
 
-static inline void dump_cur_state(void) {
+/**
+ * Print the current state of the OS
+ *
+ * Note: __attribute__((always_inline)) so that this function is always expanded and thus
+ * we get a useful PC/LR, not just the PC inside the dump_cur_state() function (in case it
+ * wasn't expanded by the compiler)
+ */
+__attribute__((always_inline)) static inline void dump_cur_state(void) {
     // IMPORTANT: Make sure you don't change any relevant registers before
     // calling dump_all_regs()
-    extern void dump_all_regs(void);
-    dump_all_regs();
+    arch_dump_all_regs();
     // TODO: Dump kernel info
+    void heap_dump_info(void);
     heap_dump_info();
 }
 
