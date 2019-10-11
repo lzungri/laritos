@@ -4,6 +4,10 @@ config MEM_HEAP_SIZE
     int "OS heap size (bytes)"
     default 16777216 # 16MB
 
+config MEM_HEAP_BUFFER_PROTECTION
+    bool "Enable heap buffer protection (affects performance)"
+    default y
+
 choice
     prompt "Manager"
     default MM_FREELIST

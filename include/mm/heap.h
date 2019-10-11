@@ -17,7 +17,7 @@ void heap_dump_info(void);
 void *_malloc(size_t size);
 void _free(void *ptr);
 
-#ifdef CONFIG_HEAP_BUFFER_PROTECTION
+#ifdef CONFIG_MEM_HEAP_BUFFER_PROTECTION
 #include <mm/_heap_prot.h>
 #else
 static inline void *malloc(size_t size) {

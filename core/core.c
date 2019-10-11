@@ -102,6 +102,7 @@ static void shell(void) {
                     heap_dump_info();
                     break;
                 case 'h':;
+                    // Heap buffer overflow
                     char *ptr = malloc(10);
                     ptr[10] = 0xCA;
                     ptr[11] = 0xCA;
