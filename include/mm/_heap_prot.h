@@ -23,6 +23,10 @@ typedef struct {
  * @return: Pointer to allocated chunk
  */
 __attribute__((always_inline)) static inline void *malloc(size_t size) {
+    if (size == 0) {
+        return NULL;
+    }
+
     bufprot_head_t *h = _malloc(sizeof(bufprot_head_t) + size + sizeof(bufprot_tail_t));
     if (h == NULL) {
         return NULL;
@@ -42,6 +46,10 @@ __attribute__((always_inline)) static inline void *malloc(size_t size) {
  * @param ptr: Pointer to mallocated chunk
  */
 __attribute__((always_inline)) static inline void free(void *ptr) {
+    if (ptr == NULL) {
+        return;
+    }
+
     bufprot_head_t *h = (bufprot_head_t *) ((char *) ptr - sizeof(bufprot_head_t));
     bufprot_tail_t *t = (bufprot_tail_t *) ((char *) ptr + h->size);
     if (h->canary != CANARY || t->canary != CANARY) {
