@@ -3,7 +3,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 #include <dstruct/list.h>
 #include <mm/heap.h>
 #include <utils/utils.h>
@@ -54,7 +53,7 @@ int heap_initialize(void *start, uint32_t size) {
     return 0;
 }
 
-void *malloc(size_t size) {
+void *_malloc(size_t size) {
     if (size <= 0) {
         return NULL;
     }
@@ -126,7 +125,7 @@ static void merge(void) {
 #endif
 }
 
-void free(void *ptr) {
+void _free(void *ptr) {
     if (ptr == NULL) {
         return;
     }
@@ -154,16 +153,6 @@ end:
     merge();
 
     spinlock_release(&lock, &ctx);
-}
-
-void *calloc(size_t nmemb, size_t size) {
-    // Very basic implementation
-    size_t n = size * nmemb;
-    void *ptr = malloc(n);
-    if (ptr != NULL) {
-        memset(ptr, 0, n);
-    }
-    return ptr;
 }
 
 uint32_t heap_get_available(void) {
