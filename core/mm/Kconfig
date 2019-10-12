@@ -9,11 +9,20 @@ config MEM_HEAP_BUFFER_PROTECTION
     default y
 
 choice
-    prompt "Manager"
+    prompt "Heap Manager"
     default MM_FREELIST
 
 config MM_FREELIST
     bool "Simple freelist memory manager"
+
+endchoice
+
+choice
+    prompt "Slab Manager"
+    default MM_BITSET_SLAB
+
+config MM_BITSET_SLAB
+    bool "Simple bitset slab allocator"
 
 endchoice
 
