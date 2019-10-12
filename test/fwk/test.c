@@ -1,6 +1,7 @@
 #include <log.h>
 
 #include <string.h>
+#include <mm/heap.h>
 #include <test/test.h>
 
 #define MAX_FILEPATH_LEN 255
@@ -10,6 +11,8 @@ int test_run(test_descriptor_t *tests[]) {
 
     test_ctx_t ctx = { 0 };
     test_descriptor_t **tdptr;
+
+    uint32_t heap_avail = heap_get_available();
 
     char *fpath = "";
     for (tdptr = tests; *tdptr != NULL; tdptr++) {
@@ -48,5 +51,8 @@ int test_run(test_descriptor_t *tests[]) {
     info("   Total:  %3u", ctx.failed + ctx.error + ctx.passed);
     info("--------------------------------------------------");
 
+    if (heap_avail > heap_get_available()) {
+        warn("Tests may be leaking %lu bytes of heap", heap_avail - heap_get_available());
+    }
     return 0;
 }
