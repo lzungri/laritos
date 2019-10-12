@@ -165,9 +165,11 @@ void kernel_entry(void)  {
 
 #ifdef CONFIG_TEST_ENABLED
     log_always("***** Running in test mode *****");
+    heap_dump_info();
     if (test_run(__tests_start) < 0) {
         fatal("Error executing test cases");
     }
+    heap_dump_info();
     while (1) {
         asm("wfi");
     }
