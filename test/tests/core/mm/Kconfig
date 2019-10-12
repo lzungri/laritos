@@ -4,9 +4,14 @@ config TEST_CORE_MM_ALL
     bool "Select all"
     default n
     select TEST_CORE_MM_FREELIST
+    select TEST_CORE_MM_BITSET_SLAB
 
 config TEST_CORE_MM_FREELIST
     bool "freelist.c"
+    default n
+
+config TEST_CORE_MM_BITSET_SLAB
+    bool "bitset-slab.c"
     default n
 
 endmenu
