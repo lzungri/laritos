@@ -1,0 +1,12 @@
+menu "Data structures"
+
+config TEST_CORE_DSTRUCT_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_DSTRUCT_BITSET
+
+config TEST_CORE_DSTRUCT_BITSET
+    bool "bitset.c"
+    default n
+
+endmenu
