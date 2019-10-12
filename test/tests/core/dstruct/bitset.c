@@ -34,10 +34,10 @@ T(bitset_lm_clear_clears_the_right_bit) {
     }
 TEND
 
-T(bitset_ffz_returns_negative_when_all_1) {
+T(bitset_ffz_returns_BITSET_IDX_NOT_FOUND_when_all_1) {
     bitset_t bs;
     memset(&bs, 0xff, sizeof(bitset_t));
-    tassert(bitset_ffz(bs) < 0);
+    tassert(bitset_ffz(bs) == BITSET_IDX_NOT_FOUND);
 TEND
 
 T(bitset_ffz_returns_the_right_pos_on_first_zero) {
