@@ -5,8 +5,10 @@ config TEST_CORE_ALL
     default n
     select TEST_CORE_LIBC_ALL
     select TEST_CORE_MM_ALL
+    select TEST_CORE_DSTRUCT_ALL
 
 source "test/tests/core/libc/Kconfig"
 source "test/tests/core/mm/Kconfig"
+source "test/tests/core/dstruct/Kconfig"
 
 endmenu
