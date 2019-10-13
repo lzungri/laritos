@@ -1,3 +1,7 @@
+/**
+ * This is the default bitset implementation. Only used when the target architecture
+ * doesn't define it's own bitset.h header
+ */
 #pragma once
 
 #include <stdint.h>
