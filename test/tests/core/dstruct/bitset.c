@@ -49,3 +49,15 @@ T(bitset_ffz_returns_the_right_pos_on_first_zero) {
         tassert(bitset_ffz(bs) == i);
     }
 TEND
+
+T(bitset_lm_bit_returns_the_right_bit_value) {
+    bitset_t bs = 0;
+    int i;
+    for (i = 0; i < BITSET_NBITS; i++) {
+        tassert(bitset_lm_bit(bs, i) == 0);
+    }
+    memset(&bs, 0xff, sizeof(bitset_t));
+    for (i = 0; i < BITSET_NBITS; i++) {
+        tassert(bitset_lm_bit(bs, i) == 1);
+    }
+TEND
