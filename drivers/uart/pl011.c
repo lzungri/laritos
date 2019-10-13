@@ -6,12 +6,7 @@
 #include <driver/driver.h>
 #include <driver/pl011.h>
 #include <utils/utils.h>
-
-#define MAX_UARTS 3
-
-// TODO Use dynamic memory instead
-static uart_t uarts[MAX_UARTS];
-static uint8_t cur_uart;
+#include <mm/heap.h>
 
 
 static int transmit_data(bytestream_t *bs) {
@@ -120,20 +115,23 @@ static int deinit(component_t *c) {
 }
 
 static int process(board_comp_t *comp) {
-    if (cur_uart > ARRAYSIZE(uarts)) {
-        error("Max number of uart components reached");
+    uart_t *uart = component_alloc(sizeof(uart_t));
+    if (uart == NULL) {
+        error("Failed to allocate memory for '%s'", comp->id);
         return -1;
     }
-    uart_t *uart = &uarts[cur_uart];
     uart->irq_handler = irq_handler;
     if (uart_component_init_and_register(uart, comp, init, deinit, transmit_data) < 0){
         error("Failed to register '%s'", comp->id);
-        return -1;
+        goto fail;
     }
     component_set_info((component_t *) uart, "PrimeCell UART (pl011)", "ARM", "UART AMBA compliant SoC");
-    cur_uart++;
 
     return 0;
+
+fail:
+    free(uart);
+    return -1;
 }
 
 DEF_DRIVER_MANAGER(pl011, process);

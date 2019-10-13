@@ -99,3 +99,9 @@ char *strstr(const char *str, const char *substr, size_t n) {
     }
     return NULL;
 }
+
+
+
+#ifdef CONFIG_TEST_CORE_LIBC_STRING
+#include __FILE__
+#endif

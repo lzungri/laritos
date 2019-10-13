@@ -38,6 +38,12 @@ SECTIONS
         /* Mark the end of the drivers array with a NULL pointer */
         LONG(0);
 
+        . = ALIGN(4);
+        __tests_start = ABSOLUTE(.);
+        KEEP(*(.test));
+        /* Mark the end of the tests array with a NULL pointer */
+        LONG(0);
+
         /* ARM stuff */
         *(.glue*);
         *(.vfp11_veneer);
@@ -64,6 +70,7 @@ SECTIONS
         __data_end = ABSOLUTE(.);
         __data_size = __data_end - __data_start;
      } > ram AT > flash
+    ASSERT(__data_end < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS .data")
 
      /* Variable used to transfer the .data section from flash to ram */
      __data_lma = LOADADDR(.data);
@@ -77,8 +84,16 @@ SECTIONS
         __bss_end = ABSOLUTE(.);
         __bss_size = __bss_end - __bss_start;
     } > ram
+    ASSERT(__bss_end < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS .bss")
 
-    /* Stack located right after the .bss section in the ram */
+    /* Heap located right after the .bss section in the ram */
+    . = ALIGN(4);
+    __heap_start = .;
+    __heap_end = __heap_start + CONFIG_MEM_HEAP_SIZE;
+    . = __heap_end;
+    ASSERT(__heap_end < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS heap")
+
+    /* Stack located right after the heap (ram) */
     . = ALIGN(4);
     __stack_end = .;
     /* laritOS only use 5 processor modes, hence 5 different stacks  */

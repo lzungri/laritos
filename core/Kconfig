@@ -3,6 +3,23 @@ menu "Kernel"
 source "core/component/Kconfig"
 source "core/syscall/Kconfig"
 source "core/libc/Kconfig"
+source "core/mm/Kconfig"
+
+menu "Board"
+
+config BOARD_MAX_COMPONENTS
+    int "Max number of components in the board info (*.bi)"
+    default 32
+
+config BOARD_MAX_COMPONENT_ATTRS
+    int "Max number of attributes per component in the board info (*.bi)"
+    default 10
+
+config BOARD_INFO_MAX_TOKEN_LEN_BYTES
+    int "Maximum length in bytes for board properties names/ids/values (includes '\0')"
+    default 32
+
+endmenu
 
 menu "Interrupts"
 

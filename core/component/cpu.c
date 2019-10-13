@@ -5,9 +5,9 @@
 #include <utils/function.h>
 #include <component/cpu.h>
 
-DEF_NOT_IMPL_FUNC(ni_set_irqs_enable, cpu_comp_t *c, bool enabled);
+DEF_NOT_IMPL_FUNC(ni_set_irqs_enable, cpu_t *c, bool enabled);
 
-int cpu_component_init(cpu_comp_t *c, board_comp_t *bcomp,
+int cpu_component_init(cpu_t *c, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
 
     if (component_init((component_t *) c, bcomp->id, bcomp, COMP_TYPE_CPU, init, deinit) < 0) {

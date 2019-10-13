@@ -5,12 +5,25 @@
 #include <component/component.h>
 #include <driver/driver.h>
 #include <time/time.h>
+#include <dstruct/list.h>
 
+/**
+ * laritOS Global context
+ */
 typedef struct {
+    /**
+     * Board information
+     */
     board_info_t bi;
-    // TODO Optimize this
-    component_t *components[CONFIG_COMP_MAX];
 
+    /**
+     * List of components grouped by type (for performance reasons)
+     */
+    struct list_head comps[COMP_TYPE_LEN];
+
+    /**
+     * Time information
+     */
     struct {
         timezone_t tz;
         bool dst;
@@ -21,4 +34,9 @@ typedef struct {
 // of the OS
 extern laritos_t _laritos;
 
+/**
+ * Kernel entry point.
+ *
+ * Called by the bootloader
+ */
 extern void kernel_entry(void);

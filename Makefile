@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 0
-PATCHLEVEL = 1
+PATCHLEVEL = 3
 SUBLEVEL = 0
 EXTRAVERSION =
 NAME = laritOS
@@ -397,10 +397,12 @@ USERINCLUDE    := -include $(srctree)/include/kconfig.h
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
-LINUXINCLUDE    :=  $(if $(building_out_of_srctree),-I$(srctree)/include) \
-		$(if $(building_out_of_srctree),-I$(srctree)/include/libc) \
+LINUXINCLUDE    :=  $(if $(building_out_of_srctree),-I$(srctree)/include/libc) \
 		-I$(objtree)/include \
 		$(USERINCLUDE)
+ifdef CONFIG_TEST_ENABLED
+LINUXINCLUDE += $(if $(building_out_of_srctree),-I$(srctree)/test/tests)
+endif
 
 KBUILD_AFLAGS   := -D__ASSEMBLY__ -fno-PIE
 
@@ -594,6 +596,12 @@ include/config/auto.conf:
 
 endif # may-sync-config
 endif # $(dot-config)
+
+# We include this folder after the arch/xxx/include so that the architecture
+# headers have precedence over the core headers.
+# This is useful for example when an architecture doesn't implement a particular
+# arch_xxx() function and then the OS uses the default one under include/arch/
+KBUILD_CFLAGS	+= $(if $(building_out_of_srctree),-I$(srctree)/include)
 
 KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
@@ -799,6 +807,8 @@ export KBUILD_IMAGE ?= laritos
 PHONY += prepare0
 
 core-y += core/ board/
+core-$(CONFIG_TEST_ENABLED) += test/
+
 drivers-y += drivers/
 
 laritos-dirs := $(patsubst %/,%,$(filter %/, $(init-y) $(core-y) $(drivers-y) $(libs-y)))

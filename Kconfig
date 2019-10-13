@@ -38,11 +38,15 @@ config LOG_MAX_LINE_SIZE
 
 config LOG_BUFSIZE_BYTES
     int "Log buffer size in bytes"
-    default 2048
+    default 5196
 
 config LOG_FILE_AND_LINEN
     bool "Log file path and line number"
     default n
+
+config LOG_USE_COLORS
+    bool "Enable log coloring"
+    default y
 
 endmenu
 
@@ -84,3 +88,4 @@ source "board/Kconfig"
 source "arch/Kconfig"
 source "core/Kconfig"
 source "drivers/Kconfig"
+source "test/Kconfig"

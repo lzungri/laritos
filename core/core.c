@@ -2,6 +2,7 @@
 #include <string.h>
 #include <core.h>
 #include <cpu.h>
+#include <mm/heap.h>
 #include <component/component.h>
 #include <component/inputdev.h>
 #include <component/timer.h>
@@ -11,6 +12,9 @@
 #include <board.h>
 #include <utils/debug.h>
 #include <generated/utsrelease.h>
+#ifdef CONFIG_TEST_ENABLED
+#include <test/test.h>
+#endif
 
 
 laritos_t _laritos;
@@ -18,7 +22,7 @@ laritos_t _laritos;
 static void shell(void) {
     while (true) {
         component_t *c;
-        for_each_filtered_component(c, c->type == COMP_TYPE_INPUTDEV) {
+        for_each_component_type(c, COMP_TYPE_INPUTDEV) {
             stream_t *s = ((inputdev_t *) c)->transport;
             char buf[32];
             int bread = 0;
@@ -37,6 +41,7 @@ static void shell(void) {
                     asm("mov r4, #5");
                     asm("mov r5, #6");
                     asm("mov r6, #7");
+                    dump_cur_state();
                     asm("svc 1");
                     break;
                 case 'r':
@@ -72,7 +77,7 @@ static void shell(void) {
                     log_always("rtc_gettime(): %lu", (uint32_t) t.secs);
 
                     component_t *c1;
-                    for_each_filtered_component(c1, c1->type == COMP_TYPE_RTC) {
+                    for_each_component_type(c1, COMP_TYPE_RTC) {
                         timer_comp_t *t = (timer_comp_t *) c1;
                         int64_t v;
                         t->ops.get_remaining(t, &v);
@@ -82,10 +87,28 @@ static void shell(void) {
                 case 'e':;
                     // rtc timer expiration
                     component_t *c2;
-                    for_each_filtered_component(c2, c2->type == COMP_TYPE_RTC) {
+                    for_each_component_type(c2, COMP_TYPE_RTC) {
                         timer_comp_t *t = (timer_comp_t *) c2;
                         t->ops.set_expiration(t, 5, 0, TIMER_EXP_RELATIVE);
                     }
+                    break;
+                case 'm':;
+                    char *p = malloc(10);
+                    char *p2 = malloc(20);
+                    char *p3 = malloc(30);
+                    free(p2);
+                    free(p);
+                    free(p3);
+                    heap_dump_info();
+                    break;
+                case 'h':;
+                    // Heap buffer overflow
+                    char *ptr = malloc(10);
+                    ptr[10] = 0xCA;
+                    ptr[11] = 0xCA;
+                    ptr[12] = 0xCA;
+                    ptr[13] = 0xCA;
+                    free(ptr);
                     break;
                 }
             }
@@ -93,9 +116,22 @@ static void shell(void) {
     }
 }
 
+static int initialize_global_context(void) {
+    return component_init_global_context();
+}
+
 void kernel_entry(void)  {
+    if (initialize_global_context() < 0) {
+        while(1);
+    }
+
+    if (heap_initialize(__heap_start, CONFIG_MEM_HEAP_SIZE) < 0) {
+        while(1);
+    }
+
     log_always("-- laritOS " UTS_RELEASE " --");
     info("Initializing kernel");
+    info("Heap of %u bytes initialized at 0x%p", CONFIG_MEM_HEAP_SIZE, __heap_start);
 
     if (board_parse_and_initialize(&_laritos.bi) < 0) {
         fatal("Couldn't initialize board");
@@ -122,10 +158,22 @@ void kernel_entry(void)  {
         error("Couldn't set default timezone");
     }
 
-    cpu_comp_t *c = cpu();
+    cpu_t *c = cpu();
     if (c->ops.set_irqs_enable(c, true) < 0) {
         fatal("Failed to enable irqs for cpu %u", c->id);
     }
+
+#ifdef CONFIG_TEST_ENABLED
+    log_always("***** Running in test mode *****");
+    heap_dump_info();
+    if (test_run(__tests_start) < 0) {
+        fatal("Error executing test cases");
+    }
+    heap_dump_info();
+    while (1) {
+        asm("wfi");
+    }
+#endif
 
     shell();
 }

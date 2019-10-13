@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <board-types.h>
+#include <dstruct/list.h>
 
 #define COMPONENT_MAX_ID_LEN CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES
 
@@ -23,6 +24,14 @@ typedef struct {
     int (*init)(struct component *c);
     int (*deinit)(struct component *c);
 
+    /**
+     * Component deallocation callback
+     * Note: Can be NULL (e.g. for statically allocated components)
+     *
+     * @param c: Component to deallocate
+     */
+    void *(*free)(struct component *c);
+
     // TODO Power manager stuff
 } component_ops_t;
 
@@ -34,17 +43,23 @@ typedef struct component {
     char vendor[CONFIG_COMP_INFO_SIZE];
     char description[CONFIG_COMP_INFO_SIZE];
 
+    /**
+     * List of components
+     */
+    struct list_head list;
+
     component_ops_t ops;
 } component_t;
 
-// TODO Optimize this
-#define for_each_filtered_component(_c, _filter) \
-    for (int i = 0; _c = _laritos.components[i], i < ARRAYSIZE(_laritos.components); i++) \
-        if (_c != NULL && (_filter))
+#define for_each_component_type(_c, _t) \
+    list_for_each_entry(_c, &_laritos.comps[_t], list)
 
 #define for_each_component(_c) \
-    for_each_filtered_component(_c, true)
+    for (int __i = 0; __i < COMP_TYPE_LEN; __i++) \
+        list_for_each_entry(_c, &_laritos.comps[__i], list)
 
+int component_init_global_context(void);
+void *component_alloc(size_t size);
 int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c));
 int component_register(component_t *comp);
@@ -52,5 +67,5 @@ int component_unregister(component_t *comp);
 component_t *component_get_by_id(char *id);
 void component_dump_registered_comps(void);
 int component_set_info(component_t *c, char *product, char *vendor, char *description);
+bool component_any_of(component_type_t t);
 bool component_are_mandatory_comps_present(void);
-

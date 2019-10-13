@@ -9,14 +9,8 @@
 #include <driver/driver.h>
 #include <driver/gicv2.h>
 #include <utils/math.h>
-
+#include <mm/heap.h>
 #include <generated/autoconf.h>
-
-#define MAX_GICS 1
-
-// TODO Use dynamic memory instead
-static gic_t gics[MAX_GICS];
-static uint8_t cur_gic;
 
 
 #define CHECK_IRQ_NUMBER(_irq) \
@@ -146,17 +140,16 @@ static int deinit(component_t *c) {
 }
 
 static int process(board_comp_t *comp) {
-    if (cur_gic > ARRAYSIZE(gics)) {
-        error("Max number of GICs components reached");
+    gic_t *gic = component_alloc(sizeof(gic_t));
+    if (gic == NULL) {
+        error("Failed to allocate memory for '%s'", comp->id);
         return -1;
     }
-
-    gic_t *gic = &gics[cur_gic];
     intc_t *intc = (intc_t *) gic;
 
     if (intc_init(intc, comp->id, comp, init, deinit) < 0) {
         error("Failed to initialize gic '%s'", comp->id);
-        return -1;
+        goto fail;
     }
     intc->ops.dispatch_irq = dispatch_irq;
     intc->ops.set_irq_enable = set_irq_enable;
@@ -170,22 +163,25 @@ static int process(board_comp_t *comp) {
     board_get_ptr_attr_def(comp, "distaddr", (void **) &gic->dist, NULL);
     if (gic->dist == NULL) {
         error("No distributor address was specified in the board information for '%s'", comp->id);
-        return -1;
+        goto fail;
     }
 
     board_get_ptr_attr_def(comp, "cpuaddr", (void **) &gic->cpu, NULL);
     if (gic->cpu == NULL) {
         error("No cpu address was specified in the board information for '%s'", comp->id);
-        return -1;
+        goto fail;
     }
 
     if (component_register((component_t *) gic) < 0) {
         error("Couldn't register gic '%s'", comp->id);
-        return -1;
+        goto fail;
     }
-    cur_gic++;
 
     return 0;
+
+fail:
+    free(cpu);
+    return -1;
 }
 
 DEF_DRIVER_MANAGER(gicv2, process);

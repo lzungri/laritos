@@ -1,0 +1,29 @@
+menu "Memory Manager"
+
+config MEM_HEAP_SIZE
+    int "OS heap size (bytes)"
+    default 16777216 # 16MB
+
+config MEM_HEAP_BUFFER_PROTECTION
+    bool "Enable heap buffer protection (affects performance)"
+    default y
+
+choice
+    prompt "Heap Manager"
+    default MM_FREELIST
+
+config MM_FREELIST
+    bool "Simple freelist memory manager"
+
+endchoice
+
+choice
+    prompt "Slab Manager"
+    default MM_BITSET_SLAB
+
+config MM_BITSET_SLAB
+    bool "Simple bitset slab allocator"
+
+endchoice
+
+endmenu

@@ -1,0 +1,11 @@
+menu "Tests"
+    depends on TEST_ENABLED
+
+config TEST_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_ALL
+
+source "test/tests/core/Kconfig"
+
+endmenu

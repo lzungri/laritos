@@ -19,6 +19,7 @@ config SYS_CPU_GENERIC_ARMV7A
 
 endchoice
 
-source "arch/arm/cpu/Kconfig"
+source "arch/arm/cortex-a15/Kconfig"
+source "arch/arm/armv7-a/Kconfig"
 
 endmenu
