@@ -164,3 +164,20 @@ T(bitsetslab_cannot_allocate_slab_with_MAXUINT32_elements) {
     tassert(slab == NULL);
     slab_destroy(slab);
 TEND
+
+T(bitsetslab_slab_has_the_right_amount_of_bsarray_elements) {
+    bs_slab_t *slab = (bs_slab_t *) slab_create(BITSET_NBITS, sizeof(uint32_t));
+    tassert(slab != NULL);
+    tassert(slab->bs_elems == 1);
+    slab_destroy(slab);
+
+    slab = (bs_slab_t *) slab_create(BITSET_NBITS + 1, sizeof(uint32_t));
+    tassert(slab != NULL);
+    tassert(slab->bs_elems == 2);
+    slab_destroy(slab);
+
+    slab = (bs_slab_t *) slab_create(BITSET_NBITS * 3 + 1, sizeof(uint32_t));
+    tassert(slab != NULL);
+    tassert(slab->bs_elems == 4);
+    slab_destroy(slab);
+TEND
