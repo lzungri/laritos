@@ -279,3 +279,19 @@ __attribute__((always_inline)) static inline regret_t arch_regs_get_retaddr(void
     asm("mov %0, lr" : "=r" (ret));
     return ret;
 }
+
+/**
+ * Indicates the processor number in the Cortex-Ax processor:
+ *
+ * @return:
+ *      0x0                 CPU ID for one processor.
+ *      0x0, 0x1            CPU ID for two processors.
+ *      0x0, 0x1, 0x2       CPU ID for three processors.
+ *      0x0, 0x1, 0x2, 0x3  CPU ID for four processors.
+ */
+static inline uint8_t arch_cpu_get_id(void) {
+    uint32_t v;
+    // Read Multiprocessor Affinity CP15 Register
+    asm("mrc p15, 0, %0, c0, c0, 5" : "=r" (v));
+    return v & 0b11;
+}
