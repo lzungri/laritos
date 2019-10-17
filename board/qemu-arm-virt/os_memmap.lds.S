@@ -70,12 +70,12 @@ SECTIONS
         __data_end = ABSOLUTE(.);
         __data_size = __data_end - __data_start;
      } > ram AT > flash
-    ASSERT(__data_end < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS .data")
+    ASSERT(__data_end < ORIGIN(flash) + LENGTH(flash), "Not enough Flash to fit the OS .data")
 
-     /* Variable used to transfer the .data section from flash to ram */
-     __data_lma = LOADADDR(.data);
+    /* Variable used to transfer the .data section from flash to ram */
+    __data_lma = LOADADDR(.data);
 
-     /* Non initialized data will be manually allocated (and zeroed) in ram */
+    /* Non initialized data will be manually allocated (and zeroed) in ram */
     .bss : {
         . = ALIGN(4);
         __bss_start = ABSOLUTE(.);
@@ -99,6 +99,5 @@ SECTIONS
     /* laritOS only use 5 processor modes, hence 5 different stacks  */
     __stack_top = __stack_end + 5 * CONFIG_MEM_STACK_SIZE_PER_MODE;
     __stack_size = __stack_top - __stack_end;
-
     ASSERT(__stack_top < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS stacks")
 }
