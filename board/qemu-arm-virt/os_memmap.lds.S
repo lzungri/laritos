@@ -75,6 +75,16 @@ SECTIONS
     /* Variable used to transfer the .data section from flash to ram */
     __data_lma = LOADADDR(.data);
 
+    /* Kernel binary size (actual size of laritos.bin) */
+    __kernel_bin_size = __data_lma + SIZEOF(.data);
+
+    /**
+     * Offset in laritos.bin where the apps are loaded (apps are appended to laritos.bin)
+     * This is temporary until we implement a better mechanism for flashing apps,
+     * such as a file system on sd card.
+     */
+    __apps_start = __kernel_bin_size;
+
     /* Non initialized data will be manually allocated (and zeroed) in ram */
     .bss : {
         . = ALIGN(4);
