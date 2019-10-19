@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdint.h>
 #include <generated/autoconf.h>
 
 #ifdef CONFIG_CPU_32_BITS
