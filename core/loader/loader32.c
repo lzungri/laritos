@@ -13,25 +13,33 @@ static inline void *allocate_app_image(appheader_t *apph) {
 }
 
 static int load_image_from_memory(appheader_t *apph, void *addr) {
-    size_t offset = 0;
-    char *destbase = addr;
+    char *dest = addr;
     char *frombase = (char *) apph;
 
+    // Load header (we may want to remove this later, all this info will be
+    // in the PCB)
+    memcpy(dest, frombase, sizeof(appheader_t));
+    dest += sizeof(appheader_t);
+
     // Load code section
-    memcpy(destbase + offset, frombase + apph->text_start, apph->text_size);
-    offset += apph->text_size;
+    memcpy(dest, frombase + apph->text_start, apph->text_size);
+    dest += apph->text_size;
 
     // Load data section (includes the GOT)
-    memcpy(destbase + offset, frombase + apph->data_start, apph->data_size);
-    offset += apph->data_size;
+    memcpy(dest, frombase + apph->data_start, apph->data_size);
+    dest += apph->data_size;
 
     // Initializes .bss to zero
-    memset(destbase + apph->bss_start, 0, apph->bss_size);
+    memset(addr + apph->bss_start, 0, apph->bss_size);
 
     return 0;
 }
 
 static int setup_image_context(appheader_t *apph, void *addr) {
+    asm("mov r9, %0" : : "r" ((char *) addr + apph->got_start - 0x30));
+
+    uint32_t *ptr = (uint32_t *) ((char *) addr + apph->got_start + 0x0);
+    *ptr = (uint32_t) ((char *) addr + 0xf4);
     return 0;
 }
 
@@ -59,7 +67,7 @@ int loader_load_app(uint16_t appidx) {
         goto error_setup;
     }
 
-    int (*main)(void) = (int (*)(void)) imgaddr;
+    int (*main)(void) = (int (*)(void)) (sizeof(appheader_t) + (char *) imgaddr);
     return main();
 
 error_setup:
