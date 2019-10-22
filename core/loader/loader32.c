@@ -65,37 +65,25 @@ static int relocate_image(void *addr) {
     return 0;
 }
 
-int loader_load_app(uint16_t appidx) {
-    appheader_t *apph = (appheader_t *) __apps_start;
-
-    if (apph->magic != APPMAGIC) {
-        error("No app #%u or invalid magic number", appidx);
-        return -1;
-    }
-
-    if (apph->hdrver != HEADER_VERSION) {
-        error("Invalid version for app #%u", appidx);
-        return -1;
-    }
-
+int loader32_load_app_from_memory(appheader_t *apph) {
     void *imgaddr = allocate_app_image(apph);
     if (imgaddr == NULL) {
-        error("Couldn't allocate memory for app #%u", appidx);
+        error("Couldn't allocate memory for app @0x%p", apph);
         return -1;
     }
 
     if (load_image_from_memory(apph, imgaddr) < 0) {
-        error("Failed to load app #%u image at 0x%p", appidx, imgaddr);
+        error("Failed to load app @0x%p image at 0x%p", apph, imgaddr);
         goto error_load;
     }
 
     if (setup_image_context(imgaddr) < 0) {
-        error("Failed to setup context for app #%u", appidx);
+        error("Failed to setup context for app @0x%p", apph);
         goto error_setup;
     }
 
     if (relocate_image(imgaddr) < 0) {
-        error("Failed to relocate app #%u", appidx);
+        error("Failed to relocate app @0x%p", apph);
         goto error_reloc;
     }
 

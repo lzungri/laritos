@@ -176,7 +176,7 @@ void kernel_entry(void)  {
     }
 #endif
 
-    if (loader_load_app(0) < 0) {
+    if (loader_load_app_from_memory(0) < 0) {
         error("Failed to load app #0");
     }
 

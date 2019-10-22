@@ -1,2 +1,3 @@
-obj-$(CONFIG_CPU_32_BITS) += loader32.o
-obj-$(CONFIG_CPU_64_BITS) += loader64.o
+obj-y += loader.o
+obj-y += loader32.o
+#obj-y += loader64.o

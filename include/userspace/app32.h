@@ -9,6 +9,7 @@
 
 #define HEADER_VERSION 0
 
+// TODO Remove this, use ELF directly
 typedef struct {
     uint32_t magic;
     uint32_t hdrver;
