@@ -12,3 +12,7 @@
 #ifdef CONFIG_TEST_CORE_DSTRUCT_BITSET
 #include <core/dstruct/bitset.c>
 #endif
+
+#ifdef CONFIG_TEST_UTILS_MATH
+#include <utils/math.c>
+#endif

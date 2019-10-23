@@ -5,7 +5,9 @@ config TEST_ALL
     bool "Select all"
     default n
     select TEST_CORE_ALL
+    select TEST_UTILS_ALL
 
 source "test/tests/core/Kconfig"
+source "test/tests/utils/Kconfig"
 
 endmenu

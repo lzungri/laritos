@@ -1,0 +1,12 @@
+menu "Utils"
+
+config TEST_UTILS_ALL
+    bool "Select all"
+    default n
+    select TEST_UTILS_MATH
+
+config TEST_UTILS_MATH
+    bool "math.c"
+    default n
+
+endmenu
