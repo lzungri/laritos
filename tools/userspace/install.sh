@@ -2,7 +2,7 @@
 SCRIPT_DIR=`dirname $0`
 
 if [ "$1" == "" ] || [[ "$2" == "" ]] || [[ "$3" == "" ]]; then
-    echo "syntax: $0 <app.bin> <laritos.bin> <laritos.img>"
+    echo "syntax: $0 <app.elf> <laritos.bin> <laritos.img>"
     exit 1
 fi
 
