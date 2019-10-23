@@ -1,7 +1,10 @@
 #include <log.h>
 
+#include <libc/string.h>
 #include <loader/loader.h>
-#include <userspace/app.h>
+#include <loader/elf.h>
+#include <loader/loader-elf.h>
+
 
 /**
  * Offset in laritos.bin where the apps are loaded.
@@ -12,17 +15,27 @@
 extern char __apps_start[];
 
 int loader_load_app_from_memory(uint16_t appidx) {
-    appheader_t *apph = (appheader_t *) __apps_start;
+    unsigned char *e_ident = __apps_start;
 
-    if (apph->magic != APPMAGIC) {
-        error("No app #%u or invalid magic number", appidx);
-        return -1;
+    debug("Loading app at 0x%p", e_ident);
+
+    if (*e_ident == 0x7f && memcmp(e_ident + 1, "ELF", 3) == 0) {
+        switch (e_ident[EI_CLASS]) {
+        case 1:;
+            // ELF 32
+            Elf32_Ehdr *elf = (Elf32_Ehdr *) e_ident;
+            return loader_elf32_load_from_memory(elf);
+        case 2:
+            // ELF 64
+            error("ELF 64 not supported yet");
+            return -1;
+        default:
+            // Unknown class
+            error("Invalid ELF class %u", e_ident[EI_CLASS]);
+            return -1;
+        }
     }
 
-    if (apph->hdrver != HEADER_VERSION) {
-        error("Invalid version for app #%u", appidx);
-        return -1;
-    }
-
-    return loader32_load_app_from_memory(apph);
+    error("Executable format not recognized");
+    return -1;
 }
