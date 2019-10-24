@@ -38,7 +38,7 @@ static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
     return 0;
 }
 
-static int setup_image_context(Elf32_Ehdr *elf, void *addr, uint32_t *got) {
+static inline int setup_image_context(Elf32_Ehdr *elf, void *addr, uint32_t *got) {
     return arch_set_got(got);
 }
 
