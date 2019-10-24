@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <limits.h>
 #include <mm/heap.h>
 #include <userspace/app.h>
 #include <loader/loader.h>
@@ -28,7 +29,7 @@ static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
                 dest += sect->sh_size;
             } else if (sect->sh_type & SHT_NOBITS) {
                 // Zero-initialized data
-                verbose("Zero-initializing %lu bytes at 0x%p", sect->sh_size, dest);
+                verbose("Zero-initializing %lu bytes at 0x%p", sect->sh_size, addr + sect->sh_addr);
                 memset(addr + sect->sh_addr, 0, sect->sh_size);
             }
         }
@@ -37,17 +38,13 @@ static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
     return 0;
 }
 
-//static int setup_image_context(void *addr) {
-//    appheader_t *apph = addr;
-//    asm("mov r9, %0" : : "r" ((char *) addr + apph->got_start - 0x30));
-//
-//    uint32_t *ptr = (uint32_t *) ((char *) addr + apph->got_start + 0x0);
-//    *ptr = (uint32_t) ((char *) addr + 0xf4);
-//    return 0;
-//}
+static int setup_image_context(Elf32_Ehdr *elf, void *addr, uint32_t *got) {
+    asm("mov r9, %0" : : "r" (got));
+    return 0;
+}
 
-static int relocate_image(Elf32_Ehdr *elf, void *addr,
-                          uint32_t rel_offset, uint16_t rel_entries, uint32_t symtab_offset) {
+static int relocate_image(Elf32_Ehdr *elf, void *addr, uint32_t rel_offset, uint16_t rel_entries,
+        uint32_t symtab_offset, uint32_t *got) {
     int i;
     for (i = 0; i < rel_entries; i++) {
         const Elf32_Rel *rel = (Elf32_Rel *)
@@ -56,12 +53,26 @@ static int relocate_image(Elf32_Ehdr *elf, void *addr,
                 ((char *) elf + symtab_offset + ELF32_R_SYM(rel->r_info) * sizeof(Elf32_Sym));
 
         verbose("Relocating offset=0x%lX, type=0x%lX, symbol value=0x%lX", rel->r_offset, ELF32_R_TYPE(rel->r_info), sym->st_value);
-        if (arch_elf32_relocate_symbol(addr, rel, sym) < 0) {
+        if (arch_elf32_relocate_symbol(addr, rel, sym, got) < 0) {
             error("Failed to relocate offset=0x%lX, type=0x%lX", rel->r_offset, ELF32_R_TYPE(rel->r_info));
             return -1;
         }
     }
     return 0;
+}
+
+static inline int get_got_virtual_addr(Elf32_Ehdr *elf, char *shstrtab, uint32_t *got_vaddr) {
+    int i;
+    for (i = 0; i < elf->e_shnum; i++) {
+        Elf32_Shdr *sect = (Elf32_Shdr *) ((char *) elf + elf->e_shoff + elf->e_shentsize * i);
+        char *sectname = shstrtab + sect->sh_name;
+        if (strncmp(sectname, ".got", 5) == 0) {
+            verbose("GOT virtual address 0x%lX", sect->sh_addr);
+            *got_vaddr = sect->sh_addr;
+            return 0;
+        }
+    }
+    return -1;
 }
 
 int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
@@ -73,11 +84,14 @@ int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
     }
 
     uint32_t imgsize = 0;
-    uint32_t rel_offset = 0;
     uint16_t rel_entries = 0;
-    uint32_t symtab_offset = 0;
+    uint32_t rel_offset = U32_MAX;
+    uint32_t symtab_offset = U32_MAX;
+    uint32_t shstrtab_offset = U32_MAX;
 
     int i;
+    // Calculate required image size based on the sections marked for allocation
+    // and obtain the offset of relocation-related sections
     for (i = 0; i < elf->e_shnum; i++) {
         Elf32_Shdr *sect = (Elf32_Shdr *) ((char *) elf + elf->e_shoff + elf->e_shentsize * i);
         if (sect->sh_flags & SHF_ALLOC) {
@@ -91,37 +105,54 @@ int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
             verbose("Found relocations at ELF offset 0x%lX", sect->sh_offset);
             rel_offset = sect->sh_offset;
             rel_entries = sect->sh_size / sizeof(Elf32_Rel);
+        } else if (sect->sh_type == SHT_STRTAB) {
+            shstrtab_offset = sect->sh_offset;
         }
     }
 
-    verbose("Allocating %lu bytes for app", imgsize);
+    if (rel_offset == U32_MAX || symtab_offset == U32_MAX || shstrtab_offset == U32_MAX) {
+        error("Couldn't find offset/s for the relocation, symtab, and/or shstrtab sections");
+        return -1;
+    }
 
+    // Find the got table offset
+    uint32_t got_vaddr;
+    if (get_got_virtual_addr(elf, (char *) elf + shstrtab_offset, &got_vaddr) < 0) {
+        error("Couldn't find got section virtual address");
+        return -1;
+    }
+
+    verbose("Allocating %lu bytes for app", imgsize);
     void *imgaddr = malloc(imgsize);
     if (imgaddr == NULL) {
         error("Couldn't allocate memory for app at 0x%p", elf);
         return -1;
     }
+    debug("Process image located at 0x%p", imgaddr);
+
+    uint32_t *got = (uint32_t *) ((char *) imgaddr + got_vaddr);
+    verbose("GOT located at 0x%p", got);
 
     if (load_image_from_memory(elf, imgaddr) < 0) {
         error("Failed to load app from 0x%p into 0x%p", elf, imgaddr);
         goto error_load;
     }
 
-//    if (setup_image_context(imgaddr) < 0) {
-//        error("Failed to setup context for app @0x%p", elf);
-//        goto error_setup;
-//    }
-//
-    if (relocate_image(elf, imgaddr, rel_offset, rel_entries, symtab_offset) < 0) {
+    if (setup_image_context(elf, imgaddr, got) < 0) {
+        error("Failed to setup context for app at 0x%p", elf);
+        goto error_setup;
+    }
+
+    if (relocate_image(elf, imgaddr, rel_offset, rel_entries, symtab_offset, got) < 0) {
         error("Failed to relocate app loaded at 0x%p", imgaddr);
         goto error_reloc;
     }
 
     int (*main)(void) = (int (*)(void)) ((char *) imgaddr + elf->e_entry);
     return main();
-//
+
 error_reloc:
-//error_setup:
+error_setup:
 error_load:
     free(imgaddr);
     return -1;
