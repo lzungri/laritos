@@ -295,3 +295,8 @@ static inline uint8_t arch_cpu_get_id(void) {
     asm("mrc p15, 0, %0, c0, c0, 5" : "=r" (v));
     return v & 0b11;
 }
+
+static inline int arch_set_got(uint32_t *got) {
+    asm("mov r9, %0" : : "r" (got));
+    return 0;
+}

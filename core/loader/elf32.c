@@ -39,8 +39,7 @@ static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
 }
 
 static int setup_image_context(Elf32_Ehdr *elf, void *addr, uint32_t *got) {
-    asm("mov r9, %0" : : "r" (got));
-    return 0;
+    return arch_set_got(got);
 }
 
 static int relocate_image(Elf32_Ehdr *elf, void *addr, uint32_t rel_offset, uint16_t rel_entries,
@@ -149,7 +148,9 @@ int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
     }
 
     int (*main)(void) = (int (*)(void)) ((char *) imgaddr + elf->e_entry);
-    return main();
+    info("App loaded at 0x%p exited with %d", imgaddr, main());
+
+    return 0;
 
 error_reloc:
 error_setup:
