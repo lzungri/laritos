@@ -24,30 +24,30 @@ SECTIONS
         /* Code */
         . = ALIGN(4);
         __text_start = ABSOLUTE(.);
-        *(.text);
+        *(.text)
 
         /* Build id created by the linker */
         KEEP(*(.note.gnu.build-id))
 
         /* Keep the read only data in the flash */
-        *(.rodata*);
+        *(.rodata*)
 
         . = ALIGN(4);
         __driver_mgrs_start = ABSOLUTE(.);
-        KEEP(*(.driver_mgrs));
+        KEEP(*(.driver_mgrs))
         /* Mark the end of the drivers array with a NULL pointer */
         LONG(0);
 
         . = ALIGN(4);
         __tests_start = ABSOLUTE(.);
-        KEEP(*(.test));
+        KEEP(*(.test))
         /* Mark the end of the tests array with a NULL pointer */
         LONG(0);
 
         /* ARM stuff */
-        *(.glue*);
-        *(.vfp11_veneer);
-        *(.v4_bx*);
+        *(.glue*)
+        *(.vfp11_veneer)
+        *(.v4_bx*)
 
         . = ALIGN(4);
         __text_end = ABSOLUTE(.);
@@ -62,24 +62,34 @@ SECTIONS
         /* Map the board information at the beginning of the .data section */
         *boardinfo.o(*.data);
         /* End the board info with a null char, we handle it as a null-terminated string */
-        BYTE(0);
+        BYTE(0)
 
         . = ALIGN(4);
-        *(.data);
+        *(.data)
         . = ALIGN(4);
         __data_end = ABSOLUTE(.);
         __data_size = __data_end - __data_start;
      } > ram AT > flash
-    ASSERT(__data_end < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS .data")
+    ASSERT(__data_end < ORIGIN(flash) + LENGTH(flash), "Not enough Flash to fit the OS .data")
 
-     /* Variable used to transfer the .data section from flash to ram */
-     __data_lma = LOADADDR(.data);
+    /* Variable used to transfer the .data section from flash to ram */
+    __data_lma = LOADADDR(.data);
 
-     /* Non initialized data will be manually allocated (and zeroed) in ram */
+    /* Kernel binary size (actual size of laritos.bin) */
+    __kernel_bin_size = __data_lma + SIZEOF(.data);
+
+    /**
+     * Offset in laritos.bin where the apps are loaded (apps are appended to laritos.bin)
+     * This is temporary until we implement a better mechanism for flashing apps,
+     * such as a file system on sd card.
+     */
+    __apps_start = __kernel_bin_size;
+
+    /* Non initialized data will be manually allocated (and zeroed) in ram */
     .bss : {
         . = ALIGN(4);
         __bss_start = ABSOLUTE(.);
-        *(.bss);
+        *(.bss)
         . = ALIGN(4);
         __bss_end = ABSOLUTE(.);
         __bss_size = __bss_end - __bss_start;
@@ -99,6 +109,5 @@ SECTIONS
     /* laritOS only use 5 processor modes, hence 5 different stacks  */
     __stack_top = __stack_end + 5 * CONFIG_MEM_STACK_SIZE_PER_MODE;
     __stack_size = __stack_top - __stack_end;
-
     ASSERT(__stack_top < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS stacks")
 }

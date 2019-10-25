@@ -11,9 +11,8 @@ typedef uint32_t cpubits_t;
 #define CPU_ALL_MASK ((cpubits_t) -1)
 #define BIT_FOR_CPU(_n) ((cpubits_t) (1 << _n))
 
-static inline int cpu_get_id(void) {
-    // TODO
-    return 0;
+static inline uint8_t cpu_get_id(void) {
+    return arch_cpu_get_id();
 }
 
 static inline cpu_t *cpu(void) {

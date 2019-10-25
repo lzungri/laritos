@@ -429,6 +429,7 @@ KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 
 KBUILD_LDFLAGS :=
+
 GCC_PLUGINS_CFLAGS :=
 
 export ARCH SRCARCH CONFIG_SHELL HOSTCC KBUILD_HOSTCFLAGS CROSS_COMPILE AS LD CC
@@ -826,11 +827,12 @@ KBUILD_LARITOS_LIBS := $(libs-y1)
 laritos-deps := $(KBUILD_LARITOS_OBJS) $(KBUILD_LARITOS_LIBS)
 
 quiet_cmd_link_laritos ?= LD      $@
-	cmd_link_laritos ?= $(LD) -T $(KBUILD_LDS) -whole-archive $(KBUILD_LARITOS_OBJS) $(KBUILD_BOARD_INFO) -o $@ $(KBUILD_LDFLAGS) $(LDFLAGS_laritos)
+	cmd_link_laritos ?= $(LD) -T $(KBUILD_LDS) -whole-archive $(KBUILD_LARITOS_OBJS) $(KBUILD_BOARD_INFO) -o $@ $(KBUILD_LDFLAGS) $(LDFLAGS_laritos) -Map $@.map
 
 laritos.elf: $(laritos-deps) $(KBUILD_BOARD_INFO) $(KBUILD_LDS) FORCE
 	$(call if_changed,link_laritos)
 
+# Remove symbols, relocation info, debugging metadata, etc
 quiet_cmd_objcopy_laritos ?= OBJCOPY $@
 	cmd_objcopy_laritos ?= $(OBJCOPY) -O binary $< $@
 

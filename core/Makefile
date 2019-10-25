@@ -8,3 +8,4 @@ obj-y += dstruct/
 obj-y += syscall/
 obj-y += time/
 obj-y += mm/
+obj-y += loader/

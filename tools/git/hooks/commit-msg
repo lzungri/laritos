@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+
+import sys
+import re
+
+with open(sys.argv[1], "r") as f:
+    msg = f.read(1000)
+
+if not re.match("^.+[:][ ].+", msg):
+    sys.stderr.write("""Invalid commit message format. Expected:
+    affected module: Subject no longer than 50 chars
+
+    Extra info
+    Extra extra info\n""")
+    sys.exit(1)
