@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#include <userspace/app.h>
 #include <loader/elf.h>
 
 /**

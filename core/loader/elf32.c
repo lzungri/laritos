@@ -5,7 +5,6 @@
 #include <string.h>
 #include <limits.h>
 #include <mm/heap.h>
-#include <userspace/app.h>
 #include <loader/loader.h>
 #include <loader/loader-elf.h>
 #include <loader/elf.h>
@@ -42,7 +41,7 @@ static inline int setup_image_context(Elf32_Ehdr *elf, void *addr, uint32_t *got
     return arch_set_got(got);
 }
 
-static int relocate_image(Elf32_Ehdr *elf, void *addr, uint32_t rel_offset, uint16_t rel_entries,
+static int relocate_image(Elf32_Ehdr *elf, void *baseaddr, uint32_t rel_offset, uint16_t rel_entries,
         uint32_t symtab_offset, uint32_t *got) {
     int i;
     for (i = 0; i < rel_entries; i++) {
@@ -52,7 +51,7 @@ static int relocate_image(Elf32_Ehdr *elf, void *addr, uint32_t rel_offset, uint
                 ((char *) elf + symtab_offset + ELF32_R_SYM(rel->r_info) * sizeof(Elf32_Sym));
 
         verbose("Relocating offset=0x%lX, type=0x%lX, symbol value=0x%lX", rel->r_offset, ELF32_R_TYPE(rel->r_info), sym->st_value);
-        if (arch_elf32_relocate_symbol(addr, rel, sym, got) < 0) {
+        if (arch_elf32_relocate_symbol(baseaddr, rel, sym, got) < 0) {
             error("Failed to relocate offset=0x%lX, type=0x%lX", rel->r_offset, ELF32_R_TYPE(rel->r_info));
             return -1;
         }
