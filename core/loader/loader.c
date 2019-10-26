@@ -19,7 +19,7 @@ int loader_load_app_from_memory(uint16_t appidx) {
 
     debug("Loading app at 0x%p", e_ident);
 
-    if (*e_ident == 0x7f && memcmp(e_ident + 1, "ELF", 3) == 0) {
+    if (memcmp(e_ident, ELFMAG, sizeof(ELFMAG) - 1) == 0) {
         switch (e_ident[EI_CLASS]) {
         case 1:;
             // ELF 32
