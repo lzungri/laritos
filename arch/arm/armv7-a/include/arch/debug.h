@@ -14,7 +14,7 @@ static inline const char *get_cpu_mode_str(uint8_t mode) {
     return modes[mode & 0xf];
 }
 
-void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, psr_t cpsr);
+void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, regpsr_t cpsr);
 
 /**
  * Log arm registers

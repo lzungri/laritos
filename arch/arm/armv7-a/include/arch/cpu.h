@@ -8,6 +8,11 @@ typedef void *regsp_t;
 typedef void *regret_t;
 
 /**
+ * Type that holds the process image size for this architecture
+ */
+typedef uint32_t imgsize_t;
+
+/**
  * The DFSR holds status information about the last data fault
  */
 typedef struct {
@@ -226,20 +231,28 @@ typedef struct {
             bool n: 1;
         } b;
     };
-} psr_t;
+} regpsr_t;
+
+typedef struct {
+    int32_t regs[13];
+    regsp_t sp;
+    regret_t lr;
+    regpc_t pc;
+    regpsr_t psr;
+} regs_t;
 
 /**
  * Note: const because changing this value will have no effect on the actual register
  *
  * @return: Current program status register
  */
-static inline const psr_t get_cpsr(void) {
-    psr_t cpsr;
+static inline const regpsr_t get_cpsr(void) {
+    regpsr_t cpsr;
     asm("mrs %0, cpsr" : "=r" (cpsr.v));
     return cpsr;
 }
 
-static inline void set_cpsr(psr_t *psr) {
+static inline void set_cpsr(regpsr_t *psr) {
     asm("msr cpsr, %0" : : "r" (psr->v));
 }
 
@@ -248,8 +261,8 @@ static inline void set_cpsr(psr_t *psr) {
  *
  * @return: Saved program status register
  */
-static inline const psr_t get_spsr(void) {
-    psr_t spsr;
+static inline const regpsr_t get_spsr(void) {
+    regpsr_t spsr;
     asm("mrs %0, spsr" : "=r" (spsr.v));
     return spsr;
 }
@@ -299,4 +312,8 @@ static inline uint8_t arch_cpu_get_id(void) {
 static inline int arch_set_got(uint32_t *got) {
     asm("mov r9, %0" : : "r" (got));
     return 0;
+}
+
+static inline void arch_wfi(void) {
+    asm("wfi");
 }

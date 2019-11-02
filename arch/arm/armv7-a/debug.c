@@ -6,8 +6,8 @@
 #include <arch/cpu.h>
 #include <arch/debug.h>
 
-void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, psr_t cpsr) {
-    psr_t v = cpsr;
+void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, regpsr_t cpsr) {
+    regpsr_t v = cpsr;
     v.v = 1;
 
     log_always_async("Registers:");
