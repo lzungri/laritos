@@ -9,6 +9,9 @@
 #include <loader/loader-elf.h>
 #include <loader/elf.h>
 #include <arch/elf32.h>
+#include <arch/cpu.h>
+#include <process/pcb.h>
+#include <sched/sched.h>
 
 static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
     char *dest = addr;
@@ -37,7 +40,7 @@ static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
     return 0;
 }
 
-static inline int setup_image_context(Elf32_Ehdr *elf, void *addr, uint32_t *got) {
+static inline int setup_pcb_context(Elf32_Ehdr *elf, pcb_t *pcb, uint32_t *got) {
     return arch_set_got(got);
 }
 
@@ -81,7 +84,13 @@ int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
         return -1;
     }
 
-    uint32_t imgsize = 0;
+    // Allocate PCB structure for this new process
+    pcb_t *pcb = pcb_alloc();
+    if (pcb == NULL) {
+        error("Could not allocate space for PCB");
+        goto error_pcb;
+    }
+
     uint16_t rel_entries = 0;
     uint32_t rel_offset = U32_MAX;
     uint32_t symtab_offset = U32_MAX;
@@ -93,7 +102,7 @@ int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
     for (i = 0; i < elf->e_shnum; i++) {
         Elf32_Shdr *sect = (Elf32_Shdr *) ((char *) elf + elf->e_shoff + elf->e_shentsize * i);
         if (sect->sh_flags & SHF_ALLOC) {
-            imgsize += sect->sh_size;
+            pcb->imgsize += sect->sh_size;
         }
 
         if (sect->sh_type == SHT_SYMTAB) {
@@ -110,50 +119,68 @@ int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
 
     if (rel_offset == U32_MAX || symtab_offset == U32_MAX || shstrtab_offset == U32_MAX) {
         error("Couldn't find offset/s for the relocation, symtab, and/or shstrtab sections");
-        return -1;
+        goto error_reloc_offset;
     }
 
     // Find the got table offset
     uint32_t got_vaddr;
     if (get_got_virtual_addr(elf, (char *) elf + shstrtab_offset, &got_vaddr) < 0) {
         error("Couldn't find got section virtual address");
-        return -1;
+        goto error_got;
     }
 
-    verbose("Allocating %lu bytes for app", imgsize);
-    void *imgaddr = malloc(imgsize);
-    if (imgaddr == NULL) {
-        error("Couldn't allocate memory for app at 0x%p", elf);
-        return -1;
+    verbose("Allocating %lu bytes for process", pcb->imgsize);
+    pcb->imgaddr = malloc(pcb->imgsize);
+    if (pcb->imgaddr == NULL) {
+        error("Couldn't allocate memory for process at 0x%p", elf);
+        goto error_imgalloc;
     }
-    debug("Process image located at 0x%p", imgaddr);
+    debug("Process image located at 0x%p", pcb->imgaddr);
 
-    uint32_t *got = (uint32_t *) ((char *) imgaddr + got_vaddr);
+    uint32_t *got = (uint32_t *) ((char *) pcb->imgaddr + got_vaddr);
     verbose("GOT located at 0x%p", got);
 
-    if (load_image_from_memory(elf, imgaddr) < 0) {
-        error("Failed to load app from 0x%p into 0x%p", elf, imgaddr);
+    if (load_image_from_memory(elf, pcb->imgaddr) < 0) {
+        error("Failed to load process from 0x%p into 0x%p", elf, pcb->imgaddr);
         goto error_load;
     }
 
-    if (setup_image_context(elf, imgaddr, got) < 0) {
-        error("Failed to setup context for app at 0x%p", elf);
+    if (setup_pcb_context(elf, pcb, got) < 0) {
+        error("Failed to setup context for process at 0x%p", elf);
         goto error_setup;
     }
 
-    if (relocate_image(elf, imgaddr, rel_offset, rel_entries, symtab_offset, got) < 0) {
-        error("Failed to relocate app loaded at 0x%p", imgaddr);
+    if (relocate_image(elf, pcb->imgaddr, rel_offset, rel_entries, symtab_offset, got) < 0) {
+        error("Failed to relocate process loaded at 0x%p", pcb->imgaddr);
         goto error_reloc;
     }
 
-    int (*main)(void) = (int (*)(void)) ((char *) imgaddr + elf->e_entry);
-    info("App loaded at 0x%p exited with %d", imgaddr, main());
+    if (pcb_register(pcb) < 0) {
+        error("Could not register process loaded at 0x%p", pcb->imgaddr);
+        goto error_pcbreg;
+    }
+
+//    int (*main)(void) = (int (*)(void)) ((char *) pcb->imgaddr + elf->e_entry);
+//    info("process loaded at 0x%p exited with %d", pcb->imgaddr, main());
+
+    sched_move_to_zombie(pcb);
+    if (pcb_unregister(pcb) < 0) {
+        error("Could not un-register process loaded at 0x%p", pcb->imgaddr);
+        goto error_pcbunreg;
+    }
 
     return 0;
 
+error_pcbunreg:
+error_pcbreg:
 error_reloc:
 error_setup:
 error_load:
-    free(imgaddr);
+    free(pcb->imgaddr);
+error_imgalloc:
+error_got:
+error_reloc_offset:
+    pcb_free(pcb);
+error_pcb:
     return -1;
 }
