@@ -5,6 +5,7 @@ source "core/syscall/Kconfig"
 source "core/libc/Kconfig"
 source "core/mm/Kconfig"
 source "core/loader/Kconfig"
+source "core/process/Kconfig"
 
 menu "Board"
 
