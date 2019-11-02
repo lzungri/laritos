@@ -59,6 +59,7 @@ typedef struct component {
         list_for_each_entry(_c, &_laritos.comps[__i], list)
 
 int component_init_global_context(void);
+int component_deinit_global_context(void);
 void *component_alloc(size_t size);
 int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c));
