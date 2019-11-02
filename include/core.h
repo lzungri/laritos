@@ -6,6 +6,7 @@
 #include <driver/driver.h>
 #include <time/time.h>
 #include <dstruct/list.h>
+#include <mm/slab.h>
 
 /**
  * laritOS Global context
@@ -20,6 +21,31 @@ typedef struct {
      * List of components grouped by type (for performance reasons)
      */
     struct list_head comps[COMP_TYPE_LEN];
+
+    /**
+     * Slab for pcb_t allocation
+     */
+    slab_t *pcb_slab;
+
+    /**
+     * List of processes in the system
+     */
+    struct list_head pcbs;
+
+    /**
+     * List of READY processes in the system
+     */
+    struct list_head ready_pcbs;
+
+    /**
+     * List of BLOCKED processes in the system
+     */
+    struct list_head blocked_pcbs;
+
+    /**
+     * List of ZOMBIE processes in the system
+     */
+    struct list_head zombie_pcbs;
 
     /**
      * Time information
