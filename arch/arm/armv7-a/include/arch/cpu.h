@@ -8,9 +8,9 @@ typedef void *regsp_t;
 typedef void *regret_t;
 
 /**
- * Type that holds the process image size for this architecture
+ * Type that holds the size of a process section for this architecture
  */
-typedef uint32_t imgsize_t;
+typedef uint32_t secsize_t;
 
 /**
  * The DFSR holds status information about the last data fault

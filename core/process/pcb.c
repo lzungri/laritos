@@ -32,15 +32,15 @@ pcb_t *pcb_alloc(void) {
     pcb_t *pcb = slab_alloc(_laritos.pcb_slab);
     if (pcb != NULL) {
         memset(pcb, 0, sizeof(pcb_t));
-        INIT_LIST_HEAD(&pcb->pcb_node);
-        INIT_LIST_HEAD(&pcb->sched_node);
-        pcb->status = PCB_STATUS_NOT_INIT;
+        INIT_LIST_HEAD(&pcb->sched.pcb_node);
+        INIT_LIST_HEAD(&pcb->sched.sched_node);
+        pcb->sched.status = PCB_STATUS_NOT_INIT;
     }
     return pcb;
 }
 
 int pcb_free(pcb_t *pcb) {
-    if (pcb->status != PCB_STATUS_NOT_INIT) {
+    if (pcb->sched.status != PCB_STATUS_NOT_INIT) {
         error("You can only free a process in PCB_STATUS_NOT_INIT state");
         return -1;
     }
@@ -53,20 +53,20 @@ int pcb_register(pcb_t *pcb) {
     pcb_assign_pid(pcb);
     debug("Registering process with pid=%u", pcb->pid);
     // TODO Mutex
-    list_add(&pcb->pcb_node, &_laritos.pcbs);
+    list_add(&pcb->sched.pcb_node, &_laritos.pcbs);
     sched_move_to_ready(pcb);
     return 0;
 }
 
 int pcb_unregister(pcb_t *pcb) {
-    if (pcb->status != PCB_STATUS_NOT_INIT && pcb->status != PCB_STATUS_ZOMBIE) {
+    if (pcb->sched.status != PCB_STATUS_NOT_INIT && pcb->sched.status != PCB_STATUS_ZOMBIE) {
         error("You can only unregister a process in either PCB_STATUS_NOT_INIT or PCB_STATUS_ZOMBIE state");
         return -1;
     }
     debug("Un-registering process with pid=%u", pcb->pid);
     // TODO Mutex
-    list_del(&pcb->pcb_node);
-    if (pcb->status == PCB_STATUS_ZOMBIE) {
+    list_del(&pcb->sched.pcb_node);
+    if (pcb->sched.status == PCB_STATUS_ZOMBIE) {
         sched_remove_from_zombie(pcb);
     }
     return pcb_free(pcb);
