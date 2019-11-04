@@ -40,12 +40,18 @@ static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
     return 0;
 }
 
-static inline int setup_pcb_context(Elf32_Ehdr *elf, pcb_t *pcb, uint32_t *got) {
-    return arch_set_got(got);
+static inline int setup_pcb_context(Elf32_Ehdr *elf, pcb_t *pcb) {
+    memset(&pcb->regs, 0, sizeof(pcb->regs));
+
+    arch_regs_set_got(pcb->mm.got_start, &pcb->regs);
+    arch_regs_set_stack((char *) pcb->mm.stack_bottom + pcb->mm.stack_size, &pcb->regs);
+    arch_regs_set_pc((char *) pcb->mm.imgaddr + elf->e_entry, &pcb->regs);
+    arch_regs_set_usermode(&pcb->regs);
+    arch_regs_set_irq_on(&pcb->regs);
+    return 0;
 }
 
-static int relocate_image(Elf32_Ehdr *elf, void *baseaddr, uint32_t rel_offset, uint16_t rel_entries,
-        uint32_t symtab_offset, uint32_t *got) {
+static int relocate_image(Elf32_Ehdr *elf, pcb_t *pcb, uint32_t rel_offset, uint16_t rel_entries, uint32_t symtab_offset) {
     int i;
     for (i = 0; i < rel_entries; i++) {
         const Elf32_Rel *rel = (Elf32_Rel *)
@@ -54,7 +60,7 @@ static int relocate_image(Elf32_Ehdr *elf, void *baseaddr, uint32_t rel_offset, 
                 ((char *) elf + symtab_offset + ELF32_R_SYM(rel->r_info) * sizeof(Elf32_Sym));
 
         verbose("Relocating offset=0x%lX, type=0x%lX, symbol value=0x%lX", rel->r_offset, ELF32_R_TYPE(rel->r_info), sym->st_value);
-        if (arch_elf32_relocate_symbol(baseaddr, rel, sym, got) < 0) {
+        if (arch_elf32_relocate_symbol(pcb->mm.imgaddr, rel, sym, pcb->mm.got_start) < 0) {
             error("Failed to relocate offset=0x%lX, type=0x%lX", rel->r_offset, ELF32_R_TYPE(rel->r_info));
             return -1;
         }
@@ -62,18 +68,26 @@ static int relocate_image(Elf32_Ehdr *elf, void *baseaddr, uint32_t rel_offset, 
     return 0;
 }
 
-static inline int get_got_virtual_addr(Elf32_Ehdr *elf, char *shstrtab, uint32_t *got_vaddr) {
+static inline Elf32_Shdr *get_section_header(char *section, Elf32_Ehdr *elf, uint32_t shstrtab_offset) {
     int i;
     for (i = 0; i < elf->e_shnum; i++) {
         Elf32_Shdr *sect = (Elf32_Shdr *) ((char *) elf + elf->e_shoff + elf->e_shentsize * i);
-        char *sectname = shstrtab + sect->sh_name;
-        if (strncmp(sectname, ".got", 5) == 0) {
-            verbose("GOT virtual address 0x%lX", sect->sh_addr);
-            *got_vaddr = sect->sh_addr;
-            return 0;
+        char *sectname = (char *) elf + shstrtab_offset + sect->sh_name;
+        if (strncmp(sectname, section, strlen(section)) == 0) {
+            return sect;
         }
     }
-    return -1;
+    return NULL;
+}
+
+static inline int populate_addr_and_size(char *section, void **addr, secsize_t *size, pcb_t *pcb, Elf32_Ehdr *elf, uint32_t shstrtab_offset) {
+    Elf32_Shdr *sect = get_section_header(section, elf, shstrtab_offset);
+    if (sect == NULL) {
+        return -1;
+    }
+    *addr = (char *) pcb->mm.imgaddr + sect->sh_addr;
+    *size = sect->sh_size;
+    return 0;
 }
 
 int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
@@ -102,7 +116,7 @@ int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
     for (i = 0; i < elf->e_shnum; i++) {
         Elf32_Shdr *sect = (Elf32_Shdr *) ((char *) elf + elf->e_shoff + elf->e_shentsize * i);
         if (sect->sh_flags & SHF_ALLOC) {
-            pcb->imgsize += sect->sh_size;
+            pcb->mm.imgsize += sect->sh_size;
         }
 
         if (sect->sh_type == SHT_SYMTAB) {
@@ -122,50 +136,58 @@ int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
         goto error_reloc_offset;
     }
 
-    // Find the got table offset
-    uint32_t got_vaddr;
-    if (get_got_virtual_addr(elf, (char *) elf + shstrtab_offset, &got_vaddr) < 0) {
-        error("Couldn't find got section virtual address");
-        goto error_got;
-    }
-
-    verbose("Allocating %lu bytes for process", pcb->imgsize);
-    pcb->imgaddr = malloc(pcb->imgsize);
-    if (pcb->imgaddr == NULL) {
+    verbose("Allocating %lu bytes for process", pcb->mm.imgsize);
+    pcb->mm.imgaddr = malloc(pcb->mm.imgsize);
+    if (pcb->mm.imgaddr == NULL) {
         error("Couldn't allocate memory for process at 0x%p", elf);
         goto error_imgalloc;
     }
-    debug("Process image located at 0x%p", pcb->imgaddr);
+    debug("Process image located at 0x%p", pcb->mm.imgaddr);
 
-    uint32_t *got = (uint32_t *) ((char *) pcb->imgaddr + got_vaddr);
-    verbose("GOT located at 0x%p", got);
+    if (populate_addr_and_size(".got", &pcb->mm.got_start, &pcb->mm.got_size, pcb, elf, shstrtab_offset) < 0) {
+        error("Couldn't find .got section");
+        goto error_got;
+    }
+    debug("GOT located at 0x%p, size=%lu", pcb->mm.got_start, pcb->mm.got_size);
 
-    if (load_image_from_memory(elf, pcb->imgaddr) < 0) {
-        error("Failed to load process from 0x%p into 0x%p", elf, pcb->imgaddr);
+    if (populate_addr_and_size(".stack", &pcb->mm.stack_bottom, &pcb->mm.stack_size, pcb, elf, shstrtab_offset) < 0) {
+        error("Couldn't find .stack section");
+        goto error_stack;
+    }
+    debug("Stack located at 0x%p, size=%lu", pcb->mm.stack_bottom, pcb->mm.stack_size);
+
+    if (populate_addr_and_size(".heap", &pcb->mm.heap_start, &pcb->mm.heap_size, pcb, elf, shstrtab_offset) < 0) {
+        error("Couldn't find .heap section");
+        goto error_heap;
+    }
+    debug("Heap located at 0x%p, size=%lu", pcb->mm.heap_start, pcb->mm.heap_size);
+
+    if (load_image_from_memory(elf, pcb->mm.imgaddr) < 0) {
+        error("Failed to load process from 0x%p into 0x%p", elf, pcb->mm.imgaddr);
         goto error_load;
     }
 
-    if (setup_pcb_context(elf, pcb, got) < 0) {
+    if (setup_pcb_context(elf, pcb) < 0) {
         error("Failed to setup context for process at 0x%p", elf);
         goto error_setup;
     }
 
-    if (relocate_image(elf, pcb->imgaddr, rel_offset, rel_entries, symtab_offset, got) < 0) {
-        error("Failed to relocate process loaded at 0x%p", pcb->imgaddr);
+    if (relocate_image(elf, pcb, rel_offset, rel_entries, symtab_offset) < 0) {
+        error("Failed to relocate process loaded at 0x%p", pcb->mm.imgaddr);
         goto error_reloc;
     }
 
     if (pcb_register(pcb) < 0) {
-        error("Could not register process loaded at 0x%p", pcb->imgaddr);
+        error("Could not register process loaded at 0x%p", pcb->mm.imgaddr);
         goto error_pcbreg;
     }
 
-//    int (*main)(void) = (int (*)(void)) ((char *) pcb->imgaddr + elf->e_entry);
-//    info("process loaded at 0x%p exited with %d", pcb->imgaddr, main());
+//    int (*main)(void) = (int (*)(void)) ((char *) pcb->mm.imgaddr + elf->e_entry);
+//    info("process loaded at 0x%p exited with %d", pcb->mm.imgaddr, main());
 
     sched_move_to_zombie(pcb);
     if (pcb_unregister(pcb) < 0) {
-        error("Could not un-register process loaded at 0x%p", pcb->imgaddr);
+        error("Could not un-register process loaded at 0x%p", pcb->mm.imgaddr);
         goto error_pcbunreg;
     }
 
@@ -176,9 +198,11 @@ error_pcbreg:
 error_reloc:
 error_setup:
 error_load:
-    free(pcb->imgaddr);
-error_imgalloc:
+error_heap:
+error_stack:
 error_got:
+    free(pcb->mm.imgaddr);
+error_imgalloc:
 error_reloc_offset:
     pcb_free(pcb);
 error_pcb:
