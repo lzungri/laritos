@@ -21,6 +21,8 @@ typedef struct {
     secsize_t heap_size;
     void *got_start;
     secsize_t got_size;
+
+    regsp_t sp;
 } pcb_mm_t;
 
 typedef struct {
@@ -29,11 +31,10 @@ typedef struct {
     struct list_head sched_node;
 } pcb_sched_t;
 
-typedef struct {
+typedef struct pcb {
     uint16_t pid;
 
     char cmd[CONFIG_PROCESS_MAX_CMD_LEN];
-    regs_t regs;
     pcb_mm_t mm;
     pcb_sched_t sched;
 } pcb_t;
@@ -47,17 +48,25 @@ int pcb_free(pcb_t *pcb);
 int pcb_register(pcb_t *pcb);
 int pcb_unregister(pcb_t *pcb);
 
+static inline pcb_t *pcb_get_current(void) {
+    return _laritos.sched.running[cpu_get_id()];
+}
+
+static inline void pcb_set_current(pcb_t *pcb) {
+    _laritos.sched.running[cpu_get_id()] = pcb;
+}
+
 #define for_each_process(_p) \
-    list_for_each_entry(_p, &_laritos.pcbs, pcb_node)
+    list_for_each_entry(_p, &_laritos.proc.pcbs, sched.pcb_node)
 
 #define for_each_ready_process(_p) \
-    list_for_each_entry(_p, &_laritos.ready_pcbs, sched_node)
+    list_for_each_entry(_p, &_laritos.sched.ready_pcbs, sched.sched_node)
 
 #define for_each_ready_process_safe(_p, _n) \
-    list_for_each_entry_safe(_p, _n, &_laritos.ready_pcbs, sched_node)
+    list_for_each_entry_safe(_p, _n, &_laritos.sched.ready_pcbs, sched.sched_node)
 
 #define for_each_blocked_process(_p) \
-    list_for_each_entry(_p, &_laritos.blocked_pcbs, sched_node)
+    list_for_each_entry(_p, &_laritos.sched.blocked_pcbs, sched.sched_node)
 
 #define for_each_zombie_process(_p) \
-    list_for_each_entry(_p, &_laritos.zombie_pcbs, sched_node)
+    list_for_each_entry(_p, &_laritos.sched.zombie_pcbs, sched.sched_node)
