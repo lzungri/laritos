@@ -8,20 +8,7 @@
 #include <dstruct/list.h>
 #include <mm/slab.h>
 
-/**
- * laritOS Global context
- */
 typedef struct {
-    /**
-     * Board information
-     */
-    board_info_t bi;
-
-    /**
-     * List of components grouped by type (for performance reasons)
-     */
-    struct list_head comps[COMP_TYPE_LEN];
-
     /**
      * Slab for pcb_t allocation
      */
@@ -31,6 +18,11 @@ typedef struct {
      * List of processes in the system
      */
     struct list_head pcbs;
+} laritos_process_t;
+
+struct pcb;
+typedef struct {
+    struct pcb *running[CONFIG_CPU_MAX_CPUS];
 
     /**
      * List of READY processes in the system
@@ -46,6 +38,24 @@ typedef struct {
      * List of ZOMBIE processes in the system
      */
     struct list_head zombie_pcbs;
+} laritos_sched_t;
+
+/**
+ * laritOS Global context
+ */
+typedef struct {
+    /**
+     * Board information
+     */
+    board_info_t bi;
+
+    /**
+     * List of components grouped by type (for performance reasons)
+     */
+    struct list_head comps[COMP_TYPE_LEN];
+
+    laritos_process_t proc;
+    laritos_sched_t sched;
 
     /**
      * Time information
