@@ -6,6 +6,19 @@ source "core/libc/Kconfig"
 source "core/mm/Kconfig"
 source "core/loader/Kconfig"
 source "core/process/Kconfig"
+source "core/sched/Kconfig"
+
+menu "Symmetric multiprocessing"
+
+config SMP
+    bool "Symmetric multiprocessing enabled"
+    default n
+
+config CPU_MAX_CPUS
+    int "Maximum number of supported cpus"
+    default 4
+
+endmenu
 
 menu "Board"
 
