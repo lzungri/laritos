@@ -8,6 +8,7 @@
 #include <component/timer.h>
 #include <loader/loader.h>
 #include <process/pcb.h>
+#include <sched/core.h>
 #include <time/time.h>
 #include <timer.h>
 #include <board-types.h>
@@ -193,6 +194,8 @@ void kernel_entry(void)  {
     if (loader_load_app_from_memory(0) < 0) {
         error("Failed to load app #0");
     }
+
+    schedule();
 
     shell();
 }
