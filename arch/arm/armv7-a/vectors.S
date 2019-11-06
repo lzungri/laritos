@@ -1,6 +1,23 @@
     .section .vectors
     .global _vectors
 
+/**
+ * From ARM documentation:
+ *
+ * When an exception is generated, the processor performs the following actions:
+ *   - Copies the CPSR into the appropriate SPSR. This saves the current mode, interrupt mask,
+ *     and condition flags.
+ *   - Switches state automatically if the current state does not match the instruction set
+ *     used in the exception vector table.
+ *   - Changes the appropriate CPSR mode bits to:
+ *   - Change to the appropriate mode, and map in the appropriate banked out registers for
+ *     that mode.
+ *   - Disable interrupts. IRQs are disabled when any exception occurs. FIQs are disabled
+ *     when an FIQ occurs and on reset.
+ *   - Sets the appropriate LR to the return address.
+ *   - Sets the PC to the vector address for the exception.
+ */
+
 _vectors:
     /* Occurs when the processor reset pin is asserted. This exception
      * is only expected to occur for signaling power-up, or for resetting
