@@ -9,8 +9,8 @@ static inline void arch_restore_context(pcb_t *pcb) {
     asm volatile (
         "mov sp, %0               \n"
         "ldmfd sp!, {r0, lr}      \n"
-        "msr spsr_all, r0         \n"
-        "ldmfd sp!, {r0-r12}      \n"
+        "msr spsr_cxsf, r0        \n"
+        "ldmfd sp!, {r0-r13}^     \n" /* ^ to save the registers in the target processor mode (not the current bank)*/
         "subs pc, lr, #0          \n"
         :
         : "r" (pcb->mm.sp)

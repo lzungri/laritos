@@ -22,16 +22,22 @@ void arch_user_stack_init(struct pcb *pcb, void *lr) {
      *               r9
      *               r10
      *               r11
-     *  sp (old) ->  r12
+     *               r12
+     *  sp (old) ->  r13  ---points to--,
+     *               xxx <--------------'
      */
     uint32_t *sp = (uint32_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size - 4);
 
     // Clear all general-purpose regs
-    memset(sp - 12, 0, sizeof(uint32_t) * 13);
+    memset(sp - 13, 0, sizeof(uint32_t) * 14);
+
+    // Stack pointer at r13 (here is where the sp will be located right
+    // after returning to user space)
+    sp[0] = (uint32_t) (sp + 1);
 
     // GOT at r9
-    sp[-3] = (uint32_t) pcb->mm.got_start;
-    sp -= 13;
+    sp[-4] = (uint32_t) pcb->mm.got_start;
+    sp -= 14;
 
     // LR
     *sp-- = (uint32_t) lr;
