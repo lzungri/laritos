@@ -233,14 +233,6 @@ typedef struct {
     };
 } regpsr_t;
 
-typedef struct {
-    int32_t regs[13];
-    regsp_t sp;
-    regret_t lr;
-    regpc_t pc;
-    regpsr_t psr;
-} regs_t;
-
 /**
  * Note: const because changing this value will have no effect on the actual register
  *
@@ -309,30 +301,9 @@ static inline uint8_t arch_cpu_get_id(void) {
     return v & 0b11;
 }
 
-static inline void arch_regs_set_got(void *got, regs_t *regs) {
-    regs->regs[9] = (int32_t) got;
-}
-
-static inline void arch_regs_set_stack(void *stack, regs_t *regs) {
-    regs->sp = stack;
-}
-
-static inline void arch_regs_set_pc(void *pc, regs_t *regs) {
-    regs->pc = pc;
-}
-
-static inline void arch_regs_set_usermode(regs_t *regs) {
-    // User mode
-    regs->psr.b.mode = 0b10000;
-}
-
-static inline void arch_regs_set_irq_on(regs_t *regs) {
-    // IRQ enabled (not masked)
-    regs->psr.b.irq = 0;
-    // FIQ disabled
-    regs->psr.b.fiq = 1;
-}
-
 static inline void arch_wfi(void) {
     asm("wfi");
 }
+
+struct pcb;
+void arch_user_stack_init(struct pcb *pcb, void *lr);

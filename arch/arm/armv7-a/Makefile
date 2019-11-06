@@ -3,3 +3,4 @@ obj-y += vectors.o
 obj-y += handlers.o
 obj-y += debug.o
 obj-y += elf32.o
+obj-y += cpu.o
