@@ -1,3 +1,4 @@
+
 #define DEBUG
 #include <log.h>
 
@@ -11,7 +12,7 @@
 #include <arch/elf32.h>
 #include <arch/cpu.h>
 #include <process/pcb.h>
-#include <sched/sched.h>
+#include <sched/core.h>
 
 static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
     char *dest = addr;
@@ -41,13 +42,7 @@ static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
 }
 
 static inline int setup_pcb_context(Elf32_Ehdr *elf, pcb_t *pcb) {
-    memset(&pcb->regs, 0, sizeof(pcb->regs));
-
-    arch_regs_set_got(pcb->mm.got_start, &pcb->regs);
-    arch_regs_set_stack((char *) pcb->mm.stack_bottom + pcb->mm.stack_size, &pcb->regs);
-    arch_regs_set_pc((char *) pcb->mm.imgaddr + elf->e_entry, &pcb->regs);
-    arch_regs_set_usermode(&pcb->regs);
-    arch_regs_set_irq_on(&pcb->regs);
+    arch_user_stack_init(pcb, (char *) pcb->mm.imgaddr + elf->e_entry);
     return 0;
 }
 
@@ -185,15 +180,15 @@ int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
 //    int (*main)(void) = (int (*)(void)) ((char *) pcb->mm.imgaddr + elf->e_entry);
 //    info("process loaded at 0x%p exited with %d", pcb->mm.imgaddr, main());
 
-    sched_move_to_zombie(pcb);
-    if (pcb_unregister(pcb) < 0) {
-        error("Could not un-register process loaded at 0x%p", pcb->mm.imgaddr);
-        goto error_pcbunreg;
-    }
+//    sched_move_to_zombie(pcb);
+//    if (pcb_unregister(pcb) < 0) {
+//        error("Could not un-register process loaded at 0x%p", pcb->mm.imgaddr);
+//        goto error_pcbunreg;
+//    }
 
     return 0;
 
-error_pcbunreg:
+//error_pcbunreg:
 error_pcbreg:
 error_reloc:
 error_setup:
