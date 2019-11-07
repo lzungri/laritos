@@ -53,11 +53,9 @@ int log_flush(void);
 
 
 #define fatal_sync(_sync, _msg, ...)  do { \
-    log(_sync, FATAL_COLOR "F", _msg RESTORE_COLOR, ##__VA_ARGS__); \
-    while (1) { \
-        asm("wfi"); \
-    } \
-} while(0)
+        log(_sync, FATAL_COLOR "F", _msg RESTORE_COLOR, ##__VA_ARGS__); \
+        while (1); \
+    } while(0)
 
 #define fatal(_msg, ...) fatal_sync(true, _msg, ##__VA_ARGS__)
 #define fatal_async(_msg, ...) fatal_sync(false, _msg, ##__VA_ARGS__)
