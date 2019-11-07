@@ -72,8 +72,11 @@ asm_undef_handler:
 
 
 asm_svc_handler:
-    # Save registers into the stack
-    stmfd sp!, {r0-r12, lr}
+    # Save registers into the caller stack
+    # See spregs_t for more info about stack layout
+    stmfd sp!, {r0-r13}^
+    mrs r0, spsr
+    stmdb sp!, {r0, lr}
 
     # Load the SVC instruction into r0 to get the service call number.
     # The instruction is located 4 bytes behind the lr
@@ -86,8 +89,7 @@ asm_svc_handler:
     # Invoke the service call handler
     bl _svc_handler
 
-    # Pop the previously saved registers and continue execution in the svc
-    # caller context.
+    # Pop the saved registers and continue execution of the selected process
     # ^ is used to restore the CPSR from the SPSR
     ldmfd sp!, {r0-r12, pc}^
 

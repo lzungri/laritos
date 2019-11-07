@@ -41,7 +41,7 @@ static char *fault_status_msg[32] = {
 };
 
 int _svc_handler(int sysno, const spregs_t *regs) {
-    return syscall(sysno, regs->r[0], regs->r[1], regs->r[2], regs->r[3], regs->r[4], regs->r[5]);
+    return syscall(sysno, (regsp_t) regs, regs->r[0], regs->r[1], regs->r[2], regs->r[3], regs->r[4], regs->r[5]);
 }
 
 int _undef_handler(int32_t pc, const spregs_t *regs) {

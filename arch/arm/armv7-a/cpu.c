@@ -39,7 +39,7 @@ void arch_user_stack_init(struct pcb *pcb, void *lr) {
     sp[-4] = (uint32_t) pcb->mm.got_start;
     sp -= 14;
 
-    // LR
+    // LR (points to the executable entry point)
     *sp-- = (uint32_t) lr;
 
     regpsr_t psr = { 0 };
