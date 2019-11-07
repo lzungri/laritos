@@ -56,6 +56,13 @@ static inline void pcb_set_current(pcb_t *pcb) {
     _laritos.sched.running[cpu_get_id()] = pcb;
 }
 
+static inline void pcb_set_current_pcb_stack(regsp_t sp) {
+    pcb_t *pcb = pcb_get_current();
+    if (pcb != NULL) {
+        pcb->mm.sp = sp;
+    }
+}
+
 #define for_each_process(_p) \
     list_for_each_entry(_p, &_laritos.proc.pcbs, sched.pcb_node)
 
