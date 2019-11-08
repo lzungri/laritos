@@ -11,6 +11,12 @@ typedef uint32_t cpubits_t;
 #define CPU_ALL_MASK ((cpubits_t) -1)
 #define BIT_FOR_CPU(_n) ((cpubits_t) (1 << _n))
 
+typedef enum {
+    CPU_MODE_SUPERVISOR = 0,
+    CPU_MODE_USER,
+} cpu_mode_t;
+
+
 static inline uint8_t cpu_get_id(void) {
     return arch_cpu_get_id();
 }
