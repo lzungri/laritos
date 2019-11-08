@@ -3,6 +3,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+typedef enum {
+    ARM_CPU_MODE_USER = 0b10000,
+    ARM_CPU_MODE_FIQ = 0b10001,
+    ARM_CPU_MODE_IRQ = 0b10010,
+    ARM_CPU_MODE_SUPERVISOR = 0b10011,
+    ARM_CPU_MODE_MONITOR = 0b10110,
+    ARM_CPU_MODE_ABORT = 0b10111,
+    ARM_CPU_MODE_HYPER = 0b11010,
+    ARM_CPU_MODE_UNDEF = 0b11011,
+    ARM_CPU_MODE_SYSTEM = 0b11111,
+} arm_cpu_mode_t;
+
 typedef void *regpc_t;
 typedef void *regsp_t;
 typedef void *regret_t;
