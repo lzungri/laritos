@@ -7,12 +7,13 @@
 
 void switch_to(pcb_t *pcb) {
     sched_move_to_running(pcb);
-    restore_context(pcb);
+    context_restore(pcb);
 }
 
 void context_switch(pcb_t *cur, pcb_t *to) {
-    if (cur != NULL && cur != to) {
+    if (cur != NULL) {
         pcb_set_current(NULL);
+        // Check whether the process is actually running (i.e. not a zombie)
         if (cur->sched.status == PCB_STATUS_RUNNING) {
             sched_move_to_ready(cur);
         }
@@ -25,6 +26,7 @@ void schedule(void) {
     pcb_t *pcb = sched_algo_pick_ready(curpcb);
 
     assert(pcb != NULL, "No process ready for execution, where is the idle process?");
-
-    return context_switch(curpcb, pcb);
+    if (curpcb != pcb) {
+        context_switch(curpcb, pcb);
+    }
 }

@@ -304,6 +304,3 @@ static inline uint8_t arch_cpu_get_id(void) {
 static inline void arch_wfi(void) {
     asm("wfi");
 }
-
-struct pcb;
-void arch_user_stack_init(struct pcb *pcb, void *lr);
