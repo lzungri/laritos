@@ -1,5 +1,6 @@
 #pragma once
 
 #include <loader/elf.h>
+#include <process/pcb.h>
 
-int loader_elf32_load_from_memory(Elf32_Ehdr *elf);
+pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf);

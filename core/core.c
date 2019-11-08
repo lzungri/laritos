@@ -9,6 +9,7 @@
 #include <loader/loader.h>
 #include <process/pcb.h>
 #include <sched/core.h>
+#include <sched/context.h>
 #include <time/time.h>
 #include <timer.h>
 #include <board-types.h>
@@ -191,15 +192,18 @@ void kernel_entry(void)  {
     }
 #endif
 
-    if (loader_load_app_from_memory(0) < 0) {
+    pcb_t *bigbang_pcb = loader_load_executable_from_memory(0);
+    if (bigbang_pcb == NULL) {
         error("Failed to load app #0");
     }
 
-    if (loader_load_app_from_memory(0) < 0) {
-        error("Failed to load app #0");
+    // Load the same program, just to have two processes for testing
+    if (loader_load_executable_from_memory(0) == NULL) {
+        error("Failed to load app #1");
     }
 
-    schedule();
+    // Execute the first process
+    switch_to(bigbang_pcb);
 
     shell();
 }

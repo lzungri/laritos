@@ -2,8 +2,9 @@
 
 #include <stdint.h>
 #include <loader/elf.h>
+#include <process/pcb.h>
 
 /**
  * Temporary api for loading apps
  */
-int loader_load_app_from_memory(uint16_t appidx);
+pcb_t *loader_load_executable_from_memory(uint16_t appidx);

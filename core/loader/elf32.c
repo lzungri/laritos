@@ -13,6 +13,7 @@
 #include <arch/cpu.h>
 #include <process/pcb.h>
 #include <sched/core.h>
+#include <sched/context.h>
 
 static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
     char *dest = addr;
@@ -42,7 +43,7 @@ static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
 }
 
 static inline int setup_pcb_context(Elf32_Ehdr *elf, pcb_t *pcb) {
-    arch_user_stack_init(pcb, (char *) pcb->mm.imgaddr + elf->e_entry);
+    arch_context_usermode_init(pcb, (char *) pcb->mm.imgaddr + elf->e_entry);
     return 0;
 }
 
@@ -85,12 +86,12 @@ static inline int populate_addr_and_size(char *section, void **addr, secsize_t *
     return 0;
 }
 
-int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
+pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
     debug("Loading ELF32 from 0x%p", elf);
 
     if (!arch_elf32_is_supported(elf)) {
         error("Executable not supported by this platform");
-        return -1;
+        return NULL;
     }
 
     // Allocate PCB structure for this new process
@@ -177,18 +178,14 @@ int loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
         goto error_pcbreg;
     }
 
-//    int (*main)(void) = (int (*)(void)) ((char *) pcb->mm.imgaddr + elf->e_entry);
-//    info("process loaded at 0x%p exited with %d", pcb->mm.imgaddr, main());
-
 //    sched_move_to_zombie(pcb);
 //    if (pcb_unregister(pcb) < 0) {
 //        error("Could not un-register process loaded at 0x%p", pcb->mm.imgaddr);
 //        goto error_pcbunreg;
 //    }
 
-    return 0;
+    return pcb;
 
-//error_pcbunreg:
 error_pcbreg:
 error_reloc:
 error_setup:
@@ -201,5 +198,5 @@ error_imgalloc:
 error_reloc_offset:
     pcb_free(pcb);
 error_pcb:
-    return -1;
+    return NULL;
 }
