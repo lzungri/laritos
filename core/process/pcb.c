@@ -76,3 +76,7 @@ regsp_t pcb_get_current_pcb_stack(void) {
     pcb_t *pcb = pcb_get_current();
     return pcb != NULL ? pcb->mm.sp : 0;
 }
+
+void pcb_kill(pcb_t *pcb) {
+    sched_move_to_zombie(pcb);
+}

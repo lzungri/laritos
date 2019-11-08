@@ -17,7 +17,7 @@ int syscall(int sysno, regsp_t sp, int32_t arg0, int32_t arg1, int32_t arg2, int
     switch (sysno) {
     case 0:
         info_async("Killing process pid=%u", pcb->pid);
-        sched_move_to_zombie(pcb);
+        pcb_kill(pcb);
         schedule();
         break;
     case 1:
