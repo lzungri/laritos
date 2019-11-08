@@ -36,6 +36,10 @@ static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t 
     spregs->r[13] = (uint32_t) ((char *) spregs + sizeof(spregs_t));
 }
 
+static inline void arch_context_save(pcb_t *pcb, void *retaddr) {
+
+}
+
 static inline void arch_context_restore(pcb_t *pcb) {
     // volatile to prevent any gcc optimization on the assembly code
     asm volatile (
