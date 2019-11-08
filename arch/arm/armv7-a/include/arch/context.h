@@ -2,6 +2,7 @@
 
 #include <cpu.h>
 #include <string.h>
+#include <arch/stack.h>
 #include <process/pcb.h>
 
 static inline void arch_context_usermode_init(struct pcb *pcb, void *lr) {
@@ -27,34 +28,32 @@ static inline void arch_context_usermode_init(struct pcb *pcb, void *lr) {
      *  sp (old) ->  r14                |
      *               xxx   <------------'
      */
-    uint32_t *sp = (uint32_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size - 4);
+    spregs_t *spregs = (spregs_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size);
+    // Move back in the stack one spregs_t chunk
+    spregs--;
 
-    // Clear all general-purpose regs
-    memset(sp - 14, 0, sizeof(uint32_t) * 15);
+    // Setup process stack pointer
+    pcb->mm.sp = (regsp_t) spregs;
+
+    // Clear all regs
+    memset(spregs, 0, sizeof(spregs_t));
+
+    // User mode
+    spregs->spsr.b.mode = 0b10000;
+    // IRQ enabled (not masked)
+    spregs->spsr.b.irq = 0;
+    // FIQ disabled
+    spregs->spsr.b.fiq = 1;
+
+    // LR (points to the executable entry point)
+    spregs->lr = (int32_t) lr;
+
+    // GOT at r9
+    spregs->r[9] = (int32_t) pcb->mm.got_start;
 
     // Stack pointer at r13 (here is where the sp will be located right
     // after returning to user space)
-    sp[-1] = (uint32_t) (sp + 1);
-
-    // GOT at r9
-    sp[-5] = (uint32_t) pcb->mm.got_start;
-    sp -= 15;
-
-    // LR (points to the executable entry point)
-    *sp-- = (uint32_t) lr;
-
-    regpsr_t psr = { 0 };
-    // User mode
-    psr.b.mode = 0b10000;
-    // IRQ enabled (not masked)
-    psr.b.irq = 0;
-    // FIQ disabled
-    psr.b.fiq = 1;
-    // SPSR
-    *sp = psr.v;
-
-    // Setup process stack pointer
-    pcb->mm.sp = sp;
+    spregs->r[13] = (uint32_t) ((char *) spregs + sizeof(spregs_t));
 }
 
 static inline void arch_context_restore(pcb_t *pcb) {
