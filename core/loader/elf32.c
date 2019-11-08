@@ -5,12 +5,12 @@
 #include <stdint.h>
 #include <string.h>
 #include <limits.h>
+#include <cpu.h>
 #include <mm/heap.h>
 #include <loader/loader.h>
 #include <loader/loader-elf.h>
 #include <loader/elf.h>
 #include <arch/elf32.h>
-#include <arch/cpu.h>
 #include <process/pcb.h>
 #include <sched/core.h>
 #include <sched/context.h>
@@ -43,7 +43,12 @@ static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
 }
 
 static inline int setup_pcb_context(Elf32_Ehdr *elf, pcb_t *pcb) {
-    arch_context_usermode_init(pcb, (char *) pcb->mm.imgaddr + elf->e_entry);
+    // Initialize process stack pointer
+    pcb->mm.sp = (regsp_t) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size);
+    verbose("Stack pointer at 0x%p", pcb->mm.sp);
+
+    context_init(pcb, (char *) pcb->mm.imgaddr + elf->e_entry, CPU_MODE_USER);
+
     return 0;
 }
 
@@ -150,7 +155,7 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
         error("Couldn't find .stack section");
         goto error_stack;
     }
-    debug("Stack located at 0x%p, size=%lu", pcb->mm.stack_bottom, pcb->mm.stack_size);
+    debug("Stack bottom located at 0x%p, size=%lu", pcb->mm.stack_bottom, pcb->mm.stack_size);
 
     if (populate_addr_and_size(".heap", &pcb->mm.heap_start, &pcb->mm.heap_size, pcb, elf, shstrtab_offset) < 0) {
         error("Couldn't find .heap section");

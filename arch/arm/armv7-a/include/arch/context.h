@@ -1,12 +1,14 @@
 #pragma once
 
+#include <log.h>
+
 #include <cpu.h>
 #include <string.h>
 #include <arch/stack.h>
 #include <process/pcb.h>
 
-static inline void arch_context_usermode_init(struct pcb *pcb, void *lr) {
-    spregs_t *spregs = (spregs_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size);
+static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t mode) {
+    spregs_t *spregs = (spregs_t *) pcb->mm.sp;
     // Move back in the stack one spregs_t chunk
     spregs--;
 
@@ -16,15 +18,15 @@ static inline void arch_context_usermode_init(struct pcb *pcb, void *lr) {
     // Clear all regs
     memset(spregs, 0, sizeof(spregs_t));
 
-    // User mode
-    spregs->spsr.b.mode = 0b10000;
+    // Processor mode
+    spregs->spsr.b.mode = mode == CPU_MODE_SUPERVISOR ? ARM_CPU_MODE_SUPERVISOR : ARM_CPU_MODE_USER;
     // IRQ enabled (not masked)
     spregs->spsr.b.irq = 0;
     // FIQ disabled
     spregs->spsr.b.fiq = 1;
 
     // LR (points to the executable entry point)
-    spregs->lr = (int32_t) lr;
+    spregs->lr = (int32_t) retaddr;
 
     // GOT at r9
     spregs->r[9] = (int32_t) pcb->mm.got_start;

@@ -17,6 +17,8 @@ void context_switch(pcb_t *cur, pcb_t *to) {
         if (cur->sched.status == PCB_STATUS_RUNNING) {
             sched_move_to_ready(cur);
         }
+
+        // Create another context here, should return to LR
     }
     switch_to(to);
 }

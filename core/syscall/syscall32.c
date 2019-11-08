@@ -21,7 +21,7 @@ int syscall(int sysno, regsp_t sp, int32_t arg0, int32_t arg1, int32_t arg2, int
         schedule();
         break;
     case 1:
-        info_async("Yield process pid=%u", pcb->pid);
+        info_async("Yielding process pid=%u", pcb->pid);
         schedule();
         break;
     }
