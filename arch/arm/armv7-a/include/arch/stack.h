@@ -24,11 +24,12 @@
  *                  r10
  *                  r11
  *                  r12
- *     sp (old) ->  r13  ---points to--,
- *                  xxx <--------------'
+ *                  r13   --points to--,
+ *     sp (old) ->  r14                |
+ *                  xxx   <------------'
  */
 typedef struct {
     regpsr_t spsr;
     int32_t lr;
-    int32_t r[13];
+    int32_t r[15];
 } spregs_t;
