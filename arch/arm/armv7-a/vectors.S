@@ -72,9 +72,26 @@ asm_undef_handler:
 
 
 asm_svc_handler:
-    # Save registers into the caller stack
+    # First off, we need to get the user stack pointer (otherwise we'll be using
+    # the sp_svc, which could point anywhere)
+    # To get the sp_user, ARM provides a priviledge mode called System that shares
+    # the same register bank as the user mode but with more priviledges
+
+    # Switch to system mode (irq enabled / fiq disabled)
+    msr cpsr_c, #0b01011111
+
+    # Push user mode registers (^) into the caller stack
     # See spregs_t for more info about stack layout
-    stmfd sp!, {r0-r13}^
+    stmfd sp!, {r0-r14}^
+    # Save the sp_user into r0 (shared with svc/user/system mode)
+    mov r0, sp
+
+    # Switch back to svc mode
+    msr cpsr_c, #0b01010011
+    # Set the sp_svc pointing to the sp_user
+    mov sp, r0
+
+    # Get the PSR and LR saved by the svc exception
     mrs r0, spsr
     stmdb sp!, {r0, lr}
 
@@ -89,9 +106,18 @@ asm_svc_handler:
     # Invoke the service call handler
     bl _svc_handler
 
-    # Pop the saved registers and continue execution of the selected process
-    # ^ is used to restore the CPSR from the SPSR
-    ldmfd sp!, {r0-r12, pc}^
+    # In case there was a context switch, update the stack pointer
+    bl pcb_get_current_pcb_stack
+    mov sp, r0
+
+    # Pop the SPSR and link register
+    ldmfd sp!, {r0, lr}
+    # Update the SPSR (CPSR will be restored from this value)
+    msr spsr_cxsf, r0
+    # ^ to save the registers in the target processor mode (not the current svc bank)
+    ldmfd sp!, {r0-r14}^
+    # subS to also restore cpsr from spsr
+    subs pc, lr, #0
 
 
 asm_prefetch_handler:

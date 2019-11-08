@@ -47,6 +47,7 @@ pcb_t *pcb_alloc(void);
 int pcb_free(pcb_t *pcb);
 int pcb_register(pcb_t *pcb);
 int pcb_unregister(pcb_t *pcb);
+regsp_t pcb_get_current_pcb_stack(void);
 
 static inline pcb_t *pcb_get_current(void) {
     return _laritos.sched.running[cpu_get_id()];

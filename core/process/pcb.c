@@ -71,3 +71,8 @@ int pcb_unregister(pcb_t *pcb) {
     }
     return pcb_free(pcb);
 }
+
+regsp_t pcb_get_current_pcb_stack(void) {
+    pcb_t *pcb = pcb_get_current();
+    return pcb != NULL ? pcb->mm.sp : 0;
+}
