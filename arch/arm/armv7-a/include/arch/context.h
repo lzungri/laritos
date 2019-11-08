@@ -6,28 +6,6 @@
 #include <process/pcb.h>
 
 static inline void arch_context_usermode_init(struct pcb *pcb, void *lr) {
-    /**
-     * Stack layout:
-     *
-     *  sp (new) ->  spsr  <- PSR to be used on process startup
-     *               lr    <- Entry point
-     *               r0
-     *               r1
-     *               r2
-     *               r3
-     *               r4
-     *               r5
-     *               r6
-     *               r7
-     *               r8
-     *               r9    <- GOT
-     *               r10
-     *               r11
-     *               r12
-     *               r13   --points to--,
-     *  sp (old) ->  r14                |
-     *               xxx   <------------'
-     */
     spregs_t *spregs = (spregs_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size);
     // Move back in the stack one spregs_t chunk
     spregs--;
