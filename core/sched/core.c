@@ -1,5 +1,7 @@
 #include <log.h>
 
+#include <stdbool.h>
+
 #include <process/pcb.h>
 #include <sched/core.h>
 #include <sched/context.h>
@@ -11,6 +13,8 @@ void switch_to(pcb_t *pcb) {
 }
 
 void context_switch(pcb_t *cur, pcb_t *to) {
+    bool ctx_saved = true;
+
     if (cur != NULL) {
         verbose_async("Context switch pid=%u -> pid=%u", cur->pid, to->pid);
         pcb_set_current(NULL);
@@ -18,9 +22,12 @@ void context_switch(pcb_t *cur, pcb_t *to) {
         if (cur->sched.status == PCB_STATUS_RUNNING) {
             sched_move_to_ready(cur);
         }
-        context_save(cur, 0);
+        ctx_saved = context_save(cur);
     }
-    switch_to(to);
+
+    if (ctx_saved) {
+        switch_to(to);
+    }
 }
 
 void schedule(void) {

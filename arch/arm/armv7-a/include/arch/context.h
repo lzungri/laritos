@@ -36,8 +36,43 @@ static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t 
     spregs->r[13] = (uint32_t) ((char *) spregs + sizeof(spregs_t));
 }
 
-static inline void arch_context_save(pcb_t *pcb, void *retaddr) {
+/**
+ *
+ * @returns true if the function saved the context
+ *          false if the function is returning from the restored context
+ */
+static inline bool arch_context_save(pcb_t *pcb) {
+    bool ctx_saved = false;
+    // volatile to prevent any gcc optimization on the assembly code
+    asm volatile (
+        /* Switch to system mode (irq enabled / fiq disabled) */
+        "msr cpsr_c, #0b01011111 \n"
+        /* Push svc registers into the caller stack */
+        "stmfd sp!, {r0-r14}    \n"
+        /* Switch back to svc mode */
+        "msr cpsr_c, #0b01010011 \n"
+        /* Save current PSR */
+        "mrs r0, cpsr_all        \n"
+        /* Save return address in r1 (5 instructions ahead) */
+        "add r1, pc, #12         \n"
+        /* Switch to system mode (irq enabled / fiq disabled) */
+        "msr cpsr_c, #0b01011111 \n"
+        /* Save psr and retaddr in the stack */
+        "stmfd sp!, {r0-r1}^     \n"
+        /* Switch back to svc mode */
+        "msr cpsr_c, #0b01010011 \n"
+        /* ret = true; */
+        "mov %0, #1              \n"
+        : "=&r" (ctx_saved)
+        :
+        : "memory"  /* Memory barrier (do not reorder read/writes) */ ,
+          "cc" /* Tell gcc this code modifies the cpsr */,
+          "r0", "r1" /* Do not use r0 and r1 in compiler generated code since we are using them */);
 
+    if (ctx_saved) {
+        pcb->mm.sp = (regsp_t) ((char *) pcb->mm.sp - sizeof(spregs_t));
+    }
+    return ctx_saved;
 }
 
 static inline void arch_context_restore(pcb_t *pcb) {
