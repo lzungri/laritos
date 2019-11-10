@@ -296,6 +296,18 @@ __attribute__((always_inline)) static inline regret_t arch_regs_get_retaddr(void
     asm("mov %0, lr" : "=r" (ret));
     return ret;
 }
+/**
+ * Note: __attribute__((always_inline)) so that this function is always expanded and thus
+ * we get a useful return value, not just the return address of the arch_regs_get_pc() function (in case it
+ * wasn't expanded by the compiler)
+ *
+ * @return: Function return address
+ */
+__attribute__((always_inline)) static inline regsp_t arch_regs_get_sp(void) {
+    regsp_t ret;
+    asm("mov %0, sp" : "=r" (ret));
+    return ret;
+}
 
 /**
  * Indicates the processor number in the Cortex-Ax processor:

@@ -5,7 +5,7 @@
 #include <process/pcb.h>
 #include <process/status.h>
 
-void switch_to(pcb_t *pcb);
+void switch_to(pcb_t *cur, pcb_t *pcb);
 void schedule(void);
 pcb_t *sched_algo_pick_ready(pcb_t *curpcb);
 

@@ -48,7 +48,7 @@ int _undef_handler(int32_t pc, const spregs_t *regs) {
     message_delimiter();
     error_async("Instruction 0x%08lx at 0x%08lx not recognized", *((uint32_t *) pc), pc);
     // cpsr is backed up in spsr during an exception
-    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
+    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->ret, get_spsr());
     message_delimiter();
 
     fatal("ABORT");
@@ -60,7 +60,7 @@ int _prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spregs_t *regs) {
     char *fs = fault_status_msg[ifsr.b.fs_h << 4 | ifsr.b.fs_l];
     error_async("Instruction prefetch exception: %s", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
-    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
+    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->ret, get_spsr());
     message_delimiter();
 
     fatal("ABORT");
@@ -80,7 +80,7 @@ int _abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
     char *fs = fault_status_msg[dfsr.b.fs_h << 4 | dfsr.b.fs_l];
     error_async("Data abort exception. Invalid %s access: %s", dfsr.b.wnr ? "write" : "read", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
-    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
+    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->ret, get_spsr());
     message_delimiter();
 
     fatal("ABORT");

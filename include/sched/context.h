@@ -21,7 +21,7 @@ static inline void context_restore(pcb_t * pcb) {
  * @returns true if the function saved the context
  *          false if the function is returning from the restored context
  */
-static inline bool context_save(pcb_t *pcb) {
-    verbose_async("Saving context for pid=%u", pcb->pid);
-    return arch_context_save(pcb);
+static inline void context_save_and_restore(pcb_t *spcb, pcb_t *rpcb) {
+    verbose_async("Saving context for pid=%u, restoring context for pid=%u", spcb->pid, rpcb->pid);
+    arch_context_save_and_restore(spcb, rpcb);
 }

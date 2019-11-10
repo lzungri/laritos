@@ -203,7 +203,7 @@ void kernel_entry(void)  {
     }
 
     // Execute the first process
-    switch_to(bigbang_pcb);
+    switch_to(NULL, bigbang_pcb);
 
     shell();
 }

@@ -22,6 +22,8 @@ typedef struct {
     void *got_start;
     secsize_t got_size;
 
+
+    // TODO Rename to sp_ctx
     regsp_t sp;
 } pcb_mm_t;
 
