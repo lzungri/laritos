@@ -77,45 +77,50 @@ asm_svc_handler:
     # To get the sp_user, ARM provides a priviledge mode called System that shares
     # the same register bank as the user mode but with more priviledges
 
+
     # Switch to system mode (irq enabled / fiq disabled)
     msr cpsr_c, #0b01011111
 
     # Push user mode registers (^) into the caller stack
     # See spregs_t for more info about stack layout
     stmfd sp!, {r0-r14}^
-    # Save the sp_user into r0 (shared with svc/user/system mode)
-    mov r0, sp
 
     # Switch back to svc mode
     msr cpsr_c, #0b01010011
-    # Set the sp_svc pointing to the sp_user
-    mov sp, r0
-
     # Get the PSR and LR saved by the svc exception
     mrs r0, spsr
-    stmdb sp!, {r0, lr}
+    mov r1, lr
+
+    # Switch to system mode (irq enabled / fiq disabled)
+    msr cpsr_c, #0b01011111
+    # Push spsr_svc and lr_svc registers into the caller stack
+    stmdb sp!, {r0, r1}
 
     # Load the SVC instruction into r0 to get the service call number.
     # The instruction is located 4 bytes behind the lr
-    ldr r0, [lr, #-4]
+    ldr r0, [r1, #-4]
     # Mask the service call number (e.g. svc 1 -> 0xef000001) and save it in
     # r0 so that the svc_handler() gets it as the first argument
     bic r0, r0, #0xff000000
     # Set the stack pointer as the second argument for the handler
     mov r1, sp
+    # Switch back to svc mode
+    msr cpsr_c, #0b01010011
+
     # Invoke the service call handler
     bl _svc_handler
 
-    # In case there was a context switch, update the stack pointer
+    # In case there was a context switch, get current stack pointer
     bl pcb_get_current_pcb_stack
-    mov sp, r0
+    # Save sp in r1 (we don't want to screw up the sp_svc)
+    mov r1, r0
 
     # Pop the SPSR and link register
-    ldmfd sp!, {r0, lr}
+    ldmfd r1!, {r0, lr}
     # Update the SPSR (CPSR will be restored from this value)
     msr spsr_cxsf, r0
     # ^ to save the registers in the target processor mode (not the current svc bank)
-    ldmfd sp!, {r0-r14}^
+    ldmfd r1!, {r0-r14}^
     # subS to also restore cpsr from spsr
     subs pc, lr, #0
 

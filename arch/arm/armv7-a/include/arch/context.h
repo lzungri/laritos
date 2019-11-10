@@ -47,27 +47,29 @@ static inline bool arch_context_save(pcb_t *pcb) {
     asm volatile (
         /* Switch to system mode (irq enabled / fiq disabled) */
         "msr cpsr_c, #0b01011111 \n"
-        /* Push svc registers into the caller stack */
-        "stmfd sp!, {r0-r14}    \n"
+        "mov r0, sp \n"
         /* Switch back to svc mode */
         "msr cpsr_c, #0b01010011 \n"
+        "mov r2, sp \n"
+        "mov sp, r0 \n"
+        /* Push svc registers into the caller stack */
+        "stmfd sp!, {r14}    \n"
+        "stmfd sp!, {r2}    \n"
         /* Save current PSR */
         "mrs r0, cpsr_all        \n"
         /* Save return address in r1 (5 instructions ahead) */
         "add r1, pc, #12         \n"
-        /* Switch to system mode (irq enabled / fiq disabled) */
-        "msr cpsr_c, #0b01011111 \n"
+        "stmfd sp!, {r0-r12}    \n"
         /* Save psr and retaddr in the stack */
-        "stmfd sp!, {r0-r1}^     \n"
-        /* Switch back to svc mode */
-        "msr cpsr_c, #0b01010011 \n"
+        "stmfd sp!, {r0-r1}     \n"
+        "mov sp, r2     \n"
         /* ret = true; */
         "mov %0, #1              \n"
         : "=&r" (ctx_saved)
         :
         : "memory"  /* Memory barrier (do not reorder read/writes) */ ,
           "cc" /* Tell gcc this code modifies the cpsr */,
-          "r0", "r1" /* Do not use r0 and r1 in compiler generated code since we are using them */);
+          "r0", "r1", "r2" /* Do not use r0 and r1 in compiler generated code since we are using them */);
 
     if (ctx_saved) {
         pcb->mm.sp = (regsp_t) ((char *) pcb->mm.sp - sizeof(spregs_t));
@@ -76,16 +78,44 @@ static inline bool arch_context_save(pcb_t *pcb) {
 }
 
 static inline void arch_context_restore(pcb_t *pcb) {
+    regpsr_t *psr = (regpsr_t *) pcb->mm.sp;
+
+    if (psr->b.mode == ARM_CPU_MODE_SUPERVISOR) {
+        // volatile to prevent any gcc optimization on the assembly code
+        asm volatile (
+            /* Restore stack pointer from pcb in r1 */
+            "mov sp, %0            \n"
+            /* Pop the SPSR and link register */
+            "ldmfd sp!, {r0, lr}   \n"
+            /* Update the SPSR (CPSR will be restored from this value)*/
+            "msr spsr_cxsf, r0     \n"
+            "ldmfd sp!, {r0-r12}   \n"
+            "mov r0, lr            \n"
+            "ldr lr, [sp, #4]      \n"
+            "ldr sp, [sp]          \n"
+            "\n"
+            /* subS to also restore cpsr from spsr */
+            "subs pc, r0, #0       \n"
+            :
+            : "r" (pcb->mm.sp)
+            : "memory" /* Memory barrier (do not reorder read/writes)*/ ,
+              "cc" /* Tell gcc this code modifies the cpsr */);
+
+        pcb->mm.sp = (regsp_t) ((char *) pcb->mm.sp + sizeof(spregs_t));
+
+        return;
+    }
+
     // volatile to prevent any gcc optimization on the assembly code
     asm volatile (
-        /* Restore stack pointer from pcb */
-        "mov sp, %0            \n"
+        /* Restore stack pointer from pcb in r1 */
+        "mov r1, %0            \n"
         /* Pop the SPSR and link register */
-        "ldmfd sp!, {r0, lr}   \n"
+        "ldmfd r1!, {r0, lr}   \n"
         /* Update the SPSR (CPSR will be restored from this value)*/
         "msr spsr_cxsf, r0     \n"
-        /* ^ to save the registers in the target processor mode (not the current bank)*/
-        "ldmfd sp!, {r0-r14}^  \n"
+        /* ^ to save the registers in the user bank (not the svc bank)*/
+        "ldmfd r1!, {r0-r14}^ \n"
         /* subS to also restore cpsr from spsr */
         "subs pc, lr, #0       \n"
         :
