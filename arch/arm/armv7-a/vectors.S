@@ -72,11 +72,11 @@ asm_undef_handler:
 
 
 asm_svc_handler:
-    # First off, we need to get the user stack pointer (otherwise we'll be using
-    # the sp_svc, which could point anywhere)
-    # To get the sp_user, ARM provides a priviledge mode called System that shares
-    # the same register bank as the user mode but with more priviledges
+    # First off, we need to get the user stack pointer and save it into sp_svc.
+    # Note: SVC context uses the process stack
 
+    # To get the sp_user, ARM provides a priviledge mode called System that shares
+    # the same register bank as the user mode but with more privileges
     # Switch to system mode (irq enabled / fiq disabled)
     msr cpsr_c, #0b01011111
 
@@ -84,11 +84,13 @@ asm_svc_handler:
     # See spregs_t for more info about stack layout
     stmfd sp!, {r0-r12, lr}^
 
+    # Save sp_usr in r0 so that we can then assign it to sp_svc (r0 is shared among all modes)
     mov r0, sp
 
     # Switch back to svc mode
     msr cpsr_c, #0b01010011
 
+    # Save sp_user in sp_svc
     mov sp, r0
 
     # Get the PSR and LR saved by the svc exception
@@ -105,6 +107,7 @@ asm_svc_handler:
     # r0 so that the svc_handler() gets it as the first argument
     bic r0, r0, #0xff000000
     # Set the stack pointer as the second argument for the handler
+    # We need this to update the pcb->mm.sp
     mov r1, sp
 
     # Invoke the service call handler
@@ -121,6 +124,8 @@ asm_svc_handler:
     msr spsr_cxsf, r0
     # ^ to save the registers in the target processor mode (not the current svc bank)
     ldmfd sp!, {r0-r12, lr}^
+
+    # Trick to save sp_svc into sp_user
     stmdb sp!, {sp}
     ldmfd sp!, {sp}^
 
