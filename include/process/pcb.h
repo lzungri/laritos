@@ -22,9 +22,7 @@ typedef struct {
     void *got_start;
     secsize_t got_size;
 
-
-    // TODO Rename to sp_ctx
-    regsp_t sp;
+    spctx_t *sp_ctx;
 } pcb_mm_t;
 
 typedef struct {
@@ -49,8 +47,8 @@ pcb_t *pcb_alloc(void);
 int pcb_free(pcb_t *pcb);
 int pcb_register(pcb_t *pcb);
 int pcb_unregister(pcb_t *pcb);
-regsp_t pcb_get_current_pcb_stack(void);
 void pcb_kill(pcb_t *pcb);
+spctx_t *pcb_get_current_pcb_stack_context(void);
 
 static inline pcb_t *pcb_get_current(void) {
     return _laritos.sched.running[cpu_get_id()];
@@ -60,10 +58,10 @@ static inline void pcb_set_current(pcb_t *pcb) {
     _laritos.sched.running[cpu_get_id()] = pcb;
 }
 
-static inline void pcb_set_current_pcb_stack(regsp_t sp) {
+static inline void pcb_set_current_pcb_stack_context(spctx_t *spctx) {
     pcb_t *pcb = pcb_get_current();
     if (pcb != NULL) {
-        pcb->mm.sp = sp;
+        pcb->mm.sp_ctx = spctx;
     }
 }
 

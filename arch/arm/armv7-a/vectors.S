@@ -113,8 +113,8 @@ asm_svc_handler:
     # Invoke the service call handler
     bl _svc_handler
 
-    # In case there was a context switch, get current stack pointer
-    bl pcb_get_current_pcb_stack
+    # In case there was a context switch, get current sp context
+    bl pcb_get_current_pcb_stack_context
     # Save sp in r1
     mov sp, r0
 

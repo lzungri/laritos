@@ -44,8 +44,8 @@ static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
 
 static inline int setup_pcb_context(Elf32_Ehdr *elf, pcb_t *pcb) {
     // Initialize process stack pointer
-    pcb->mm.sp = (regsp_t) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size);
-    verbose("Stack pointer at 0x%p", pcb->mm.sp);
+    pcb->mm.sp_ctx = (spctx_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size);
+    verbose("Stack pointer at 0x%p", pcb->mm.sp_ctx);
 
     context_init(pcb, (char *) pcb->mm.imgaddr + elf->e_entry, CPU_MODE_USER);
 

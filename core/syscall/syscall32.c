@@ -7,8 +7,8 @@
 #include <syscall/syscall.h>
 #include <utils/assert.h>
 
-int syscall(int sysno, regsp_t sp, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5) {
-    pcb_set_current_pcb_stack(sp);
+int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5) {
+    pcb_set_current_pcb_stack_context(ctx);
     verbose_async("syscall_%d(%lx, %lx, %lx, %lx, %lx, %lx)", sysno, arg0, arg1, arg2, arg3, arg4, arg5);
 
     pcb_t *pcb = pcb_get_current();

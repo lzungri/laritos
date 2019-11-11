@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <core.h>
 #include <arch/cpu.h>
+#include <arch/stack.h>
 #include <component/cpu.h>
 #include <component/component.h>
 

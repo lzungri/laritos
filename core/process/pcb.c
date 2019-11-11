@@ -72,9 +72,9 @@ int pcb_unregister(pcb_t *pcb) {
     return pcb_free(pcb);
 }
 
-regsp_t pcb_get_current_pcb_stack(void) {
+spctx_t *pcb_get_current_pcb_stack_context(void) {
     pcb_t *pcb = pcb_get_current();
-    return pcb != NULL ? pcb->mm.sp : 0;
+    return pcb != NULL ? pcb->mm.sp_ctx : 0;
 }
 
 void pcb_kill(pcb_t *pcb) {

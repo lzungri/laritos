@@ -40,34 +40,34 @@ static char *fault_status_msg[32] = {
     [0b11000] = "Asynchronous parity error on memory access",
 };
 
-int _svc_handler(int sysno, const spregs_t *regs) {
-    return syscall(sysno, (regsp_t) regs, regs->r[0], regs->r[1], regs->r[2], regs->r[3], regs->r[4], regs->r[5]);
+int _svc_handler(int sysno, const spctx_t *ctx) {
+    return syscall(sysno, (spctx_t *) ctx, ctx->r[0], ctx->r[1], ctx->r[2], ctx->r[3], ctx->r[4], ctx->r[5]);
 }
 
-int _undef_handler(int32_t pc, const spregs_t *regs) {
+int _undef_handler(int32_t pc, const spctx_t *ctx) {
     message_delimiter();
     error_async("Instruction 0x%08lx at 0x%08lx not recognized", *((uint32_t *) pc), pc);
     // cpsr is backed up in spsr during an exception
-    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->ret, get_spsr());
+    dump_regs(ctx->r, ARRAYSIZE(ctx->r), pc, ctx->ret, get_spsr());
     message_delimiter();
 
     fatal("ABORT");
     return 0;
 }
 
-int _prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spregs_t *regs) {
+int _prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spctx_t *ctx) {
     message_delimiter();
     char *fs = fault_status_msg[ifsr.b.fs_h << 4 | ifsr.b.fs_l];
     error_async("Instruction prefetch exception: %s", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
-    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->ret, get_spsr());
+    dump_regs(ctx->r, ARRAYSIZE(ctx->r), pc, ctx->ret, get_spsr());
     message_delimiter();
 
     fatal("ABORT");
     return 0;
 }
 
-int _abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
+int _abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spctx_t *ctx) {
     /**
      * From ARM ARM document:
      * After taking a Data Abort exception, the state of the exclusive monitors is UNKNOWN. Therefore,
@@ -80,14 +80,14 @@ int _abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
     char *fs = fault_status_msg[dfsr.b.fs_h << 4 | dfsr.b.fs_l];
     error_async("Data abort exception. Invalid %s access: %s", dfsr.b.wnr ? "write" : "read", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
-    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->ret, get_spsr());
+    dump_regs(ctx->r, ARRAYSIZE(ctx->r), pc, ctx->ret, get_spsr());
     message_delimiter();
 
     fatal("ABORT");
     return 0;
 }
 
-int _irq_handler(const spregs_t *regs) {
+int _irq_handler(const spctx_t *ctx) {
     component_t *c = NULL;
     for_each_component_type(c, COMP_TYPE_INTC) {
         verbose_async("Dispatching irq to int controller '%s'", c->id);
