@@ -1,3 +1,5 @@
+#include "asm-macros.S"
+
     .section .vectors
     .global _vectors
 
@@ -55,50 +57,20 @@ asm_reset_handler:
 
 
 asm_undef_handler:
-    # Save registers into the stack
-    stmfd sp!, {r0-r12, lr}
+    SAVE_CONTEXT #0b11011011
+    mov r2, r0
 
     # First arg: Offending instruction
     sub r0, lr, #4
     # Second arg: Stack pointer
     mov r1, sp
-    # Invoke the service call handler
-    bl _undef_handler
 
-    # Pop the previously saved registers and continue execution in the
-    # caller context.
-    # ^ is used to restore the CPSR from the SPSR
-    ldmfd sp!, {r0-r12, pc}^
+    CALL_HANDLER_AND_RESTORE_CONTEXT _undef_handler, r2
 
 
 asm_svc_handler:
-    # First off, we need to get the user stack pointer and save it into sp_svc.
-    # Note: SVC context uses the process stack
-
-    # To get the sp_user, ARM provides a priviledge mode called System that shares
-    # the same register bank as the user mode but with more privileges
-    # Switch to system mode (irq enabled / fiq disabled)
-    msr cpsr_c, #0b01011111
-
-    # Push user mode registers (^) into the caller stack
-    # See spregs_t for more info about stack layout
-    stmfd sp!, {r0-r12, lr}^
-
-    # Save sp_usr in r0 so that we can then assign it to sp_svc (r0 is shared among all modes)
-    mov r0, sp
-
-    # Switch back to svc mode
-    msr cpsr_c, #0b01010011
-
-    # Save sp_user in sp_svc
-    mov sp, r0
-
-    # Get the PSR and LR saved by the svc exception
-    mrs r0, spsr
-    mov r1, lr
-
-    # Push spsr_svc and lr_svc registers into the caller stack
-    stmdb sp!, {r0, r1}^
+    SAVE_CONTEXT #0b11010011
+    mov r2, r0
 
     # Load the SVC instruction into r0 to get the service call number.
     # The instruction is located 4 bytes behind the lr
@@ -110,27 +82,7 @@ asm_svc_handler:
     # We need this to update the pcb->mm.sp
     mov r1, sp
 
-    # Invoke the service call handler
-    bl _svc_handler
-
-    # In case there was a context switch, get current sp context
-    bl pcb_get_current_pcb_stack_context
-    # Save sp in r1
-    mov sp, r0
-
-    # Pop the SPSR and link register
-    ldmfd sp!, {r0, lr}
-    # Update the SPSR (CPSR will be restored from this value)
-    msr spsr_cxsf, r0
-    # ^ to save the registers in the target processor mode (not the current svc bank)
-    ldmfd sp!, {r0-r12, lr}^
-
-    # Trick to save sp_svc into sp_user
-    stmdb sp!, {sp}
-    ldmfd sp!, {sp}^
-
-    # subS to also restore cpsr from spsr
-    subs pc, lr, #0
+    CALL_HANDLER_AND_RESTORE_CONTEXT _svc_handler, r2
 
 
 asm_prefetch_handler:
@@ -138,8 +90,8 @@ asm_prefetch_handler:
     # on return
     sub lr, lr, #4
 
-    # Save registers into the stack
-    stmfd sp!, {r0-r12, lr}
+    SAVE_CONTEXT #0b11010111
+    mov r3, r0
 
     # First arg: Offending instruction
     mov r0, lr
@@ -148,11 +100,7 @@ asm_prefetch_handler:
     # Third arg: Stack pointer
     mov r2, sp
 
-    bl _prefetch_handler
-
-    # Pop the previously saved registers and continue execution in the caller context.
-    # ^ is used to restore the CPSR from the SPSR
-    ldmfd sp!, {r0-r12, pc}^
+    CALL_HANDLER_AND_RESTORE_CONTEXT _prefetch_handler, r3
 
 
 asm_abort_handler:
@@ -165,8 +113,8 @@ asm_abort_handler:
     # on return
     sub lr, lr, #8
 
-    # Save registers into the stack
-    stmfd sp!, {r0-r12, lr}
+    SAVE_CONTEXT #0b11010111
+    mov r3, r0
 
     # First arg: Offending instruction
     mov r0, lr
@@ -175,11 +123,7 @@ asm_abort_handler:
     # Third arg: Stack pointer
     mov r2, sp
 
-    bl _abort_handler
-
-    # Pop the previously saved registers and continue execution in the caller context.
-    # ^ is used to restore the CPSR from the SPSR
-    ldmfd sp!, {r0-r12, pc}^
+    CALL_HANDLER_AND_RESTORE_CONTEXT _abort_handler, r3
 
 
 asm_reserved_handler:
@@ -196,17 +140,15 @@ asm_irq_handler:
     # from the instruction prior to the one pointed to by lr_mode
     sub lr, lr, #4
 
-    # Save registers into the stack
-    stmfd sp!, {r0-r12, lr}
+    SAVE_CONTEXT #0b11010010
+    mov r1, r0
 
     # First arg: Stack pointer
     mov r0, sp
-    bl _irq_handler
 
-    # Pop the previously saved registers and continue execution in the caller context.
-    # ^ is used to restore the CPSR from the SPSR
-    ldmfd sp!, {r0-r12, pc}^
+    CALL_HANDLER_AND_RESTORE_CONTEXT _irq_handler, r1
 
 
 asm_fiq_handler:
+    # laritOS doesn't support FIQs yet
     b _fiq_handler
