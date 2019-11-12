@@ -106,9 +106,10 @@ SECTIONS
     /* Stack located right after the heap (ram) */
     . = ALIGN(4);
     __stack_end = .;
-    /* laritOS only use 5 processor modes (+ user mode), hence 5 different stacks (user stack belongs
-     * to the process) */
-    __stack_top = __stack_end + 5 * CONFIG_MEM_STACK_SIZE_PER_MODE;
+    /* laritOS allocates stacks for the fiq, irq, undef, abort, svc processor modes
+     + and a temporal stack for exception handlers (user mode stack will be allocated in the address
+     * space of each process) */
+    __stack_top = __stack_end + 6 * CONFIG_MEM_STACK_SIZE_PER_MODE;
     __stack_size = __stack_top - __stack_end;
     ASSERT(__stack_top < ORIGIN(ram) + LENGTH(ram), "Not enough RAM to fit the OS stacks")
 }
