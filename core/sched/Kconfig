@@ -1,3 +1,15 @@
 menu "Scheduler"
 
+choice
+    prompt "Process scheduler"
+    default SCHED_COOPERATIVE_FIFO
+
+config SCHED_COOPERATIVE_FIFO
+    bool "Cooperative FIFO"
+
+config SCHED_PREEMPTIVE_RR
+    bool "Preemptive Round Robin"
+
+endchoice
+
 endmenu

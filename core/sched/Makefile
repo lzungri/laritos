@@ -1,2 +1,2 @@
 obj-y += core.o
-obj-y += coop-fifo.o
+obj-$(CONFIG_SCHED_COOPERATIVE_FIFO) += coop-fifo.o
