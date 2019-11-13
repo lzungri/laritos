@@ -6,7 +6,7 @@
 #include <arch/debug.h>
 
 static inline void message_delimiter(void) {
-    log_always_async("*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
+    error_async("*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
 }
 
 /**
