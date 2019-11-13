@@ -52,7 +52,9 @@ void pcb_kill(pcb_t *pcb);
 spctx_t *pcb_get_current_pcb_stack_context(void);
 
 static inline pcb_t *pcb_get_current(void) {
-    return _laritos.sched.running[cpu_get_id()];
+    pcb_t *pcb = _laritos.sched.running[cpu_get_id()];
+    assert(pcb != NULL, "Current pcb cannot be NULL, make sure you are running in process context");
+    return pcb;
 }
 
 static inline void pcb_set_current(pcb_t *pcb) {
@@ -62,7 +64,6 @@ static inline void pcb_set_current(pcb_t *pcb) {
 static inline void pcb_set_current_pcb_stack_context(spctx_t *spctx) {
     verbose_async("Setting current pcb context to 0x%p", spctx);
     pcb_t *pcb = pcb_get_current();
-    assert(pcb != NULL, "Current pcb cannot be NULL, make sure you are running in process context");
     pcb->mm.sp_ctx = spctx;
 }
 
