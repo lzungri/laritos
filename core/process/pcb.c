@@ -1,3 +1,4 @@
+#define DEBUG
 #include <log.h>
 
 #include <dstruct/list.h>
@@ -41,17 +42,17 @@ pcb_t *pcb_alloc(void) {
 
 int pcb_free(pcb_t *pcb) {
     if (pcb->sched.status != PCB_STATUS_NOT_INIT) {
-        error("You can only free a process in PCB_STATUS_NOT_INIT state");
+        error_async("You can only free a process in PCB_STATUS_NOT_INIT state");
         return -1;
     }
-    verbose("Freeing process with pid=%u", pcb->pid);
+    verbose_async("Freeing process with pid=%u", pcb->pid);
     slab_free(_laritos.proc.pcb_slab, pcb);
     return 0;
 }
 
 int pcb_register(pcb_t *pcb) {
     pcb_assign_pid(pcb);
-    debug("Registering process with pid=%u", pcb->pid);
+    debug_async("Registering process with pid=%u", pcb->pid);
     // TODO Mutex
     list_add(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
     sched_move_to_ready(pcb);
@@ -60,10 +61,10 @@ int pcb_register(pcb_t *pcb) {
 
 int pcb_unregister(pcb_t *pcb) {
     if (pcb->sched.status != PCB_STATUS_NOT_INIT && pcb->sched.status != PCB_STATUS_ZOMBIE) {
-        error("You can only unregister a process in either PCB_STATUS_NOT_INIT or PCB_STATUS_ZOMBIE state");
+        error_async("You can only unregister a process in either PCB_STATUS_NOT_INIT or PCB_STATUS_ZOMBIE state");
         return -1;
     }
-    debug("Un-registering process with pid=%u", pcb->pid);
+    debug_async("Un-registering process with pid=%u", pcb->pid);
     // TODO Mutex
     list_del(&pcb->sched.pcb_node);
     if (pcb->sched.status == PCB_STATUS_ZOMBIE) {
@@ -78,5 +79,6 @@ spctx_t *pcb_get_current_pcb_stack_context(void) {
 }
 
 void pcb_kill(pcb_t *pcb) {
+    verbose_async("Killing process pid=%u", pcb->pid);
     sched_move_to_zombie(pcb);
 }
