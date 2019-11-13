@@ -8,6 +8,7 @@
 #include <dstruct/list.h>
 #include <cpu.h>
 #include <core.h>
+#include <utils/assert.h>
 #include <mm/slab.h>
 #include <process/status.h>
 #include <generated/autoconf.h>
@@ -59,10 +60,10 @@ static inline void pcb_set_current(pcb_t *pcb) {
 }
 
 static inline void pcb_set_current_pcb_stack_context(spctx_t *spctx) {
+    verbose_async("Setting current pcb context to 0x%p", spctx);
     pcb_t *pcb = pcb_get_current();
-    if (pcb != NULL) {
-        pcb->mm.sp_ctx = spctx;
-    }
+    assert(pcb != NULL, "Current pcb cannot be NULL, make sure you are running in process context");
+    pcb->mm.sp_ctx = spctx;
 }
 
 #define for_each_process(_p) \
