@@ -7,6 +7,7 @@ source "core/mm/Kconfig"
 source "core/loader/Kconfig"
 source "core/process/Kconfig"
 source "core/sched/Kconfig"
+source "core/irq/Kconfig"
 
 menu "Symmetric multiprocessing"
 
@@ -33,18 +34,6 @@ config BOARD_MAX_COMPONENT_ATTRS
 config BOARD_INFO_MAX_TOKEN_LEN_BYTES
     int "Maximum length in bytes for board properties names/ids/values (includes '\0')"
     default 32
-
-endmenu
-
-menu "Interrupts"
-
-config INT_MAX_IRQS
-    int "Max number of supported IRQs"
-    default 128
-
-config INT_MAX_HANDLERS_PER_IRQ
-    int "Max number of handlers per IRQ"
-    default 2
 
 endmenu
 
