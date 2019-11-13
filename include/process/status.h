@@ -10,7 +10,7 @@ typedef enum {
     PCB_STATUS_LEN,
 } pcb_status_t;
 
-static inline char *get_pcb_status_str(pcb_status_t status) {
+static inline char *pcb_get_status_str(pcb_status_t status) {
     static char *statusstr[PCB_STATUS_LEN] =
         { "NOT INIT", "READY", "BLOCKED", "RUNNING", "ZOMBIE" };
     return status < PCB_STATUS_LEN ? statusstr[status] : "???";
