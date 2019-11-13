@@ -9,12 +9,21 @@
 #include <arch/context-types.h>
 #include <utils/debug.h>
 #include <utils/math.h>
+#include <sched/core.h>
 
-static void dump_process_info(pcb_t *pcb) {
+static inline void dump_process_info(pcb_t *pcb) {
     error_async("pid=%u, context=0x%p, status=%s",
             pcb->pid, pcb->mm.sp_ctx, pcb_get_status_str(pcb->sched.status));
     error_async("ABORT");
     message_delimiter();
+}
+
+static inline void handle_process_exception(pcb_t *pcb) {
+    dump_process_info(pcb);
+    // Kill the offending process
+    pcb_kill(pcb);
+    // Switch to another ready process
+    schedule();
 }
 
 void exc_undef_handler(int32_t pc, spctx_t *ctx) {
@@ -23,9 +32,7 @@ void exc_undef_handler(int32_t pc, spctx_t *ctx) {
     }
 
     pcb_set_current_pcb_stack_context(ctx);
-
-    pcb_t *pcb = pcb_get_current();
-    dump_process_info(pcb);
+    handle_process_exception(pcb_get_current());
 }
 
 void exc_prefetch_handler(int32_t pc, spctx_t *ctx) {
@@ -34,6 +41,7 @@ void exc_prefetch_handler(int32_t pc, spctx_t *ctx) {
     }
 
     pcb_set_current_pcb_stack_context(ctx);
+    handle_process_exception(pcb_get_current());
 }
 
 void exc_abort_handler(int32_t pc, spctx_t *ctx) {
@@ -42,4 +50,5 @@ void exc_abort_handler(int32_t pc, spctx_t *ctx) {
     }
 
     pcb_set_current_pcb_stack_context(ctx);
+    handle_process_exception(pcb_get_current());
 }
