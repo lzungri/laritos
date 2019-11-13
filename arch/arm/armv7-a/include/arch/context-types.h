@@ -29,7 +29,7 @@
  *                  r12
  *     sp (old) ->  r14  (original lr value)
  */
-typedef struct {
+typedef struct spctx {
     regpsr_t spsr;
     int32_t ret;
     int32_t r[14];

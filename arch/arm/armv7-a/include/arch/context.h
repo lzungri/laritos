@@ -7,6 +7,13 @@
 #include <process/pcb.h>
 #include <arch/context-types.h>
 
+static inline bool arch_context_is_usr(spctx_t *ctx) {
+    return ctx->spsr.b.mode == ARM_CPU_MODE_USER;
+}
+
+static inline bool arch_context_is_kernel(spctx_t *ctx) {
+    return !arch_context_is_usr(ctx);
+}
 
 static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t mode) {
     // Move back in the stack one spctx_t chunk
@@ -31,11 +38,9 @@ static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t 
 }
 
 static inline void arch_context_restore(pcb_t *pcb) {
-    regpsr_t *psr = (regpsr_t *) pcb->mm.sp_ctx;
-
     // The context restore will change based on whether we need to restore an svc
     // or user context. Check this by inspecting the psr value saved in the stack
-    if (psr->b.mode == ARM_CPU_MODE_SUPERVISOR) {
+    if (arch_context_is_kernel(pcb->mm.sp_ctx)) {
         regsp_t cursp = pcb->mm.sp_ctx;
         // Restore previous spctx (it was saved in r0 in arch_context_save_and_restore())
         pcb->mm.sp_ctx = (spctx_t *) pcb->mm.sp_ctx->r[0];
