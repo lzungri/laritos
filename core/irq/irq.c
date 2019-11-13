@@ -5,7 +5,13 @@
 #include <component/component.h>
 #include <component/intc.h>
 
-int irq_handler(const spctx_t *ctx) {
+int irq_handler(spctx_t *ctx) {
+
+//    pcb_set_current_pcb_stack_context(ctx);
+
+
+
+
     component_t *c = NULL;
     for_each_component_type(c, COMP_TYPE_INTC) {
         verbose_async("Dispatching irq to int controller '%s'", c->id);

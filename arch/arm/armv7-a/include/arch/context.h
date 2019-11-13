@@ -4,8 +4,9 @@
 
 #include <cpu.h>
 #include <string.h>
-#include <arch/stack.h>
 #include <process/pcb.h>
+#include <arch/context-types.h>
+
 
 static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t mode) {
     // Move back in the stack one spctx_t chunk

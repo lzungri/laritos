@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <utils/utils.h>
 #include <arch/irq.h>
-#include <arch/stack.h>
+#include <arch/context-types.h>
 
 
 typedef enum {
@@ -32,7 +32,7 @@ typedef irqret_t (*irq_handler_t)(irq_t irq, void *data);
  * @param ctx: Context saved by the irq handler
  * @return 0 on success, <0 on error
  */
-int irq_handler(const spctx_t *ctx);
+int irq_handler(spctx_t *ctx);
 
 /**
  * @return: IRQ return value string for the given <value>

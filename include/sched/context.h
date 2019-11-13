@@ -4,6 +4,7 @@
 
 #include <cpu.h>
 #include <process/pcb.h>
+#include <arch/context-types.h>
 #include <arch/context.h>
 
 static inline void context_init(struct pcb *pcb, void *retaddr, cpu_mode_t mode) {

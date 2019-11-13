@@ -10,7 +10,8 @@
 #include <utils/debug.h>
 #include <arch/debug.h>
 #include <arch/cpu.h>
-#include <arch/stack.h>
+#include <arch/context-types.h>
+#include <mm/exc-handlers.h>
 
 /**
  * Fault messages according to the armv7-a ARM document
@@ -44,18 +45,17 @@ int _svc_handler(int sysno, const spctx_t *ctx) {
     return syscall(sysno, (spctx_t *) ctx, ctx->r[0], ctx->r[1], ctx->r[2], ctx->r[3], ctx->r[4], ctx->r[5]);
 }
 
-int _undef_handler(int32_t pc, const spctx_t *ctx) {
+void _undef_handler(int32_t pc, spctx_t *ctx) {
     message_delimiter();
     error_async("Instruction 0x%08lx at 0x%08lx not recognized", *((uint32_t *) pc), pc);
     // cpsr is backed up in spsr during an exception
     dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
     message_delimiter();
 
-    fatal("ABORT");
-    return 0;
+    exc_undef_handler(pc, ctx);
 }
 
-int _prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spctx_t *ctx) {
+void _prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, spctx_t *ctx) {
     message_delimiter();
     char *fs = fault_status_msg[ifsr.b.fs_h << 4 | ifsr.b.fs_l];
     error_async("Instruction prefetch exception: %s", fs != NULL ? fs : "Unknown");
@@ -63,11 +63,10 @@ int _prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spctx_t *ctx) {
     dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
     message_delimiter();
 
-    fatal("ABORT");
-    return 0;
+    exc_prefetch_handler(pc, ctx);
 }
 
-int _abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spctx_t *ctx) {
+void _abort_handler(int32_t pc, const dfsr_reg_t dfsr, spctx_t *ctx) {
     /**
      * From ARM ARM document:
      * After taking a Data Abort exception, the state of the exclusive monitors is UNKNOWN. Therefore,
@@ -83,11 +82,10 @@ int _abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spctx_t *ctx) {
     dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
     message_delimiter();
 
-    fatal("ABORT");
-    return 0;
+    exc_abort_handler(pc, ctx);
 }
 
-int _irq_handler(const spctx_t *ctx) {
+int _irq_handler(spctx_t *ctx) {
     return irq_handler(ctx);
 }
 
