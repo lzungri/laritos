@@ -25,7 +25,27 @@
 
 _save_ctx_nonusr_mode\@:
     # Save registers into the exception stack
+    # lr is just a placeholder here, it will be replaced with the lr associated with
+    # the interrupted thread
     stmfd sp!, {r0-r12, lr}
+
+    # Get the PSR saved by the exception
+    mrs r0, spsr
+    # Disable irq, otherwise when we switch modes, it will call the irq handler again
+    orr r1, r0, #0b10000000
+
+    # Switch to mode running before the irq occured
+    msr cpsr, r1
+    # Save the lr associated with the interrupted thread into r2
+    mov r2, lr
+
+    # Switch back to the mode specified by the <mode> argument
+    msr cpsr, \mode
+    # Save interrupted thread lr into the stack
+    str r2, [sp, #52]
+
+    # Push spsr_<mode> and lr_<mode> registers into the interrupted thread stack
+    stmdb sp!, {r0, lr}
 
     # Return value: non-user mode
     mov r0, #0
@@ -91,10 +111,38 @@ _save_ctx_end\@:
 # Restores the current non-user context from the stack associated with
 # the exception (e.g. sp_irq for irq exceptions)
 .macro RESTORE_NONUSER_CONTEXT
-    # Pop the previously saved registers from the exception stack and
-    # continue execution in the interrupted thread context.
-    # ^ is used to restore the CPSR from the SPSR
-    ldmfd sp!, {r0-r12, pc}^
+    # Pop the PSR and lr
+    ldmfd sp!, {r0, lr}
+
+    # Update the SPSR (CPSR will be restored from this value)
+    msr spsr_cxsf, r0
+
+    # Restore some registers, the rest will be used as temp regs
+    ldmfd sp!, {r0-r9}
+
+    # Save current psr
+    mrs r10, cpsr
+    # Save previous psr
+    mrs r11, spsr
+    # Disable irq, otherwise when we switch modes, it will call the irq handler again
+    orr r11, r11, #0b10000000
+    # Save irq_sp
+    mov r12, sp
+
+    # Switch to mode running before the irq occured
+    msr cpsr_c, r11
+    # Load its lr from the sp_irq
+    ldr lr, [r12, #12]
+
+    # Switch back to irq mode
+    msr cpsr_c, r10
+    # Restore all the remaining regs
+    ldmfd sp!, {r10-r12}
+    # lr was already read, so update sp to point to the end of the frame
+    add sp, sp, #4
+
+    # subS to also restore cpsr from spsr
+    subs pc, lr, #0
 .endm
 
 
