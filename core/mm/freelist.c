@@ -24,7 +24,7 @@ static LIST_HEAD(freelist);
 /**
  * Freelist lock
  */
-spinlock_t lock;
+static spinlock_t lock;
 
 
 #ifdef DEBUG
@@ -45,9 +45,6 @@ int heap_initialize(void *start, uint32_t size) {
     whole->size = size - sizeof(fl_node_t);
     INIT_LIST_HEAD(&whole->list);
     list_add(&whole->list, &freelist);
-#ifdef DEBUG
-    dump_freelist();
-#endif
 
     spinlock_release(&lock, &ctx);
     return 0;

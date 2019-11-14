@@ -3,9 +3,26 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+typedef enum {
+    ARM_CPU_MODE_USER = 0b10000,
+    ARM_CPU_MODE_FIQ = 0b10001,
+    ARM_CPU_MODE_IRQ = 0b10010,
+    ARM_CPU_MODE_SUPERVISOR = 0b10011,
+    ARM_CPU_MODE_MONITOR = 0b10110,
+    ARM_CPU_MODE_ABORT = 0b10111,
+    ARM_CPU_MODE_HYPER = 0b11010,
+    ARM_CPU_MODE_UNDEF = 0b11011,
+    ARM_CPU_MODE_SYSTEM = 0b11111,
+} arm_cpu_mode_t;
+
 typedef void *regpc_t;
 typedef void *regsp_t;
 typedef void *regret_t;
+
+/**
+ * Type that holds the size of a process section for this architecture
+ */
+typedef uint32_t secsize_t;
 
 /**
  * The DFSR holds status information about the last data fault
@@ -226,20 +243,20 @@ typedef struct {
             bool n: 1;
         } b;
     };
-} psr_t;
+} regpsr_t;
 
 /**
  * Note: const because changing this value will have no effect on the actual register
  *
  * @return: Current program status register
  */
-static inline const psr_t get_cpsr(void) {
-    psr_t cpsr;
+static inline const regpsr_t get_cpsr(void) {
+    regpsr_t cpsr;
     asm("mrs %0, cpsr" : "=r" (cpsr.v));
     return cpsr;
 }
 
-static inline void set_cpsr(psr_t *psr) {
+static inline void set_cpsr(regpsr_t *psr) {
     asm("msr cpsr, %0" : : "r" (psr->v));
 }
 
@@ -248,8 +265,8 @@ static inline void set_cpsr(psr_t *psr) {
  *
  * @return: Saved program status register
  */
-static inline const psr_t get_spsr(void) {
-    psr_t spsr;
+static inline const regpsr_t get_spsr(void) {
+    regpsr_t spsr;
     asm("mrs %0, spsr" : "=r" (spsr.v));
     return spsr;
 }
@@ -279,6 +296,18 @@ __attribute__((always_inline)) static inline regret_t arch_regs_get_retaddr(void
     asm("mov %0, lr" : "=r" (ret));
     return ret;
 }
+/**
+ * Note: __attribute__((always_inline)) so that this function is always expanded and thus
+ * we get a useful return value, not just the return address of the arch_regs_get_pc() function (in case it
+ * wasn't expanded by the compiler)
+ *
+ * @return: Function return address
+ */
+__attribute__((always_inline)) static inline regsp_t arch_regs_get_sp(void) {
+    regsp_t ret;
+    asm("mov %0, sp" : "=r" (ret));
+    return ret;
+}
 
 /**
  * Indicates the processor number in the Cortex-Ax processor:
@@ -296,7 +325,6 @@ static inline uint8_t arch_cpu_get_id(void) {
     return v & 0b11;
 }
 
-static inline int arch_set_got(uint32_t *got) {
-    asm("mov r9, %0" : : "r" (got));
-    return 0;
+static inline void arch_wfi(void) {
+    asm("wfi");
 }

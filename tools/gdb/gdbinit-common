@@ -46,6 +46,14 @@ Syntax: los_dump_all_regs
 Dump all the registers
 end
 
+define los_sp
+    x/$arg0x $sp
+end
+document los_sp
+Syntax: los_sp <words>
+Dump stack
+end
+
 define los_dump_circbuf_pointers
     set $__cb = $arg0
     printf "buf=%p, head=%u, dlen=%5u\n", $__cb->buf, $__cb->head, $__cb->datalen

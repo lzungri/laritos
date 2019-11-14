@@ -10,7 +10,9 @@
 #include <utils/debug.h>
 #include <arch/debug.h>
 #include <arch/cpu.h>
-#include <arch/stack.h>
+#include <arch/context-types.h>
+#include <mm/exc-handlers.h>
+#include <utils/math.h>
 
 /**
  * Fault messages according to the armv7-a ARM document
@@ -40,34 +42,37 @@ static char *fault_status_msg[32] = {
     [0b11000] = "Asynchronous parity error on memory access",
 };
 
-int _svc_handler(int sysno, const spregs_t *regs) {
-    return syscall(sysno, regs->r[0], regs->r[1], regs->r[2], regs->r[3], regs->r[4], regs->r[5]);
+int _svc_handler(int sysno, const spctx_t *ctx) {
+    return syscall(sysno, (spctx_t *) ctx, ctx->r[0], ctx->r[1], ctx->r[2], ctx->r[3], ctx->r[4], ctx->r[5]);
 }
 
-int _undef_handler(int32_t pc, const spregs_t *regs) {
+void _undef_handler(int32_t pc, spctx_t *ctx) {
     message_delimiter();
     error_async("Instruction 0x%08lx at 0x%08lx not recognized", *((uint32_t *) pc), pc);
     // cpsr is backed up in spsr during an exception
-    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
-    message_delimiter();
+    dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
 
-    fatal("ABORT");
-    return 0;
+    uint32_t *ptr = (uint32_t *) max(pc - 4 * 8, 0);
+    error_async("Instructions around pc=0x%p:", (void *) pc);
+    int i;
+    for (i = 0; i < 16; i++, ptr++) {
+        error_async(" %s [0x%p] 0x%08lx", ptr == (uint32_t *) pc ? "->" : "  ", ptr, *ptr);
+    }
+
+    exc_undef_handler(pc, ctx);
 }
 
-int _prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, const spregs_t *regs) {
+void _prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, spctx_t *ctx) {
     message_delimiter();
     char *fs = fault_status_msg[ifsr.b.fs_h << 4 | ifsr.b.fs_l];
     error_async("Instruction prefetch exception: %s", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
-    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
-    message_delimiter();
+    dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
 
-    fatal("ABORT");
-    return 0;
+    exc_prefetch_handler(pc, ctx);
 }
 
-int _abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
+void _abort_handler(int32_t pc, const dfsr_reg_t dfsr, spctx_t *ctx) {
     /**
      * From ARM ARM document:
      * After taking a Data Abort exception, the state of the exclusive monitors is UNKNOWN. Therefore,
@@ -80,33 +85,13 @@ int _abort_handler(int32_t pc, const dfsr_reg_t dfsr, const spregs_t *regs) {
     char *fs = fault_status_msg[dfsr.b.fs_h << 4 | dfsr.b.fs_l];
     error_async("Data abort exception. Invalid %s access: %s", dfsr.b.wnr ? "write" : "read", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
-    dump_regs(regs->r, ARRAYSIZE(regs->r), pc, regs->lr, get_spsr());
-    message_delimiter();
+    dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
 
-    fatal("ABORT");
-    return 0;
+    exc_abort_handler(pc, ctx);
 }
 
-int _irq_handler(const spregs_t *regs) {
-    component_t *c = NULL;
-    for_each_component_type(c, COMP_TYPE_INTC) {
-        verbose_async("Dispatching irq to int controller '%s'", c->id);
-        intc_t *intc = (intc_t *) c;
-        irqret_t ret = intc->ops.dispatch_irq(intc);
-        verbose_async("Interrupt controller '%s' returned %s", c->id, get_irqret_str(ret));
-        switch (ret) {
-        case IRQ_RET_HANDLED:
-            return 0;
-        case IRQ_RET_ERROR:
-            error_async("Error while dispatching irq with intc '%s'", c->id);
-            return -1;
-        case IRQ_RET_NOT_HANDLED:
-        case IRQ_RET_HANDLED_KEEP_PROCESSING:
-        default:
-            break;
-        }
-    }
-    return 0;
+int _irq_handler(spctx_t *ctx) {
+    return irq_handler(ctx);
 }
 
 int _fiq_handler(void) {

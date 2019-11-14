@@ -181,3 +181,15 @@ T(bitsetslab_slab_has_the_right_amount_of_bsarray_elements) {
     tassert(slab->bs_elems == 4);
     slab_destroy(slab);
 TEND
+
+T(bitsetslab_slab_returns_the_right_slab_position) {
+    bs_slab_t *slab = (bs_slab_t *) slab_create(10, sizeof(char));
+    tassert(slab != NULL);
+    tassert(slab_get_avail_elems(slab) == 10);
+    int i;
+    for (i = 0; i < 10; i++) {
+        char *v1 = slab_alloc(slab);
+        tassert(slab_get_slab_position(slab, v1) == i);
+    }
+    slab_destroy(slab);
+TEND

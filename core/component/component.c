@@ -16,6 +16,11 @@ int component_init_global_context() {
     return 0;
 }
 
+int component_deinit_global_context() {
+    // Nothing
+    return 0;
+}
+
 static int nop_init(component_t *c) {
     // Nothing
     return 0;

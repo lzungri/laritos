@@ -7,10 +7,33 @@ _start:
 
 init_stacks:
     # Setup the OS stack pointers (fiq, irq, supervisor/svc, abort, undefined).
+    #
+    # Stack layout:
+    #    _________________________________________________________________________________
+    #   | stack for temp variables used in SAVE_CONTEXT assembly macro                    |
+    #   |_________________________________________________________________________________|
+    #   | fiq (not used yet)                                                              |
+    #   |_________________________________________________________________________________|
+    #   | irq (only used when kernel is booting up and has not yet spawned any process)   |
+    #   |_________________________________________________________________________________|
+    #   | abort (only used when kernel is booting up and has not yet spawned any process) |
+    #   |_________________________________________________________________________________|
+    #   | undef (only used when kernel is booting up and has not yet spawned any process) |
+    #   |_________________________________________________________________________________|
+    #   | svc (only used when kernel is booting up and has not yet spawned any process)   |
+    #   |_________________________________________________________________________________|
+    #
+    # Note: Once the kernel has spawned the first process, all the exception handlers will be
+    # executed in the context of the process in which the exception occured.
+
+
     # To configure the stack pointers, enter each mode with interrupts disabled,
     # and assign the appropriate value to the stack pointer.
 
     ldr r0, =__stack_top
+
+    # Allocate space for the temp stack
+    sub r0, #CONFIG_MEM_STACK_SIZE_PER_MODE
 
     # irq/fiq disabled (0b110) | FIQ mode (0b10001)
     msr cpsr_c, #0b11010001

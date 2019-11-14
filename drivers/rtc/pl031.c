@@ -69,7 +69,7 @@ static int set_expiration(timer_comp_t *t, int64_t secs, int32_t ns, timer_exp_t
     return 0;
 }
 
-static irqret_t irq_handler(irq_t irq, void *data) {
+static irqret_t pl031_irq_handler(irq_t irq, void *data) {
     verbose_async("rtc '%s' expired", ((component_t *) data)->id);
 
     rtc_t *rtc = (rtc_t *) data;
@@ -109,7 +109,7 @@ static int process(board_comp_t *comp) {
         error("Failed to register '%s'", comp->id);
         goto fail;
     }
-    t->irq_handler = irq_handler;
+    t->irq_handler = pl031_irq_handler;
     t->ops.get_value = get_value;
     t->ops.set_value = set_value;
     t->ops.get_remaining = get_remaining;

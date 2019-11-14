@@ -1,0 +1,7 @@
+menu "Interrupts"
+
+config INT_MAX_IRQS
+    int "Max number of supported IRQs"
+    default 128
+
+endmenu

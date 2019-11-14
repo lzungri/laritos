@@ -2,7 +2,7 @@
 
 #include <arch/cpu.h>
 
-typedef psr_t irqctx_t;
+typedef regpsr_t irqctx_t;
 
 static inline int arch_disable_local_irq(void) {
     asm("cpsid i");

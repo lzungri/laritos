@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <utils/utils.h>
 #include <arch/irq.h>
+#include <arch/context-types.h>
+
 
 typedef enum {
     IRQ_TRIGGER_EDGE_LOW_HIGH = 1,
@@ -23,6 +25,14 @@ typedef enum {
 typedef uint16_t irq_t;
 
 typedef irqret_t (*irq_handler_t)(irq_t irq, void *data);
+
+/**
+ * Main function to dispatch and process irqs
+ *
+ * @param ctx: Context saved by the irq handler
+ * @return 0 on success, <0 on error
+ */
+int irq_handler(spctx_t *ctx);
 
 /**
  * @return: IRQ return value string for the given <value>

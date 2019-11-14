@@ -1,5 +1,24 @@
+#include "asm-macros.S"
+
     .section .vectors
     .global _vectors
+
+/**
+ * From ARM documentation:
+ *
+ * When an exception is generated, the processor performs the following actions:
+ *   - Copies the CPSR into the appropriate SPSR. This saves the current mode, interrupt mask,
+ *     and condition flags.
+ *   - Switches state automatically if the current state does not match the instruction set
+ *     used in the exception vector table.
+ *   - Changes the appropriate CPSR mode bits to:
+ *   - Change to the appropriate mode, and map in the appropriate banked out registers for
+ *     that mode.
+ *   - Disable interrupts. IRQs are disabled when any exception occurs. FIQs are disabled
+ *     when an FIQ occurs and on reset.
+ *   - Sets the appropriate LR to the return address.
+ *   - Sets the PC to the vector address for the exception.
+ */
 
 _vectors:
     /* Occurs when the processor reset pin is asserted. This exception
@@ -38,41 +57,32 @@ asm_reset_handler:
 
 
 asm_undef_handler:
-    # Save registers into the stack
-    stmfd sp!, {r0-r12, lr}
+    SAVE_CONTEXT #0b11011011
+    mov r2, r0
 
     # First arg: Offending instruction
     sub r0, lr, #4
     # Second arg: Stack pointer
     mov r1, sp
-    # Invoke the service call handler
-    bl _undef_handler
 
-    # Pop the previously saved registers and continue execution in the
-    # caller context.
-    # ^ is used to restore the CPSR from the SPSR
-    ldmfd sp!, {r0-r12, pc}^
+    CALL_HANDLER_AND_RESTORE_CONTEXT _undef_handler, r2
 
 
 asm_svc_handler:
-    # Save registers into the stack
-    stmfd sp!, {r0-r12, lr}
+    SAVE_CONTEXT #0b11010011
+    mov r2, r0
 
     # Load the SVC instruction into r0 to get the service call number.
     # The instruction is located 4 bytes behind the lr
-    ldr r0, [lr, #-4]
+    ldr r0, [r1, #-4]
     # Mask the service call number (e.g. svc 1 -> 0xef000001) and save it in
     # r0 so that the svc_handler() gets it as the first argument
     bic r0, r0, #0xff000000
     # Set the stack pointer as the second argument for the handler
+    # We need this to update the pcb->mm.sp
     mov r1, sp
-    # Invoke the service call handler
-    bl _svc_handler
 
-    # Pop the previously saved registers and continue execution in the svc
-    # caller context.
-    # ^ is used to restore the CPSR from the SPSR
-    ldmfd sp!, {r0-r12, pc}^
+    CALL_HANDLER_AND_RESTORE_CONTEXT _svc_handler, r2
 
 
 asm_prefetch_handler:
@@ -80,8 +90,8 @@ asm_prefetch_handler:
     # on return
     sub lr, lr, #4
 
-    # Save registers into the stack
-    stmfd sp!, {r0-r12, lr}
+    SAVE_CONTEXT #0b11010111
+    mov r3, r0
 
     # First arg: Offending instruction
     mov r0, lr
@@ -90,11 +100,7 @@ asm_prefetch_handler:
     # Third arg: Stack pointer
     mov r2, sp
 
-    bl _prefetch_handler
-
-    # Pop the previously saved registers and continue execution in the caller context.
-    # ^ is used to restore the CPSR from the SPSR
-    ldmfd sp!, {r0-r12, pc}^
+    CALL_HANDLER_AND_RESTORE_CONTEXT _prefetch_handler, r3
 
 
 asm_abort_handler:
@@ -107,8 +113,8 @@ asm_abort_handler:
     # on return
     sub lr, lr, #8
 
-    # Save registers into the stack
-    stmfd sp!, {r0-r12, lr}
+    SAVE_CONTEXT #0b11010111
+    mov r3, r0
 
     # First arg: Offending instruction
     mov r0, lr
@@ -117,11 +123,7 @@ asm_abort_handler:
     # Third arg: Stack pointer
     mov r2, sp
 
-    bl _abort_handler
-
-    # Pop the previously saved registers and continue execution in the caller context.
-    # ^ is used to restore the CPSR from the SPSR
-    ldmfd sp!, {r0-r12, pc}^
+    CALL_HANDLER_AND_RESTORE_CONTEXT _abort_handler, r3
 
 
 asm_reserved_handler:
@@ -138,17 +140,15 @@ asm_irq_handler:
     # from the instruction prior to the one pointed to by lr_mode
     sub lr, lr, #4
 
-    # Save registers into the stack
-    stmfd sp!, {r0-r12, lr}
+    SAVE_CONTEXT #0b11010010
+    mov r1, r0
 
     # First arg: Stack pointer
     mov r0, sp
-    bl _irq_handler
 
-    # Pop the previously saved registers and continue execution in the caller context.
-    # ^ is used to restore the CPSR from the SPSR
-    ldmfd sp!, {r0-r12, pc}^
+    CALL_HANDLER_AND_RESTORE_CONTEXT _irq_handler, r1
 
 
 asm_fiq_handler:
+    # laritOS doesn't support FIQs yet
     b _fiq_handler

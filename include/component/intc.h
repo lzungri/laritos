@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <cpu.h>
 #include <irq.h>
+#include <dstruct/list.h>
 #include <component/component.h>
 #include <generated/autoconf.h>
 
@@ -30,13 +31,15 @@ typedef struct {
 typedef struct {
     irq_handler_t h;
     void *data;
+
+    struct list_head list;
 } irq_handler_info_t;
 
 typedef struct intc{
     component_t parent;
     intc_ops_t ops;
 
-    irq_handler_info_t handlers[CONFIG_INT_MAX_IRQS][CONFIG_INT_MAX_HANDLERS_PER_IRQ];
+    struct list_head handlers[CONFIG_INT_MAX_IRQS];
 } intc_t;
 
 

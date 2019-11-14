@@ -7,6 +7,9 @@
 #include <component/inputdev.h>
 #include <component/timer.h>
 #include <loader/loader.h>
+#include <process/pcb.h>
+#include <sched/core.h>
+#include <sched/context.h>
 #include <time/time.h>
 #include <timer.h>
 #include <board-types.h>
@@ -118,15 +121,28 @@ static void shell(void) {
 }
 
 static int initialize_global_context(void) {
-    return component_init_global_context();
+    if (component_init_global_context() < 0) {
+        goto error_comp;
+    }
+
+    if (pcb_init_global_context() < 0) {
+        goto error_pcb;
+    }
+    return 0;
+
+    pcb_deinit_global_context();
+error_pcb:
+    component_deinit_global_context();
+error_comp:
+    return -1;
 }
 
 void kernel_entry(void)  {
-    if (initialize_global_context() < 0) {
+    if (heap_initialize(__heap_start, CONFIG_MEM_HEAP_SIZE) < 0) {
         while(1);
     }
 
-    if (heap_initialize(__heap_start, CONFIG_MEM_HEAP_SIZE) < 0) {
+    if (initialize_global_context() < 0) {
         while(1);
     }
 
@@ -172,13 +188,22 @@ void kernel_entry(void)  {
     }
     heap_dump_info();
     while (1) {
-        asm("wfi");
+        arch_wfi();
     }
 #endif
 
-    if (loader_load_app_from_memory(0) < 0) {
+    pcb_t *bigbang_pcb = loader_load_executable_from_memory(0);
+    if (bigbang_pcb == NULL) {
         error("Failed to load app #0");
     }
+
+    // Load the same program, just to have two processes for testing
+    if (loader_load_executable_from_memory(0) == NULL) {
+        error("Failed to load app #1");
+    }
+
+    // Execute the first process
+    switch_to(NULL, bigbang_pcb);
 
     shell();
 }

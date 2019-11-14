@@ -50,7 +50,7 @@ static inline int put_into_bytestream(uart_t *uart) {
     return 0;
 }
 
-static irqret_t irq_handler(irq_t irq, void *data) {
+static irqret_t pl011_irq_handler(irq_t irq, void *data) {
     uart_t *uart = (uart_t *) data;
     pl011_mm_t *pl011 = (pl011_mm_t *) uart->baseaddr;
 
@@ -120,7 +120,7 @@ static int process(board_comp_t *comp) {
         error("Failed to allocate memory for '%s'", comp->id);
         return -1;
     }
-    uart->irq_handler = irq_handler;
+    uart->irq_handler = pl011_irq_handler;
     if (uart_component_init_and_register(uart, comp, init, deinit, transmit_data) < 0){
         error("Failed to register '%s'", comp->id);
         goto fail;
