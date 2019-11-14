@@ -4,8 +4,4 @@ config INT_MAX_IRQS
     int "Max number of supported IRQs"
     default 128
 
-config INT_MAX_HANDLERS_PER_IRQ
-    int "Max number of handlers per IRQ"
-    default 2
-
 endmenu

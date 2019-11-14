@@ -3,10 +3,12 @@
 #include <irq.h>
 #include <board-types.h>
 #include <cpu.h>
+#include <dstruct/list.h>
 #include <component/component.h>
 #include <component/intc.h>
 #include <utils/utils.h>
 #include <utils/function.h>
+#include <mm/heap.h>
 #include <generated/autoconf.h>
 
 int intc_enable_irq_with_handler(intc_t *intc, irq_t irq, irq_trigger_mode_t tmode, irq_handler_t h, void *data) {
@@ -41,9 +43,9 @@ static irqret_t handle_irq(intc_t *intc, irq_t irq) {
     verbose_async("Handling irq %u with int controller '%s'", irq, ((component_t *) intc)->id);
 
     irqret_t ret = IRQ_RET_NOT_HANDLED;
-    int i;
-    for (i = 0; i < ARRAYSIZE(intc->handlers[0]); i++) {
-        irq_handler_info_t *hi = &intc->handlers[irq][i];
+
+    irq_handler_info_t *hi;
+    list_for_each_entry(hi, &intc->handlers[irq], list) {
         if (hi->h != NULL) {
             ret = hi->h(irq, hi->data);
             verbose_async("irq %u processed with handler 0x%p(data=0x%p) = %s", irq, hi->h, hi->data, get_irqret_str(ret));
@@ -79,17 +81,16 @@ static int add_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h, void *data)
         return -1;
     }
 
-    int i;
-    for (i = 0; i < ARRAYSIZE(intc->handlers[0]); i++) {
-        irq_handler_info_t *hi = &intc->handlers[irq][i];
-        if (hi->h == NULL || hi->h == h) {
-            hi->h = h;
-            hi->data = data;
-            return 0;
-        }
+    irq_handler_info_t *hi = calloc(1, sizeof(irq_handler_info_t));
+    if (hi == NULL) {
+        error("Couldn't allocate memory for irq_handler_info_t");
+        return -1;
     }
-    error("Couldn't add handler 0x%p. Max number of handlers reached (%u) for irq %u", h, i, irq);
-    return -1;
+    hi->h = h;
+    hi->data = data;
+    INIT_LIST_HEAD(&hi->list);
+    list_add_tail(&hi->list, &intc->handlers[irq]);
+    return 0;
 }
 
 static int remove_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h) {
@@ -99,12 +100,15 @@ static int remove_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h) {
         return -1;
     }
     int i;
-    for (i = 0; i < ARRAYSIZE(intc->handlers[0]); i++) {
-        irq_handler_info_t *hi = &intc->handlers[irq][i];
-        if (hi->h == h) {
-            hi->h = NULL;
-            hi->data = NULL;
-            return 0;
+    for (i = 0; i < ARRAYSIZE(intc->handlers); i++) {
+        irq_handler_info_t *hi;
+        irq_handler_info_t *hitemp;
+        list_for_each_entry_safe(hi, hitemp, &intc->handlers[irq], list) {
+            if (hi->h == h) {
+                list_del(&hi->list);
+                free(hi);
+                return 0;
+            }
         }
     }
     return 0;
@@ -131,5 +135,10 @@ int intc_init(intc_t *intc, char *id, board_comp_t *bcomp,
     intc->ops.set_priority_filter = ni_set_priority_filter;
     intc->ops.add_irq_handler = add_irq_handler;
     intc->ops.remove_irq_handler = remove_irq_handler;
+
+    int i;
+    for (i = 0; i < ARRAYSIZE(intc->handlers); i++) {
+        INIT_LIST_HEAD(&intc->handlers[i]);
+    }
     return 0;
 }
