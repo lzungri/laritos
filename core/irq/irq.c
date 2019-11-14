@@ -4,13 +4,12 @@
 #include <cpu.h>
 #include <component/component.h>
 #include <component/intc.h>
+#include <sched/context.h>
 
 int irq_handler(spctx_t *ctx) {
-
-//    pcb_set_current_pcb_stack_context(ctx);
-
-
-
+    if (arch_context_is_usr(ctx)) {
+        pcb_set_current_pcb_stack_context(ctx);
+    }
 
     component_t *c = NULL;
     for_each_component_type(c, COMP_TYPE_INTC) {
