@@ -80,10 +80,24 @@ static inline void arch_context_restore(pcb_t *pcb) {
         /* Update the SPSR (CPSR will be restored from this value)*/
         "msr spsr_cxsf, r0        \n"
         /* ^ to save the registers in the user bank (not the svc bank)*/
-        "ldmfd sp!, {r0-r12, lr}^ \n"
-        /* Trick to save the sp_svc into sp_user */
-        "stmdb sp!, {sp}          \n"
-        "ldmfd sp!, {sp}^         \n"
+        "ldm sp, {r0-r12, lr}^    \n"
+        "add sp, sp, #64          \n"
+        /* Trick to save the sp_svc into sp_user
+         * We could do something like:
+         *   stmdb sp!, {sp}
+         *   ldmfd sp!, {sp}^
+         * But this will generate the warning "writeback of base register is UNPREDICTABLE"
+         *
+         * From ARM docs:
+         *   Unpredictable instruction (forced user mode transfer with write-back to base)
+         *   This is caused by an instruction such as PUSH {r0}^ where the ^ indicates
+         *   access to user registers. The ARM Architectural Reference Manual specifies
+         *   that writeback to the base register is not available with this instruction.
+         **/
+        "str sp, [sp, #-4]        \n"
+        "sub sp, sp, #4           \n"
+        "ldm sp, {sp}^            \n"
+        "add sp, sp, #4           \n"
         /* subS to also restore cpsr from spsr */
         "subs pc, lr, #0          \n"
         :

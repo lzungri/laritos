@@ -59,7 +59,8 @@ _save_ctx_usr_mode\@:
 
     # Push user mode registers into the interrupted thread stack
     # See spctx_t for more info about stack layout
-    stmfd sp!, {r0-r12, lr}
+    sub sp, sp, #64
+    stm sp, {r0-r12, lr}
 
     # Save sp_usr in r0 so that we can then assign it to sp_<mode> (r0 is shared among all modes)
     mov r0, sp
@@ -75,7 +76,8 @@ _save_ctx_usr_mode\@:
     mov r1, lr
 
     # Push spsr_<mode> and lr_<mode> registers into the interrupted thread stack
-    stmdb sp!, {r0, r1}^
+    sub sp, sp, #8
+    stm sp, {r0, r1}^
 
     # Return value: user mode
     mov r0, #1
@@ -93,15 +95,30 @@ _save_ctx_end\@:
     mov sp, r0
 
     # Pop the SPSR and link register
-    ldmfd sp!, {r0, lr}
+    ldm sp, {r0, lr}
+    add sp, sp, #8
+
     # Update the SPSR (CPSR will be restored from this value)
     msr spsr_cxsf, r0
     # ^ to save the registers in the target processor mode (not the current bank)
-    ldmfd sp!, {r0-r12, lr}^
+    ldm sp, {r0-r12, lr}^
+    add sp, sp, #64
 
     # Trick to save sp_<mode> into sp_user
-    stmdb sp!, {sp}
-    ldmfd sp!, {sp}^
+    # We could do something like:
+    #   stmdb sp!, {sp}
+    #   ldmfd sp!, {sp}^
+    # But this will generate the warning "writeback of base register is UNPREDICTABLE"
+    #
+    # From ARM docs:
+    #   Unpredictable instruction (forced user mode transfer with write-back to base)
+    #   This is caused by an instruction such as PUSH {r0}^ where the ^ indicates
+    #   access to user registers. The ARM Architectural Reference Manual specifies
+    #   that writeback to the base register is not available with this instruction.
+    str sp, [sp, #-4]
+    sub sp, sp, #4
+    ldm sp, {sp}^
+    add sp, sp, #4
 
     # subS to also restore cpsr from spsr
     subs pc, lr, #0
