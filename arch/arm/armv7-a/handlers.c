@@ -53,7 +53,7 @@ void _undef_handler(int32_t pc, spctx_t *ctx) {
     dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
 
     uint32_t *ptr = (uint32_t *) max(pc - 4 * 8, 0);
-    error_async("Instructions around pc=0x%p:", ptr);
+    error_async("Instructions around pc=0x%p:", (void *) pc);
     int i;
     for (i = 0; i < 16; i++, ptr++) {
         error_async(" %s [0x%p] 0x%08lx", ptr == (uint32_t *) pc ? "->" : "  ", ptr, *ptr);
