@@ -82,3 +82,8 @@ void pcb_kill(pcb_t *pcb) {
     verbose_async("Killing process pid=%u", pcb->pid);
     sched_move_to_zombie(pcb);
 }
+
+void pcb_kill_and_schedule(pcb_t *pcb) {
+    pcb_kill(pcb);
+    schedule();
+}
