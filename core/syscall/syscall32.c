@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <cpu.h>
@@ -28,6 +27,9 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
     case 1:
         info_async("Yielding process pid=%u", pcb->pid);
         schedule();
+        break;
+    case 2:
+        info_async("[pid=%u] %s", pcb->pid, (char *) arg0);
         break;
     }
     return 0;
