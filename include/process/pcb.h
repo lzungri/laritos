@@ -38,6 +38,8 @@ typedef struct pcb {
     char cmd[CONFIG_PROCESS_MAX_CMD_LEN];
     pcb_mm_t mm;
     pcb_sched_t sched;
+
+    int exit_status;
 } pcb_t;
 
 
