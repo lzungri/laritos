@@ -19,18 +19,18 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
     assert(pcb != NULL, "pcb_get_current() cannot be NULL on system call");
 
     switch (sysno) {
-    case 0:
-        info_async("Killing process pid=%u", pcb->pid);
-        pcb_kill(pcb);
-        schedule();
+    case SYSCALL_EXIT:
+        syscall_exit((int) arg0);
         break;
-    case 1:
-        info_async("Yielding process pid=%u", pcb->pid);
-        schedule();
+    case SYSCALL_YIELD:
+        syscall_yield();
         break;
-    case 2:
-        info_async("[pid=%u] %s", pcb->pid, (char *) arg0);
+    case SYSCALL_PUTS:
+        syscall_puts((const char *) arg0);
         break;
+    default:
+        error_async("Unrecognized system call #%d", sysno);
+        pcb_kill_and_schedule(pcb);
     }
     return 0;
 }
