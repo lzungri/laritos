@@ -18,19 +18,23 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
     pcb_t *pcb = pcb_get_current();
     assert(pcb != NULL, "pcb_get_current() cannot be NULL on system call");
 
+    int ret = 0;
     switch (sysno) {
     case SYSCALL_EXIT:
         syscall_exit((int) arg0);
         break;
     case SYSCALL_YIELD:
-        syscall_yield();
+        ret = syscall_yield();
         break;
     case SYSCALL_PUTS:
-        syscall_puts((const char *) arg0);
+        ret = syscall_puts((const char *) arg0);
+        break;
+    case SYSCALL_GETPID:
+        ret = syscall_getpid();
         break;
     default:
         error_async("Unrecognized system call #%d", sysno);
         pcb_kill_and_schedule(pcb);
     }
-    return 0;
+    return ret;
 }

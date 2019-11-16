@@ -12,3 +12,4 @@
 void syscall_exit(int status);
 int syscall_yield(void);
 int syscall_puts(const char *str);
+int syscall_getpid(void);
