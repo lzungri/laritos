@@ -121,7 +121,8 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
         if (sect->sh_type == SHT_SYMTAB) {
             verbose("Found symbol table at ELF offset 0x%lX", sect->sh_offset);
             symtab_offset = sect->sh_offset;
-        } else if (sect->sh_type == SHT_REL) {
+        } else if (rel_offset == U32_MAX && sect->sh_type == SHT_REL) {
+            // Only use the first relocation section (rel.text) and ignore the others
             verbose("Found relocations at ELF offset 0x%lX", sect->sh_offset);
             rel_offset = sect->sh_offset;
             rel_entries = sect->sh_size / sizeof(Elf32_Rel);
