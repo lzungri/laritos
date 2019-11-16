@@ -32,6 +32,24 @@ int arch_elf32_relocate_symbol(void *imgaddr, const Elf32_Rel *rel, const Elf32_
      * 	  X is the 32-bit result of normal relocation processing
      */
     switch (ELF32_R_TYPE(rel->r_info)) {
+    case R_ARM_V4BX:
+        /**
+         * According to ARM ld:
+         *    The ‘R_ARM_V4BX’ relocation (defined by the ARM AAELF specification) enables objects compiled for the ARMv4
+         *    architecture to be interworking-safe when linked with other objects compiled for ARMv4t, but also allows pure
+         *    ARMv4 binaries to be built from the same ARMv4 objects.
+         *
+         *    In the latter case, the switch --fix-v4bx must be passed to the linker, which causes v4t BX rM instructions to
+         *    be rewritten as MOV PC,rM, since v4 processors do not have a BX instruction.
+         *
+         *    In the former case, the switch should not be used, and ‘R_ARM_V4BX’ relocations are ignored.
+         */
+
+        // Since we are targeting the armv7-a architecture, which supports bx instructions, we just ignore this relocation
+        break;
+    case R_ARM_JUMP24:
+        // R_ARM_JUMP24 and R_ARM_CALL have different behavior when using THUMB mode. Since we only use ARM mode, we can
+        // treat them the same way.
     case R_ARM_CALL:
         // Ignore this type of relocation, they are already resolved
         break;
@@ -54,7 +72,13 @@ int arch_elf32_relocate_symbol(void *imgaddr, const Elf32_Rel *rel, const Elf32_
         break;
     case R_ARM_GOT32:
     case R_ARM_GOT_BREL12:;
+        /**
+         * From ARM docs: Offset of the GOT entry from the GOT origin. Stored in the offset field of an ARM LDR instruction
+         */
+
+        // Get the got index of the symbol
         uint32_t gotidx = *((uint32_t *) (imgbase + rel->r_offset)) / 4;
+        // Update the got associated with that symbol to point to the right offset starting from imgbase
         got[gotidx] = (uint32_t) (imgbase + sym->st_value);
         break;
     default:
