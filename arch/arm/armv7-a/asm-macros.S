@@ -89,11 +89,6 @@ _save_ctx_end\@:
 
 # Restores the current context from the stack associated with the process stack
 .macro RESTORE_USER_CONTEXT
-    # In case there was a context switch, get current sp context
-    bl pcb_get_current_pcb_stack_context
-    # Save sp in r1
-    mov sp, r0
-
     # Pop the SPSR and link register
     ldm sp, {r0, lr}
     add sp, sp, #8
@@ -122,6 +117,23 @@ _save_ctx_end\@:
 
     # subS to also restore cpsr from spsr
     subs pc, lr, #0
+.endm
+
+# Restores the current context from the stack associated with the process stack
+# It also saves the handler retval in r0 for he user process to read it
+.macro RESTORE_USER_CONTEXT_WITH_RETVAL
+    # Save retval in r4
+    mov r4, r0
+
+    # In case there was a context switch, get current sp context
+    bl pcb_get_current_pcb_stack_context
+    # Save r0 in sp
+    mov sp, r0
+
+    # Set the r0 stacked value equals to retval (r4)
+    str r4, [sp, #8]
+
+    RESTORE_USER_CONTEXT
 .endm
 
 
@@ -163,8 +175,7 @@ _save_ctx_end\@:
 .endm
 
 
-# Restores the current non-user context from the stack associated with
-# the exception (e.g. sp_irq for irq exceptions)
+# Calls the <handler> and restores the context on return
 #
 # @param handler: Handler symbol
 # @param user_reg: Register in which the cpu mode is stored (1=user, 0=non-user)
@@ -178,5 +189,27 @@ _nonusr_mode\@:
 
 _usr_mode\@:
     bl \handler
+    # In case there was a context switch, get current sp context
+    bl pcb_get_current_pcb_stack_context
+    # Save r0 in sp
+    mov sp, r0
     RESTORE_USER_CONTEXT
+.endm
+
+# Calls the <handler> and restores the context on return, it also saves the return
+# value of the handler in r0 for the caller to access it
+#
+# @param handler: Handler symbol
+# @param user_reg: Register in which the cpu mode is stored (1=user, 0=non-user)
+.macro CALL_HANDLER_AND_RESTORE_CONTEXT_WITH_RETVAL handler, user_reg
+    cmp \user_reg, #1
+    beq _usr_mode\@
+
+_nonusr_mode\@:
+    bl \handler
+    RESTORE_NONUSER_CONTEXT
+
+_usr_mode\@:
+    bl \handler
+    RESTORE_USER_CONTEXT_WITH_RETVAL
 .endm
