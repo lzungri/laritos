@@ -182,12 +182,6 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
         goto error_pcbreg;
     }
 
-//    sched_move_to_zombie(pcb);
-//    if (pcb_unregister(pcb) < 0) {
-//        error("Could not un-register process loaded at 0x%p", pcb->mm.imgaddr);
-//        goto error_pcbunreg;
-//    }
-
     return pcb;
 
 error_pcbreg:

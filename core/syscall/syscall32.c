@@ -6,6 +6,7 @@
 #include <syscall/syscall.h>
 #include <utils/assert.h>
 #include <sched/context.h>
+#include <time/time.h>
 
 int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5) {
     if (arch_context_is_kernel(ctx)) {
@@ -31,6 +32,9 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
         break;
     case SYSCALL_GETPID:
         ret = syscall_getpid();
+        break;
+    case SYSCALL_TIME:
+        ret = syscall_time((time_t *) arg0);
         break;
     default:
         error_async("Unrecognized system call #%d", sysno);
