@@ -7,6 +7,7 @@
 #include <time/time.h>
 #include <dstruct/list.h>
 #include <mm/slab.h>
+#include <timer/tick.h>
 
 typedef struct {
     /**
@@ -63,6 +64,7 @@ typedef struct {
     struct {
         timezone_t tz;
         bool dst;
+        abstick_t ticks;
     } timeinfo;
 } laritos_t;
 
