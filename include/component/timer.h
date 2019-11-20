@@ -19,14 +19,6 @@ struct timer_comp;
 typedef int (*timer_cb_t)(struct timer_comp *t, void *data);
 
 typedef struct {
-    bool enabled;
-    int64_t ticks;
-    bool periodic;
-    timer_cb_t cb;
-    void *data;
-} timer_t;
-
-typedef struct {
     int (*get_value)(struct timer_comp *t, uint64_t *v);
     int (*set_value)(struct timer_comp *t, uint64_t v);
     int (*get_remaining)(struct timer_comp *t, int64_t *v);
@@ -59,14 +51,19 @@ typedef struct timer_comp {
     uint32_t curfreq;
     uint32_t maxfreq;
 
-    timer_t curtimer;
+    struct {
+        bool enabled;
+        int64_t ticks;
+        bool periodic;
+        timer_cb_t cb;
+        void *data;
+    } curtimer;
 
     timer_comp_ops_t ops;
 } timer_comp_t;
 
+irqret_t timer_handle_expiration(timer_comp_t *t);
 int timer_init(timer_comp_t *t);
 int timer_deinit(timer_comp_t *t);
 int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c));
-
-irqret_t timer_handle_expiration(timer_comp_t *t);
