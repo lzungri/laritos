@@ -5,3 +5,4 @@ obj-y += intc.o
 obj-y += bytestream.o
 obj-y += timer.o
 obj-y += cpu.o
+obj-y += ticker.o
