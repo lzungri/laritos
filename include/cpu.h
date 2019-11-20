@@ -5,6 +5,7 @@
 #include <arch/cpu.h>
 #include <component/cpu.h>
 #include <component/component.h>
+#include <utils/assert.h>
 
 typedef uint32_t cpubits_t;
 
@@ -29,6 +30,7 @@ static inline cpu_t *cpu(void) {
             return cpu;
         }
     }
+    assert(false, "cpu() cannot be NULL");
     return NULL;
 }
 
