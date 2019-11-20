@@ -12,4 +12,3 @@ obj-y += loader/
 obj-y += process/
 obj-y += sched/
 obj-y += irq/
-obj-y += timer/
