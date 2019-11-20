@@ -147,7 +147,7 @@ static int process(board_comp_t *comp) {
     }
     intc_t *intc = (intc_t *) gic;
 
-    if (intc_init(intc, comp->id, comp, init, deinit) < 0) {
+    if (intc_component_init(intc, comp->id, comp, init, deinit) < 0) {
         error("Failed to initialize gic '%s'", comp->id);
         goto fail;
     }
