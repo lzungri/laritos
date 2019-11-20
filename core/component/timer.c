@@ -1,5 +1,8 @@
 #include <log.h>
+
+#include <stdint.h>
 #include <board.h>
+#include <irq.h>
 #include <component/component.h>
 #include <component/timer.h>
 #include <utils/function.h>
@@ -23,13 +26,33 @@ int timer_deinit(timer_comp_t *t) {
     return 0;
 }
 
+irqret_t timer_handle_expiration(timer_comp_t *t) {
+    if (!t->curtimer.enabled) {
+        return IRQ_RET_HANDLED;
+    }
+
+    irqret_t ret = IRQ_RET_HANDLED;
+    if (t->curtimer.cb(t, t->curtimer.data) < 0) {
+        ret = IRQ_RET_ERROR;
+    }
+
+    if (t->curtimer.periodic) {
+        t->ops.set_expiration_ticks(t, t->curtimer.ticks, TIMER_EXP_RELATIVE,
+                t->curtimer.cb, t->curtimer.data, t->curtimer.periodic);
+    }
+
+    return ret;
+}
+
 
 DEF_NOT_IMPL_FUNC(ni_get_value, timer_comp_t *t, uint64_t *v);
 DEF_NOT_IMPL_FUNC(ni_set_value, timer_comp_t *t, uint64_t v);
 DEF_NOT_IMPL_FUNC(ni_get_remaining, timer_comp_t *t, int64_t *v);
 DEF_NOT_IMPL_FUNC(ni_reset, timer_comp_t *t);
 DEF_NOT_IMPL_FUNC(ni_set_enable, timer_comp_t *t, bool enable);
-DEF_NOT_IMPL_FUNC(ni_set_expiration, timer_comp_t *t, int64_t secs, int32_t ns, timer_exp_type_t type);
+DEF_NOT_IMPL_FUNC(ni_set_expiration_ticks, timer_comp_t *t, int64_t timer_ticks, timer_exp_type_t type,
+        timer_cb_t cb, void *data, bool periodic);
+DEF_NOT_IMPL_FUNC(ni_clear_expiration, timer_comp_t *t);
 
 int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
@@ -44,7 +67,8 @@ int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t 
     t->ops.get_remaining = ni_get_remaining;
     t->ops.reset = ni_reset;
     t->ops.set_enable = ni_set_enable;
-    t->ops.set_expiration = ni_set_expiration;
+    t->ops.set_expiration_ticks = ni_set_expiration_ticks;
+    t->ops.clear_expiration = ni_clear_expiration;
 
     board_get_bool_attr_def(bcomp, "intio", &t->intio, false);
     if (t->intio) {
@@ -62,7 +86,8 @@ int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t 
         }
     }
 
-    board_get_long_attr_def(bcomp, "res", (long *) &t->resolution_ns, 0);
+    board_get_int_attr_def(bcomp, "maxfreq", (int *) &t->maxfreq, 0);
+    t->curfreq = t->maxfreq;
 
     return 0;
 }
