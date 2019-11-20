@@ -11,7 +11,6 @@
 #include <sched/core.h>
 #include <sched/context.h>
 #include <time/time.h>
-#include <timer.h>
 #include <board-types.h>
 #include <board.h>
 #include <utils/debug.h>
@@ -86,14 +85,6 @@ static void shell(void) {
                         int64_t v;
                         t->ops.get_remaining(t, &v);
                         log_always("rtc remaining: %ld", (int32_t) v);
-                    }
-                    break;
-                case 'e':;
-                    // rtc timer expiration
-                    component_t *c2;
-                    for_each_component_type(c2, COMP_TYPE_RTC) {
-                        timer_comp_t *t = (timer_comp_t *) c2;
-                        t->ops.set_expiration(t, 5, 0, TIMER_EXP_RELATIVE);
                     }
                     break;
                 case 'm':;
@@ -192,18 +183,18 @@ void kernel_entry(void)  {
     }
 #endif
 
-    pcb_t *bigbang_pcb = loader_load_executable_from_memory(0);
-    if (bigbang_pcb == NULL) {
-        error("Failed to load app #0");
-    }
-
-    // Load the same program, just to have two processes for testing
-    if (loader_load_executable_from_memory(0) == NULL) {
-        error("Failed to load app #1");
-    }
-
-    // Execute the first process
-    switch_to(NULL, bigbang_pcb);
+//    pcb_t *bigbang_pcb = loader_load_executable_from_memory(0);
+//    if (bigbang_pcb == NULL) {
+//        error("Failed to load app #0");
+//    }
+//
+//    // Load the same program, just to have two processes for testing
+//    if (loader_load_executable_from_memory(0) == NULL) {
+//        error("Failed to load app #1");
+//    }
+//
+//    // Execute the first process
+//    switch_to(NULL, bigbang_pcb);
 
     shell();
 }
