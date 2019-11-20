@@ -1,0 +1,7 @@
+menu "Timer"
+
+config TICKER_DEF_FREQ
+    int "Default ticker frequency"
+    default 100
+
+endmenu

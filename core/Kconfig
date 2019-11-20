@@ -8,6 +8,7 @@ source "core/loader/Kconfig"
 source "core/process/Kconfig"
 source "core/sched/Kconfig"
 source "core/irq/Kconfig"
+source "core/timer/Kconfig"
 
 menu "Symmetric multiprocessing"
 
