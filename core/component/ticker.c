@@ -99,3 +99,7 @@ int ticker_component_init(ticker_comp_t *t, board_comp_t *bcomp,
 
     return 0;
 }
+
+#ifdef CONFIG_TEST_CORE_COMPONENT_TICKER
+#include __FILE__
+#endif

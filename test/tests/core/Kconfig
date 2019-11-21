@@ -6,9 +6,11 @@ config TEST_CORE_ALL
     select TEST_CORE_LIBC_ALL
     select TEST_CORE_MM_ALL
     select TEST_CORE_DSTRUCT_ALL
+    select TEST_CORE_COMPONENT_ALL
 
 source "test/tests/core/libc/Kconfig"
 source "test/tests/core/mm/Kconfig"
 source "test/tests/core/dstruct/Kconfig"
+source "test/tests/core/component/Kconfig"
 
 endmenu

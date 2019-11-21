@@ -1,0 +1,12 @@
+menu "Component"
+
+config TEST_CORE_COMPONENT_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_COMPONENT_TICKER
+
+config TEST_CORE_COMPONENT_TICKER
+    bool "ticker.c"
+    default n
+
+endmenu
