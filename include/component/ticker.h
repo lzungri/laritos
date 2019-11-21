@@ -5,6 +5,7 @@
 #include <dstruct/list.h>
 #include <component/component.h>
 #include <component/timer.h>
+#include <dstruct/list.h>
 
 struct ticker_comp;
 
@@ -13,10 +14,12 @@ typedef int (*ticker_cb_t)(struct ticker_comp *t, void *data);
 typedef struct {
     ticker_cb_t cb;
     void *data;
+    struct list_head list;
 } ticker_cb_info_t;
 
 typedef struct {
     int (*add_callback)(struct ticker_comp *t, ticker_cb_t cb, void *data);
+    int (*remove_callback)(struct ticker_comp *t, ticker_cb_t cb, void *data);
 } ticker_comp_ops_t;
 
 typedef struct ticker_comp {
