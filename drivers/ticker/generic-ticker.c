@@ -29,7 +29,7 @@ static int process(board_comp_t *comp) {
     component_set_info((component_t *) t, "Ticker", "lzungri", "Generic OS ticker");
 
     if (component_register((component_t *) t) < 0) {
-        error("Couldn't register rtc '%s'", comp->id);
+        error("Couldn't register ticker '%s'", comp->id);
         goto fail;
     }
 
