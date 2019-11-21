@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <board.h>
+#include <core.h>
 #include <component/ticker.h>
 #include <component/timer.h>
 #include <component/component.h>
@@ -13,6 +14,9 @@
 
 
 static int ticker_cb(timer_comp_t *t, void *data) {
+    // Increment global tick
+    _laritos.timeinfo.ticks++;
+
     ticker_comp_t *ticker = (ticker_comp_t *) data;
     ticker_cb_info_t *ti;
     list_for_each_entry(ti, &ticker->cbs, list) {
