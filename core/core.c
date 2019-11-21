@@ -86,6 +86,8 @@ static void shell(void) {
                         t->ops.get_remaining(t, &v);
                         log_always("rtc remaining: %ld", (int32_t) v);
                     }
+
+                    log_always("_laritos.timeinfo.ticks: %lu", (uint32_t) _laritos.timeinfo.ticks);
                     break;
                 case 'm':;
                     char *p = malloc(10);
