@@ -69,11 +69,11 @@ int test_run(test_descriptor_t *tests[]);
 
 #define TEST_BUSY_WAIT_WHILE(_expr, _max_secs) do { \
         time_t _t; \
-        rtc_gettime(&_t); \
+        time_rtc_gettime(&_t); \
         _t.secs += (_max_secs); \
         while (_expr) { \
             time_t _cur; \
-            rtc_gettime(&_cur); \
+            time_rtc_gettime(&_cur); \
             if (_cur.secs >= _t.secs) { \
                 break; \
             } \
