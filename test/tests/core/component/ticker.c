@@ -9,9 +9,6 @@
 #include <component/component.h>
 #include <dstruct/list.h>
 
-// TODO Can we just remove this arbitrary value? (without using sleep() since
-// we don't if it works at this instance)
-#define MAX_BUSY_WAIT_CYCLES 1000000000L
 
 static ticker_comp_t *get_ticker(void) {
     component_t *c;
@@ -32,12 +29,14 @@ static bool is_callback_registered(ticker_comp_t *t, ticker_cb_t cb, void *data)
 }
 
 T(ticker_global_ctx_tick_is_incremented_periodically) {
+    ticker_comp_t *t = get_ticker();
+    tassert(t != NULL);
+
     abstick_t ticks = _laritos.timeinfo.ticks;
-    uint64_t counter = 0;
-    while(ticks == _laritos.timeinfo.ticks && counter < MAX_BUSY_WAIT_CYCLES) {
-        counter++;
-    }
-    tassert(counter < MAX_BUSY_WAIT_CYCLES);
+
+    TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
+
+    tassert(ticks < _laritos.timeinfo.ticks);
 TEND
 
 static int cb0(ticker_comp_t *t, void *data) {
@@ -75,11 +74,9 @@ T(ticker_callbacks_are_called) {
     t->ops.add_callback(t, cb1, &cb_called);
     tassert(is_callback_registered(t, cb1, &cb_called));
 
-    uint64_t counter = 0;
-    while(!cb_called && counter < MAX_BUSY_WAIT_CYCLES) {
-        counter++;
-    }
-    tassert(counter < MAX_BUSY_WAIT_CYCLES);
+    TEST_BUSY_WAIT_WHILE(!cb_called, t->ticks_per_sec == 1 ? 2 : 1);
+
+    tassert(cb_called);
 
     t->ops.remove_callback(t, cb1, &cb_called);
     tassert(!is_callback_registered(t, cb1, &cb_called));
@@ -106,10 +103,8 @@ T(ticker_callbacks_are_called_on_every_tick) {
     t->ops.add_callback(t, cb2, &valid_tick);
     tassert(is_callback_registered(t, cb2, &valid_tick));
 
-    uint64_t counter = 0;
-    while(counter < MAX_BUSY_WAIT_CYCLES) {
-        counter++;
-    }
+    TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 5 : 1);
+
     tassert(valid_tick);
 
     t->ops.remove_callback(t, cb2, &valid_tick);
