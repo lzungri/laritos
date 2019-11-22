@@ -4,9 +4,14 @@ config TEST_CORE_COMPONENT_ALL
     bool "Select all"
     default n
     select TEST_CORE_COMPONENT_TICKER
+    select TEST_CORE_COMPONENT_VRTIMER
 
 config TEST_CORE_COMPONENT_TICKER
     bool "ticker.c"
+    default n
+
+config TEST_CORE_COMPONENT_VRTIMER
+    bool "vrtimer.c"
     default n
 
 endmenu

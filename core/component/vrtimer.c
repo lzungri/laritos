@@ -13,7 +13,7 @@
 
 // TODO: We should use a rbtree here instead
 static void add_vrtimer_sorted(vrtimer_comp_t *t, vrtimer_t *vrt) {
-    verbose_async("Adding vrtimer abs_ticks=%lu, periodic=%u", (uint32_t) vrt->abs_ticks, vrt->periodic);
+    verbose_async("Adding vrtimer abs_ticks=%lu, ticks=%lu, periodic=%u", (uint32_t) vrt->abs_ticks, vrt->ticks, vrt->periodic);
     if (list_empty(&t->timers)) {
         list_add(&vrt->list, &t->timers);
         return;
@@ -120,3 +120,9 @@ int vrtimer_component_init(vrtimer_comp_t *t, board_comp_t *bcomp,
 
     return 0;
 }
+
+
+
+#ifdef CONFIG_TEST_CORE_COMPONENT_VRTIMER
+#include __FILE__
+#endif
