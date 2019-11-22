@@ -97,8 +97,15 @@ int ticker_component_init(ticker_comp_t *t, board_comp_t *bcomp,
     board_get_int_attr_def(bcomp, "ticks_per_sec", (int *) &t->ticks_per_sec,
             min(CONFIG_TICKER_DEF_FREQ, t->timer->maxfreq));
 
+    if (t->ticks_per_sec == 0) {
+        error("Ticks per second cannot be zero");
+        return -1;
+    }
+
     return 0;
 }
+
+
 
 #ifdef CONFIG_TEST_CORE_COMPONENT_TICKER
 #include __FILE__
