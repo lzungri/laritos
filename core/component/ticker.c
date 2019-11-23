@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <stdbool.h>
@@ -6,6 +5,7 @@
 #include <core.h>
 #include <component/ticker.h>
 #include <component/timer.h>
+#include <component/vrtimer.h>
 #include <component/component.h>
 #include <timer/tick.h>
 #include <utils/math.h>
@@ -13,7 +13,7 @@
 #include <mm/heap.h>
 
 
-static int ticker_cb(timer_comp_t *t, void *data) {
+static int ticker_cb(vrtimer_comp_t *t, void *data) {
     // Increment global tick
     _laritos.timeinfo.ticks++;
 
@@ -30,21 +30,22 @@ static int ticker_cb(timer_comp_t *t, void *data) {
 }
 
 int ticker_init(ticker_comp_t *t) {
+    // Reset global ticks
+    _laritos.timeinfo.ticks = 0;
+
     INIT_LIST_HEAD(&t->cbs);
 
-    tick_t timer_ticks = t->timer->curfreq / t->ticks_per_sec;
+    tick_t timer_ticks = t->vrtimer->hrtimer->curfreq / t->ticks_per_sec;
     if (timer_ticks == 0) {
         // If the timer resolution cannot handle the required ticks_per_sec, then
         // expire at the next tick
         timer_ticks = 1;
     }
-    return t->timer->ops.set_expiration_ticks(t->timer, timer_ticks,
-            TIMER_EXP_RELATIVE, ticker_cb, t, true);
+    return t->vrtimer->ops.add_vrtimer(t->vrtimer, timer_ticks, ticker_cb, t, true);
 }
 
 int ticker_deinit(ticker_comp_t *t) {
-    t->timer->ops.clear_expiration(t->timer);
-    return 0;
+    return t->vrtimer->ops.remove_vrtimer(t->vrtimer, ticker_cb, t, true);
 }
 
 static int add_callback(ticker_comp_t *t, ticker_cb_t cb, void *data) {
@@ -89,13 +90,13 @@ int ticker_component_init(ticker_comp_t *t, board_comp_t *bcomp,
     t->ops.add_callback = add_callback;
     t->ops.remove_callback = remove_callback;
 
-    if (board_get_component_attr(bcomp, "timer", (component_t **) &t->timer) < 0) {
-        error("Invalid or no timer component specified in the board info");
+    if (board_get_component_attr(bcomp, "vrtimer", (component_t **) &t->vrtimer) < 0) {
+        error("Invalid or no virtual timer component specified in the board info");
         return -1;
     }
 
     board_get_int_attr_def(bcomp, "ticks_per_sec", (int *) &t->ticks_per_sec,
-            min(CONFIG_TICKER_DEF_FREQ, t->timer->maxfreq));
+            min(CONFIG_TICKER_DEF_FREQ, t->vrtimer->hrtimer->maxfreq));
 
     if (t->ticks_per_sec == 0) {
         error("Ticks per second cannot be zero");

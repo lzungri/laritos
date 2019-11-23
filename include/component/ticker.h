@@ -5,6 +5,7 @@
 #include <dstruct/list.h>
 #include <component/component.h>
 #include <component/timer.h>
+#include <component/vrtimer.h>
 #include <dstruct/list.h>
 
 struct ticker_comp;
@@ -26,7 +27,7 @@ typedef struct ticker_comp {
     component_t parent;
 
     uint32_t ticks_per_sec;
-    timer_comp_t *timer;
+    vrtimer_comp_t *vrtimer;
     struct list_head cbs;
 
     ticker_comp_ops_t ops;
