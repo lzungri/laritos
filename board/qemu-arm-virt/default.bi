@@ -36,8 +36,8 @@ input_uart:inputdev|transport=bytestream@uart0
 # Interrupt controller
 gic:gicv2|distaddr=0x08000000,cpuaddr=0x08010000
 
-# OS Ticker, we are currently using the rtc as a timer until we implement a higher-res timer
-ticker0:generic_ticker|timer=@rtc0,ticks_per_sec=1
+# OS Ticker
+ticker0:generic_ticker|vrtimer=@vrtimer0,ticks_per_sec=1
 
-# Virtual timer component
-vrtimer0:generic_vrtimer|ticker=@ticker0,rtc=@rtc0
+# Virtual timer component, we are currently using the rtc as a timer until we implement a higher-res timer
+vrtimer0:generic_vrtimer|hrtimer=@rtc0,low_power_timer=@rtc0
