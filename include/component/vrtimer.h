@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <component/component.h>
-#include <component/ticker.h>
 #include <component/timer.h>
 #include <timer/tick.h>
 #include <dstruct/list.h>
@@ -33,8 +32,8 @@ typedef struct vrtimer_comp {
     component_t parent;
 
     struct list_head timers;
-    ticker_comp_t *ticker;
-    timer_comp_t *rtc;
+    timer_comp_t *hrtimer;
+    timer_comp_t *low_power_timer;
 
     vrtimer_comp_ops_t ops;
 } vrtimer_comp_t;
