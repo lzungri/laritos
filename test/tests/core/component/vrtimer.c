@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <test/test.h>
 #include <component/vrtimer.h>
+#include <component/ticker.h>
 #include <timer/tick.h>
 #include <component/component.h>
 #include <dstruct/list.h>
@@ -16,6 +17,22 @@ static vrtimer_comp_t *get_vrtimer(void) {
         return (vrtimer_comp_t *) c;
     }
     return NULL;
+}
+
+static void pause_ticker(void) {
+    component_t *c;
+    for_each_component_type(c, COMP_TYPE_TICKER) {
+        ticker_comp_t *ticker = (ticker_comp_t *) c;
+        ticker->ops.pause(ticker);
+    }
+}
+
+static void resume_ticker(void) {
+    component_t *c;
+    for_each_component_type(c, COMP_TYPE_TICKER) {
+        ticker_comp_t *ticker = (ticker_comp_t *) c;
+        ticker->ops.resume(ticker);
+    }
 }
 
 static bool is_vrtimer_registered(vrtimer_comp_t *t, vrtimer_cb_t cb, void *data, bool periodic) {
@@ -63,6 +80,8 @@ static int cb1(vrtimer_comp_t *t, void *data) {
 }
 
 T(vrtimer_callback_is_called_after_n_ticks) {
+    pause_ticker();
+
     vrtimer_comp_t *t = get_vrtimer();
     tassert(t != NULL);
 
@@ -78,6 +97,8 @@ T(vrtimer_callback_is_called_after_n_ticks) {
 
     // Timer should be removed automatically once expired
     tassert(!is_vrtimer_registered(t, cb1, &cb_ticks, false));
+
+    resume_ticker();
 TEND
 
 static abstick_t cb2_ticks = 0;
@@ -95,6 +116,8 @@ static int cb2(vrtimer_comp_t *t, void *data) {
 }
 
 T(vrtimer_callbacks_are_called_on_every_n_ticks_if_vrtimer_is_periodic) {
+    pause_ticker();
+
     vrtimer_comp_t *t = get_vrtimer();
     tassert(t != NULL);
 
@@ -114,4 +137,6 @@ T(vrtimer_callbacks_are_called_on_every_n_ticks_if_vrtimer_is_periodic) {
     // Let's remove it
     t->ops.remove_vrtimer(t, cb2, &valid_tick, true);
     tassert(!is_vrtimer_registered(t, cb2, &valid_tick, true));
+
+    resume_ticker();
 TEND
