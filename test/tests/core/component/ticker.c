@@ -39,6 +39,25 @@ T(ticker_global_ctx_tick_is_incremented_periodically) {
     tassert(ticks < _laritos.timeinfo.ticks);
 TEND
 
+T(ticker_can_be_paused_and_resumed) {
+    ticker_comp_t *t = get_ticker();
+    tassert(t != NULL);
+
+    abstick_t ticks = _laritos.timeinfo.ticks;
+    TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
+    tassert(ticks < _laritos.timeinfo.ticks);
+
+    t->ops.pause(t);
+    ticks = _laritos.timeinfo.ticks;
+    TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
+    tassert(ticks == _laritos.timeinfo.ticks);
+
+    t->ops.resume(t);
+    ticks = _laritos.timeinfo.ticks;
+    TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
+    tassert(ticks <= _laritos.timeinfo.ticks);
+TEND
+
 static int cb0(ticker_comp_t *t, void *data) {
     return 0;
 }
