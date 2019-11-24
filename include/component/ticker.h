@@ -21,6 +21,8 @@ typedef struct {
 typedef struct {
     int (*add_callback)(struct ticker_comp *t, ticker_cb_t cb, void *data);
     int (*remove_callback)(struct ticker_comp *t, ticker_cb_t cb, void *data);
+    int (*pause)(struct ticker_comp *t);
+    int (*resume)(struct ticker_comp *t);
 } ticker_comp_ops_t;
 
 typedef struct ticker_comp {

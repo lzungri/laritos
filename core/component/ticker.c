@@ -1,3 +1,4 @@
+#define DEBUG
 #include <log.h>
 
 #include <stdbool.h>
@@ -29,12 +30,13 @@ static int ticker_cb(vrtimer_comp_t *t, void *data) {
     return 0;
 }
 
-int ticker_init(ticker_comp_t *t) {
-    // Reset global ticks
-    _laritos.timeinfo.ticks = 0;
+static int ticker_pause(ticker_comp_t *t) {
+    verbose_async("Pausing ticker '%s'", ((component_t *) t)->id);
+    return t->vrtimer->ops.remove_vrtimer(t->vrtimer, ticker_cb, t, true);
+}
 
-    INIT_LIST_HEAD(&t->cbs);
-
+static int ticker_resume(ticker_comp_t *t) {
+    verbose_async("Resuming ticker '%s'", ((component_t *) t)->id);
     tick_t timer_ticks = t->vrtimer->hrtimer->curfreq / t->ticks_per_sec;
     if (timer_ticks == 0) {
         // If the timer resolution cannot handle the required ticks_per_sec, then
@@ -44,8 +46,17 @@ int ticker_init(ticker_comp_t *t) {
     return t->vrtimer->ops.add_vrtimer(t->vrtimer, timer_ticks, ticker_cb, t, true);
 }
 
+int ticker_init(ticker_comp_t *t) {
+    // Reset global ticks
+    _laritos.timeinfo.ticks = 0;
+
+    INIT_LIST_HEAD(&t->cbs);
+
+    return ticker_resume(t);
+}
+
 int ticker_deinit(ticker_comp_t *t) {
-    return t->vrtimer->ops.remove_vrtimer(t->vrtimer, ticker_cb, t, true);
+    return ticker_pause(t);
 }
 
 static int add_callback(ticker_comp_t *t, ticker_cb_t cb, void *data) {
@@ -89,6 +100,8 @@ int ticker_component_init(ticker_comp_t *t, board_comp_t *bcomp,
 
     t->ops.add_callback = add_callback;
     t->ops.remove_callback = remove_callback;
+    t->ops.pause = ticker_pause;
+    t->ops.resume = ticker_resume;
 
     if (board_get_component_attr(bcomp, "vrtimer", (component_t **) &t->vrtimer) < 0) {
         error("Invalid or no virtual timer component specified in the board info");
