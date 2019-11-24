@@ -15,12 +15,32 @@ static int vrtimer_cb(timer_comp_t *t, void *data);
 static void update_expiration(vrtimer_comp_t *t) {
     if (list_empty(&t->timers)) {
         t->hrtimer->ops.clear_expiration(t->hrtimer);
+        t->low_power_timer->ops.clear_expiration(t->low_power_timer);
         return;
     }
 
     vrtimer_t *vrt = list_first_entry(&t->timers, vrtimer_t, list);
-    t->hrtimer->ops.set_expiration_ticks(t->hrtimer, vrt->abs_ticks,
-            TIMER_EXP_ABSOLUTE, vrtimer_cb, t, false);
+
+    // Remaining ticks to expire
+    abstick_t deltaticks;
+    t->hrtimer->ops.get_value(t->hrtimer, &deltaticks);
+    deltaticks = vrt->abs_ticks - deltaticks;
+
+    // If the ticks-to-expire value is lower that the high-res timer frequency
+    // (i.e. we need to wake up in less than a second), then use the hrtimer.
+    // Otherwise, use the low power timer, since we don't need that much precision
+    if (deltaticks <= t->hrtimer->curfreq) {
+        t->low_power_timer->ops.clear_expiration(t->low_power_timer);
+        t->hrtimer->ops.set_expiration_ticks(t->hrtimer, vrt->abs_ticks,
+                TIMER_EXP_ABSOLUTE, vrtimer_cb, t, false);
+    } else {
+        t->hrtimer->ops.clear_expiration(t->hrtimer);
+
+        // Normalized ticks for the low power timer
+        abstick_t norm_ticks = (deltaticks / t->hrtimer->curfreq) * t->low_power_timer->curfreq;
+        t->low_power_timer->ops.set_expiration_ticks(t->hrtimer, norm_ticks,
+                TIMER_EXP_RELATIVE, vrtimer_cb, t, false);
+    }
 }
 
 // TODO: We should use a rbtree here instead
