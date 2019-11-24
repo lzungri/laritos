@@ -1,3 +1,4 @@
+#define DEBUG
 #include <log.h>
 #include <irq.h>
 #include <board-types.h>
@@ -54,9 +55,11 @@ static int set_expiration_ticks(timer_comp_t *t, int64_t timer_ticks, timer_exp_
 
     switch (type) {
     case TIMER_EXP_ABSOLUTE:
+        verbose_async("set_expiration_ticks(pl031, timer_ticks=%lu, TIMER_EXP_ABSOLUTE)", (uint32_t) timer_ticks);
         rtc->mm->match = max(timer_ticks, 0);
         break;
     case TIMER_EXP_RELATIVE:
+        verbose_async("set_expiration_ticks(pl031, timer_ticks=%lu, TIMER_EXP_RELATIVE)", (uint32_t) timer_ticks);
         rtc->mm->match = max((int64_t) rtc->mm->data + timer_ticks, 0);
         break;
     }
