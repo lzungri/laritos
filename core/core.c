@@ -195,6 +195,9 @@ void kernel_entry(void)  {
 //        error("Failed to load app #1");
 //    }
 //
+//    // From now on, everything will be executed in the context of a process
+//    _laritos.process_mode = true;
+//
 //    // Execute the first process
 //    switch_to(NULL, bigbang_pcb);
 
