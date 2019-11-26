@@ -6,7 +6,7 @@
 #include <test/test.h>
 #include <component/vrtimer.h>
 #include <component/ticker.h>
-#include <timer/tick.h>
+#include <time/tick.h>
 #include <component/component.h>
 #include <dstruct/list.h>
 

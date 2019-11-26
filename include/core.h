@@ -7,7 +7,7 @@
 #include <time/time.h>
 #include <dstruct/list.h>
 #include <mm/slab.h>
-#include <timer/tick.h>
+#include <time/tick.h>
 
 typedef struct {
     /**

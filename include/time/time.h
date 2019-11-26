@@ -69,3 +69,7 @@ int time_rtc_gettime(time_t *t);
 int time_rtc_get_localtime_calendar(calendar_t *c);
 int time_set_timezone(timezone_t t, bool daylight);
 int time_get_localtime_offset(void);
+
+void sleep(uint32_t secs);
+void msleep(uint32_t ms);
+void usleep(uint32_t us);

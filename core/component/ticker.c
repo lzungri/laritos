@@ -8,7 +8,7 @@
 #include <component/timer.h>
 #include <component/vrtimer.h>
 #include <component/component.h>
-#include <timer/tick.h>
+#include <time/tick.h>
 #include <utils/math.h>
 #include <dstruct/list.h>
 #include <mm/heap.h>

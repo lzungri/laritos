@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <component/component.h>
 #include <component/timer.h>
-#include <timer/tick.h>
+#include <time/tick.h>
 #include <dstruct/list.h>
 
 struct vrtimer_comp;

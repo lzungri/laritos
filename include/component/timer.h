@@ -6,7 +6,7 @@
 #include <irq.h>
 #include <component/component.h>
 #include <component/intc.h>
-#include <timer/tick.h>
+#include <time/tick.h>
 
 
 typedef enum {
