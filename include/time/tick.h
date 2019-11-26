@@ -13,6 +13,6 @@ typedef uint32_t tick_t;
  */
 typedef uint64_t abstick_t;
 
-#define SEC_TO_TICK(_ticker, _secs) ((_secs) * (_ticker)->ticks_per_sec)
-#define MS_TO_TICK(_ticker, _ms)  (((_ms) * (_ticker)->ticks_per_sec) / MSEC_PER_SEC)
-#define US_TO_TICK(_ticker, _us)  (((_us) * (_ticker)->ticks_per_sec) / USEC_PER_SEC)
+#define SEC_TO_TICK(_timer, _secs) ((_secs) * (_timer)->curfreq)
+#define MS_TO_TICK(_timer, _ms)  (((_ms) * (_timer)->curfreq) / MSEC_PER_SEC)
+#define US_TO_TICK(_timer, _us)  (((_us) * (_timer)->curfreq) / USEC_PER_SEC)
