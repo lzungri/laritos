@@ -1,0 +1,12 @@
+menu "Time"
+
+config TEST_CORE_TIME_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_TIME_TIME
+
+config TEST_CORE_TIME_TIME
+    bool "time.c"
+    default n
+
+endmenu
