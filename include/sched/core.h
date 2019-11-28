@@ -16,6 +16,13 @@ static inline void sched_move_to_ready(pcb_t *pcb) {
     pcb->sched.status = PCB_STATUS_READY;
 }
 
+static inline void sched_move_to_blocked(pcb_t *pcb) {
+    verbose_async("PID %u: %s -> BLOCKED", pcb->pid, pcb_get_status_str(pcb->sched.status));
+    // TODO Mutex
+    list_move_tail(&pcb->sched.sched_node, &_laritos.sched.blocked_pcbs);
+    pcb->sched.status = PCB_STATUS_BLOCKED;
+}
+
 static inline void sched_move_to_running(pcb_t *pcb) {
     verbose_async("PID %u: %s -> RUNNING", pcb->pid, pcb_get_status_str(pcb->sched.status));
     // TODO Mutex

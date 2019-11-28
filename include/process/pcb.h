@@ -56,7 +56,7 @@ spctx_t *pcb_get_current_pcb_stack_context(void);
 
 static inline pcb_t *pcb_get_current(void) {
     pcb_t *pcb = _laritos.sched.running[cpu_get_id()];
-    assert(pcb != NULL, "Current pcb cannot be NULL, make sure you are running in process context");
+    assert(pcb != NULL, "Current pcb cannot be NULL, make sure you are running in process mode");
     return pcb;
 }
 
