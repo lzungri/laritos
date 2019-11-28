@@ -36,6 +36,9 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
     case SYSCALL_TIME:
         ret = syscall_time((time_t *) arg0);
         break;
+    case SYSCALL_SLEEP:
+        ret = syscall_sleep((uint32_t) arg0);
+        break;
     default:
         error_async("Unrecognized system call #%d", sysno);
         pcb_kill_and_schedule(pcb);

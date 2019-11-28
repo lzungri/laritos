@@ -6,6 +6,9 @@ typedef enum {
     SYSCALL_PUTS,
     SYSCALL_GETPID,
     SYSCALL_TIME,
+    SYSCALL_SLEEP,
+    SYSCALL_MSLEEP,
+    SYSCALL_USLEEP,
 
     SYSCALL_LEN,
 } syscall_t;
