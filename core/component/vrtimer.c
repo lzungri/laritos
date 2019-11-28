@@ -1,3 +1,4 @@
+#define DEBUG
 #include <log.h>
 
 #include <stdint.h>
@@ -51,7 +52,7 @@ static void update_expiration(vrtimer_comp_t *t) {
 
 // TODO: We should use a rbtree here instead
 static void add_vrtimer_sorted(vrtimer_comp_t *t, vrtimer_t *vrt) {
-    verbose_async("Adding vrtimer abs_ticks=%lu, ticks=%lu, periodic=%u", (uint32_t) vrt->abs_ticks, vrt->ticks, vrt->periodic);
+    verbose_async("Adding vrtimer id=0x%p abs_ticks=%lu, ticks=%lu, periodic=%u", vrt, (uint32_t) vrt->abs_ticks, vrt->ticks, vrt->periodic);
 
     if (list_empty(&t->timers)) {
         list_add(&vrt->list, &t->timers);
@@ -79,7 +80,7 @@ static int vrtimer_cb(timer_comp_t *t, void *data) {
 
     list_for_each_entry_safe(pos, tmp, &vrt->timers, list) {
         if (curticks >= pos->abs_ticks) {
-            verbose_async("vrtimer abs_ticks=%lu expired", (uint32_t) pos->abs_ticks);
+            verbose_async("vrtimer id=0x%p abs_ticks=%lu expired", pos, (uint32_t) pos->abs_ticks);
 
             // Execute timer callback
             if (pos->cb(vrt, pos->data) < 0) {
