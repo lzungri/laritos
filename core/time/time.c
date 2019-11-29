@@ -1,3 +1,4 @@
+#define DEBUG
 #include <log.h>
 
 #include <cpu.h>
@@ -9,6 +10,8 @@
 #include <component/vrtimer.h>
 #include <component/component.h>
 #include <utils/assert.h>
+#include <process/pcb.h>
+#include <sched/core.h>
 
 int time_rtc_gettime(time_t *t) {
     component_t *c;
@@ -51,6 +54,12 @@ static inline vrtimer_comp_t *get_vrtimer(void) {
     return NULL;
 }
 
+static int process_sleep_cb(vrtimer_comp_t *t, void *data) {
+    pcb_t *pcb = (pcb_t *) data;
+    sched_move_to_ready(pcb);
+    return 0;
+}
+
 static int non_process_sleep_cb(vrtimer_comp_t *t, void *data) {
     bool *timer_expired = (bool *) data;
     *timer_expired = true;
@@ -59,8 +68,16 @@ static int non_process_sleep_cb(vrtimer_comp_t *t, void *data) {
 
 static inline void _sleep(vrtimer_comp_t *t, tick_t ticks) {
     if (_laritos.process_mode) {
+        pcb_t *pcb = pcb_get_current();
+        sched_move_to_blocked(pcb);
         // Running in process mode, then block the process and schedule()
-        // TODO Implement
+        if (t->ops.add_vrtimer(t, ticks, process_sleep_cb, pcb, false) < 0) {
+            error_async("Failed to create virtual timer ticks=%lu", ticks);
+            return;
+        }
+        info("SCHEDULE");
+        schedule();
+        info("SCHEDULE RET");
     } else {
         // Running in non-process mode, then block the kernel thread
         bool timer_expired = false;
