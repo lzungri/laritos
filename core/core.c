@@ -204,7 +204,7 @@ void kernel_entry(void)  {
     _laritos.process_mode = true;
 
     // Execute the first process
-    switch_to(NULL, bigbang_pcb);
+    sched_switch_to(NULL, bigbang_pcb);
 
     shell();
 }

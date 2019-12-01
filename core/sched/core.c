@@ -10,7 +10,7 @@
 #include <utils/assert.h>
 #include <process/status.h>
 
-void switch_to(pcb_t *from, pcb_t *to) {
+void sched_switch_to(pcb_t *from, pcb_t *to) {
     sched_move_to_running(to);
 
     if (from != NULL) {
@@ -24,7 +24,7 @@ void switch_to(pcb_t *from, pcb_t *to) {
     }
 }
 
-void context_switch(pcb_t *cur, pcb_t *to) {
+static void context_switch(pcb_t *cur, pcb_t *to) {
     if (cur != NULL) {
         verbose_async("Context switch pid=%u -> pid=%u", cur->pid, to->pid);
         pcb_set_current(NULL);
@@ -33,7 +33,7 @@ void context_switch(pcb_t *cur, pcb_t *to) {
             sched_move_to_ready(cur);
         }
     }
-    switch_to(cur, to);
+    sched_switch_to(cur, to);
 }
 
 void schedule(void) {
