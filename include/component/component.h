@@ -17,6 +17,7 @@ typedef enum {
     COMP_TYPE_LOGGER,
     COMP_TYPE_TICKER,
     COMP_TYPE_VRTIMER,
+    COMP_TYPE_SCHED,
 
     COMP_TYPE_LEN,
 } component_type_t;
