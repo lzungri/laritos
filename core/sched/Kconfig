@@ -2,7 +2,7 @@ menu "Scheduler"
 
 choice
     prompt "Process scheduler"
-    default SCHED_COOPERATIVE_FIFO
+    default SCHED_PREEMPTIVE_RR
 
 config SCHED_COOPERATIVE_FIFO
     bool "Cooperative FIFO"
