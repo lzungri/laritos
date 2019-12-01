@@ -17,6 +17,7 @@ void switch_to(pcb_t *from, pcb_t *to) {
         context_save_and_restore(from, to);
         // Once the from context is restored, it will continue execution from
         // here (actually from within the context_save_and_restore() function)
+        verbose_async("Resuming execution of pid=%u", pcb_get_current()->pid);
     } else {
         context_restore(to);
         // Execution will never reach this point
