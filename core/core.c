@@ -11,7 +11,6 @@
 #include <sched/core.h>
 #include <sched/context.h>
 #include <time/time.h>
-#include <timer.h>
 #include <board-types.h>
 #include <board.h>
 #include <utils/debug.h>
@@ -70,14 +69,14 @@ static void shell(void) {
                     break;
                 case 'c':;
                     calendar_t c = { 0 };
-                    rtc_get_localtime_calendar(&c);
+                    time_rtc_get_localtime_calendar(&c);
                     log_always("calendar: %02d/%02d/%ld %02d:%02d:%02d",
                             c.mon + 1, c.mday, c.year + 1900, c.hour, c.min, c.sec);
                     break;
                 case 't':;
                     // rtc timer status
                     time_t t = { 0 };
-                    rtc_gettime(&t);
+                    time_rtc_gettime(&t);
                     log_always("rtc_gettime(): %lu", (uint32_t) t.secs);
 
                     component_t *c1;
@@ -87,14 +86,8 @@ static void shell(void) {
                         t->ops.get_remaining(t, &v);
                         log_always("rtc remaining: %ld", (int32_t) v);
                     }
-                    break;
-                case 'e':;
-                    // rtc timer expiration
-                    component_t *c2;
-                    for_each_component_type(c2, COMP_TYPE_RTC) {
-                        timer_comp_t *t = (timer_comp_t *) c2;
-                        t->ops.set_expiration(t, 5, 0, TIMER_EXP_RELATIVE);
-                    }
+
+                    log_always("_laritos.timeinfo.ticks: %lu", (uint32_t) _laritos.timeinfo.ticks);
                     break;
                 case 'm':;
                     char *p = malloc(10);
@@ -171,7 +164,7 @@ void kernel_entry(void)  {
     }
 
     info("Setting default timezone as PDT");
-    if (set_timezone(TZ_PST, true) < 0) {
+    if (time_set_timezone(TZ_PST, true) < 0) {
         error("Couldn't set default timezone");
     }
 
@@ -201,6 +194,14 @@ void kernel_entry(void)  {
     if (loader_load_executable_from_memory(0) == NULL) {
         error("Failed to load app #1");
     }
+
+    // Load the same program, just to have two processes for testing
+    if (loader_load_executable_from_memory(0) == NULL) {
+        error("Failed to load app #2");
+    }
+
+    // From now on, everything will be executed in the context of a process
+    _laritos.process_mode = true;
 
     // Execute the first process
     switch_to(NULL, bigbang_pcb);

@@ -121,5 +121,5 @@ int epoch_to_utc_calendar(const uint64_t secs, calendar_t *c) {
 }
 
 int epoch_to_localtime_calendar(const uint64_t secs, calendar_t *c) {
-    return epoch_to_calendar(secs, get_localtime_offset(), c);
+    return epoch_to_calendar(secs, time_get_localtime_offset(), c);
 }

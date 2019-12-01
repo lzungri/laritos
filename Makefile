@@ -780,8 +780,7 @@ GNU_LIBGCC_A := $(shell $(CC) -print-file-name=libgcc.a)
 #		This ensures that you have no unresolved references to internal GCC library subroutines
 #	    (e.g. __aeabi_uidivmod for arm-none-eabi-)
 # -no-whole-archive: Only include those objects referenced by the program, otherwise it will fail when searching
-# 	    for symbols not (yet?) implemented
-# 		in laritOS, (e.g. malloc(), abort())
+# 	    for symbols not (yet?) implemented in laritOS, (e.g. malloc(), abort())
 LDFLAGS_laritos += --no-whole-archive -L $(dir $(GNU_LIBGCC_A)) -lgcc
 
 ifeq ($(CONFIG_STRIP_ASM_SYMS),y)

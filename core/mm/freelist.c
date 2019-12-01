@@ -30,9 +30,9 @@ static spinlock_t lock;
 #ifdef DEBUG
 static inline void dump_freelist(void) {
     fl_node_t *pos = NULL;
-    log_always("Free list:");
+    log_always_async("Free list:");
     list_for_each_entry(pos, &freelist, list) {
-        log_always("   [0x%p, size=%lu]", pos, pos->size);
+        log_always_async("   [0x%p, size=%lu]", pos, pos->size);
     }
 }
 #endif
@@ -55,7 +55,7 @@ void *_malloc(size_t size) {
         return NULL;
     }
 
-    verbose("malloc(%d)", size);
+    verbose_async("malloc(%d)", size);
 
     irqctx_t ctx;
     spinlock_acquire(&lock, &ctx);
@@ -65,7 +65,7 @@ void *_malloc(size_t size) {
     list_for_each_entry(pos, &freelist, list) {
         if (pos->size >= size) {
             best = pos;
-            verbose("Block found [0x%p, size=%lu]", pos, pos->size);
+            verbose_async("Block found [0x%p, size=%lu]", pos, pos->size);
 
             size_t size_and_meta = size + sizeof(fl_node_t);
 
@@ -80,7 +80,7 @@ void *_malloc(size_t size) {
                 // If we don't have any available space for splitting the chunk, we just keep
                 // the original size even if we waste some memory
                 pos->size = size;
-                verbose("Splitting: [0x%p, size=%lu] + [0x%p, size=%lu]", pos, pos->size, split, split->size);
+                verbose_async("Splitting: [0x%p, size=%lu] + [0x%p, size=%lu]", pos, pos->size, split, split->size);
             }
 
             list_del(&pos->list);
@@ -102,7 +102,7 @@ static void merge(void) {
     fl_node_t *pos;
     fl_node_t *tmp;
 
-    verbose("Merging free blocks");
+    verbose_async("Merging free blocks");
     list_for_each_entry_safe_reverse(pos, tmp, &freelist, list) {
         if (pos->list.prev == &freelist) {
             // First node, nothing else to merge
@@ -111,7 +111,7 @@ static void merge(void) {
 
         fl_node_t *prev = list_entry(pos->list.prev, fl_node_t, list);
         if ((char *) pos - prev->size == prev->data) {
-            verbose("Merging: [0x%p, size=%lu] U [0x%p, size=%lu]", prev, prev->size, pos, pos->size);
+            verbose_async("Merging: [0x%p, size=%lu] U [0x%p, size=%lu]", prev, prev->size, pos, pos->size);
             prev->size += pos->size + sizeof(fl_node_t);
             list_del(&pos->list);
         }
@@ -131,7 +131,7 @@ void _free(void *ptr) {
     spinlock_acquire(&lock, &ctx);
 
     fl_node_t *node = container_of(ptr, fl_node_t, data);
-    verbose("Freeing ptr=0x%p, block [0x%p, size=%lu]", ptr, node, node->size);
+    verbose_async("Freeing ptr=0x%p, block [0x%p, size=%lu]", ptr, node, node->size);
 
     struct list_head *pos;
     list_for_each(pos, &freelist) {

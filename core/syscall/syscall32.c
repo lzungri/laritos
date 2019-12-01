@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <cpu.h>
@@ -7,6 +6,7 @@
 #include <syscall/syscall.h>
 #include <utils/assert.h>
 #include <sched/context.h>
+#include <time/time.h>
 
 int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5) {
     if (arch_context_is_kernel(ctx)) {
@@ -19,16 +19,35 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
     pcb_t *pcb = pcb_get_current();
     assert(pcb != NULL, "pcb_get_current() cannot be NULL on system call");
 
+    int ret = 0;
     switch (sysno) {
-    case 0:
-        info_async("Killing process pid=%u", pcb->pid);
-        pcb_kill(pcb);
-        schedule();
+    case SYSCALL_EXIT:
+        syscall_exit((int) arg0);
         break;
-    case 1:
-        info_async("Yielding process pid=%u", pcb->pid);
-        schedule();
+    case SYSCALL_YIELD:
+        ret = syscall_yield();
         break;
+    case SYSCALL_PUTS:
+        ret = syscall_puts((const char *) arg0);
+        break;
+    case SYSCALL_GETPID:
+        ret = syscall_getpid();
+        break;
+    case SYSCALL_TIME:
+        ret = syscall_time((time_t *) arg0);
+        break;
+    case SYSCALL_SLEEP:
+        ret = syscall_sleep((uint32_t) arg0);
+        break;
+    case SYSCALL_MSLEEP:
+        ret = syscall_msleep((uint32_t) arg0);
+        break;
+    case SYSCALL_USLEEP:
+        ret = syscall_usleep((uint32_t) arg0);
+        break;
+    default:
+        error_async("Unrecognized system call #%d", sysno);
+        pcb_kill_and_schedule(pcb);
     }
-    return 0;
+    return ret;
 }

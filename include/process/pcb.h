@@ -38,6 +38,8 @@ typedef struct pcb {
     char cmd[CONFIG_PROCESS_MAX_CMD_LEN];
     pcb_mm_t mm;
     pcb_sched_t sched;
+
+    int exit_status;
 } pcb_t;
 
 
@@ -49,11 +51,12 @@ int pcb_free(pcb_t *pcb);
 int pcb_register(pcb_t *pcb);
 int pcb_unregister(pcb_t *pcb);
 void pcb_kill(pcb_t *pcb);
+void pcb_kill_and_schedule(pcb_t *pcb);
 spctx_t *pcb_get_current_pcb_stack_context(void);
 
 static inline pcb_t *pcb_get_current(void) {
     pcb_t *pcb = _laritos.sched.running[cpu_get_id()];
-    assert(pcb != NULL, "Current pcb cannot be NULL, make sure you are running in process context");
+    assert(pcb != NULL, "Current pcb cannot be NULL, make sure you are running in process mode");
     return pcb;
 }
 
@@ -62,8 +65,8 @@ static inline void pcb_set_current(pcb_t *pcb) {
 }
 
 static inline void pcb_set_current_pcb_stack_context(spctx_t *spctx) {
-    verbose_async("Setting current pcb context to 0x%p", spctx);
     pcb_t *pcb = pcb_get_current();
+    verbose_async("Setting current context for pid=%u to 0x%p", pcb->pid, spctx);
     pcb->mm.sp_ctx = spctx;
 }
 

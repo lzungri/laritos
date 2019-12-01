@@ -3,7 +3,9 @@
 #include <log.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 #include <utils/utils.h>
+#include <time/time.h>
 
 typedef struct {
     uint16_t failed;
@@ -64,3 +66,18 @@ int test_run(test_descriptor_t *tests[]);
             return TEST_FAIL; \
         } \
     } while(0)
+
+#define TEST_BUSY_WAIT_WHILE(_expr, _max_secs) do { \
+        time_t _t; \
+        time_rtc_gettime(&_t); \
+        _t.secs += (_max_secs); \
+        while (_expr) { \
+            time_t _cur; \
+            time_rtc_gettime(&_cur); \
+            if (_cur.secs >= _t.secs) { \
+                break; \
+            } \
+        } \
+    } while(0)
+
+#define TEST_BUSY_WAIT(_max_secs) TEST_BUSY_WAIT_WHILE(true, _max_secs)

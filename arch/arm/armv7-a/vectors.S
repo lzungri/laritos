@@ -82,7 +82,7 @@ asm_svc_handler:
     # We need this to update the pcb->mm.sp
     mov r1, sp
 
-    CALL_HANDLER_AND_RESTORE_CONTEXT _svc_handler, r2
+    CALL_HANDLER_AND_RESTORE_CONTEXT_WITH_RETVAL _svc_handler, r2
 
 
 asm_prefetch_handler:

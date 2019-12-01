@@ -7,6 +7,7 @@
 #include <time/time.h>
 #include <dstruct/list.h>
 #include <mm/slab.h>
+#include <time/tick.h>
 
 typedef struct {
     /**
@@ -58,11 +59,19 @@ typedef struct {
     laritos_sched_t sched;
 
     /**
+     * Indicates whether or not the OS has enabled the process execution mode.
+     *    true: Every execution flow runs in a process context
+     *    false: Every execution flow runs in the context of the kernel
+     */
+    bool process_mode;
+
+    /**
      * Time information
      */
     struct {
         timezone_t tz;
         bool dst;
+        abstick_t ticks;
     } timeinfo;
 } laritos_t;
 

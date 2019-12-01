@@ -120,7 +120,7 @@ DEF_NOT_IMPL_FUNC(ni_set_irq_target_cpus, intc_t *intc, irq_t irq, cpubits_t bit
 DEF_NOT_IMPL_FUNC(ni_set_irqs_enable_for_this_cpu, intc_t *intc, bool enabled);
 DEF_NOT_IMPL_FUNC(ni_set_priority_filter, intc_t *intc, uint8_t lowest_prio);
 
-int intc_init(intc_t *intc, char *id, board_comp_t *bcomp,
+int intc_component_init(intc_t *intc, char *id, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
     if (component_init((component_t *) intc, id, bcomp, COMP_TYPE_INTC, init, deinit) < 0) {
         error("Couldn't initialize intc '%s' component", id);

@@ -4,4 +4,12 @@ config COMP_INFO_SIZE
     int "Max size for each component info field"
     default 32
 
+menu "Ticker"
+
+config TICKER_DEF_FREQ
+    int "Default ticker frequency"
+    default 100
+
+endmenu
+
 endmenu
