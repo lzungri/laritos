@@ -75,9 +75,7 @@ static inline void _sleep(vrtimer_comp_t *t, tick_t ticks) {
             error_async("Failed to create virtual timer ticks=%lu", ticks);
             return;
         }
-        info("SCHEDULE");
         schedule();
-        info("SCHEDULE RET");
     } else {
         // Running in non-process mode, then block the kernel thread
         bool timer_expired = false;

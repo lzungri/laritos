@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 #include <irq.h>
 #include <board-types.h>
