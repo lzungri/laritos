@@ -22,10 +22,10 @@ log_uart:logger|transport=bytestream@uart0
 rtc0:pl031|mmbase=0x09010000,maxfreq=1,intio=true,intc=@gic,irq=34,trigger=level_hi
 
 # CPUs
-cpu0:cortex_a15|id=0,intc=@gic
-cpu1:cortex_a15|id=1,intc=@gic
-cpu2:cortex_a15|id=2,intc=@gic
-cpu3:cortex_a15|id=3,intc=@gic
+cpu0:cortex_a15|id=0,intc=@gic,sched=@rr
+cpu1:cortex_a15|id=1,intc=@gic,sched=@rr
+cpu2:cortex_a15|id=2,intc=@gic,sched=@rr
+cpu3:cortex_a15|id=3,intc=@gic,sched=@rr
 
 # UART component using irq 33
 uart0:pl011|baseaddr=0x09000000,blocking=true,intio=true,intc=@gic,irq=33,trigger=level_hi
@@ -41,3 +41,6 @@ ticker0:generic_ticker|vrtimer=@vrtimer0,ticks_per_sec=1
 
 # Virtual timer component, we are currently using the rtc as a hrtimer until we implement a higher-res timer
 vrtimer0:generic_vrtimer|hrtimer=@rtc0,low_power_timer=@rtc0
+
+# Preemptive round robin scheduler
+rr:preempt_rr|ticker=@ticker0
