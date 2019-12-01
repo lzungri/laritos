@@ -185,21 +185,26 @@ void kernel_entry(void)  {
     }
 #endif
 
-//    pcb_t *bigbang_pcb = loader_load_executable_from_memory(0);
-//    if (bigbang_pcb == NULL) {
-//        error("Failed to load app #0");
-//    }
-//
-//    // Load the same program, just to have two processes for testing
-//    if (loader_load_executable_from_memory(0) == NULL) {
-//        error("Failed to load app #1");
-//    }
-//
-//    // From now on, everything will be executed in the context of a process
-//    _laritos.process_mode = true;
-//
-//    // Execute the first process
-//    switch_to(NULL, bigbang_pcb);
+    pcb_t *bigbang_pcb = loader_load_executable_from_memory(0);
+    if (bigbang_pcb == NULL) {
+        error("Failed to load app #0");
+    }
+
+    // Load the same program, just to have two processes for testing
+    if (loader_load_executable_from_memory(0) == NULL) {
+        error("Failed to load app #1");
+    }
+
+    // Load the same program, just to have two processes for testing
+    if (loader_load_executable_from_memory(0) == NULL) {
+        error("Failed to load app #2");
+    }
+
+    // From now on, everything will be executed in the context of a process
+    _laritos.process_mode = true;
+
+    // Execute the first process
+    switch_to(NULL, bigbang_pcb);
 
     shell();
 }
