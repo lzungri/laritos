@@ -7,7 +7,7 @@
 
 void sched_switch_to(pcb_t *cur, pcb_t *pcb);
 void schedule(void);
-pcb_t *sched_algo_pick_ready(pcb_t *curpcb);
+
 
 static inline void sched_move_to_ready(pcb_t *pcb) {
     verbose_async("PID %u: %s -> READY", pcb->pid, pcb_get_status_str(pcb->sched.status));

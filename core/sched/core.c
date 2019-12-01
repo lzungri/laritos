@@ -9,6 +9,7 @@
 #include <sched/context.h>
 #include <utils/assert.h>
 #include <process/status.h>
+#include <component/sched.h>
 
 void sched_switch_to(pcb_t *from, pcb_t *to) {
     sched_move_to_running(to);
@@ -45,8 +46,9 @@ void schedule(void) {
     }
 #endif
 
+    cpu_t *c = cpu();
     pcb_t *curpcb = pcb_get_current();
-    pcb_t *pcb = sched_algo_pick_ready(curpcb);
+    pcb_t *pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);
 
     assert(pcb != NULL, "No process ready for execution, where is the idle process?");
     if (curpcb != pcb) {

@@ -4,7 +4,6 @@
 #include <board-types.h>
 #include <dstruct/list.h>
 #include <component/component.h>
-#include <component/timer.h>
 #include <component/vrtimer.h>
 #include <dstruct/list.h>
 
