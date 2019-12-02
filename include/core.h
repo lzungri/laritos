@@ -39,6 +39,12 @@ typedef struct {
      * List of ZOMBIE processes in the system
      */
     struct list_head zombie_pcbs;
+
+    /**
+     * Indicates whether or not the OS should schedule the next 'ready' process
+     * before returning from the current non-user mode.
+     */
+    bool need_sched;
 } laritos_sched_t;
 
 /**
