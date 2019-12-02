@@ -40,9 +40,9 @@ static void context_switch(pcb_t *cur, pcb_t *to) {
 void schedule(void) {
 #ifdef DEBUG
     pcb_t *proc;
-    info("Processes:");
+    log_always("Processes:");
     for_each_process(proc) {
-        info("   pid=%u, status=%s", proc->pid, pcb_get_status_str(proc->sched.status));
+        log_always("   pid=%u, status=%s", proc->pid, pcb_get_status_str(proc->sched.status));
     }
 #endif
 
