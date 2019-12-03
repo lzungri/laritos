@@ -42,6 +42,12 @@ void schedule(void) {
     pcb_t *curpcb = pcb_get_current();
     pcb_t *pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);
 
+    // If the current process is running and there is no other pcb ready,
+    // then continue execution of the current process
+    if (pcb == NULL && curpcb->sched.status == PCB_STATUS_RUNNING) {
+        return;
+    }
+
     assert(pcb != NULL, "No process ready for execution, where is the idle process?");
     if (curpcb != pcb) {
         context_switch(curpcb, pcb);
