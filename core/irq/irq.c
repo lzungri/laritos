@@ -8,14 +8,6 @@
 #include <sched/context.h>
 #include <sched/core.h>
 
-static inline void schedule_if_needed(void) {
-    // Check whether we need to schedule
-    if (_laritos.sched.need_sched) {
-        _laritos.sched.need_sched = false;
-        schedule();
-    }
-}
-
 int irq_handler(spctx_t *ctx) {
     if (arch_context_is_usr(ctx)) {
         pcb_set_current_pcb_stack_context(ctx);

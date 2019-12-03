@@ -8,6 +8,13 @@
 void sched_switch_to(pcb_t *cur, pcb_t *pcb);
 void schedule(void);
 
+static inline void schedule_if_needed(void) {
+    // Check whether we need to schedule
+    if (_laritos.sched.need_sched) {
+        _laritos.sched.need_sched = false;
+        schedule();
+    }
+}
 
 static inline void sched_move_to_ready(pcb_t *pcb) {
     verbose_async("PID %u: %s -> READY", pcb->pid, pcb_get_status_str(pcb->sched.status));
