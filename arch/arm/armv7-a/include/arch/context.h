@@ -38,7 +38,7 @@ static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t 
 }
 
 static inline void arch_context_restore(pcb_t *pcb) {
-    // The context restore will change based on whether we need to restore an svc
+    // The context restore will change based on whether we need to restore a non-user
     // or user context. Check this by inspecting the psr value saved in the stack
     if (arch_context_is_kernel(pcb->mm.sp_ctx)) {
         regsp_t cursp = pcb->mm.sp_ctx;
