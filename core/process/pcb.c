@@ -5,6 +5,7 @@
 #include <cpu.h>
 #include <core.h>
 #include <mm/slab.h>
+#include <mm/heap.h>
 #include <process/status.h>
 #include <process/pcb.h>
 #include <sched/core.h>
@@ -46,6 +47,9 @@ int pcb_free(pcb_t *pcb) {
         return -1;
     }
     verbose_async("Freeing process with pid=%u", pcb->pid);
+    // Free process image allocated in the OS heap
+    free(pcb->mm.imgaddr);
+    // Free pcb structure allocated in the pcb slab
     slab_free(_laritos.proc.pcb_slab, pcb);
     return 0;
 }
