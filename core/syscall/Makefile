@@ -8,3 +8,4 @@ obj-y += puts.o
 obj-y += getpid.o
 obj-y += time.o
 obj-y += sleep.o
+obj-y += priority.o
