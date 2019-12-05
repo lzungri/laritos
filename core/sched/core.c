@@ -8,6 +8,7 @@
 #include <sched/core.h>
 #include <sched/context.h>
 #include <utils/assert.h>
+#include <utils/debug.h>
 #include <process/status.h>
 #include <component/sched.h>
 
@@ -31,21 +32,21 @@ static void context_switch(pcb_t *cur, pcb_t *to) {
 
 void schedule(void) {
 #ifdef DEBUG
-    pcb_t *proc;
-    log_always("Processes:");
-    for_each_process(proc) {
-        log_always("   pid=%u, status=%s", proc->pid, pcb_get_status_str(proc->sched.status));
-    }
+    debug_dump_processes();
 #endif
 
     cpu_t *c = cpu();
     pcb_t *curpcb = pcb_get_current();
     pcb_t *pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);
 
-    // If the current process is running and there is no other pcb ready,
+    // If the current process is running and:
+    //      - there is no other pcb ready,
+    //      - or there is another pcb ready but with lower priority (i.e. higher number),
     // then continue execution of the current process
-    if (pcb == NULL && curpcb->sched.status == PCB_STATUS_RUNNING) {
-        return;
+    if (curpcb->sched.status == PCB_STATUS_RUNNING) {
+        if (pcb == NULL || (curpcb->sched.priority < pcb->sched.priority)) {
+            return;
+        }
     }
 
     assert(pcb != NULL, "No process ready for execution, where is the idle process?");
