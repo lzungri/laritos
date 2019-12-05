@@ -53,11 +53,6 @@ static void update_expiration(vrtimer_comp_t *t) {
 static void add_vrtimer_sorted(vrtimer_comp_t *t, vrtimer_t *vrt) {
     verbose_async("Adding vrtimer id=0x%p abs_ticks=%lu, ticks=%lu, periodic=%u", vrt, (uint32_t) vrt->abs_ticks, vrt->ticks, vrt->periodic);
 
-    if (list_empty(&t->timers)) {
-        list_add(&vrt->list, &t->timers);
-        return;
-    }
-
     vrtimer_t *pos;
     list_for_each_entry(pos, &t->timers, list) {
         if (vrt->abs_ticks <= pos->abs_ticks) {
