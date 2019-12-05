@@ -44,7 +44,7 @@ static void shell(void) {
                     asm("mov r4, #5");
                     asm("mov r5, #6");
                     asm("mov r6, #7");
-                    dump_cur_state();
+                    debug_dump_cur_state();
                     asm("svc 1");
                     break;
                 case 'r':

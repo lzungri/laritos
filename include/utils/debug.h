@@ -4,9 +4,19 @@
 #include <string.h>
 #include <component/component.h>
 #include <arch/debug.h>
+#include <process/pcb.h>
+#include <process/status.h>
 
-static inline void message_delimiter(void) {
+static inline void debug_message_delimiter(void) {
     error_async("*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
+}
+
+static inline void debug_dump_processes(void) {
+    pcb_t *proc;
+    log_always("Processes:");
+    for_each_process(proc) {
+        log_always("  [%7s] pid=%u, prio=%u",  pcb_get_status_str(proc->sched.status), proc->pid, proc->sched.priority);
+    }
 }
 
 /**
@@ -16,16 +26,17 @@ static inline void message_delimiter(void) {
  * we get a useful PC/LR, not just the PC inside the dump_cur_state() function (in case it
  * wasn't expanded by the compiler)
  */
-__attribute__((always_inline)) static inline void dump_cur_state(void) {
+__attribute__((always_inline)) static inline void debug_dump_cur_state(void) {
     // IMPORTANT: Make sure you don't change any relevant registers before
     // calling dump_all_regs()
     arch_dump_all_regs();
     // TODO: Dump kernel info
     void heap_dump_info(void);
     heap_dump_info();
+    debug_dump_processes();
 }
 
-static inline void dump_registered_comps(void) {
+static inline void debug_dump_registered_comps(void) {
     component_t *c;
     log_always("Components:");
     for_each_component(c) {

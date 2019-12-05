@@ -54,14 +54,14 @@ __attribute__((always_inline)) static inline void free(void *ptr) {
     bufprot_tail_t *t = (bufprot_tail_t *) ((char *) ptr + h->size);
     if (h->canary != CANARY || t->canary != CANARY) {
         regpc_t pc = regs_get_pc();
-        message_delimiter();
+        debug_message_delimiter();
         error("Buffer overflow on block with size %zu bytes:", h->size);
         error("  Expected canaries head=0x%lX tail=0x%lX, got head=0x%lX tail=0x%lX", CANARY, CANARY, h->canary, t->canary);
         error("  Allocation at pc=0x%p", h->pc);
         error("  Run gdb-multiarch -batch -n -ex 'file bin/laritos.elf' -ex 'disassemble /m 0x%p'", h->pc);
         error("  Deallocation at pc=0x%p", pc);
         error("  Run gdb-multiarch -batch -n -ex 'file bin/laritos.elf' -ex 'disassemble /m 0x%p'", pc);
-        message_delimiter();
+        debug_message_delimiter();
         fatal("ABORT");
     }
     _free(h);
