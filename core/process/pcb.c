@@ -56,9 +56,10 @@ int pcb_free(pcb_t *pcb) {
 
 int pcb_register(pcb_t *pcb) {
     pcb_assign_pid(pcb);
-    debug_async("Registering process with pid=%u", pcb->pid);
+    pcb_set_priority(pcb, CONFIG_SCHED_PRIORITY_MAX_USER);
+    debug_async("Registering process with pid=%u, priority=%u", pcb->pid, pcb->sched.priority);
     // TODO Mutex
-    list_add(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
+    list_add_tail(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
     sched_move_to_ready(pcb);
     return 0;
 }
@@ -90,4 +91,26 @@ void pcb_kill(pcb_t *pcb) {
 void pcb_kill_and_schedule(pcb_t *pcb) {
     pcb_kill(pcb);
     schedule();
+}
+
+int pcb_set_priority(pcb_t *pcb, uint8_t priority) {
+    if (!pcb->kernel && priority < CONFIG_SCHED_PRIORITY_MAX_USER) {
+        error_async("Invalid priority for a user process, max priority = %u", CONFIG_SCHED_PRIORITY_MAX_USER);
+        return -1;
+    }
+
+    debug_async("Setting priority for pid=%u to %u", pcb->pid, priority);
+    uint8_t prev_prio = pcb->sched.priority;
+    pcb->sched.priority = priority;
+
+    // If the process is in the ready queue, then reorder it based on the new priority
+    if (pcb->sched.status == PCB_STATUS_READY) {
+        sched_move_to_ready(pcb);
+    } else if (pcb->sched.status == PCB_STATUS_RUNNING && priority > prev_prio) {
+        // If the process is running and it now has a lower priority (i.e. higher number), then re-schedule.
+        // There may be now a higher priority ready process
+        _laritos.sched.need_sched = true;
+    }
+
+    return 0;
 }

@@ -12,4 +12,12 @@ config SCHED_PREEMPTIVE_RR
 
 endchoice
 
+config SCHED_PRIORITY_MAX_KERNEL
+    int "Maximum priority for a kernel process"
+    default 0
+
+config SCHED_PRIORITY_MAX_USER
+    int "Maximum priority for a user process"
+    default 64
+
 endmenu
