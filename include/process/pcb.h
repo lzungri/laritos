@@ -28,12 +28,15 @@ typedef struct {
 
 typedef struct {
     pcb_status_t status;
+    uint8_t priority;
     struct list_head pcb_node;
     struct list_head sched_node;
 } pcb_sched_t;
 
 typedef struct pcb {
     uint16_t pid;
+
+    bool kernel;
 
     char cmd[CONFIG_PROCESS_MAX_CMD_LEN];
     pcb_mm_t mm;
@@ -52,6 +55,7 @@ int pcb_register(pcb_t *pcb);
 int pcb_unregister(pcb_t *pcb);
 void pcb_kill(pcb_t *pcb);
 void pcb_kill_and_schedule(pcb_t *pcb);
+int pcb_set_priority(pcb_t *pcb, uint8_t priority);
 spctx_t *pcb_get_current_pcb_stack_context(void);
 
 static inline pcb_t *pcb_get_current(void) {
