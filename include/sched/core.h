@@ -11,16 +11,43 @@ void schedule(void);
 static inline void schedule_if_needed(void) {
     // Check whether we need to schedule
     if (_laritos.sched.need_sched) {
+        verbose_async("Re-schedule needed");
         _laritos.sched.need_sched = false;
         schedule();
     }
 }
 
+/**
+ * Adds a READY process in the ready queue sorted in ascending order by priority number
+ * (i.e. highest priority process are first in the list).
+ * If two or more processes share the same priority, the new pcb will be appended to the
+ * last process with that priority.
+ *
+ * @param pcb: Process to add
+ * @return void
+ */
+static inline void sched_add_ready_proc_sorted(pcb_t *pcb) {
+    list_del_init(&pcb->sched.sched_node);
+    pcb_t *proc;
+    for_each_ready_process(proc) {
+        if (pcb->sched.priority < proc->sched.priority) {
+            list_add(&pcb->sched.sched_node, proc->sched.sched_node.prev);
+            return;
+        }
+    }
+    list_add_tail(&pcb->sched.sched_node, &_laritos.sched.ready_pcbs);
+}
+
 static inline void sched_move_to_ready(pcb_t *pcb) {
     verbose_async("PID %u: %s -> READY", pcb->pid, pcb_get_status_str(pcb->sched.status));
     // TODO Mutex
-    list_move_tail(&pcb->sched.sched_node, &_laritos.sched.ready_pcbs);
+    sched_add_ready_proc_sorted(pcb);
     pcb->sched.status = PCB_STATUS_READY;
+
+    // Re-schedule in case there is a new higher priority process
+    if (list_first_entry(&_laritos.sched.ready_pcbs, pcb_t, sched.sched_node) == pcb) {
+        _laritos.sched.need_sched = true;
+    }
 }
 
 static inline void sched_move_to_blocked(pcb_t *pcb) {
