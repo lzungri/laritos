@@ -10,11 +10,7 @@
 #include <mm/heap.h>
 
 static inline pcb_t *pick_ready(sched_comp_t *sched, struct cpu *cpu, pcb_t *curpcb) {
-    pcb_t *pcb;
-    for_each_ready_process(pcb) {
-        return pcb;
-    }
-    return NULL;
+    return list_first_entry_or_null(&_laritos.sched.ready_pcbs, pcb_t, sched.sched_node);
 }
 
 static int rr_ticker_cb(ticker_comp_t *t, void *data) {
