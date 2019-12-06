@@ -106,6 +106,8 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
         goto error_pcb;
     }
 
+    pcb->kernel = false;
+
     uint16_t rel_entries = 0;
     uint32_t rel_offset = U32_MAX;
     uint32_t symtab_offset = U32_MAX;
