@@ -7,10 +7,11 @@
 
 void sched_switch_to(pcb_t *cur, pcb_t *pcb);
 void schedule(void);
+void sched_execute_first_system_proc(pcb_t *pcb);
 
 static inline void schedule_if_needed(void) {
     // Check whether we need to schedule
-    if (_laritos.sched.need_sched) {
+    if (_laritos.sched.need_sched && _laritos.process_mode) {
         verbose_async("Re-schedule needed");
         _laritos.sched.need_sched = false;
         schedule();
