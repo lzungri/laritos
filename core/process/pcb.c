@@ -46,7 +46,7 @@ int pcb_free(pcb_t *pcb) {
         error_async("You can only free a process in PCB_STATUS_NOT_INIT state");
         return -1;
     }
-    verbose_async("Freeing process with pid=%u", pcb->pid);
+    verbose_async("Freeing %s process with pid=%u", pcb->kernel ? "kernel" : "user", pcb->pid);
     // Free process image allocated in the OS heap
     free(pcb->mm.imgaddr);
     // Free pcb structure allocated in the pcb slab
@@ -56,7 +56,6 @@ int pcb_free(pcb_t *pcb) {
 
 int pcb_register(pcb_t *pcb) {
     pcb_assign_pid(pcb);
-    pcb_set_priority(pcb, CONFIG_SCHED_PRIORITY_MAX_USER);
     debug_async("Registering process with pid=%u, priority=%u", pcb->pid, pcb->sched.priority);
     // TODO Mutex
     list_add_tail(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
@@ -99,7 +98,7 @@ int pcb_set_priority(pcb_t *pcb, uint8_t priority) {
         return -1;
     }
 
-    debug_async("Setting priority for pid=%u to %u", pcb->pid, priority);
+    debug_async("Setting priority for process at 0x%p to %u", pcb, priority);
     uint8_t prev_prio = pcb->sched.priority;
     pcb->sched.priority = priority;
 
