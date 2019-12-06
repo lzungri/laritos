@@ -32,6 +32,9 @@ _save_ctx_nonusr_mode\@:
     # Get the PSR saved by the exception
     mrs r0, spsr
 
+    # Disable irq, otherwise when we switch modes, it will call the irq handler again
+    orr r1, r0, #0b10000000
+
     # Switch to mode running before the irq occured
     msr cpsr, r1
     # Save the lr associated with the interrupted thread into r2
