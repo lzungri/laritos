@@ -143,25 +143,19 @@ void kernel_entry(void)  {
     info("Initializing kernel");
     info("Heap of %u bytes initialized at 0x%p", CONFIG_MEM_HEAP_SIZE, __heap_start);
 
-    if (board_parse_and_initialize(&_laritos.bi) < 0) {
-        fatal("Couldn't initialize board");
-    }
+    assert(board_parse_and_initialize(&_laritos.bi) >= 0, "Couldn't initialize board");
 
 #ifdef CONFIG_LOG_LEVEL_DEBUG
     board_dump_board_info(&_laritos.bi);
 #endif
 
-    if (driver_process_board_components(&_laritos.bi) < 0) {
-        fatal("Error processing board components");
-    }
+    assert(driver_process_board_components(&_laritos.bi) >= 0, "Error processing board components");
 
 #ifdef CONFIG_LOG_LEVEL_DEBUG
-    dump_registered_comps();
+    debug_dump_registered_comps();
 #endif
 
-    if (!component_are_mandatory_comps_present()) {
-        fatal("Not all mandatory board components were found");
-    }
+    assert(component_are_mandatory_comps_present(), "Not all mandatory board components were found");
 
     info("Setting default timezone as PDT");
     if (time_set_timezone(TZ_PST, true) < 0) {
@@ -185,27 +179,25 @@ void kernel_entry(void)  {
     }
 #endif
 
-    pcb_t *bigbang_pcb = loader_load_executable_from_memory(0);
-    if (bigbang_pcb == NULL) {
+    int idle_main(void *data);
+    pcb_t *idle = pcb_spawn_kernel_process("IDLE", idle_main, (void *) 0xaabbccdd, CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST);
+    assert(idle != NULL, "Could not create idle process");
+
+    if (loader_load_executable_from_memory(0) == NULL) {
         error("Failed to load app #0");
     }
 
-    // Load the same program, just to have two processes for testing
+    // Load the same program, just to have 2 processes for testing
     if (loader_load_executable_from_memory(0) == NULL) {
         error("Failed to load app #1");
     }
 
-    // Load the same program, just to have two processes for testing
+    // Load the same program, just to have 3 processes for testing
     if (loader_load_executable_from_memory(0) == NULL) {
         error("Failed to load app #2");
     }
 
-    // From now on, everything will be executed in the context of a process
-    _laritos.process_mode = true;
-
-    // Execute the first process
-    sched_move_to_running(bigbang_pcb);
-    context_restore(bigbang_pcb);
+    sched_execute_first_system_proc(idle);
     // Execution will never reach this point
 
     shell();
