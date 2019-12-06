@@ -24,6 +24,7 @@ typedef struct {
     secsize_t got_size;
 
     spctx_t *sp_ctx;
+    spctx_t *sp_ctx_prev;
 } pcb_mm_t;
 
 typedef struct {
@@ -46,6 +47,14 @@ typedef struct pcb {
 } pcb_t;
 
 
+/**
+ * Kernel process main function type
+ *
+ * @param data: Pointer to any data you want to send to the kernel function
+ */
+typedef int (*kproc_main_t)(void *data);
+
+
 int pcb_init_global_context(void);
 int pcb_deinit_global_context(void);
 void pcb_assign_pid(pcb_t *pcb);
@@ -57,6 +66,7 @@ void pcb_kill(pcb_t *pcb);
 void pcb_kill_and_schedule(pcb_t *pcb);
 int pcb_set_priority(pcb_t *pcb, uint8_t priority);
 spctx_t *pcb_get_current_pcb_stack_context(void);
+pcb_t *pcb_spawn_kernel_process(kproc_main_t main, void *data, uint32_t stacksize, uint8_t priority);
 
 static inline pcb_t *pcb_get_current(void) {
     pcb_t *pcb = _laritos.sched.running[cpu_get_id()];

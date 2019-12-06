@@ -42,8 +42,8 @@ static inline void arch_context_restore(pcb_t *pcb) {
     // or user context. Check this by inspecting the psr value saved in the stack
     if (arch_context_is_kernel(pcb->mm.sp_ctx)) {
         regsp_t cursp = pcb->mm.sp_ctx;
-        // Restore previous spctx (it was saved in r0 in arch_context_save_and_restore())
-        pcb->mm.sp_ctx = (spctx_t *) pcb->mm.sp_ctx->r[0];
+        // Restore previous spctx
+        pcb->mm.sp_ctx = pcb->mm.sp_ctx_prev;
 
         // volatile to prevent any gcc optimization on the assembly code
         asm volatile (
@@ -111,10 +111,7 @@ static inline void arch_context_save_and_restore(pcb_t *spcb, pcb_t *rpcb) {
     bool ctx_saved = false;
     // volatile to prevent any gcc optimization on the assembly code
     asm volatile (
-        /* Save in r0 the previous spcb->mm.sp. We will use this value to restore the
-         * previous pcb->mm.sp once this context is restored, see arch_context_restore()*/
-        "mov r0, %1              \n"
-        /* Push registers into sp_svc stack (remember that svc code uses the process stack) */
+        /* Push registers into sp_svc/irq stack (remember that svc/irq code uses the process stack) */
         "stmfd sp!, {r0-r12, lr} \n"
         /* Save current PSR */
         "mrs r0, cpsr_all        \n"
@@ -131,13 +128,14 @@ static inline void arch_context_save_and_restore(pcb_t *spcb, pcb_t *rpcb) {
         "mov %0, #0              \n"
      "1:                         \n"
         : "=&r" (ctx_saved)
-        : "r" (spcb->mm.sp_ctx)
+        :
         : "memory",  /* Memory barrier (do not reorder read/writes) */
           "cc", /* Tell gcc this code modifies the cpsr */
           "r0", "r1" /* Do not use r0-r1 in compiler generated code since we are using them */);
 
     // Check whether this is a context save or returning from a context restore
     if (ctx_saved) {
+        spcb->mm.sp_ctx_prev = spcb->mm.sp_ctx;
         // Update the context pointer
         spcb->mm.sp_ctx = (spctx_t *) arch_regs_get_sp();
 
