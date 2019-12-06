@@ -14,8 +14,9 @@ static inline void debug_message_delimiter(void) {
 static inline void debug_dump_processes(void) {
     pcb_t *proc;
     log_always("Processes:");
+    log_always("   name      pid type status  prio");
     for_each_process(proc) {
-        log_always("  [%7s] pid=%u, prio=%u",  pcb_get_status_str(proc->sched.status), proc->pid, proc->sched.priority);
+        log_always("   %-8s  %-3u  %s  %7s  %-3u", proc->name, proc->pid, proc->kernel ? "K" : "U", pcb_get_status_str(proc->sched.status), proc->sched.priority);
     }
 }
 
