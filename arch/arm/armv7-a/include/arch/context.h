@@ -15,6 +15,16 @@ static inline bool arch_context_is_kernel(spctx_t *ctx) {
     return !arch_context_is_usr(ctx);
 }
 
+static inline void arch_context_set_first_arg(spctx_t *ctx, void *arg) {
+    // First function argument is passed via R0
+    ctx->r[0] = (int32_t) arg;
+}
+
+static inline void arch_context_set_second_arg(spctx_t *ctx, void *arg) {
+    // Second function argument is passed via R1
+    ctx->r[1] = (int32_t) arg;
+}
+
 static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t mode) {
     // Move back in the stack one spctx_t chunk
     pcb->mm.sp_ctx--;
