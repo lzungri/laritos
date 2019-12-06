@@ -42,7 +42,11 @@ typedef struct {
 
     /**
      * Indicates whether or not the OS should schedule the next 'ready' process
-     * before returning from the current non-user mode.
+     * right before returning from the current non-user mode and when all the work required is done.
+     *
+     * Calling schedule() while handling an irq (e.g. without having acknowledged the int
+     * controller yet), may prevent future irqs to be dispatched, will block the current irq
+     * processing, among other unintentional fatal consequences.
      */
     bool need_sched;
 } laritos_sched_t;
