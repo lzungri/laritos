@@ -4,8 +4,16 @@ config PROCESS_MAX_CMD_LEN
     int "Max length for the command line value saved in the pcb"
     default 64
 
+config PROCESS_MAX_NAME_LEN
+    int "Max length for the process name"
+    default 16
+
 config PROCESS_MAX_CONCURRENT_PROCS
     int "Max number of concurrent processes allowed in the system"
     default 64
+
+config PROCESS_IDLE_STACK_SIZE
+    int "Idle process stack size"
+    default 8196
 
 endmenu

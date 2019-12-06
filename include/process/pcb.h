@@ -36,7 +36,7 @@ typedef struct {
 
 typedef struct pcb {
     uint16_t pid;
-
+    char name[CONFIG_PROCESS_MAX_NAME_LEN];
     bool kernel;
 
     char cmd[CONFIG_PROCESS_MAX_CMD_LEN];
@@ -66,7 +66,7 @@ void pcb_kill(pcb_t *pcb);
 void pcb_kill_and_schedule(pcb_t *pcb);
 int pcb_set_priority(pcb_t *pcb, uint8_t priority);
 spctx_t *pcb_get_current_pcb_stack_context(void);
-pcb_t *pcb_spawn_kernel_process(kproc_main_t main, void *data, uint32_t stacksize, uint8_t priority);
+pcb_t *pcb_spawn_kernel_process(char *name, kproc_main_t main, void *data, uint32_t stacksize, uint8_t priority);
 
 static inline pcb_t *pcb_get_current(void) {
     pcb_t *pcb = _laritos.sched.running[cpu_get_id()];
@@ -82,6 +82,10 @@ static inline void pcb_set_current_pcb_stack_context(spctx_t *spctx) {
     pcb_t *pcb = pcb_get_current();
     verbose_async("Setting current context for pid=%u to 0x%p", pcb->pid, spctx);
     pcb->mm.sp_ctx = spctx;
+}
+
+static inline void pcb_set_name(pcb_t *pcb, char *name) {
+    strncpy(pcb->name, name, sizeof(pcb->name));
 }
 
 #define for_each_process(_p) \

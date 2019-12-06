@@ -20,4 +20,8 @@ config SCHED_PRIORITY_MAX_USER
     int "Maximum priority for a user process"
     default 64
 
+config SCHED_PRIORITY_LOWEST
+    int "Lowest priority"
+    default 255
+
 endmenu
