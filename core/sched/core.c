@@ -14,6 +14,11 @@
 
 void sched_switch_to(pcb_t *from, pcb_t *to) {
     sched_move_to_running(to);
+
+#ifdef DEBUG
+    debug_dump_processes();
+#endif
+
     context_save_and_restore(from, to);
     // Once the *from* context is restored, it will continue execution from
     // here (actually from within the context_save_and_restore() function)
@@ -31,10 +36,6 @@ static void context_switch(pcb_t *cur, pcb_t *to) {
 }
 
 void schedule(void) {
-#ifdef DEBUG
-    debug_dump_processes();
-#endif
-
     cpu_t *c = cpu();
     pcb_t *curpcb = pcb_get_current();
     pcb_t *pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);
@@ -53,4 +54,15 @@ void schedule(void) {
     if (curpcb != pcb) {
         context_switch(curpcb, pcb);
     }
+}
+
+void sched_execute_first_system_proc(pcb_t *pcb) {
+    // Execute the first process
+    sched_move_to_running(pcb);
+
+    // From now on, everything will be executed in the context of a process
+    _laritos.process_mode = true;
+
+    context_restore(pcb);
+    // Execution will never reach this point
 }
