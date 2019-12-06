@@ -20,7 +20,7 @@ static inline void schedule_if_needed(void) {
 /**
  * Adds a READY process in the ready queue sorted in ascending order by priority number
  * (i.e. highest priority process are first in the list).
- * If two or more processes share the same priority, the new pcb will be appended to the
+ * If two or more processes share the same priority, the new pcb will be added next to the
  * last process with that priority.
  *
  * @param pcb: Process to add

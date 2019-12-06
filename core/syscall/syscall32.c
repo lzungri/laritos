@@ -53,7 +53,7 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
         pcb_kill_and_schedule(pcb);
     }
 
-    // Finishing the svc call, re-schedule if needed
+    // About to finish the svc call, re-schedule if needed
     schedule_if_needed();
 
     return ret;
