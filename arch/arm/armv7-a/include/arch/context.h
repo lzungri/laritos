@@ -65,18 +65,18 @@ static inline void arch_context_restore(pcb_t *pcb) {
             "msr spsr_cxsf, r0     \n"
             /* Restore all the other registers */
             "ldmfd sp!, {r0-r12}   \n"
-            /* Save the return address in r0, (don't care if we lose r0 original value) */
-            "mov r0, lr            \n"
+            /* Save the return address in r2, (don't care if we lose r2 original value) */
+            "mov r2, lr            \n"
             /* Get the original lr value from the saved context */
             "ldmfd sp!, {lr}       \n"
             /* Return to the address specified by the retaddr in the saved context.
              * subS also restores cpsr from spsr */
-            "subs pc, r0, #0       \n"
+            "subs pc, r2, #0       \n"
             :
             : "r" (cursp)
             : "memory", /* Memory barrier (do not reorder read/writes)*/
               "cc", /* Tell gcc this code modifies the cpsr */
-              "r0" /* Do not use r0 in compiler generated code since we are using it */);
+              "r0", "r2" /* Do not use r0, r2 in compiler generated code since we are using it */);
 
         return;
     }
@@ -141,7 +141,8 @@ static inline void arch_context_save_and_restore(pcb_t *spcb, pcb_t *rpcb) {
         :
         : "memory",  /* Memory barrier (do not reorder read/writes) */
           "cc", /* Tell gcc this code modifies the cpsr */
-          "r0", "r1" /* Do not use r0-r1 in compiler generated code since we are using them */);
+          "r0", "r1", "r2" /* Do not use r0-r1 in compiler generated code since we are using them */
+          /* Do not use r2 since we use it in arch_context_restore() as a temp buffer */);
 
     // Check whether this is a context save or returning from a context restore
     if (ctx_saved) {
