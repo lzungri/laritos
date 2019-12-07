@@ -180,7 +180,8 @@ void kernel_entry(void)  {
 #endif
 
     int idle_main(void *data);
-    pcb_t *idle = pcb_spawn_kernel_process("IDLE", idle_main, (void *) 0xaabbccdd, CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST);
+    pcb_t *idle = pcb_spawn_kernel_process("IDLE", idle_main, (void *) 0xaabbccdd,
+            CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST);
     assert(idle != NULL, "Could not create idle process");
 
     if (loader_load_executable_from_memory(0) == NULL) {
