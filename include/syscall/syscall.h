@@ -20,3 +20,4 @@ int syscall_sleep(uint32_t secs);
 int syscall_msleep(uint32_t msecs);
 int syscall_usleep(uint32_t usecs);
 int syscall_set_priority(uint8_t priority);
+int syscall_set_process_name(char *name);

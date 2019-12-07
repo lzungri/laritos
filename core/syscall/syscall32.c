@@ -48,6 +48,9 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
     case SYSCALL_SET_PRIORITY:
         ret = syscall_set_priority((uint8_t) arg0);
         break;
+    case SYSCALL_SET_PROCESS_NAME:
+        ret = syscall_set_process_name((char *) arg0);
+        break;
     default:
         error_async("Unrecognized system call #%d", sysno);
         pcb_kill_and_schedule(pcb);

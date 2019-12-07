@@ -10,6 +10,7 @@ typedef enum {
     SYSCALL_MSLEEP,
     SYSCALL_USLEEP,
     SYSCALL_SET_PRIORITY,
+    SYSCALL_SET_PROCESS_NAME,
 
     SYSCALL_LEN,
 } syscall_t;
