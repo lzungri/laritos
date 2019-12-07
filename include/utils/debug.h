@@ -16,7 +16,7 @@ static inline void debug_dump_processes(void) {
     log_always("Processes:");
     log_always("   name      pid type status  prio");
     for_each_process(proc) {
-        log_always("   %-8s  %-3u  %s  %7s  %-3u", proc->name, proc->pid, proc->kernel ? "K" : "U", pcb_get_status_str(proc->sched.status), proc->sched.priority);
+        log_always("   %8.8s  %-3u  %s  %7s  %-3u", proc->name, proc->pid, proc->kernel ? "K" : "U", pcb_get_status_str(proc->sched.status), proc->sched.priority);
     }
 }
 
