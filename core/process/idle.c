@@ -1,6 +1,6 @@
 #include <log.h>
 
-#include <process/pcb.h>
+#include <process/core.h>
 
 
 int idle_main(void *data) {

@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <board.h>
-#include <process/pcb.h>
+#include <process/core.h>
 #include <sched/core.h>
 #include <component/sched.h>
 #include <mm/heap.h>

@@ -128,7 +128,7 @@ _save_ctx_end\@:
     mov r4, r0
 
     # In case there was a context switch, get current sp context
-    bl pcb_get_current_pcb_stack_context
+    bl process_get_current_pcb_stack_context
     # Save r0 in sp
     mov sp, r0
 
@@ -192,7 +192,7 @@ _nonusr_mode\@:
 _usr_mode\@:
     bl \handler
     # In case there was a context switch, get current sp context
-    bl pcb_get_current_pcb_stack_context
+    bl process_get_current_pcb_stack_context
     # Save r0 in sp
     mov sp, r0
     RESTORE_USER_CONTEXT

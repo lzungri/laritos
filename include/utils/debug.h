@@ -4,7 +4,7 @@
 #include <string.h>
 #include <component/component.h>
 #include <arch/debug.h>
-#include <process/pcb.h>
+#include <process/core.h>
 #include <process/status.h>
 
 static inline void debug_message_delimiter(void) {

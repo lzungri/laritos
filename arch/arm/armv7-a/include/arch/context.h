@@ -4,7 +4,7 @@
 
 #include <cpu.h>
 #include <string.h>
-#include <process/pcb.h>
+#include <process/core.h>
 #include <arch/context-types.h>
 
 static inline bool arch_context_is_usr(spctx_t *ctx) {

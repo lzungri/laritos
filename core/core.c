@@ -7,7 +7,7 @@
 #include <component/inputdev.h>
 #include <component/timer.h>
 #include <loader/loader.h>
-#include <process/pcb.h>
+#include <process/core.h>
 #include <sched/core.h>
 #include <sched/context.h>
 #include <time/time.h>
@@ -118,12 +118,12 @@ static int initialize_global_context(void) {
         goto error_comp;
     }
 
-    if (pcb_init_global_context() < 0) {
+    if (process_init_global_context() < 0) {
         goto error_pcb;
     }
     return 0;
 
-    pcb_deinit_global_context();
+    process_deinit_global_context();
 error_pcb:
     component_deinit_global_context();
 error_comp:
@@ -180,7 +180,7 @@ void kernel_entry(void)  {
 #endif
 
     int idle_main(void *data);
-    pcb_t *idle = pcb_spawn_kernel_process("IDLE", idle_main, (void *) 0xaabbccdd,
+    pcb_t *idle = process_spawn_kernel_process("IDLE", idle_main, (void *) 0xaabbccdd,
             CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST);
     assert(idle != NULL, "Could not create idle process");
 

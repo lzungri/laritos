@@ -9,7 +9,7 @@
 #include <loader/loader-elf.h>
 #include <loader/elf.h>
 #include <arch/elf32.h>
-#include <process/pcb.h>
+#include <process/core.h>
 #include <sched/core.h>
 #include <sched/context.h>
 #include <generated/autoconf.h>
@@ -100,7 +100,7 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
     }
 
     // Allocate PCB structure for this new process
-    pcb_t *pcb = pcb_alloc();
+    pcb_t *pcb = process_alloc();
     if (pcb == NULL) {
         error_async("Could not allocate space for PCB");
         goto error_pcb;
@@ -181,9 +181,9 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
         goto error_reloc;
     }
 
-    pcb_set_priority(pcb, CONFIG_SCHED_PRIORITY_MAX_USER);
+    process_set_priority(pcb, CONFIG_SCHED_PRIORITY_MAX_USER);
 
-    if (pcb_register(pcb) < 0) {
+    if (process_register(pcb) < 0) {
         error_async("Could not register process at 0x%p", pcb);
         goto error_pcbreg;
     }
@@ -200,7 +200,7 @@ error_got:
     free(pcb->mm.imgaddr);
 error_imgalloc:
 error_reloc_offset:
-    pcb_free(pcb);
+    process_free(pcb);
 error_pcb:
     return NULL;
 }

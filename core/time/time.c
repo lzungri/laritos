@@ -10,7 +10,7 @@
 #include <component/vrtimer.h>
 #include <component/component.h>
 #include <utils/assert.h>
-#include <process/pcb.h>
+#include <process/core.h>
 #include <sched/core.h>
 
 int time_rtc_gettime(time_t *t) {

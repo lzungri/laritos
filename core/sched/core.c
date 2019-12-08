@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include <cpu.h>
-#include <process/pcb.h>
+#include <process/core.h>
 #include <sched/core.h>
 #include <sched/context.h>
 #include <utils/assert.h>

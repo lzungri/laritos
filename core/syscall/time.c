@@ -1,6 +1,6 @@
 #include <log.h>
 
-#include <process/pcb.h>
+#include <process/core.h>
 #include <syscall/syscall.h>
 #include <time/time.h>
 

@@ -2,7 +2,7 @@
 
 #include <log.h>
 #include <core.h>
-#include <process/pcb.h>
+#include <process/core.h>
 #include <process/status.h>
 
 void sched_switch_to(pcb_t *cur, pcb_t *pcb);

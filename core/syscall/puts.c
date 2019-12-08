@@ -1,6 +1,6 @@
 #include <log.h>
 
-#include <process/pcb.h>
+#include <process/core.h>
 #include <syscall/syscall.h>
 
 int syscall_puts(const char *s) {

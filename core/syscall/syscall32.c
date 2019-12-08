@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <cpu.h>
-#include <process/pcb.h>
+#include <process/core.h>
 #include <sched/core.h>
 #include <syscall/syscall.h>
 #include <utils/assert.h>
@@ -53,7 +53,7 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
         break;
     default:
         error_async("Unrecognized system call #%d", sysno);
-        pcb_kill_and_schedule(pcb);
+        process_kill_and_schedule(pcb);
     }
 
     // About to finish the svc call, re-schedule if needed

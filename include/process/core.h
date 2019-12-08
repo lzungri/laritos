@@ -55,18 +55,18 @@ typedef struct pcb {
 typedef int (*kproc_main_t)(void *data);
 
 
-int pcb_init_global_context(void);
-int pcb_deinit_global_context(void);
-void pcb_assign_pid(pcb_t *pcb);
-pcb_t *pcb_alloc(void);
-int pcb_free(pcb_t *pcb);
-int pcb_register(pcb_t *pcb);
-int pcb_unregister(pcb_t *pcb);
-void pcb_kill(pcb_t *pcb);
-void pcb_kill_and_schedule(pcb_t *pcb);
-int pcb_set_priority(pcb_t *pcb, uint8_t priority);
-spctx_t *pcb_get_current_pcb_stack_context(void);
-pcb_t *pcb_spawn_kernel_process(char *name, kproc_main_t main, void *data, uint32_t stacksize, uint8_t priority);
+int process_init_global_context(void);
+int process_deinit_global_context(void);
+void process_assign_pid(pcb_t *pcb);
+pcb_t *process_alloc(void);
+int process_free(pcb_t *pcb);
+int process_register(pcb_t *pcb);
+int process_unregister(pcb_t *pcb);
+void process_kill(pcb_t *pcb);
+void process_kill_and_schedule(pcb_t *pcb);
+int process_set_priority(pcb_t *pcb, uint8_t priority);
+spctx_t *process_get_current_pcb_stack_context(void);
+pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, uint32_t stacksize, uint8_t priority);
 
 static inline pcb_t *pcb_get_current(void) {
     pcb_t *pcb = _laritos.sched.running[cpu_get_id()];

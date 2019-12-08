@@ -1,2 +1,2 @@
-obj-y += pcb.o
+obj-y += core.o
 obj-y += idle.o

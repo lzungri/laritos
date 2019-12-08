@@ -4,7 +4,7 @@
 #include <cpu.h>
 #include <sched/context.h>
 #include <mm/exc-handlers.h>
-#include <process/pcb.h>
+#include <process/core.h>
 #include <process/status.h>
 #include <arch/context-types.h>
 #include <utils/debug.h>
@@ -21,7 +21,7 @@ static inline void dump_process_info(pcb_t *pcb) {
 static inline void handle_process_exception(pcb_t *pcb) {
     dump_process_info(pcb);
     // Kill the offending process
-    pcb_kill(pcb);
+    process_kill(pcb);
     // Switch to another ready process
     schedule();
 }

@@ -3,7 +3,7 @@
 #include <log.h>
 
 #include <cpu.h>
-#include <process/pcb.h>
+#include <process/core.h>
 #include <arch/context-types.h>
 #include <arch/context.h>
 
