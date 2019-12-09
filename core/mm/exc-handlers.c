@@ -12,14 +12,15 @@
 #include <sched/core.h>
 
 static inline void dump_process_info(pcb_t *pcb) {
-    error_async("pid=%u, context=0x%p, status=%s",
-            pcb->pid, pcb->mm.sp_ctx, pcb_get_status_str(pcb->sched.status));
-    error_async("ABORT");
-    debug_message_delimiter();
+    error_async("pid=%u, name=%s, type=%s, context=0x%p, status=%s",
+            pcb->pid, pcb->name, pcb->kernel ? "K" : "U",
+            pcb->mm.sp_ctx, pcb_get_status_str(pcb->sched.status));
 }
 
 static inline void handle_process_exception(pcb_t *pcb) {
     dump_process_info(pcb);
+    debug_message_delimiter();
+    error_async("ABORT");
     // Kill the offending process
     process_kill(pcb);
     // Switch to another ready process
@@ -27,7 +28,7 @@ static inline void handle_process_exception(pcb_t *pcb) {
 }
 
 void exc_undef_handler(int32_t pc, spctx_t *ctx) {
-    if (arch_context_is_kernel(ctx)) {
+    if (!_laritos.process_mode) {
         fatal("ABORT");
     }
 
@@ -36,7 +37,7 @@ void exc_undef_handler(int32_t pc, spctx_t *ctx) {
 }
 
 void exc_prefetch_handler(int32_t pc, spctx_t *ctx) {
-    if (arch_context_is_kernel(ctx)) {
+    if (!_laritos.process_mode) {
         fatal("ABORT");
     }
 
@@ -45,7 +46,7 @@ void exc_prefetch_handler(int32_t pc, spctx_t *ctx) {
 }
 
 void exc_abort_handler(int32_t pc, spctx_t *ctx) {
-    if (arch_context_is_kernel(ctx)) {
+    if (!_laritos.process_mode) {
         fatal("ABORT");
     }
 
