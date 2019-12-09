@@ -7,6 +7,8 @@
 # @param mode: Processor mode associated with the exception
 # @return on r0: 1 on user mode context, 0 on non-user mode
 .macro SAVE_CONTEXT mode
+    # TODO Fix this once reentrant exceptions are implemented (disable interrupts
+    # in this section, maybe?)
     # Load the exception temporal stack into sp
     ldr sp, =__stack_top
     # Save the current r0
@@ -122,7 +124,7 @@ _save_ctx_end\@:
 .endm
 
 # Restores the current context from the stack associated with the process stack
-# It also saves the handler retval in r0 for he user process to read it
+# It also saves the handler retval in r0 for the user process to read it
 .macro RESTORE_USER_CONTEXT_WITH_RETVAL
     # Save retval in r4
     mov r4, r0
