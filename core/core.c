@@ -167,23 +167,20 @@ void kernel_entry(void)  {
         fatal("Failed to enable irqs for cpu %u", c->id);
     }
 
+    int idle_main(void *data);
+    pcb_t *idle = process_spawn_kernel_process("IDLE", idle_main, NULL,
+                        CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST);
+    assert(idle != NULL, "Could not create IDLE process");
+
 #ifdef CONFIG_TEST_ENABLED
     log_always("***** Running in test mode *****");
-    heap_dump_info();
-    if (test_run(__tests_start) < 0) {
-        fatal("Error executing test cases");
-    }
-    heap_dump_info();
-    while (1) {
-        arch_wfi();
-    }
-#endif
+    pcb_t *test = process_spawn_kernel_process("TEST", test_main, __tests_start,
+                        CONFIG_PROCESS_TEST_STACK_SIZE, CONFIG_SCHED_PRIORITY_MAX_USER - 1);
+    assert(test != NULL, "Could not create TEST process");
+#else
 
-    int idle_main(void *data);
-    pcb_t *idle = process_spawn_kernel_process("IDLE", idle_main, (void *) 0xaabbccdd,
-            CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST);
-    assert(idle != NULL, "Could not create idle process");
-
+    // Launch a few processes for testing
+    // TODO: This code will disappear once we implement a shell and file system
     if (loader_load_executable_from_memory(0) == NULL) {
         error("Failed to load app #0");
     }
@@ -197,6 +194,7 @@ void kernel_entry(void)  {
     if (loader_load_executable_from_memory(0) == NULL) {
         error("Failed to load app #2");
     }
+#endif
 
     sched_execute_first_system_proc(idle);
     // Execution will never reach this point

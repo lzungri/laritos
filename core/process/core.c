@@ -149,7 +149,6 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
     pcb->mm.stack_bottom = pcb->mm.imgaddr;
     pcb->mm.stack_size = stacksize;
     pcb->mm.sp_ctx = (spctx_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size - 8);
-    pcb->mm.sp_ctx_prev = pcb->mm.sp_ctx;
     debug_async("Kernel process stack located at 0x%p, size=%lu", pcb->mm.imgaddr, pcb->mm.stack_size);
 
     context_init(pcb, kernel_main_wrapper, CPU_MODE_SUPERVISOR);

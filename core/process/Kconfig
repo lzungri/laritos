@@ -16,4 +16,8 @@ config PROCESS_IDLE_STACK_SIZE
     int "Idle process stack size"
     default 8196
 
+config PROCESS_TEST_STACK_SIZE
+    int "Test process stack size"
+    default 8196
+
 endmenu
