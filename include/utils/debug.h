@@ -6,6 +6,7 @@
 #include <arch/debug.h>
 #include <process/core.h>
 #include <process/status.h>
+#include <sched/context.h>
 
 static inline void debug_message_delimiter(void) {
     error_async("*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
@@ -14,9 +15,13 @@ static inline void debug_message_delimiter(void) {
 static inline void debug_dump_processes(void) {
     pcb_t *proc;
     log_always("Processes:");
-    log_always("   name      pid type status  prio");
+    log_always("   name      pid  type  status   prio   mode   pc");
     for_each_process(proc) {
-        log_always("   %8.8s  %-3u  %s  %7s  %-3u", proc->name, proc->pid, proc->kernel ? "K" : "U", pcb_get_status_str(proc->sched.status), proc->sched.priority);
+        log_always("   %-8.8s  %3u   %s   %7s    %3u   %-4.4s    0x%p",
+                proc->name, proc->pid, proc->kernel ? "K" : "U",
+                pcb_get_status_str(proc->sched.status), proc->sched.priority,
+                arch_context_get_cpu_mode_str(proc->mm.sp_ctx),
+                (void *) proc->mm.sp_ctx->ret);
     }
 }
 
