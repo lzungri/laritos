@@ -14,12 +14,11 @@
 
 void sched_switch_to(pcb_t *from, pcb_t *to) {
     sched_move_to_running(to);
-
 #ifdef DEBUG
     debug_dump_processes();
 #endif
-
     context_save_and_restore(from, to);
+
     // Once the *from* context is restored, it will continue execution from
     // here (actually from within the context_save_and_restore() function)
     verbose_async("Resuming execution of pid=%u", pcb_get_current()->pid);
