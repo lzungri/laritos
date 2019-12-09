@@ -5,6 +5,7 @@
 #include <cpu.h>
 #include <string.h>
 #include <process/core.h>
+#include <arch/debug.h>
 #include <arch/context-types.h>
 
 static inline bool arch_context_is_usr(spctx_t *ctx) {
@@ -13,6 +14,10 @@ static inline bool arch_context_is_usr(spctx_t *ctx) {
 
 static inline bool arch_context_is_kernel(spctx_t *ctx) {
     return !arch_context_is_usr(ctx);
+}
+
+static inline const char *arch_context_get_cpu_mode_str(spctx_t *ctx) {
+    return get_cpu_mode_str(ctx->spsr.b.mode);
 }
 
 static inline void arch_context_set_first_arg(spctx_t *ctx, void *arg) {
@@ -26,6 +31,8 @@ static inline void arch_context_set_second_arg(spctx_t *ctx, void *arg) {
 }
 
 static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t mode) {
+    // Save what is going to be the previous stack context
+    pcb->mm.sp_ctx_prev = pcb->mm.sp_ctx;
     // Move back in the stack one spctx_t chunk
     pcb->mm.sp_ctx--;
     spctx_t *ctx = pcb->mm.sp_ctx;
