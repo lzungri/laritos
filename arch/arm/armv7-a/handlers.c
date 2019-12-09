@@ -58,6 +58,7 @@ void _undef_handler(int32_t pc, spctx_t *ctx) {
     for (i = 0; i < 16; i++, ptr++) {
         error_async(" %s [0x%p] 0x%08lx", ptr == (uint32_t *) pc ? "->" : "  ", ptr, *ptr);
     }
+    error_async("Run gdb-multiarch -batch -n -ex 'file bin/laritos.elf' -ex 'disassemble /m 0x%p'", (void *) pc);
 
     exc_undef_handler(pc, ctx);
 }
