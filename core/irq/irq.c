@@ -1,3 +1,4 @@
+#define DEBUG
 #include <log.h>
 
 #include <irq.h>
@@ -9,7 +10,7 @@
 #include <sched/core.h>
 
 int irq_handler(spctx_t *ctx) {
-    if (arch_context_is_usr(ctx)) {
+    if (_laritos.process_mode) {
         pcb_set_current_pcb_stack_context(ctx);
     }
 
