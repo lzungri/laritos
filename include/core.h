@@ -56,6 +56,16 @@ typedef struct {
  */
 typedef struct {
     /**
+     *
+     * uint32_t instead of bool to keep the structure 4-byte aligned
+     *
+     * Indicates whether or not the OS has enabled the process execution mode.
+     *    true: Every execution flow runs in a process context
+     *    false: Every execution flow runs in the context of the kernel
+     */
+    uint32_t process_mode;
+
+    /**
      * Board information
      */
     board_info_t bi;
@@ -67,13 +77,6 @@ typedef struct {
 
     laritos_process_t proc;
     laritos_sched_t sched;
-
-    /**
-     * Indicates whether or not the OS has enabled the process execution mode.
-     *    true: Every execution flow runs in a process context
-     *    false: Every execution flow runs in the context of the kernel
-     */
-    bool process_mode;
 
     /**
      * Time information
