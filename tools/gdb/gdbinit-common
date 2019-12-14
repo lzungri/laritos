@@ -273,6 +273,10 @@ define flags
                             else
                                 if ($mode == 11)
                                     set $modestr = "und"
+                                else
+                                    if ($mode == 15)
+                                        set $modestr = "sys"
+                                    end
                                 end
                             end
                         end
