@@ -24,6 +24,7 @@ typedef struct {
     secsize_t got_size;
 
     spctx_t *sp_ctx;
+    // Only used by arch_context_save_and_restore() and arch_context_restore()
     spctx_t *sp_ctx_prev;
 } pcb_mm_t;
 
