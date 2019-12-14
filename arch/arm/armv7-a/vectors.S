@@ -74,7 +74,7 @@ asm_svc_handler:
 
     # Load the SVC instruction into r0 to get the service call number.
     # The instruction is located 4 bytes behind the lr
-    ldr r0, [r1, #-4]
+    ldr r0, [lr, #-4]
     # Mask the service call number (e.g. svc 1 -> 0xef000001) and save it in
     # r0 so that the svc_handler() gets it as the first argument
     bic r0, r0, #0xff000000
