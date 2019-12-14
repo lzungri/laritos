@@ -172,3 +172,9 @@ error_imgalloc:
 error_pcb:
     return NULL;
 }
+
+
+
+#ifdef CONFIG_TEST_CORE_PROCESS_CORE
+#include __FILE__
+#endif
