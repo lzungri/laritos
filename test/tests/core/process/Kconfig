@@ -1,0 +1,12 @@
+menu "Process"
+
+config TEST_CORE_PROCESS_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_PROCESS_CORE
+
+config TEST_CORE_PROCESS_CORE
+    bool "core.c"
+    default n
+
+endmenu
