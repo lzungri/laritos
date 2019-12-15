@@ -1,3 +1,3 @@
 obj-y += core.o
-obj-$(CONFIG_SCHED_COOPERATIVE_FIFO) += coop-fifo.o
-obj-$(CONFIG_SCHED_PREEMPTIVE_RR) += preempt-rr.o
+obj-y += coop-fifo.o
+obj-y += preempt-rr.o

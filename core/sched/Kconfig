@@ -1,17 +1,5 @@
 menu "Scheduler"
 
-choice
-    prompt "Process scheduler"
-    default SCHED_PREEMPTIVE_RR
-
-config SCHED_COOPERATIVE_FIFO
-    bool "Cooperative FIFO"
-
-config SCHED_PREEMPTIVE_RR
-    bool "Preemptive Round Robin"
-
-endchoice
-
 config SCHED_PRIORITY_MAX_KERNEL
     int "Maximum priority for a kernel process"
     default 0

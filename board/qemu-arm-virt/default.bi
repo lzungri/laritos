@@ -22,7 +22,7 @@ log_uart:logger|transport=bytestream@uart0
 rtc0:pl031|mmbase=0x09010000,maxfreq=1,intio=true,intc=@gic,irq=34,trigger=level_hi
 
 # CPUs
-cpu0:cortex_a15|id=0,intc=@gic,sched=@rr
+cpu0:cortex_a15|id=0,intc=@gic,sched=@coopfifo
 cpu1:cortex_a15|id=1,intc=@gic,sched=@rr
 cpu2:cortex_a15|id=2,intc=@gic,sched=@rr
 cpu3:cortex_a15|id=3,intc=@gic,sched=@rr
@@ -44,3 +44,6 @@ vrtimer0:generic_vrtimer|hrtimer=@rtc0,low_power_timer=@rtc0
 
 # Preemptive round robin scheduler
 rr:preempt_rr|ticker=@ticker0
+
+# Cooperative FIFO scheduler
+coopfifo:coop_fifo

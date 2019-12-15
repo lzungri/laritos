@@ -24,7 +24,7 @@ static int process(board_comp_t *comp) {
         goto fail;
     }
 
-    component_set_info((component_t *) s, "FIFO Scheduler", "lzungri", "RR cooperative scheduler");
+    component_set_info((component_t *) s, "FIFO Scheduler", "lzungri", "FIFO cooperative scheduler");
 
     if (component_register((component_t *) s) < 0) {
         error("Couldn't register scheduler '%s'", comp->id);
