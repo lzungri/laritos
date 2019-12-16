@@ -21,11 +21,11 @@ static int highprio(void *data) {
 
 T(process_spawning_kernel_process_with_highest_priority_switches_to_it) {
     pcb_t *p = process_spawn_kernel_process("high prio", highprio, NULL,
-                        1024, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
+                        8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
     tassert(p != NULL);
 
     p = process_spawn_kernel_process("high prio 2", highprio, NULL,
-                        1024, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
+                        8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
     tassert(p != NULL);
 
 //    unsigned long long i = 0;
