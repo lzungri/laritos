@@ -127,7 +127,7 @@ static void kernel_main_wrapper(kproc_main_t main, void *data) {
 }
 
 pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, uint32_t stacksize, uint8_t priority) {
-    debug_async("Spawning kernel process (main=0x%p, data=0x%p, stacksize=%lu, prio=%u)", main, data, stacksize, priority);
+    debug_async("Spawning kernel process (name=%s, main=0x%p, data=0x%p, prio=%u)", name, main, data, priority);
 
     // Allocate PCB structure for this new process
     pcb_t *pcb = process_alloc();
@@ -149,7 +149,7 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
     pcb->mm.stack_bottom = pcb->mm.imgaddr;
     pcb->mm.stack_size = stacksize;
     pcb->mm.sp_ctx = (spctx_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size - 8);
-    debug_async("Kernel process stack located at 0x%p, size=%lu", pcb->mm.imgaddr, pcb->mm.stack_size);
+    debug_async("Kernel process stack top located at 0x%p, size=%lu", pcb->mm.sp_ctx, pcb->mm.stack_size);
 
     context_init(pcb, kernel_main_wrapper, CPU_MODE_SUPERVISOR);
 
