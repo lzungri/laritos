@@ -20,6 +20,10 @@ static inline const char *arch_context_get_cpu_mode_str(spctx_t *ctx) {
     return get_cpu_mode_str(ctx->spsr.b.mode);
 }
 
+static inline void *arch_context_get_retaddr(spctx_t *ctx) {
+    return (void *) ctx->ret;
+}
+
 static inline void arch_context_set_first_arg(spctx_t *ctx, void *arg) {
     // First function argument is passed via R0
     ctx->r[0] = (int32_t) arg;
