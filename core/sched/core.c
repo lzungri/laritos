@@ -14,9 +14,6 @@
 
 void sched_switch_to(pcb_t *from, pcb_t *to) {
     sched_move_to_running(to);
-#ifdef DEBUG
-    debug_dump_processes();
-#endif
     context_save_and_restore(from, to);
 
     // Once the *from* context is restored, it will continue execution from
@@ -26,7 +23,9 @@ void sched_switch_to(pcb_t *from, pcb_t *to) {
 
 static void context_switch(pcb_t *cur, pcb_t *to) {
     verbose_async("Context switch pid=%u -> pid=%u", cur->pid, to->pid);
-    pcb_set_current(NULL);
+#ifdef DEBUG
+    debug_dump_processes();
+#endif
     // Check whether the process is actually running (i.e. not a zombie)
     if (cur->sched.status == PCB_STATUS_RUNNING) {
         sched_move_to_ready(cur);
