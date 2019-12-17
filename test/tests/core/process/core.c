@@ -1,40 +1,43 @@
 #include <log.h>
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <test/test.h>
 #include <process/core.h>
 #include <generated/autoconf.h>
 
 
-#include <sched/core.h>
-
 static int highprio(void *data) {
+    info("%s", pcb_get_current()->name);
+
     unsigned long long i = 0;
-    info("HIGH PRIO");
-    while (i++ < 10000000) {
-        if (i % 1000000 == 0)  {
-            schedule();
-        }
-    }
+    while (i++ < 10000000);
+
+    bool *finish = (bool *) data;
+    *finish = true;
     return 0;
 }
 
 T(process_spawning_kernel_process_with_highest_priority_switches_to_it) {
-    pcb_t *p = process_spawn_kernel_process("high prio", highprio, NULL,
+    bool finish1 = false;
+    pcb_t *p1 = process_spawn_kernel_process("high prio", highprio, &finish1,
                         8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
-    tassert(p != NULL);
+    tassert(p1 != NULL);
 
-    p = process_spawn_kernel_process("high prio 2", highprio, NULL,
+    bool finish2 = false;
+    pcb_t *p2 = process_spawn_kernel_process("high prio 2", highprio, &finish2,
                         8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
-    tassert(p != NULL);
+    tassert(p2 != NULL);
 
-//    unsigned long long i = 0;
-//    while (i++ < 1000000000);
-    unsigned int i = 0;
-    while (i++ < 1000000000) {
-//    while(1) {
-        if (i++ % 100000000 == 0)  {
-            info("TEST");
-        }
-    }
+    bool finish3 = false;
+    pcb_t *p3 = process_spawn_kernel_process("high prio 3", highprio, &finish3,
+                        8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
+    tassert(p3 != NULL);
+
+    while (!finish1 || !finish2 || !finish3);
+    info("Kernel threads finished");
+
+    process_unregister(p1);
+    process_unregister(p2);
+    process_unregister(p3);
 TEND
