@@ -59,73 +59,58 @@ static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t 
 }
 
 static inline void arch_context_restore(pcb_t *pcb) {
+    spctx_t *cursp = pcb->mm.sp_ctx;
+    // Restore previous spctx
+    pcb->mm.sp_ctx = pcb->mm.sp_ctx_prev;
+
+    regpsr_t curpsr = get_cpsr();
+    regpsr_t targetpsr = { 0 };
     // The context restore will change based on whether we need to restore a non-user
     // or user context. Check this by inspecting the psr value saved in the stack
-    if (arch_context_is_kernel(pcb->mm.sp_ctx)) {
-        regsp_t cursp = pcb->mm.sp_ctx;
-        // Restore previous spctx
-        pcb->mm.sp_ctx = pcb->mm.sp_ctx_prev;
+    if (arch_context_is_kernel(cursp)) {
+        targetpsr = cursp->spsr;
+        targetpsr.b.irq = 1;
+    } else {
+        targetpsr.b.mode = ARM_CPU_MODE_SYSTEM;
+        targetpsr.b.irq = 1;
+        targetpsr.b.fiq = 1;
+    }
 
+    if (curpsr.b.mode == targetpsr.b.mode) {
         // volatile to prevent any gcc optimization on the assembly code
         asm volatile (
-            /* Restore stack pointer from pcb */
-            "mov sp, %0            \n"
-            /* Pop the SPSR and return address */
-            "ldmfd sp!, {r0, lr}   \n"
-            /* Update the SPSR (CPSR will be restored from this value)*/
-            "msr spsr_cxsf, r0     \n"
-            /* Restore all the other registers */
-            "ldmfd sp!, {r0-r12}   \n"
-            /* Save the return address in r2, (don't care if we lose r2 original value) */
-            "mov r2, lr            \n"
-            /* Get the original lr value from the saved context */
-            "ldmfd sp!, {lr}       \n"
-            /* Return to the address specified by the retaddr in the saved context.
-             * subS also restores cpsr from spsr */
-            "subs pc, r2, #0       \n"
+            "mov r0, %0            \n"
+            "ldmfd r0!, {r1, lr}            \n"
+            "mov sp, r0            \n"
+            "msr cpsr, r1            \n"
+            "ldmfd sp!, {r0-r12, lr}            \n"
+            "ldr pc, [sp, #-60]            \n"
             :
             : "r" (cursp)
             : "memory", /* Memory barrier (do not reorder read/writes)*/
               "cc", /* Tell gcc this code modifies the cpsr */
-              "r0", "r2" /* Do not use r0, r2 in compiler generated code since we are using it */);
-
-        return;
+              "r0", "r1" /* Do not use r0, r2 in compiler generated code since we are using it */);
+    } else {
+        // volatile to prevent any gcc optimization on the assembly code
+        asm volatile (
+            "mov r0, %0            \n"
+            "ldmfd r0!, {r1, lr}            \n"
+            "msr spsr_cxsf, r1            \n"
+            "mov r1, %1            \n"
+            "msr cpsr, r1            \n"
+            "mov r1, %2            \n"
+            "add sp, r0, #8            \n"
+            "ldmfd sp!, {r2-r12, lr}            \n"
+            "msr cpsr_c, r1            \n"
+            "mov sp, r0            \n"
+            "ldmfd sp!, {r0, r1}            \n"
+            "subs pc, lr, #0            \n"
+            :
+            : "r" (cursp), "r" (targetpsr.v), "r" (curpsr.v)
+            : "memory", /* Memory barrier (do not reorder read/writes)*/
+              "cc", /* Tell gcc this code modifies the cpsr */
+              "r0", "r1" /* Do not use r0, r2 in compiler generated code since we are using it */);
     }
-
-    // volatile to prevent any gcc optimization on the assembly code
-    asm volatile (
-        /* Restore stack pointer from pcb */
-        "mov sp, %0               \n"
-        /* Pop the SPSR and link register */
-        "ldmfd sp!, {r0, lr}      \n"
-        /* Update the SPSR (CPSR will be restored from this value)*/
-        "msr spsr_cxsf, r0        \n"
-        /* ^ to save the registers in the user bank (not the svc bank)*/
-        "ldm sp, {r0-r12, lr}^    \n"
-        "add sp, sp, #64          \n"
-        /* Trick to save the sp_svc into sp_user
-         * We could do something like:
-         *   stmdb sp!, {sp}
-         *   ldmfd sp!, {sp}^
-         * But this will generate the warning "writeback of base register is UNPREDICTABLE"
-         *
-         * From ARM docs:
-         *   Unpredictable instruction (forced user mode transfer with write-back to base)
-         *   This is caused by an instruction such as PUSH {r0}^ where the ^ indicates
-         *   access to user registers. The ARM Architectural Reference Manual specifies
-         *   that writeback to the base register is not available with this instruction.
-         **/
-        "str sp, [sp, #-4]        \n"
-        "sub sp, sp, #4           \n"
-        "ldm sp, {sp}^            \n"
-        "add sp, sp, #4           \n"
-        /* subS to also restore cpsr from spsr */
-        "subs pc, lr, #0          \n"
-        :
-        : "r" (pcb->mm.sp_ctx)
-        : "memory", /* Memory barrier (do not reorder read/writes)*/
-          "cc", /* Tell gcc this code modifies the cpsr */
-          "r0" /* Do not use r0 in compiler generated code since we are using it */);
 }
 
 static inline void arch_context_save_and_restore(pcb_t *spcb, pcb_t *rpcb) {

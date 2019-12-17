@@ -5,27 +5,22 @@
 #                    the exception (e.g. sp_irq for irq exceptions)
 #
 # @param mode: Processor mode associated with the exception
-# @return on r0: 1 on user mode context, 0 on non-user mode
 .macro SAVE_CONTEXT mode
+_save_ctx\@:
     # TODO Fix this once reentrant exceptions are implemented (disable interrupts
     # in this section, maybe?)
     # Load the exception temporal stack into sp
     ldr sp, =__stack_top
     # Save the current r0
     stmdb sp!, {r0}
-    # Get the saved psr to check the cpu mode of the interrupted thread
-    mrs r0, spsr
-    # Mask cpu mode
-    and r0, r0, #0b11111
-    # user mode?
-    cmp r0, #0b10000
+    ldr r0, =_laritos
+    ldr r0, [r0]
+    cmp r0, #1
     # Restore original r0
     ldmfd sp!, {r0}
+    beq _save_ctx_process_mode\@
 
-    # \@ maintains a counter of how many macros it has executed in this pseudo-variable
-    beq _save_ctx_usr_mode\@
-
-_save_ctx_nonusr_mode\@:
+_save_ctx_nonprocess_mode\@:
     # Save registers into the exception stack
     # lr is just a placeholder here, it will be replaced with the lr associated with
     # the interrupted thread
@@ -43,7 +38,7 @@ _save_ctx_nonusr_mode\@:
     mov r2, lr
 
     # Switch back to the mode specified by the <mode> argument
-    msr cpsr, \mode
+    msr cpsr_c, \mode
 
     # Save interrupted thread lr into the stack
     str r2, [sp, #52]
@@ -51,40 +46,44 @@ _save_ctx_nonusr_mode\@:
     # Push spsr_<mode> and lr_<mode> registers into the interrupted thread stack
     stmdb sp!, {r0, lr}
 
-    # Return value: non-user mode
-    mov r0, #0
     b _save_ctx_end\@
 
-_save_ctx_usr_mode\@:
-    # To get the sp_user, ARM provides a priviledge mode called System that shares
-    # the same register bank as the user mode but with more privileges
-    # Switch to system mode (irq enabled / fiq disabled)
-    msr cpsr_c, #0b11011111
+_save_ctx_process_mode\@:
+    # TODO Fix this once reentrant exceptions are implemented (disable interrupts
+    # in this section, maybe?)
+    # Save the current r0, r1
+    stmdb sp!, {r0, r1}
+    # Get the saved psr to check the cpu mode of the interrupted thread
+    mrs r0, spsr
 
-    # Push user mode registers into the interrupted thread stack
-    # See spctx_t for more info about stack layout
-    sub sp, sp, #64
-    stm sp, {r0-r12, lr}
+    # Disable irq, otherwise when we switch modes, it will call the irq handler again
+    orr r1, r0, #0b10000000
 
-    # Save sp_usr in r0 so that we can then assign it to sp_<mode> (r0 is shared among all modes)
-    mov r0, sp
+    # Mask cpu mode
+    and r0, r0, #0b11111
 
-    # Switch back to the mode specified by the <mode> argument
+    # user mode?
+    cmp r0, #0b10000
+    bne _switch_and_save_ctx\@
+    mov r1, #0b11011111
+
+_switch_and_save_ctx\@:
+    msr cpsr, r1
+
+    stmfd sp!, {r2-r12, lr}
+
+    mov r2, sp
+
     msr cpsr_c, \mode
 
-    # Save sp_user in sp_<mode>
-    mov sp, r0
+    # Restore original r0
+    ldmfd sp!, {r0, r1}
 
-    # Get the PSR and LR saved by the exception
+    mov sp, r2
+    stmfd sp!, {r0, r1}
+
     mrs r0, spsr
-    mov r1, lr
-
-    # Push spsr_<mode> and lr_<mode> registers into the interrupted thread stack
-    sub sp, sp, #8
-    stm sp, {r0, r1}^
-
-    # Return value: user mode
-    mov r0, #1
+    stmdb sp!, {r0, lr}
 
 _save_ctx_end\@:
 
@@ -92,58 +91,47 @@ _save_ctx_end\@:
 
 
 # Restores the current context from the stack associated with the process stack
-.macro RESTORE_USER_CONTEXT
-    # Pop the SPSR and link register
-    ldm sp, {r0, lr}
-    add sp, sp, #8
+# NOTE: Context stack pointer is passed via r0
+#
+# @param mode: Processor mode associated with the exception
+.macro RESTORE_PROCESS_CONTEXT mode
+    # Get the saved psr to check the cpu mode of the interrupted thread
+    ldr r1, [r0]
 
+    # Disable irq, otherwise when we switch modes, it will call the irq handler again
+    orr r2, r1, #0b10000000
+
+    # Mask cpu mode
+    and r1, r1, #0b11111
+
+    # User mode?
+    cmp r1, #0b10000
+    bne _switch_and_restore_ctx\@
+
+    mov r2, #0b11011111
+
+_switch_and_restore_ctx\@:
+    # Pop the SPSR and link register from the r0 register, which points to the stack
+    ldmfd r0!, {r1, lr}
     # Update the SPSR (CPSR will be restored from this value)
-    msr spsr_cxsf, r0
-    # ^ to save the registers in the target processor mode (not the current bank)
-    ldm sp, {r0-r12, lr}^
-    add sp, sp, #64
+    msr spsr_cxsf, r1
 
-    # Trick to save sp_<mode> into sp_user
-    # We could do something like:
-    #   stmdb sp!, {sp}
-    #   ldmfd sp!, {sp}^
-    # But this will generate the warning "writeback of base register is UNPREDICTABLE"
-    #
-    # From ARM docs:
-    #   Unpredictable instruction (forced user mode transfer with write-back to base)
-    #   This is caused by an instruction such as PUSH {r0}^ where the ^ indicates
-    #   access to user registers. The ARM Architectural Reference Manual specifies
-    #   that writeback to the base register is not available with this instruction.
-    str sp, [sp, #-4]
-    sub sp, sp, #4
-    ldm sp, {sp}^
-    add sp, sp, #4
+    msr cpsr, r2
+
+    mov sp, r0
+    ldmfd sp!, {r0-r12, lr}
+
+    # Switch back to the mode specified by the <mode> argument
+    msr cpsr_c, \mode
 
     # subS to also restore cpsr from spsr
     subs pc, lr, #0
 .endm
 
-# Restores the current context from the stack associated with the process stack
-# It also saves the handler retval in r0 for the user process to read it
-.macro RESTORE_USER_CONTEXT_WITH_RETVAL
-    # Save retval in r4
-    mov r4, r0
 
-    # In case there was a context switch, get current sp context
-    bl process_get_current_pcb_stack_context
-    # Save r0 in sp
-    mov sp, r0
-
-    # Set the r0 stacked value equals to retval (r4)
-    str r4, [sp, #8]
-
-    RESTORE_USER_CONTEXT
-.endm
-
-
-# Restores the current non-user context from the stack associated with
+# Restores the current non process context from the stack associated with
 # the exception (e.g. sp_irq for irq exceptions)
-.macro RESTORE_NONUSER_CONTEXT
+.macro RESTORE_NONPROCESS_CONTEXT
     # Pop the PSR and lr
     ldmfd sp!, {r0, lr}
 
@@ -182,38 +170,48 @@ _save_ctx_end\@:
 # Calls the <handler> and restores the context on return
 #
 # @param handler: Handler symbol
-# @param user_reg: Register in which the cpu mode is stored (1=user, 0=non-user)
-.macro CALL_HANDLER_AND_RESTORE_CONTEXT handler, user_reg
-    cmp \user_reg, #1
-    beq _usr_mode\@
+# @param mode: Processor mode associated with the exception
+.macro CALL_HANDLER_AND_RESTORE_CONTEXT handler, mode
+_restore_ctx\@:
+    ldr r4, =_laritos
+    ldr r4, [r4]
+    cmp r4, #1
+    beq _restore_ctx_process_mode\@
 
-_nonusr_mode\@:
+_restore_ctx_nonprocess_mode\@:
     bl \handler
-    RESTORE_NONUSER_CONTEXT
+    RESTORE_NONPROCESS_CONTEXT
 
-_usr_mode\@:
+_restore_ctx_process_mode\@:
     bl \handler
     # In case there was a context switch, get current sp context
     bl process_get_current_pcb_stack_context
-    # Save r0 in sp
-    mov sp, r0
-    RESTORE_USER_CONTEXT
+    RESTORE_PROCESS_CONTEXT \mode
 .endm
 
 # Calls the <handler> and restores the context on return, it also saves the return
 # value of the handler in r0 for the caller to access it
 #
 # @param handler: Handler symbol
-# @param user_reg: Register in which the cpu mode is stored (1=user, 0=non-user)
-.macro CALL_HANDLER_AND_RESTORE_CONTEXT_WITH_RETVAL handler, user_reg
-    cmp \user_reg, #1
-    beq _usr_mode\@
+# @param mode: Processor mode associated with the exception
+.macro CALL_HANDLER_AND_RESTORE_CONTEXT_WITH_RETVAL handler, mode
+_restore_ctx\@:
+    ldr r4, =_laritos
+    ldr r4, [r4]
+    cmp r4, #1
+    beq _restore_ctx_process_mode\@
 
-_nonusr_mode\@:
+_restore_ctx_nonprocess_mode\@:
     bl \handler
-    RESTORE_NONUSER_CONTEXT
+    RESTORE_NONPROCESS_CONTEXT
 
-_usr_mode\@:
+_restore_ctx_process_mode\@:
     bl \handler
-    RESTORE_USER_CONTEXT_WITH_RETVAL
+    # Save retval in r4
+    mov r4, r0
+    # In case there was a context switch, get current sp context
+    bl process_get_current_pcb_stack_context
+    # Set the r0 stacked value equals to retval (r4)
+    str r4, [r0, #8]
+    RESTORE_PROCESS_CONTEXT \mode
 .endm
