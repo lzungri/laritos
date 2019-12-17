@@ -80,8 +80,7 @@ int process_unregister(pcb_t *pcb) {
 }
 
 spctx_t *process_get_current_pcb_stack_context(void) {
-    pcb_t *pcb = pcb_get_current();
-    return pcb != NULL ? pcb->mm.sp_ctx : 0;
+    return pcb_get_current()->mm.sp_ctx;
 }
 
 void process_kill(pcb_t *pcb) {
@@ -149,7 +148,7 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
     pcb->mm.stack_bottom = pcb->mm.imgaddr;
     pcb->mm.stack_size = stacksize;
     pcb->mm.sp_ctx = (spctx_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size - 8);
-    debug_async("Kernel process stack top located at 0x%p, size=%lu", pcb->mm.sp_ctx, pcb->mm.stack_size);
+    debug_async("Kernel process stack 0x%p-0x%p", (char *) pcb->mm.sp_ctx - pcb->mm.stack_size, pcb->mm.sp_ctx);
 
     context_init(pcb, kernel_main_wrapper, CPU_MODE_SUPERVISOR);
 
