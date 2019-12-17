@@ -8,8 +8,8 @@ tui enable
 layout src
 layout regs
 focus cmd
-winheight src 30
-winheight regs 13
+winheight regs 12
+winheight src 24
 
 #set print pretty on
 set print array on
