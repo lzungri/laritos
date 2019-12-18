@@ -7,7 +7,7 @@
 /**
  * @return: Processor mode string for the given <mode>
  */
-static inline const char *get_cpu_mode_str(uint8_t mode) {
+static inline const char *arch_get_cpu_mode_str(uint8_t mode) {
     static const char modes[16][4] = {
         "usr", "fiq", "irq", "svc", "???", "???", "mon", "abt",
         "???", "???", "hyp", "und", "???", "???", "???", "sys"
@@ -15,7 +15,7 @@ static inline const char *get_cpu_mode_str(uint8_t mode) {
     return modes[mode & 0xf];
 }
 
-static inline void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, regpsr_t cpsr) {
+static inline void arch_dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, regpsr_t cpsr) {
     regpsr_t v = cpsr;
     v.v = 1;
 
@@ -23,7 +23,7 @@ static inline void dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int
     error_async("   pc=0x%08lx lr=0x%08lx cpsr=0x%08lx (%c%c%c%c%c%c%c%c %s mode)", pc, lr, cpsr.v,
             cpsr.b.n ? 'N' : '.', cpsr.b.z ? 'Z' : '.', cpsr.b.c ? 'C' : '.',
             cpsr.b.v ? 'V' : '.', cpsr.b.q ? 'Q' : '.', cpsr.b.async_abort ? '.' : 'A',
-            cpsr.b.irq ? '.' : 'I', cpsr.b.fiq ? '.' : 'F', get_cpu_mode_str(cpsr.b.mode));
+            cpsr.b.irq ? '.' : 'I', cpsr.b.fiq ? '.' : 'F', arch_get_cpu_mode_str(cpsr.b.mode));
     int i;
     char buf[128] = { 0 };
     int written = 0;
@@ -58,7 +58,7 @@ __attribute__((always_inline)) static inline void arch_dump_all_regs(void) {
     // 5th arg (in the stack): Current PSR
     asm("mrs r4, cpsr");
     asm("push {r4}");
-    void (*f)(void) = (void (*)(void)) dump_regs;
+    void (*f)(void) = (void (*)(void)) arch_dump_regs;
     f();
     asm("pop {r4}");
 
