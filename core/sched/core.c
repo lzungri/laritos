@@ -28,7 +28,7 @@ void sched_switch_to(pcb_t *from, pcb_t *to) {
 static void context_switch(pcb_t *cur, pcb_t *to) {
     verbose_async("Context switch pid=%u -> pid=%u", cur->pid, to->pid);
     // Check whether the process is actually running (i.e. not a zombie)
-    if (cur->sched.status == PCB_STATUS_RUNNING) {
+    if (cur->sched.status == PROC_STATUS_RUNNING) {
         sched_move_to_ready(cur);
     }
     sched_switch_to(cur, to);
@@ -43,7 +43,7 @@ void schedule(void) {
     //      - there is no other pcb ready,
     //      - or there is another pcb ready but with lower priority (i.e. higher number),
     // then continue execution of the current process
-    if (curpcb->sched.status == PCB_STATUS_RUNNING) {
+    if (curpcb->sched.status == PROC_STATUS_RUNNING) {
         if (pcb == NULL || (curpcb->sched.priority < pcb->sched.priority)) {
             return;
         }

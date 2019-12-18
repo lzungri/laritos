@@ -36,7 +36,7 @@ T(process_kernel_process_exit_status_matches_kfunc_t_return_value) {
 
     while (!finish1);
 
-    tassert(p1->sched.status == PCB_STATUS_ZOMBIE);
+    tassert(p1->sched.status == PROC_STATUS_ZOMBIE);
     tassert(p1->exit_status == 12345);
     debug("Kernel thread finished");
 
@@ -65,7 +65,7 @@ T(process_spawning_kernel_process_with_highest_priority_switches_to_it) {
 
     while (!finish1);
 
-    tassert(p1->sched.status == PCB_STATUS_ZOMBIE);
+    tassert(p1->sched.status == PROC_STATUS_ZOMBIE);
     debug("Kernel thread finished");
 
     process_unregister(p1);
@@ -105,9 +105,9 @@ T(process_ready_kernel_threads_with_highest_priority_is_executed_first) {
 
     while (!finish1 || !finish2 || !finish3);
 
-    tassert(p1->sched.status == PCB_STATUS_ZOMBIE);
-    tassert(p2->sched.status == PCB_STATUS_ZOMBIE);
-    tassert(p3->sched.status == PCB_STATUS_ZOMBIE);
+    tassert(p1->sched.status == PROC_STATUS_ZOMBIE);
+    tassert(p2->sched.status == PROC_STATUS_ZOMBIE);
+    tassert(p3->sched.status == PROC_STATUS_ZOMBIE);
     debug("Kernel threads finished");
 
     process_unregister(p1);

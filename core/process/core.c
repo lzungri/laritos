@@ -36,14 +36,14 @@ pcb_t *process_alloc(void) {
         memset(pcb, 0, sizeof(pcb_t));
         INIT_LIST_HEAD(&pcb->sched.pcb_node);
         INIT_LIST_HEAD(&pcb->sched.sched_node);
-        pcb->sched.status = PCB_STATUS_NOT_INIT;
+        pcb->sched.status = PROC_STATUS_NOT_INIT;
         process_set_name(pcb, "?");
     }
     return pcb;
 }
 
 int process_free(pcb_t *pcb) {
-    if (pcb->sched.status != PCB_STATUS_NOT_INIT) {
+    if (pcb->sched.status != PROC_STATUS_NOT_INIT) {
         error_async("You can only free a process in PCB_STATUS_NOT_INIT state");
         return -1;
     }
@@ -65,14 +65,14 @@ int process_register(pcb_t *pcb) {
 }
 
 int process_unregister(pcb_t *pcb) {
-    if (pcb->sched.status != PCB_STATUS_NOT_INIT && pcb->sched.status != PCB_STATUS_ZOMBIE) {
+    if (pcb->sched.status != PROC_STATUS_NOT_INIT && pcb->sched.status != PROC_STATUS_ZOMBIE) {
         error_async("You can only unregister a process in either PCB_STATUS_NOT_INIT or PCB_STATUS_ZOMBIE state");
         return -1;
     }
     debug_async("Un-registering process with pid=%u", pcb->pid);
     // TODO Mutex
     list_del(&pcb->sched.pcb_node);
-    if (pcb->sched.status == PCB_STATUS_ZOMBIE) {
+    if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
         sched_remove_from_zombie(pcb);
     }
     return process_free(pcb);
@@ -107,9 +107,9 @@ int process_set_priority(pcb_t *pcb, uint8_t priority) {
     pcb->sched.priority = priority;
 
     // If the process is in the ready queue, then reorder it based on the new priority
-    if (pcb->sched.status == PCB_STATUS_READY) {
+    if (pcb->sched.status == PROC_STATUS_READY) {
         sched_move_to_ready(pcb);
-    } else if (pcb->sched.status == PCB_STATUS_RUNNING && priority > prev_prio) {
+    } else if (pcb->sched.status == PROC_STATUS_RUNNING && priority > prev_prio) {
         // If the process is running and it now has a lower priority (i.e. higher number), then re-schedule.
         // There may be now a higher priority ready process
         _laritos.sched.need_sched = true;

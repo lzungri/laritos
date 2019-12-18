@@ -29,7 +29,7 @@ typedef struct {
 } pcb_mm_t;
 
 typedef struct {
-    pcb_status_t status;
+    process_status_t status;
     uint8_t priority;
     struct list_head pcb_node;
     struct list_head sched_node;

@@ -1,17 +1,17 @@
 #pragma once
 
 typedef enum {
-    PCB_STATUS_NOT_INIT = 0,
-    PCB_STATUS_READY,
-    PCB_STATUS_BLOCKED,
-    PCB_STATUS_RUNNING,
-    PCB_STATUS_ZOMBIE,
+    PROC_STATUS_NOT_INIT = 0,
+    PROC_STATUS_READY,
+    PROC_STATUS_BLOCKED,
+    PROC_STATUS_RUNNING,
+    PROC_STATUS_ZOMBIE,
 
-    PCB_STATUS_LEN,
-} pcb_status_t;
+    PROC_STATUS_LEN,
+} process_status_t;
 
-static inline char *pcb_get_status_str(pcb_status_t status) {
-    static char *statusstr[PCB_STATUS_LEN] =
+static inline char *pcb_get_status_str(process_status_t status) {
+    static char *statusstr[PROC_STATUS_LEN] =
         { "NOT INIT", "READY", "BLOCKED", "RUNNING", "ZOMBIE" };
-    return status < PCB_STATUS_LEN ? statusstr[status] : "???";
+    return status < PROC_STATUS_LEN ? statusstr[status] : "???";
 }
