@@ -13,14 +13,15 @@ static inline void debug_message_delimiter(void) {
 }
 
 static inline void debug_dump_processes(void) {
+    char buf[64] = { 0 };
     pcb_t *proc;
     log_always("Processes:");
-    log_always("   name      pid  type  status   prio   mode   pc          sp_ctx");
+    log_always("name      pid  type  status   prio       mode       pc          sp_ctx");
     for_each_process(proc) {
-        log_always("   %-8.8s  %3u   %s   %7s    %3u   %-4.4s   0x%p  0x%p",
+        log_always("%-8.8s  %3u   %s   %7s    %3u   %-12.12s   0x%p  0x%p",
                 proc->name, proc->pid, proc->kernel ? "K" : "U",
                 pcb_get_status_str(proc->sched.status), proc->sched.priority,
-                arch_context_get_cpu_mode_str(proc->mm.sp_ctx),
+                arch_get_psr_str_from_ctx(proc->mm.sp_ctx, buf, sizeof(buf)),
                 arch_context_get_retaddr(proc->mm.sp_ctx), proc->mm.sp_ctx);
     }
 }

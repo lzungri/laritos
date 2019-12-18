@@ -16,10 +16,6 @@ static inline bool arch_context_is_kernel(spctx_t *ctx) {
     return !arch_context_is_usr(ctx);
 }
 
-static inline const char *arch_context_get_cpu_mode_str(spctx_t *ctx) {
-    return arch_get_cpu_mode_str(ctx->spsr.b.mode);
-}
-
 static inline void *arch_context_get_retaddr(spctx_t *ctx) {
     return (void *) ctx->ret;
 }

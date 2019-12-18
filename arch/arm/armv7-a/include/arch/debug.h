@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <printf.h>
 #include <cpu.h>
+#include <arch/context-types.h>
+#include <printf.h>
 
 /**
  * @return: Processor mode string for the given <mode>
@@ -15,15 +17,25 @@ static inline const char *arch_get_cpu_mode_str(uint8_t mode) {
     return modes[mode & 0xf];
 }
 
+static inline char *arch_get_psr_str(regpsr_t psr, char *buf, size_t buflen) {
+    snprintf(buf, buflen, "%c%c%c%c%c%c%c%c %s", psr.b.n ? 'N' : '.', psr.b.z ? 'Z' : '.', psr.b.c ? 'C' : '.',
+            psr.b.v ? 'V' : '.', psr.b.q ? 'Q' : '.', psr.b.async_abort ? '.' : 'A',
+            psr.b.irq ? '.' : 'I', psr.b.fiq ? '.' : 'F', arch_get_cpu_mode_str(psr.b.mode));
+    return buf;
+}
+
+static inline char *arch_get_psr_str_from_ctx(spctx_t *ctx, char *buf, size_t buflen) {
+    return arch_get_psr_str(ctx->spsr, buf, buflen);
+}
+
 static inline void arch_dump_regs(const int32_t *regs, uint8_t nregs, int32_t pc, int32_t lr, regpsr_t cpsr) {
     regpsr_t v = cpsr;
     v.v = 1;
 
+    char cpsrbuf[64] = { 0 };
     error_async("Registers:");
-    error_async("   pc=0x%08lx lr=0x%08lx cpsr=0x%08lx (%c%c%c%c%c%c%c%c %s mode)", pc, lr, cpsr.v,
-            cpsr.b.n ? 'N' : '.', cpsr.b.z ? 'Z' : '.', cpsr.b.c ? 'C' : '.',
-            cpsr.b.v ? 'V' : '.', cpsr.b.q ? 'Q' : '.', cpsr.b.async_abort ? '.' : 'A',
-            cpsr.b.irq ? '.' : 'I', cpsr.b.fiq ? '.' : 'F', arch_get_cpu_mode_str(cpsr.b.mode));
+    error_async("   pc=0x%08lx lr=0x%08lx cpsr=0x%08lx (%s mode)", pc, lr, cpsr.v, arch_get_psr_str(cpsr, cpsrbuf, sizeof(cpsrbuf)));
+
     int i;
     char buf[128] = { 0 };
     int written = 0;
