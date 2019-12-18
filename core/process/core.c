@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <dstruct/list.h>

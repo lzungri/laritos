@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <process/core.h>
@@ -6,7 +5,7 @@
 
 int idle_main(void *data) {
     while (1) {
-        info("IDLE");
+        verbose("IDLE");
         arch_wfi();
     }
     return 0;
