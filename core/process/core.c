@@ -148,10 +148,20 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
         error_async("Couldn't allocate memory for kernel process at 0x%p", pcb);
         goto error_imgalloc;
     }
+    pcb->mm.imgsize = stacksize;
+
+    extern void *__text_start[];
+    extern void *__text_end[];
+    pcb->mm.text_start = (void *) __text_start;
+    pcb->mm.text_size = (secsize_t) ((char *) __text_end - (char *) __text_start);
+
     pcb->mm.stack_bottom = pcb->mm.imgaddr;
     pcb->mm.stack_size = stacksize;
     pcb->mm.sp_ctx = (spctx_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size - 8);
-    debug_async("Kernel process stack 0x%p-0x%p", (char *) pcb->mm.sp_ctx - pcb->mm.stack_size, pcb->mm.sp_ctx);
+
+    debug_async("Process image: 0x%p-0x%p", pcb->mm.imgaddr, (char *) pcb->mm.imgaddr + pcb->mm.imgsize);
+    debug_async("text:          0x%p-0x%p", pcb->mm.text_start, (char *) pcb->mm.text_start + pcb->mm.text_size);
+    debug_async("stack:         0x%p-0x%p", pcb->mm.stack_bottom, (char *) pcb->mm.stack_bottom + pcb->mm.stack_size);
 
     context_init(pcb, kernel_main_wrapper, CPU_MODE_SUPERVISOR);
 

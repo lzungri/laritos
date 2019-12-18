@@ -16,12 +16,19 @@
 typedef struct {
     void *imgaddr;
     secsize_t imgsize;
-    void *stack_bottom;
-    secsize_t stack_size;
-    void *heap_start;
-    secsize_t heap_size;
+
+    void *text_start;
+    secsize_t text_size;
+    void *data_start;
+    secsize_t data_size;
     void *got_start;
     secsize_t got_size;
+    void *bss_start;
+    secsize_t bss_size;
+    void *heap_start;
+    secsize_t heap_size;
+    void *stack_bottom;
+    secsize_t stack_size;
 
     spctx_t *sp_ctx;
     // Only used by arch_context_save_and_restore() and arch_context_restore()
