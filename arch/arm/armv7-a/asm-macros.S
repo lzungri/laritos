@@ -13,6 +13,8 @@ _save_ctx\@:
     ldr sp, =__stack_top
     # Save the current r0
     stmdb sp!, {r0}
+    # Check whether we are running in process mode or not.
+    # Process mode flag is the first member of the _laritos struct
     ldr r0, =_laritos
     ldr r0, [r0]
     cmp r0, #1
@@ -62,27 +64,49 @@ _save_ctx_process_mode\@:
     # Mask cpu mode
     and r0, r0, #0b11111
 
-    # user mode?
+    # User mode?
     cmp r0, #0b10000
+    # Not, then use the previously saved mode in r1
     bne _switch_and_save_ctx\@
+    # User mode, then use System mode (which will give us access to all
+    # the user registers plus the ability to switch back to curpsr)
     mov r1, #0b11011111
 
 _switch_and_save_ctx\@:
+    # Switch to target mode
     msr cpsr, r1
 
+    mov r1, \mode
+    and r1, r1, #0b11111
+
+    cmp r0, r1
+    bne _switch_and_save_ctx_diff_mode\@
+
+_switch_and_save_ctx_same_mode\@:
+    # TODO
+
+_switch_and_save_ctx_diff_mode\@:
+    # Save registers (r0-r1 will be saved later)
     stmfd sp!, {r2-r12, lr}
 
+    # Save current sp in r2 so that we can access it from the original
+    # processor mode (i.e. \mode)
     mov r2, sp
 
+    # Switch back to \mode
     msr cpsr_c, \mode
 
-    # Restore original r0
+    # Restore original r0, r1 saved in temporal stack
     ldmfd sp!, {r0, r1}
 
+    # Point sp to the process context
     mov sp, r2
+    # Saved restored r0-r1
     stmfd sp!, {r0, r1}
 
+    # Read Saved PSR
     mrs r0, spsr
+    # Store PSR and ret address
     stmdb sp!, {r0, lr}
 
 _save_ctx_end\@:
