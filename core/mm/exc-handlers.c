@@ -10,11 +10,14 @@
 #include <utils/debug.h>
 #include <utils/math.h>
 #include <sched/core.h>
+#include <arch/debug.h>
 
 static inline void dump_process_info(pcb_t *pcb) {
-    error_async("pid=%u, name=%s, type=%s, context=0x%p, status=%s",
+    char buf[64] = { 0 };
+    error_async("pid=%u, name=%s, type=%s, context=0x%p, status=%s, psr=%s",
             pcb->pid, pcb->name, pcb->kernel ? "K" : "U",
-            pcb->mm.sp_ctx, pcb_get_status_str(pcb->sched.status));
+            pcb->mm.sp_ctx, pcb_get_status_str(pcb->sched.status),
+            arch_get_psr_str(arch_get_spsr(), buf, sizeof(buf)));
 }
 
 static inline void handle_process_exception(pcb_t *pcb) {
