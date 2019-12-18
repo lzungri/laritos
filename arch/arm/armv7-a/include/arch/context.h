@@ -63,28 +63,44 @@ static inline void arch_context_restore(pcb_t *pcb) {
     // Restore previous spctx
     pcb->mm.sp_ctx = pcb->mm.sp_ctx_prev;
 
+
     regpsr_t curpsr = get_cpsr();
     regpsr_t targetpsr = { 0 };
     // The context restore will change based on whether we need to restore a non-user
     // or user context. Check this by inspecting the psr value saved in the stack
     if (arch_context_is_kernel(cursp)) {
         targetpsr = cursp->spsr;
+        // Disable IRQs
         targetpsr.b.irq = 1;
+        // Disable FIQs (not supported yet)
+        targetpsr.b.fiq = 1;
     } else {
+        // If user mode, then switch to System mode, which will give us access to all the
+        // user registers plus the ability to switch back to curpsr
         targetpsr.b.mode = ARM_CPU_MODE_SYSTEM;
+        // Disable IRQs
         targetpsr.b.irq = 1;
+        // Disable FIQs (not supported yet)
         targetpsr.b.fiq = 1;
     }
 
+    // Check if the target and current processor mode are the same. If they are, then the switch
+    // logic is simpler since we don't have to switch modes back and forth
     if (curpsr.b.mode == targetpsr.b.mode) {
         // volatile to prevent any gcc optimization on the assembly code
         asm volatile (
-            "mov r0, %0            \n"
-            "ldmfd r0!, {r1, lr}            \n"
-            "mov sp, r0            \n"
+            /* Copy cursp into r0*/
+            "mov r0, %0              \n"
+            /* Load target mode and ret address (lr will be overwritten later) */
+            "ldmfd r0!, {r1, lr}     \n"
+            /* Save cursp + 8 into sp */
+            "mov sp, r0              \n"
+            /* Set current mode (to update condition flags, etc)*/
             "msr cpsr, r1            \n"
-            "ldmfd sp!, {r0-r12, lr}            \n"
-            "ldr pc, [sp, #-60]            \n"
+            /* Restore registers */
+            "ldmfd sp!, {r0-r12, lr} \n"
+            /* Set pc equals ret address */
+            "ldr pc, [sp, #-60]      \n"
             :
             : "r" (cursp)
             : "memory", /* Memory barrier (do not reorder read/writes)*/
@@ -93,18 +109,33 @@ static inline void arch_context_restore(pcb_t *pcb) {
     } else {
         // volatile to prevent any gcc optimization on the assembly code
         asm volatile (
-            "mov r0, %0            \n"
-            "ldmfd r0!, {r1, lr}            \n"
-            "msr spsr_cxsf, r1            \n"
-            "mov r1, %1            \n"
+            /* Copy cursp into r0*/
+            "mov r0, %0              \n"
+            /* Load target mode and ret address */
+            "ldmfd r0!, {r1, lr}     \n"
+            /* Update saved PSR, CPSR wlll be set to this value with the SUBS instr later */
+            "msr spsr_cxsf, r1       \n"
+            /* Save target psr into r1 */
+            "mov r1, %1              \n"
+            /* Change to target mode */
             "msr cpsr, r1            \n"
-            "mov r1, %2            \n"
-            "add sp, r0, #8            \n"
-            "ldmfd sp!, {r2-r12, lr}            \n"
-            "msr cpsr_c, r1            \n"
-            "mov sp, r0            \n"
-            "ldmfd sp!, {r0, r1}            \n"
-            "subs pc, lr, #0            \n"
+            /* Save curpsr into r1. These kind of instructions will use other auxiliary
+             * registers (e.g. r12) and therefore we need to execute them before
+             * restoring r0-r12 */
+            "mov r1, %2              \n"
+            /* Change target mode sp to point to the end of the sp context (all the remaining
+             * registers will be read later while in cursp mode) */
+            "add sp, r0, #8          \n"
+            /* Restore registers (r0, r1, will be used as temporal regs and restored later)*/
+            "ldmfd sp!, {r2-r12, lr} \n"
+            /* Switch back to cursp */
+            "msr cpsr_c, r1          \n"
+            /* Point SP to the beginning of the rX registers */
+            "mov sp, r0              \n"
+            /* Restore r0 and r1 */
+            "ldmfd sp!, {r0, r1}     \n"
+            /* Jump and switch modes */
+            "subs pc, lr, #0         \n"
             :
             : "r" (cursp), "r" (targetpsr.v), "r" (curpsr.v)
             : "memory", /* Memory barrier (do not reorder read/writes)*/
