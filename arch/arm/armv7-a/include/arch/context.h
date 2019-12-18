@@ -64,7 +64,7 @@ static inline void arch_context_restore(pcb_t *pcb) {
     pcb->mm.sp_ctx = pcb->mm.sp_ctx_prev;
 
 
-    regpsr_t curpsr = get_cpsr();
+    regpsr_t curpsr = arch_get_cpsr();
     regpsr_t targetpsr = { 0 };
     // The context restore will change based on whether we need to restore a non-user
     // or user context. Check this by inspecting the psr value saved in the stack

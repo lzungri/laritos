@@ -251,13 +251,13 @@ typedef struct {
  *
  * @return: Current program status register
  */
-static inline const regpsr_t get_cpsr(void) {
+static inline const regpsr_t arch_get_cpsr(void) {
     regpsr_t cpsr;
     asm("mrs %0, cpsr" : "=r" (cpsr.v));
     return cpsr;
 }
 
-static inline void set_cpsr(regpsr_t *psr) {
+static inline void arch_set_cpsr(regpsr_t *psr) {
     asm("msr cpsr, %0" : : "r" (psr->v));
 }
 
@@ -266,7 +266,7 @@ static inline void set_cpsr(regpsr_t *psr) {
  *
  * @return: Saved program status register
  */
-static inline const regpsr_t get_spsr(void) {
+static inline const regpsr_t arch_get_spsr(void) {
     regpsr_t spsr;
     asm("mrs %0, spsr" : "=r" (spsr.v));
     return spsr;
