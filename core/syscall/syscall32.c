@@ -13,11 +13,11 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
         fatal("ABORT: Cannot issue a system call while in kernel mode");
     }
 
-    pcb_set_current_pcb_stack_context(ctx);
+    process_set_current_pcb_stack_context(ctx);
     verbose_async("syscall_%d(%lx, %lx, %lx, %lx, %lx, %lx)", sysno, arg0, arg1, arg2, arg3, arg4, arg5);
 
-    pcb_t *pcb = pcb_get_current();
-    assert(pcb != NULL, "pcb_get_current() cannot be NULL on system call");
+    pcb_t *pcb = process_get_current();
+    assert(pcb != NULL, "process_get_current() cannot be NULL on system call");
 
     int ret = 0;
     switch (sysno) {

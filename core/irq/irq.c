@@ -10,7 +10,7 @@
 
 int irq_handler(spctx_t *ctx) {
     if (_laritos.process_mode) {
-        pcb_set_current_pcb_stack_context(ctx);
+        process_set_current_pcb_stack_context(ctx);
     }
 
     int fret = 0;

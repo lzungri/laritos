@@ -18,7 +18,7 @@ void sched_switch_to(pcb_t *from, pcb_t *to) {
 
     // Once the *from* context is restored, it will continue execution from
     // here (actually from within the context_save_and_restore() function)
-    verbose_async("Resuming execution of pid=%u", pcb_get_current()->pid);
+    verbose_async("Resuming execution of pid=%u", process_get_current()->pid);
 
 #ifdef DEBUG
     debug_dump_processes();
@@ -36,7 +36,7 @@ static void context_switch(pcb_t *cur, pcb_t *to) {
 
 void schedule(void) {
     cpu_t *c = cpu();
-    pcb_t *curpcb = pcb_get_current();
+    pcb_t *curpcb = process_get_current();
     pcb_t *pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);
 
     // If the current process is running and:

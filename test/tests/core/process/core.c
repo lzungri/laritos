@@ -48,7 +48,7 @@ TEND
 static int kproc1(void *data) {
     unsigned long long i = 0;
     while (i++ < 1000) {
-        verbose("%s: %lu", pcb_get_current()->name, (uint32_t) i);
+        verbose("%s: %lu", process_get_current()->name, (uint32_t) i);
     }
 
     bool *finish = (bool *) data;
@@ -75,8 +75,8 @@ TEND
 
 static int kproc2(void *data) {
     unsigned long long i = 0;
-    while (i++ < 2000 * pcb_get_current()->pid) {
-        verbose("%s: %lu", pcb_get_current()->name, (uint32_t) i);
+    while (i++ < 2000 * process_get_current()->pid) {
+        verbose("%s: %lu", process_get_current()->name, (uint32_t) i);
     }
 
     bool *finish = (bool *) data;

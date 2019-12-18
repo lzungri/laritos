@@ -63,7 +63,7 @@ static inline void sched_move_to_running(pcb_t *pcb) {
     // TODO Mutex
     list_del_init(&pcb->sched.sched_node);
     pcb->sched.status = PCB_STATUS_RUNNING;
-    pcb_set_current(pcb);
+    process_set_current(pcb);
 }
 
 static inline void sched_remove_from_zombie(pcb_t *pcb) {

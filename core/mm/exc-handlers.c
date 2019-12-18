@@ -32,8 +32,8 @@ void exc_undef_handler(int32_t pc, spctx_t *ctx) {
         fatal("ABORT");
     }
 
-    pcb_set_current_pcb_stack_context(ctx);
-    handle_process_exception(pcb_get_current());
+    process_set_current_pcb_stack_context(ctx);
+    handle_process_exception(process_get_current());
 }
 
 void exc_prefetch_handler(int32_t pc, spctx_t *ctx) {
@@ -41,8 +41,8 @@ void exc_prefetch_handler(int32_t pc, spctx_t *ctx) {
         fatal("ABORT");
     }
 
-    pcb_set_current_pcb_stack_context(ctx);
-    handle_process_exception(pcb_get_current());
+    process_set_current_pcb_stack_context(ctx);
+    handle_process_exception(process_get_current());
 }
 
 void exc_abort_handler(int32_t pc, spctx_t *ctx) {
@@ -50,6 +50,6 @@ void exc_abort_handler(int32_t pc, spctx_t *ctx) {
         fatal("ABORT");
     }
 
-    pcb_set_current_pcb_stack_context(ctx);
-    handle_process_exception(pcb_get_current());
+    process_set_current_pcb_stack_context(ctx);
+    handle_process_exception(process_get_current());
 }

@@ -4,5 +4,5 @@
 #include <syscall/syscall.h>
 
 int syscall_getpid(void) {
-    return pcb_get_current()->pid;
+    return process_get_current()->pid;
 }

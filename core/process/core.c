@@ -37,7 +37,7 @@ pcb_t *process_alloc(void) {
         INIT_LIST_HEAD(&pcb->sched.pcb_node);
         INIT_LIST_HEAD(&pcb->sched.sched_node);
         pcb->sched.status = PCB_STATUS_NOT_INIT;
-        pcb_set_name(pcb, "?");
+        process_set_name(pcb, "?");
     }
     return pcb;
 }
@@ -79,11 +79,11 @@ int process_unregister(pcb_t *pcb) {
 }
 
 spctx_t *asm_process_get_current_pcb_stack_context(void) {
-    return pcb_get_current()->mm.sp_ctx;
+    return process_get_current()->mm.sp_ctx;
 }
 
 pcb_t *asm_process_get_current(void) {
-    return pcb_get_current();
+    return process_get_current();
 }
 
 void process_kill(pcb_t *pcb) {
@@ -120,7 +120,7 @@ int process_set_priority(pcb_t *pcb, uint8_t priority) {
 
 static void kernel_main_wrapper(kproc_main_t main, void *data) {
     verbose_async("Starting kernel_main_wrapper(main=0x%p, data=0x%p)", main, data);
-    pcb_t *pcb = pcb_get_current();
+    pcb_t *pcb = process_get_current();
     pcb->exit_status = main(data);
     info_async("Exiting kernel process pid=%u, exitcode=%d", pcb->pid, pcb->exit_status);
     process_kill_and_schedule(pcb);
@@ -138,7 +138,7 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
         goto error_pcb;
     }
 
-    pcb_set_name(pcb, name);
+    process_set_name(pcb, name);
     pcb->kernel = true;
 
     verbose_async("Allocating %lu bytes for kernel process stack", stacksize);

@@ -68,7 +68,7 @@ static int non_process_sleep_cb(vrtimer_comp_t *t, void *data) {
 
 static inline void _sleep(vrtimer_comp_t *t, tick_t ticks) {
     if (_laritos.process_mode) {
-        pcb_t *pcb = pcb_get_current();
+        pcb_t *pcb = process_get_current();
         sched_move_to_blocked(pcb);
         // Running in process mode, then block the process and schedule()
         if (t->ops.add_vrtimer(t, ticks, process_sleep_cb, pcb, false) < 0) {

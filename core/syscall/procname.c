@@ -4,7 +4,7 @@
 #include <syscall/syscall.h>
 
 int syscall_set_process_name(char *name) {
-    pcb_t *pcb = pcb_get_current();
-    pcb_set_name(pcb, name);
+    pcb_t *pcb = process_get_current();
+    process_set_name(pcb, name);
     return 0;
 }
