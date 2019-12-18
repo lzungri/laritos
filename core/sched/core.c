@@ -5,6 +5,7 @@
 
 #include <cpu.h>
 #include <process/core.h>
+#include <process/validation.h>
 #include <sched/core.h>
 #include <sched/context.h>
 #include <utils/assert.h>
@@ -37,7 +38,13 @@ static void context_switch(pcb_t *cur, pcb_t *to) {
 void schedule(void) {
     cpu_t *c = cpu();
     pcb_t *curpcb = process_get_current();
-    pcb_t *pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);
+    pcb_t *pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);;
+
+    while (pcb != NULL && pcb != curpcb && !process_is_valid_context(pcb, pcb->mm.sp_ctx)) {
+        error("Cannot switch to pid=%u, invalid context. Killing process...", pcb->pid);
+        process_kill(pcb);
+        pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);;
+    }
 
     // If the current process is running and:
     //      - there is no other pcb ready,
