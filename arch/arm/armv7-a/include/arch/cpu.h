@@ -266,10 +266,22 @@ static inline void arch_set_cpsr(regpsr_t *psr) {
  *
  * @return: Saved program status register
  */
-static inline const regpsr_t arch_get_spsr(void) {
+static inline const regpsr_t arch_get_saved_psr(void) {
     regpsr_t spsr;
     asm("mrs %0, spsr" : "=r" (spsr.v));
     return spsr;
+}
+
+static inline bool arch_is_irq(regpsr_t psr) {
+    return psr.b.mode == ARM_CPU_MODE_IRQ;
+}
+
+static inline bool arch_is_svc(regpsr_t psr) {
+    return psr.b.mode == ARM_CPU_MODE_SUPERVISOR;
+}
+
+static inline bool arch_is_user(regpsr_t psr) {
+    return psr.b.mode == ARM_CPU_MODE_USER;
 }
 
 /**

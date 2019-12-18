@@ -17,7 +17,7 @@ static inline void dump_process_info(pcb_t *pcb) {
     error_async("pid=%u, name=%s, type=%s, context=0x%p, status=%s, psr=%s",
             pcb->pid, pcb->name, pcb->kernel ? "K" : "U",
             pcb->mm.sp_ctx, pcb_get_status_str(pcb->sched.status),
-            arch_get_psr_str(arch_get_spsr(), buf, sizeof(buf)));
+            arch_get_psr_str(arch_get_saved_psr(), buf, sizeof(buf)));
 }
 
 static inline void handle_process_exception(pcb_t *pcb) {
@@ -26,8 +26,15 @@ static inline void handle_process_exception(pcb_t *pcb) {
     error_async("ABORT");
     // Kill the offending process
     process_kill(pcb);
-    // Switch to another ready process
-    schedule();
+
+    // If the exception occurred while in IRQ mode, then stop the kernel with a fatal error.
+    // Otherwise, schedule a new process
+    if (arch_is_irq(arch_get_saved_psr())) {
+        fatal("Error while handling irq");
+    } else {
+        // Switch to another ready process
+        schedule();
+    }
 }
 
 void exc_undef_handler(int32_t pc, spctx_t *ctx) {
