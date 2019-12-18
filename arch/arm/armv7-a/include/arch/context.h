@@ -123,8 +123,7 @@ static inline void arch_context_restore(pcb_t *pcb) {
              * registers (e.g. r12) and therefore we need to execute them before
              * restoring r0-r12 */
             "mov r1, %2              \n"
-            /* Change target mode sp to point to the end of the sp context (all the remaining
-             * registers will be read later while in cursp mode) */
+            /* Skip r0 and r1 registers (those are going to be restored later) */
             "add sp, r0, #8          \n"
             /* Restore registers (r0, r1, will be used as temporal regs and restored later)*/
             "ldmfd sp!, {r2-r12, lr} \n"

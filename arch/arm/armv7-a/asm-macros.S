@@ -90,45 +90,6 @@ _save_ctx_end\@:
 .endm
 
 
-# Restores the current context from the stack associated with the process stack
-# NOTE: Context stack pointer is passed via r0
-#
-# @param mode: Processor mode associated with the exception
-.macro RESTORE_PROCESS_CONTEXT mode
-    # Get the saved psr to check the cpu mode of the interrupted thread
-    ldr r1, [r0]
-
-    # Disable irq, otherwise when we switch modes, it will call the irq handler again
-    orr r2, r1, #0b10000000
-
-    # Mask cpu mode
-    and r1, r1, #0b11111
-
-    # User mode?
-    cmp r1, #0b10000
-    bne _switch_and_restore_ctx\@
-
-    mov r2, #0b11011111
-
-_switch_and_restore_ctx\@:
-    # Pop the SPSR and link register from the r0 register, which points to the stack
-    ldmfd r0!, {r1, lr}
-    # Update the SPSR (CPSR will be restored from this value)
-    msr spsr_cxsf, r1
-
-    msr cpsr, r2
-
-    mov sp, r0
-    ldmfd sp!, {r0-r12, lr}
-
-    # Switch back to the mode specified by the <mode> argument
-    msr cpsr_c, \mode
-
-    # subS to also restore cpsr from spsr
-    subs pc, lr, #0
-.endm
-
-
 # Restores the current non process context from the stack associated with
 # the exception (e.g. sp_irq for irq exceptions)
 .macro RESTORE_NONPROCESS_CONTEXT
@@ -170,8 +131,7 @@ _switch_and_restore_ctx\@:
 # Calls the <handler> and restores the context on return
 #
 # @param handler: Handler symbol
-# @param mode: Processor mode associated with the exception
-.macro CALL_HANDLER_AND_RESTORE_CONTEXT handler, mode
+.macro CALL_HANDLER_AND_RESTORE_CONTEXT handler
 _restore_ctx\@:
     ldr r4, =_laritos
     ldr r4, [r4]
@@ -184,17 +144,17 @@ _restore_ctx_nonprocess_mode\@:
 
 _restore_ctx_process_mode\@:
     bl \handler
-    # In case there was a context switch, get current sp context
-    bl process_get_current_pcb_stack_context
-    RESTORE_PROCESS_CONTEXT \mode
+    # Get current process and restore its context
+    bl asm_process_get_current
+    # Current process is passed via r0
+    b asm_arch_context_restore
 .endm
 
 # Calls the <handler> and restores the context on return, it also saves the return
 # value of the handler in r0 for the caller to access it
 #
 # @param handler: Handler symbol
-# @param mode: Processor mode associated with the exception
-.macro CALL_HANDLER_AND_RESTORE_CONTEXT_WITH_RETVAL handler, mode
+.macro CALL_HANDLER_AND_RESTORE_CONTEXT_WITH_RETVAL handler
 _restore_ctx\@:
     ldr r4, =_laritos
     ldr r4, [r4]
@@ -209,9 +169,12 @@ _restore_ctx_process_mode\@:
     bl \handler
     # Save retval in r4
     mov r4, r0
-    # In case there was a context switch, get current sp context
-    bl process_get_current_pcb_stack_context
-    # Set the r0 stacked value equals to retval (r4)
+    # Get current process stack context in r0
+    bl asm_process_get_current_pcb_stack_context
+    # Update context with the return value (retval is sent via r0)
     str r4, [r0, #8]
-    RESTORE_PROCESS_CONTEXT \mode
+    # Get current process and restore its context
+    bl asm_process_get_current
+    # Current process is passed via r0
+    b asm_arch_context_restore
 .endm

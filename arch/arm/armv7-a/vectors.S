@@ -64,7 +64,7 @@ asm_undef_handler:
     # Second arg: Stack pointer
     mov r1, sp
 
-    CALL_HANDLER_AND_RESTORE_CONTEXT _undef_handler, #0b11011011
+    CALL_HANDLER_AND_RESTORE_CONTEXT _undef_handler
 
 
 asm_svc_handler:
@@ -80,7 +80,7 @@ asm_svc_handler:
     # We need this to update the pcb->mm.sp
     mov r1, sp
 
-    CALL_HANDLER_AND_RESTORE_CONTEXT_WITH_RETVAL _svc_handler, #0b11010011
+    CALL_HANDLER_AND_RESTORE_CONTEXT_WITH_RETVAL _svc_handler
 
 
 asm_prefetch_handler:
@@ -97,7 +97,7 @@ asm_prefetch_handler:
     # Third arg: Stack pointer
     mov r2, sp
 
-    CALL_HANDLER_AND_RESTORE_CONTEXT _prefetch_handler, #0b11010111
+    CALL_HANDLER_AND_RESTORE_CONTEXT _prefetch_handler
 
 
 asm_abort_handler:
@@ -119,7 +119,7 @@ asm_abort_handler:
     # Third arg: Stack pointer
     mov r2, sp
 
-    CALL_HANDLER_AND_RESTORE_CONTEXT _abort_handler, #0b11010111
+    CALL_HANDLER_AND_RESTORE_CONTEXT _abort_handler
 
 
 asm_reserved_handler:
@@ -141,7 +141,7 @@ asm_irq_handler:
     # First arg: Stack pointer
     mov r0, sp
 
-    CALL_HANDLER_AND_RESTORE_CONTEXT _irq_handler, #0b11010010
+    CALL_HANDLER_AND_RESTORE_CONTEXT _irq_handler
 
 
 asm_fiq_handler:
