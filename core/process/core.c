@@ -78,8 +78,12 @@ int process_unregister(pcb_t *pcb) {
     return process_free(pcb);
 }
 
-spctx_t *process_get_current_pcb_stack_context(void) {
+spctx_t *asm_process_get_current_pcb_stack_context(void) {
     return pcb_get_current()->mm.sp_ctx;
+}
+
+pcb_t *asm_process_get_current(void) {
+    return pcb_get_current();
 }
 
 void process_kill(pcb_t *pcb) {
