@@ -28,6 +28,7 @@ int init_main(void *data) {
 #else
     // Launch a few processes for testing
     // TODO: This code will disappear once we implement a shell and file system
+
     if (loader_load_executable_from_memory(0) == NULL) {
         error("Failed to load app #0");
     }
@@ -41,8 +42,15 @@ int init_main(void *data) {
     if (loader_load_executable_from_memory(0) == NULL) {
         error("Failed to load app #2");
     }
+
+    info("Spawning shell process");
+    int shell_main(void *data);
+    pcb_t *shell = process_spawn_kernel_process("shell", shell_main, NULL,
+                        8196, CONFIG_SCHED_PRIORITY_LOWEST - 10);
+    assert(shell != NULL, "Could not create shell process");
 #endif
 
+    // Wait forever
     while (1) {
         arch_wfi();
     }
