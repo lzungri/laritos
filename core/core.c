@@ -167,36 +167,13 @@ void kernel_entry(void)  {
         fatal("Failed to enable irqs for cpu %u", c->id);
     }
 
-    int idle_main(void *data);
-    pcb_t *idle = process_spawn_kernel_process("IDLE", idle_main, NULL,
-                        CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST);
-    assert(idle != NULL, "Could not create IDLE process");
+    info("Starting init process");
+    int init_main(void *data);
+    pcb_t *init = process_spawn_kernel_process("init", init_main, NULL,
+                        CONFIG_PROCESS_INIT_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST - 1);
+    assert(init != NULL, "Could not create init process");
 
-#ifdef CONFIG_TEST_ENABLED
-    log_always("***** Running in test mode *****");
-    pcb_t *test = process_spawn_kernel_process("TEST", test_main, __tests_start,
-                        CONFIG_PROCESS_TEST_STACK_SIZE, CONFIG_SCHED_PRIORITY_MAX_USER - 1);
-    assert(test != NULL, "Could not create TEST process");
-#else
-
-    // Launch a few processes for testing
-    // TODO: This code will disappear once we implement a shell and file system
-    if (loader_load_executable_from_memory(0) == NULL) {
-        error("Failed to load app #0");
-    }
-
-    // Load the same program, just to have 2 processes for testing
-    if (loader_load_executable_from_memory(0) == NULL) {
-        error("Failed to load app #1");
-    }
-
-    // Load the same program, just to have 3 processes for testing
-    if (loader_load_executable_from_memory(0) == NULL) {
-        error("Failed to load app #2");
-    }
-#endif
-
-    sched_execute_first_system_proc(idle);
+    sched_execute_first_system_proc(init);
     // Execution will never reach this point
 
     shell();
