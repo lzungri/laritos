@@ -22,6 +22,14 @@ int shell_main(void *data) {
 
 
                 switch (buf[0]) {
+                case '+':;
+                    pcb_t *pcb1 = process_get_current();
+                    process_set_priority(pcb1, pcb1->sched.priority + 1);
+                    break;
+                case '-':;
+                    pcb_t *pcb2 = process_get_current();
+                    process_set_priority(pcb2, pcb2->sched.priority - 1);
+                    break;
                 case 's':
                     // system call
                     asm("mov r0, %[c]" : : [c] "r" (buf[0]));
