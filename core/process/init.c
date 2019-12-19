@@ -53,6 +53,15 @@ int init_main(void *data) {
     // Wait forever
     while (1) {
         arch_wfi();
+
+        pcb_t *child;
+        pcb_t *temp;
+        for_each_child_process_safe(process_get_current(), child, temp) {
+            if (child->sched.status == PROC_STATUS_ZOMBIE) {
+                verbose("Unregistering dead child process pid=%u", child->pid);
+                process_unregister(child);
+            }
+        }
     }
     return 0;
 }
