@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <core.h>
 #include <board-types.h>
 #include <board.h>
 #include <driver/driver.h>
@@ -15,6 +16,7 @@
 #include <component/timer.h>
 #include <component/component.h>
 #include <component/stream.h>
+#include <process/core.h>
 
 
 static char logb[CONFIG_LOG_BUFSIZE_BYTES];
@@ -32,8 +34,8 @@ int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
     }
 
     // TODO: Add msecs resolution
-    int nchars = snprintf(lineb, sizeof(lineb), "[%02d/%02d %02d:%02d:%02d] %s %s: ",
-            cal.mon + 1, cal.mday, cal.hour, cal.min, cal.sec, level, tag);
+    int nchars = snprintf(lineb, sizeof(lineb), "[%02d/%02d %02d:%02d:%02d] %3u %s %s: ",
+            cal.mon + 1, cal.mday, cal.hour, cal.min, cal.sec, _laritos.process_mode ? process_get_current()->pid : 0, level, tag);
     // If the required number of chars is bigger than the size of the buffer, then truncate string
     if (nchars > sizeof(lineb)) {
         goto full_buf;
