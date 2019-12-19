@@ -36,6 +36,8 @@ pcb_t *process_alloc(void) {
         memset(pcb, 0, sizeof(pcb_t));
         INIT_LIST_HEAD(&pcb->sched.pcb_node);
         INIT_LIST_HEAD(&pcb->sched.sched_node);
+        INIT_LIST_HEAD(&pcb->children);
+        INIT_LIST_HEAD(&pcb->siblings);
         pcb->sched.status = PROC_STATUS_NOT_INIT;
         process_set_name(pcb, "?");
     }
@@ -58,7 +60,14 @@ int process_free(pcb_t *pcb) {
 int process_register(pcb_t *pcb) {
     process_assign_pid(pcb);
     debug_async("Registering process with pid=%u, priority=%u", pcb->pid, pcb->sched.priority);
+
     // TODO Mutex
+    if (_laritos.process_mode) {
+        pcb_t *parent = process_get_current();
+        pcb->parent = parent;
+        list_add_tail(&pcb->siblings, &parent->children);
+    }
+
     list_add_tail(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
     sched_move_to_ready(pcb);
     return 0;
@@ -69,9 +78,10 @@ int process_unregister(pcb_t *pcb) {
         error_async("You can only unregister a process in either PCB_STATUS_NOT_INIT or PCB_STATUS_ZOMBIE state");
         return -1;
     }
-    debug_async("Un-registering process with pid=%u", pcb->pid);
+    debug_async("Un-registering process with pid=%u, exit status=%d", pcb->pid, pcb->exit_status);
     // TODO Mutex
     list_del(&pcb->sched.pcb_node);
+    list_del(&pcb->siblings);
     if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
         sched_remove_from_zombie(pcb);
     }

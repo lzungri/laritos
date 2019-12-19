@@ -52,6 +52,10 @@ typedef struct pcb {
     pcb_sched_t sched;
 
     int exit_status;
+
+    struct pcb *parent;
+    struct list_head children;
+    struct list_head siblings;
 } pcb_t;
 
 
@@ -98,6 +102,9 @@ static inline void process_set_name(pcb_t *pcb, char *name) {
 
 #define for_each_process(_p) \
     list_for_each_entry(_p, &_laritos.proc.pcbs, sched.pcb_node)
+
+#define for_each_child_process_safe(_parent, _child, _temp) \
+    list_for_each_entry_safe(_child, _temp, &_parent->children, siblings)
 
 #define for_each_ready_process(_p) \
     list_for_each_entry(_p, &_laritos.sched.ready_pcbs, sched.sched_node)

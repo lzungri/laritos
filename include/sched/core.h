@@ -79,6 +79,15 @@ static inline void sched_remove_from_zombie(pcb_t *pcb) {
 static inline void sched_move_to_zombie(pcb_t *pcb) {
     verbose_async("PID %u: %s -> ZOMBIE ", pcb->pid, pcb_get_status_str(pcb->sched.status));
     // TODO Mutex
+    pcb_t *child;
+    pcb_t *temp;
+    pcb_t *parent = pcb->parent;
+    for_each_child_process_safe(pcb, child, temp) {
+        verbose_async("pid=%u new parent pid=%u", child->pid, parent->pid);
+        child->parent = parent;
+        list_move_tail(&child->siblings, &parent->children);
+    }
+
     list_move_tail(&pcb->sched.sched_node, &_laritos.sched.zombie_pcbs);
     pcb->sched.status = PROC_STATUS_ZOMBIE;
 }
