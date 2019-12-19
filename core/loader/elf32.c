@@ -202,14 +202,8 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
 
     process_set_priority(pcb, CONFIG_SCHED_PRIORITY_MAX_USER);
 
-    if (process_register(pcb) < 0) {
-        error_async("Could not register process at 0x%p", pcb);
-        goto error_pcbreg;
-    }
-
     return pcb;
 
-error_pcbreg:
 error_reloc:
 error_setup:
 error_load:

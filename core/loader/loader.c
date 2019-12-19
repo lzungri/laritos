@@ -20,23 +20,38 @@ pcb_t *loader_load_executable_from_memory(uint16_t appidx) {
 
     debug("Loading app at 0x%p", e_ident);
 
-    if (memcmp(e_ident, ELFMAG, sizeof(ELFMAG) - 1) == 0) {
-        switch (e_ident[EI_CLASS]) {
-        case 1:;
-            // ELF 32
-            Elf32_Ehdr *elf = (Elf32_Ehdr *) e_ident;
-            return loader_elf32_load_from_memory(elf);
-        case 2:
-            // ELF 64
-            error("ELF 64 not supported yet");
-            return NULL;
-        default:
-            // Unknown class
-            error("Invalid ELF class %u", e_ident[EI_CLASS]);
-            return NULL;
-        }
+    if (memcmp(e_ident, ELFMAG, sizeof(ELFMAG) - 1) != 0) {
+        error("Executable format not recognized");
+        return NULL;
     }
 
-    error("Executable format not recognized");
-    return NULL;
+
+    pcb_t *pcb = NULL;
+
+    switch (e_ident[EI_CLASS]) {
+    case 1:;
+        // ELF 32
+        Elf32_Ehdr *elf = (Elf32_Ehdr *) e_ident;
+        pcb = loader_elf32_load_from_memory(elf);
+        break;
+    case 2:
+        // ELF 64
+        error("ELF 64 not supported yet");
+        break;
+    default:
+        // Unknown class
+        error("Invalid ELF class %u", e_ident[EI_CLASS]);
+        break;
+    }
+
+    if (pcb == NULL) {
+        return NULL;
+    }
+
+    if (process_register(pcb) < 0) {
+        error_async("Could not register process at 0x%p", pcb);
+        process_free(pcb);
+    }
+
+    return pcb;
 }
