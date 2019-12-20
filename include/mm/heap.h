@@ -18,7 +18,7 @@ void *_malloc(size_t size);
 void _free(void *ptr);
 
 #ifdef CONFIG_MEM_HEAP_BUFFER_PROTECTION
-#include <mm/_heap_prot.h>
+#include <mm/_heap-prot.h>
 #else
 static inline void *malloc(size_t size) {
     return _malloc(size);
