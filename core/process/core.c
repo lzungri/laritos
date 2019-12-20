@@ -5,6 +5,7 @@
 #include <core.h>
 #include <mm/slab.h>
 #include <mm/heap.h>
+#include <mm/spprot.h>
 #include <process/status.h>
 #include <process/core.h>
 #include <sched/core.h>
@@ -168,6 +169,9 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
     pcb->mm.stack_bottom = pcb->mm.imgaddr;
     pcb->mm.stack_size = stacksize;
     pcb->mm.sp_ctx = (spctx_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size - 8);
+
+    // Setup the stack protector
+    spprot_setup(pcb);
 
     debug_async("Process image: 0x%p-0x%p", pcb->mm.imgaddr, (char *) pcb->mm.imgaddr + pcb->mm.imgsize);
     debug_async("text:          0x%p-0x%p", pcb->mm.text_start, (char *) pcb->mm.text_start + pcb->mm.text_size);

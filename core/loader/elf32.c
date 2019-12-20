@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <cpu.h>
 #include <mm/heap.h>
+#include <mm/spprot.h>
 #include <loader/loader.h>
 #include <loader/loader-elf.h>
 #include <loader/elf.h>
@@ -43,6 +44,9 @@ static int load_image_from_memory(Elf32_Ehdr *elf, void *addr) {
 }
 
 static inline int setup_pcb_context(Elf32_Ehdr *elf, pcb_t *pcb) {
+    // Setup the stack protector
+    spprot_setup(pcb);
+
     // Initialize process stack pointer
     pcb->mm.sp_ctx = (spctx_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size - 8);
     verbose_async("Stack pointer at 0x%p", pcb->mm.sp_ctx);
