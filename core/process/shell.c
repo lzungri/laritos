@@ -30,7 +30,7 @@ int shell_main(void *data) {
                     pcb_t *pcb2 = process_get_current();
                     process_set_priority(pcb2, pcb2->sched.priority - 1);
                     break;
-                case 's':
+                case '1':
                     // system call
                     asm("mov r0, %[c]" : : [c] "r" (buf[0]));
                     asm("mov r1, #2");
@@ -39,8 +39,11 @@ int shell_main(void *data) {
                     asm("mov r4, #5");
                     asm("mov r5, #6");
                     asm("mov r6, #7");
-                    debug_dump_cur_state();
                     asm("svc 1");
+                    break;
+                case 's':
+                    debug_dump_processes();
+                    debug_dump_processes_stats();
                     break;
                 case 'r':
                     // reset
