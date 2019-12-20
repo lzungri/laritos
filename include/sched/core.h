@@ -18,6 +18,12 @@ static inline void schedule_if_needed(void) {
     }
 }
 
+static inline void sched_update_stats(pcb_t *pcb) {
+    tick_t delta = _laritos.timeinfo.ticks - pcb->stats.last_status_change;
+    pcb->stats.ticks_spent[pcb->sched.status] += delta;
+    pcb->stats.last_status_change = _laritos.timeinfo.ticks;
+}
+
 /**
  * Adds a READY process in the ready queue sorted in ascending order by priority number
  * (i.e. highest priority process are first in the list).
@@ -41,6 +47,9 @@ static inline void sched_add_ready_proc_sorted(pcb_t *pcb) {
 
 static inline void sched_move_to_ready(pcb_t *pcb) {
     verbose_async("PID %u: %s -> READY", pcb->pid, pcb_get_status_str(pcb->sched.status));
+
+    sched_update_stats(pcb);
+
     // TODO Mutex
     sched_add_ready_proc_sorted(pcb);
     pcb->sched.status = PROC_STATUS_READY;
@@ -53,6 +62,9 @@ static inline void sched_move_to_ready(pcb_t *pcb) {
 
 static inline void sched_move_to_blocked(pcb_t *pcb) {
     verbose_async("PID %u: %s -> BLOCKED", pcb->pid, pcb_get_status_str(pcb->sched.status));
+
+    sched_update_stats(pcb);
+
     // TODO Mutex
     list_move_tail(&pcb->sched.sched_node, &_laritos.sched.blocked_pcbs);
     pcb->sched.status = PROC_STATUS_BLOCKED;
@@ -60,6 +72,9 @@ static inline void sched_move_to_blocked(pcb_t *pcb) {
 
 static inline void sched_move_to_running(pcb_t *pcb) {
     verbose_async("PID %u: %s -> RUNNING", pcb->pid, pcb_get_status_str(pcb->sched.status));
+
+    sched_update_stats(pcb);
+
     // TODO Mutex
     list_del_init(&pcb->sched.sched_node);
     pcb->sched.status = PROC_STATUS_RUNNING;
@@ -71,6 +86,9 @@ static inline void sched_remove_from_zombie(pcb_t *pcb) {
         return;
     }
     verbose_async("PID %u: %s -> NOT_INIT", pcb->pid, pcb_get_status_str(pcb->sched.status));
+
+    sched_update_stats(pcb);
+
     // TODO Mutex
     list_del_init(&pcb->sched.sched_node);
     pcb->sched.status = PROC_STATUS_NOT_INIT;
@@ -78,6 +96,9 @@ static inline void sched_remove_from_zombie(pcb_t *pcb) {
 
 static inline void sched_move_to_zombie(pcb_t *pcb) {
     verbose_async("PID %u: %s -> ZOMBIE ", pcb->pid, pcb_get_status_str(pcb->sched.status));
+
+    sched_update_stats(pcb);
+
     // TODO Mutex
     pcb_t *child;
     pcb_t *temp;

@@ -11,6 +11,7 @@
 #include <utils/assert.h>
 #include <mm/slab.h>
 #include <process/status.h>
+#include <time/tick.h>
 #include <generated/autoconf.h>
 
 typedef struct {
@@ -42,6 +43,11 @@ typedef struct {
     struct list_head sched_node;
 } pcb_sched_t;
 
+typedef struct {
+    abstick_t last_status_change;
+    tick_t ticks_spent[PROC_STATUS_LEN];
+} pcb_stats_t;
+
 typedef struct pcb {
     uint16_t pid;
     char name[CONFIG_PROCESS_MAX_NAME_LEN];
@@ -50,6 +56,7 @@ typedef struct pcb {
     char cmd[CONFIG_PROCESS_MAX_CMD_LEN];
     pcb_mm_t mm;
     pcb_sched_t sched;
+    pcb_stats_t stats;
 
     int exit_status;
 
