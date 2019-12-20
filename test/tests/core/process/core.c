@@ -106,7 +106,7 @@ TEND
 
 static int kproc3(void *data) {
     unsigned long long i = 0;
-    while (i++ < 1000000000) {
+    while (i++ < 500000000) {
         verbose("%s: %lu", process_get_current()->name, (uint32_t) i);
     }
 
