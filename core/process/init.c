@@ -51,7 +51,7 @@ int init_main(void *data) {
     }
 #endif
 
-    // Wait forever
+    // Loop forever
     while (1) {
         arch_wfi();
 
