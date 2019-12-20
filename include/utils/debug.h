@@ -7,6 +7,7 @@
 #include <process/core.h>
 #include <process/status.h>
 #include <sched/context.h>
+#include <sched/core.h>
 
 static inline void debug_message_delimiter(void) {
     error_async("*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
@@ -26,6 +27,19 @@ static inline void debug_dump_processes(void) {
     }
 }
 
+static inline void debug_dump_processes_stats(void) {
+    pcb_t *proc;
+    log_always("Processes stats (ticks):");
+    log_always("name   pid    ready  running  blocked   zombie");
+    for_each_process(proc) {
+        // Update with the latest stats
+        sched_update_stats(proc);
+        log_always("%-7.7s %2u  %7lu  %7lu  %7lu  %7lu",
+                proc->name, proc->pid, proc->stats.ticks_spent[PROC_STATUS_READY], proc->stats.ticks_spent[PROC_STATUS_RUNNING],
+                proc->stats.ticks_spent[PROC_STATUS_BLOCKED], proc->stats.ticks_spent[PROC_STATUS_ZOMBIE]);
+    }
+}
+
 /**
  * Print the current state of the OS
  *
@@ -41,6 +55,7 @@ __attribute__((always_inline)) static inline void debug_dump_cur_state(void) {
     void heap_dump_info(void);
     heap_dump_info();
     debug_dump_processes();
+    debug_dump_processes_stats();
 }
 
 static inline void debug_dump_registered_comps(void) {
