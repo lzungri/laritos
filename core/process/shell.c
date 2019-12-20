@@ -10,6 +10,8 @@
 #include <utils/debug.h>
 
 int shell_main(void *data) {
+    pcb_t *proc = process_get_current();
+
     while (true) {
         component_t *c;
         for_each_component_type(c, COMP_TYPE_INPUTDEV) {
@@ -23,12 +25,10 @@ int shell_main(void *data) {
 
                 switch (buf[0]) {
                 case '+':;
-                    pcb_t *pcb1 = process_get_current();
-                    process_set_priority(pcb1, pcb1->sched.priority + 1);
+                    process_set_priority(proc, proc->sched.priority + 1);
                     break;
                 case '-':;
-                    pcb_t *pcb2 = process_get_current();
-                    process_set_priority(pcb2, pcb2->sched.priority - 1);
+                    process_set_priority(proc, proc->sched.priority - 1);
                     break;
                 case '1':
                     // system call
@@ -40,6 +40,12 @@ int shell_main(void *data) {
                     asm("mov r5, #6");
                     asm("mov r6, #7");
                     asm("svc 1");
+                    break;
+                case '2':;
+                    uint32_t *bottom = proc->mm.stack_bottom;
+                    *bottom = 0xCACACACA;
+                    uint32_t *top = (uint32_t *) ((char *) proc->mm.stack_bottom + proc->mm.stack_size - 4);
+                    *top = 0xBABABABA;
                     break;
                 case 's':
                     debug_dump_processes();
