@@ -2,7 +2,10 @@
 
 #include <log.h>
 #include <cpu.h>
+#include <core.h>
 #include <utils/debug.h>
+#include <mm/exc-handlers.h>
+
 
 #define CANARY 0xAACCBBDDL
 
@@ -62,7 +65,18 @@ __attribute__((always_inline)) static inline void free(void *ptr) {
         error("  Deallocation at pc=0x%p", pc);
         error("  Run gdb-multiarch -batch -n -ex 'file bin/laritos.elf' -ex 'disassemble /m 0x%p'", pc);
         debug_message_delimiter();
-        fatal("ABORT");
+
+        if (_laritos.process_mode) {
+            // Free chunk anyway
+            _free(h);
+            // Kill process and schedule
+            handle_process_exception(process_get_current());
+            // Execution will never reach this point
+        } else {
+            // Stop the kernel
+            fatal("ABORT: Cannot issue a system call while in kernel mode");
+        }
+
     }
     _free(h);
 }

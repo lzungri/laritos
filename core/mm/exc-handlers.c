@@ -14,10 +14,12 @@
 
 static inline void dump_process_info(pcb_t *pcb) {
     char buf[64] = { 0 };
-    error_async("pid=%u, name=%s, type=%s, context=0x%p, status=%s, psr=%s",
+    char buf2[64] = { 0 };
+    error_async("pid=%u, name=%s, type=%s, status=%s, spsr=%s, cpsr=%s",
             pcb->pid, pcb->name, pcb->kernel ? "K" : "U",
-            pcb->mm.sp_ctx, pcb_get_status_str(pcb->sched.status),
-            arch_get_psr_str(arch_get_saved_psr(), buf, sizeof(buf)));
+            pcb_get_status_str(pcb->sched.status),
+            arch_get_psr_str(arch_get_saved_psr(), buf, sizeof(buf)),
+            arch_get_psr_str(arch_get_cpsr(), buf2, sizeof(buf2)));
 }
 
 void handle_process_exception(pcb_t *pcb) {
