@@ -19,6 +19,13 @@ int init_main(void *data) {
                         CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST);
     assert(idle != NULL, "Could not create idle process");
 
+    // TODO Remove this process, this is just for debugging
+    info("Spawning shell process");
+    int shell_main(void *data);
+    pcb_t *shell = process_spawn_kernel_process("shell", shell_main, NULL,
+                        8196, CONFIG_SCHED_PRIORITY_LOWEST - 10);
+    assert(shell != NULL, "Could not create shell process");
+
 #ifdef CONFIG_TEST_ENABLED
     log_always("***** Running in test mode *****");
     info("Spawning test process");
@@ -42,12 +49,6 @@ int init_main(void *data) {
     if (loader_load_executable_from_memory(0) == NULL) {
         error("Failed to load app #2");
     }
-
-    info("Spawning shell process");
-    int shell_main(void *data);
-    pcb_t *shell = process_spawn_kernel_process("shell", shell_main, NULL,
-                        8196, CONFIG_SCHED_PRIORITY_LOWEST - 10);
-    assert(shell != NULL, "Could not create shell process");
 #endif
 
     // Wait forever
