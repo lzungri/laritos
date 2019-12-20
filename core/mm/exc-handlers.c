@@ -20,7 +20,7 @@ static inline void dump_process_info(pcb_t *pcb) {
             arch_get_psr_str(arch_get_saved_psr(), buf, sizeof(buf)));
 }
 
-static inline void handle_process_exception(pcb_t *pcb) {
+void handle_process_exception(pcb_t *pcb) {
     dump_process_info(pcb);
     debug_message_delimiter();
     error_async("ABORT");
@@ -34,6 +34,7 @@ static inline void handle_process_exception(pcb_t *pcb) {
     } else {
         // Switch to another ready process
         schedule();
+        // Execution will never reach this point
     }
 }
 
