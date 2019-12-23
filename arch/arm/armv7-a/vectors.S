@@ -70,9 +70,6 @@ asm_undef_handler:
 asm_svc_handler:
     SAVE_CONTEXT #0b11010011
 
-    # Enable interrupts while processing system calls
-    cpsie i
-
     # Load the SVC instruction into r0 to get the service call number.
     # The instruction is located 4 bytes behind the lr
     ldr r0, [lr, #-4]

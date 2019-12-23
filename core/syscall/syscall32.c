@@ -10,6 +10,9 @@
 #include <mm/exc-handlers.h>
 
 int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5) {
+    // Enable interrupts while processing system calls
+    arch_enable_local_irq();
+
     if (_laritos.process_mode) {
         process_set_current_pcb_stack_context(ctx);
     }
