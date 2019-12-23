@@ -24,7 +24,7 @@ static inline void spprot_check(pcb_t *pcb) {
         error("Expected canaries head=0x%lX tail=0x%lX, got head=0x%lX tail=0x%lX", CANARY_STACK, CANARY_STACK, *top, *bottom);
 
         // Kill process and schedule
-        handle_process_exception(process_get_current());
+        exc_handle_process_exception(process_get_current());
         // Execution will never reach this point
     }
 }

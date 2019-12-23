@@ -12,7 +12,7 @@
 #include <sched/core.h>
 #include <arch/debug.h>
 
-static inline void dump_process_info(pcb_t *pcb) {
+void exc_dump_process_info(pcb_t *pcb) {
     char buf[64] = { 0 };
     char buf2[64] = { 0 };
     error_async("pid=%u, name=%s, type=%s, status=%s, spsr=%s, cpsr=%s",
@@ -22,8 +22,8 @@ static inline void dump_process_info(pcb_t *pcb) {
             arch_get_psr_str(arch_get_cpsr(), buf2, sizeof(buf2)));
 }
 
-void handle_process_exception(pcb_t *pcb) {
-    dump_process_info(pcb);
+void exc_handle_process_exception(pcb_t *pcb) {
+    exc_dump_process_info(pcb);
     debug_message_delimiter();
     error_async("ABORT");
     // Kill the offending process
@@ -46,7 +46,7 @@ void exc_undef_handler(int32_t pc, spctx_t *ctx) {
     }
 
     process_set_current_pcb_stack_context(ctx);
-    handle_process_exception(process_get_current());
+    exc_handle_process_exception(process_get_current());
 }
 
 void exc_prefetch_handler(int32_t pc, spctx_t *ctx) {
@@ -55,7 +55,7 @@ void exc_prefetch_handler(int32_t pc, spctx_t *ctx) {
     }
 
     process_set_current_pcb_stack_context(ctx);
-    handle_process_exception(process_get_current());
+    exc_handle_process_exception(process_get_current());
 }
 
 void exc_abort_handler(int32_t pc, spctx_t *ctx) {
@@ -64,5 +64,5 @@ void exc_abort_handler(int32_t pc, spctx_t *ctx) {
     }
 
     process_set_current_pcb_stack_context(ctx);
-    handle_process_exception(process_get_current());
+    exc_handle_process_exception(process_get_current());
 }

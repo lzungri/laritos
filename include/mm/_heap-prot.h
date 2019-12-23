@@ -70,7 +70,7 @@ __attribute__((always_inline)) static inline void free(void *ptr) {
             // Free chunk anyway
             _free(h);
             // Kill process and schedule
-            handle_process_exception(process_get_current());
+            exc_handle_process_exception(process_get_current());
             // Execution will never reach this point
         } else {
             // Stop the kernel

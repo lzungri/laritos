@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <stdbool.h>
@@ -13,6 +12,7 @@
 #include <process/status.h>
 #include <component/sched.h>
 #include <mm/spprot.h>
+#include <mm/exc-handlers.h>
 
 void sched_switch_to(pcb_t *from, pcb_t *to) {
     sched_move_to_running(to);
@@ -45,6 +45,7 @@ void schedule(void) {
     pcb_t *pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);;
 
     while (pcb != NULL && pcb != curpcb && !process_is_valid_context(pcb, pcb->mm.sp_ctx)) {
+        exc_dump_process_info(pcb);
         error("Cannot switch to pid=%u, invalid context. Killing process...", pcb->pid);
         process_kill(pcb);
         pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);;

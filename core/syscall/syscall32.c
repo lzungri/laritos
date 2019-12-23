@@ -22,7 +22,7 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
     if (arch_context_is_kernel(ctx)) {
         if (_laritos.process_mode) {
             error("Cannot issue a system call in a kernel process");
-            handle_process_exception(process_get_current());
+            exc_handle_process_exception(process_get_current());
             // Execution will never reach this point
         } else {
             fatal("ABORT: Cannot issue a system call while in kernel mode");
