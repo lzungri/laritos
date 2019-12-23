@@ -14,7 +14,7 @@ static inline void context_init(struct pcb *pcb, void *retaddr, cpu_mode_t mode)
 
 static inline void context_restore(pcb_t * pcb) {
     verbose_async("Restoring context for pid=%u", pcb->pid);
-    arch_context_restore(pcb);
+    arch_context_restore(pcb->mm.sp_ctx);
 }
 
 /**

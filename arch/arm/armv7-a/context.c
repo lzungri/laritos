@@ -2,6 +2,6 @@
 
 #include <sched/context.h>
 
-void asm_arch_context_restore(pcb_t *pcb) {
-    arch_context_restore(pcb);
+void asm_arch_context_restore(spctx_t *spctx) {
+    arch_context_restore(spctx);
 }

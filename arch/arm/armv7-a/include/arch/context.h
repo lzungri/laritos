@@ -31,8 +31,6 @@ static inline void arch_context_set_second_arg(spctx_t *ctx, void *arg) {
 }
 
 static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t mode) {
-    // Save what is going to be the previous stack context
-    pcb->mm.sp_ctx_prev = pcb->mm.sp_ctx;
     // Move back in the stack one spctx_t chunk
     pcb->mm.sp_ctx--;
     spctx_t *ctx = pcb->mm.sp_ctx;
@@ -54,18 +52,13 @@ static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t 
     ctx->r[9] = (int32_t) pcb->mm.got_start;
 }
 
-static inline void arch_context_restore(pcb_t *pcb) {
-    spctx_t *cursp = pcb->mm.sp_ctx;
-    // Restore previous spctx
-    pcb->mm.sp_ctx = pcb->mm.sp_ctx_prev;
-
-
+static inline void arch_context_restore(spctx_t *spctx) {
     regpsr_t curpsr = arch_get_cpsr();
     regpsr_t targetpsr = { 0 };
     // The context restore will change based on whether we need to restore a non-user
     // or user context. Check this by inspecting the psr value saved in the stack
-    if (arch_context_is_kernel(cursp)) {
-        targetpsr = cursp->spsr;
+    if (arch_context_is_kernel(spctx)) {
+        targetpsr = spctx->spsr;
         // Disable IRQs
         targetpsr.b.irq = 1;
         // Disable FIQs (not supported yet)
@@ -98,7 +91,7 @@ static inline void arch_context_restore(pcb_t *pcb) {
             /* Set pc equals ret address */
             "ldr pc, [sp, #-60]      \n"
             :
-            : "r" (cursp)
+            : "r" (spctx)
             : "memory", /* Memory barrier (do not reorder read/writes)*/
               "cc", /* Tell gcc this code modifies the cpsr */
               "r0", "r1" /* Do not use r0, r2 in compiler generated code since we are using it */);
@@ -132,7 +125,7 @@ static inline void arch_context_restore(pcb_t *pcb) {
             /* Jump and switch modes */
             "subs pc, lr, #0         \n"
             :
-            : "r" (cursp), "r" (targetpsr.v), "r" (curpsr.v)
+            : "r" (spctx), "r" (targetpsr.v), "r" (curpsr.v)
             : "memory", /* Memory barrier (do not reorder read/writes)*/
               "cc", /* Tell gcc this code modifies the cpsr */
               "r0", "r1" /* Do not use r0, r2 in compiler generated code since we are using it */);
@@ -168,14 +161,13 @@ static inline void arch_context_save_and_restore(pcb_t *spcb, pcb_t *rpcb) {
 
     // Check whether this is a context save or returning from a context restore
     if (ctx_saved) {
-        spcb->mm.sp_ctx_prev = spcb->mm.sp_ctx;
         // Update the context pointer
         spcb->mm.sp_ctx = (spctx_t *) arch_regs_get_sp();
 
         // Since we screw the stack we need to do the saving and restoring here, that way,
         // when execution goes back to spcb, it will fix the stack and continue execution as
         // normal
-        arch_context_restore(rpcb);
+        arch_context_restore(rpcb->mm.sp_ctx);
 
         // Execution will never reach this point
         // When spcb context is restored, it will continue right in the if (ctx_saved) instruction,

@@ -6,9 +6,7 @@
 
 /**
  * Process context saved by the os in the process stack every time there
- * is a switch from user to kernel
- * This structure maps the set of registers pushed into the
- * stack by the handlers.
+ * is an exception or context switch.
  *
  * We need the following stack layout to be able to perform
  * context switches:

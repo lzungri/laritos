@@ -160,17 +160,19 @@ _restore_ctx\@:
     ldr r4, =_laritos
     ldr r4, [r4]
     cmp r4, #1
+
     beq _restore_ctx_process_mode\@
 
 _restore_ctx_nonprocess_mode\@:
+    # Jump to the exception handler
     bl \handler
     RESTORE_NONPROCESS_CONTEXT
 
 _restore_ctx_process_mode\@:
+    # Jump to the exception handler
     bl \handler
-    # Get current process and restore its context
-    bl asm_process_get_current
-    # Current process is passed via r0
+    # Pass current stack pointer as the first argument
+    mov r0, sp
     b asm_arch_context_restore
 .endm
 
@@ -183,22 +185,20 @@ _restore_ctx\@:
     ldr r4, =_laritos
     ldr r4, [r4]
     cmp r4, #1
+
     beq _restore_ctx_process_mode\@
 
 _restore_ctx_nonprocess_mode\@:
+    # Jump to the exception handler
     bl \handler
     RESTORE_NONPROCESS_CONTEXT
 
 _restore_ctx_process_mode\@:
+    # Jump to the exception handler
     bl \handler
-    # Save retval in r4
-    mov r4, r0
-    # Get current process stack context in r0
-    bl asm_process_get_current_pcb_stack_context
     # Update context with the return value (retval is sent via r0)
-    str r4, [r0, #8]
-    # Get current process and restore its context
-    bl asm_process_get_current
-    # Current process is passed via r0
+    str r0, [sp, #8]
+    # Pass current stack pointer as the first argument
+    mov r0, sp
     b asm_arch_context_restore
 .endm
