@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <cpu.h>
@@ -14,13 +13,12 @@
 #include <sched/core.h>
 
 int time_rtc_gettime(time_t *t) {
-    component_t *c;
-    for_each_component_type(c, COMP_TYPE_RTC) {
-        timer_comp_t *timer = (timer_comp_t *) c;
-        t->ns = 0;
-        return timer->ops.get_value(timer, &t->secs);
+    timer_comp_t *rtc = (timer_comp_t *) component_first_of_type(COMP_TYPE_RTC);
+    if (rtc == NULL) {
+        return -1;
     }
-    return -1;
+    t->ns = 0;
+    return rtc->ops.get_value(rtc, &t->secs);
 }
 
 int time_rtc_get_localtime_calendar(calendar_t *c) {
@@ -46,12 +44,9 @@ int time_get_localtime_offset(void) {
 
 
 static inline vrtimer_comp_t *get_vrtimer(void) {
-    component_t *c;
-    for_each_component_type(c, COMP_TYPE_VRTIMER) {
-        return (vrtimer_comp_t *) c;
-    }
-    assert(false, "Cannot use xsleep() family without a virtual timer");
-    return NULL;
+    vrtimer_comp_t *vrt = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
+    assert(vrt != NULL, "Cannot use xsleep() family without a virtual timer");
+    return vrt;
 }
 
 static int process_sleep_cb(vrtimer_comp_t *t, void *data) {
