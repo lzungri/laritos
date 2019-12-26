@@ -54,6 +54,9 @@ typedef struct component {
     component_ops_t ops;
 } component_t;
 
+#define component_first_of_type(_t) \
+    list_first_entry_or_null(&_laritos.comps[_t], component_t, list)
+
 #define for_each_component_type(_c, _t) \
     list_for_each_entry(_c, &_laritos.comps[_t], list)
 
