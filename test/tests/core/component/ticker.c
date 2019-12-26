@@ -10,12 +10,8 @@
 #include <dstruct/list.h>
 
 
-static ticker_comp_t *get_ticker(void) {
-    component_t *c;
-    for_each_component_type(c, COMP_TYPE_TICKER) {
-        return (ticker_comp_t *) c;
-    }
-    return NULL;
+static inline ticker_comp_t *get_ticker(void) {
+    return (ticker_comp_t *) component_first_of_type(COMP_TYPE_TICKER);
 }
 
 static bool is_callback_registered(ticker_comp_t *t, ticker_cb_t cb, void *data) {
