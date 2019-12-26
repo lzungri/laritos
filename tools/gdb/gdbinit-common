@@ -8,8 +8,8 @@ tui enable
 layout src
 layout regs
 focus cmd
-winheight src 30
-winheight regs 13
+winheight regs 12
+winheight src 24
 
 #set print pretty on
 set print array on
@@ -147,9 +147,10 @@ define flags
 # zero (Z), bit 30
 # Carry/Borrow/Extend (C), bit 29
 # Overflow (V), bit 28
+    set $__cpsr = $arg0
     # negative/less than (N), bit 31 of CPSR
-    printf "cpsr=0x%x (", $cpsr
-    if (($cpsr >> 0x1f) & 1)
+    printf "cpsr=0x%x (", $__cpsr
+    if (($__cpsr >> 0x1f) & 1)
         printf "N"
         set $_n_flag = 1
     else
@@ -157,7 +158,7 @@ define flags
         set $_n_flag = 0
     end
     # zero (Z), bit 30
-    if (($cpsr >> 0x1e) & 1)
+    if (($__cpsr >> 0x1e) & 1)
         printf "Z"
         set $_z_flag = 1
     else
@@ -165,7 +166,7 @@ define flags
         set $_z_flag = 0
     end
     # Carry/Borrow/Extend (C), bit 29
-    if (($cpsr >> 0x1d) & 1)
+    if (($__cpsr >> 0x1d) & 1)
         printf "C"
         set $_c_flag = 1
     else
@@ -173,7 +174,7 @@ define flags
         set $_c_flag = 0
     end
     # Overflow (V), bit 28
-    if (($cpsr >> 0x1c) & 1)
+    if (($__cpsr >> 0x1c) & 1)
         printf "V"
         set $_v_flag = 1
     else
@@ -181,7 +182,7 @@ define flags
         set $_v_flag = 0
     end
     # Sticky overflow (Q), bit 27    
-    if (($cpsr >> 0x1b) & 1)
+    if (($__cpsr >> 0x1b) & 1)
         printf "Q"
         set $_q_flag = 1
     else
@@ -192,7 +193,7 @@ define flags
     # When T=1:
     # J = 0 The processor is in Thumb state.
     # J = 1 The processor is in ThumbEE state.
-    if (($cpsr >> 0x18) & 1)
+    if (($__cpsr >> 0x18) & 1)
         printf "J"
         set $_j_flag = 1
     else
@@ -200,7 +201,7 @@ define flags
         set $_j_flag = 0
     end
     # Data endianness bit (E), bit 9
-    if (($cpsr >> 9) & 1)
+    if (($__cpsr >> 9) & 1)
         printf "E"
         set $_e_flag = 1
     else
@@ -210,7 +211,7 @@ define flags
     # Imprecise abort disable bit (A), bit 8
     # The A bit is set to 1 automatically. It is used to disable imprecise data aborts. 
     # It might not be writable in the Nonsecure state if the AW bit in the SCR register is reset.
-    if (($cpsr >> 8) & 1)
+    if (($__cpsr >> 8) & 1)
         printf "."
         set $_a_flag = 1
     else
@@ -219,7 +220,7 @@ define flags
     end
     # IRQ disable bit (I), bit 7
     # When the I bit is set to 1, IRQ interrupts are disabled.
-    if (($cpsr >> 7) & 1)
+    if (($__cpsr >> 7) & 1)
         printf "."
         set $_i_flag = 1
     else
@@ -229,7 +230,7 @@ define flags
     # FIQ disable bit (F), bit 6
     # When the F bit is set to 1, FIQ interrupts are disabled. 
     # FIQ can be nonmaskable in the Nonsecure state if the FW bit in SCR register is reset.
-    if (($cpsr >> 6) & 1)
+    if (($__cpsr >> 6) & 1)
         printf "."
         set $_f_flag = 1
     else
@@ -238,7 +239,7 @@ define flags
     end
     # Thumb state bit (F), bit 5
     # if 1 then the processor is executing in Thumb state or ThumbEE state depending on the J bit
-    if (($cpsr >> 5) & 1)
+    if (($__cpsr >> 5) & 1)
         printf "T"
         set $_t_flag = 1
     else
@@ -248,7 +249,7 @@ define flags
     # TODO: GE bit ?
     printf ") "
 
-    set $mode = $cpsr & 0xf
+    set $mode = $__cpsr & 0xf
     set $modestr = "???"
     if ($mode == 0)
         set $modestr = "usr"
@@ -273,6 +274,10 @@ define flags
                             else
                                 if ($mode == 11)
                                     set $modestr = "und"
+                                else
+                                    if ($mode == 15)
+                                        set $modestr = "sys"
+                                    end
                                 end
                             end
                         end

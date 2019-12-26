@@ -58,23 +58,21 @@ asm_reset_handler:
 
 asm_undef_handler:
     SAVE_CONTEXT #0b11011011
-    mov r2, r0
 
     # First arg: Offending instruction
     sub r0, lr, #4
     # Second arg: Stack pointer
     mov r1, sp
 
-    CALL_HANDLER_AND_RESTORE_CONTEXT _undef_handler, r2
+    CALL_HANDLER_AND_RESTORE_CONTEXT _undef_handler
 
 
 asm_svc_handler:
     SAVE_CONTEXT #0b11010011
-    mov r2, r0
 
     # Load the SVC instruction into r0 to get the service call number.
     # The instruction is located 4 bytes behind the lr
-    ldr r0, [r1, #-4]
+    ldr r0, [lr, #-4]
     # Mask the service call number (e.g. svc 1 -> 0xef000001) and save it in
     # r0 so that the svc_handler() gets it as the first argument
     bic r0, r0, #0xff000000
@@ -82,7 +80,7 @@ asm_svc_handler:
     # We need this to update the pcb->mm.sp
     mov r1, sp
 
-    CALL_HANDLER_AND_RESTORE_CONTEXT_WITH_RETVAL _svc_handler, r2
+    CALL_HANDLER_AND_RESTORE_CONTEXT_WITH_RETVAL _svc_handler
 
 
 asm_prefetch_handler:
@@ -91,7 +89,6 @@ asm_prefetch_handler:
     sub lr, lr, #4
 
     SAVE_CONTEXT #0b11010111
-    mov r3, r0
 
     # First arg: Offending instruction
     mov r0, lr
@@ -100,7 +97,7 @@ asm_prefetch_handler:
     # Third arg: Stack pointer
     mov r2, sp
 
-    CALL_HANDLER_AND_RESTORE_CONTEXT _prefetch_handler, r3
+    CALL_HANDLER_AND_RESTORE_CONTEXT _prefetch_handler
 
 
 asm_abort_handler:
@@ -114,7 +111,6 @@ asm_abort_handler:
     sub lr, lr, #8
 
     SAVE_CONTEXT #0b11010111
-    mov r3, r0
 
     # First arg: Offending instruction
     mov r0, lr
@@ -123,7 +119,7 @@ asm_abort_handler:
     # Third arg: Stack pointer
     mov r2, sp
 
-    CALL_HANDLER_AND_RESTORE_CONTEXT _abort_handler, r3
+    CALL_HANDLER_AND_RESTORE_CONTEXT _abort_handler
 
 
 asm_reserved_handler:
@@ -141,12 +137,11 @@ asm_irq_handler:
     sub lr, lr, #4
 
     SAVE_CONTEXT #0b11010010
-    mov r1, r0
 
     # First arg: Stack pointer
     mov r0, sp
 
-    CALL_HANDLER_AND_RESTORE_CONTEXT _irq_handler, r1
+    CALL_HANDLER_AND_RESTORE_CONTEXT _irq_handler
 
 
 asm_fiq_handler:

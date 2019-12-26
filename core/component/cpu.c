@@ -27,5 +27,10 @@ int cpu_component_init(cpu_t *c, board_comp_t *bcomp,
         return -1;
     }
 
+    if (board_get_component_attr(bcomp, "sched", (component_t **) &c->sched) < 0) {
+        error("invalid or no scheduler specified in the board info");
+        return -1;
+    }
+
     return 0;
 }

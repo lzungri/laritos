@@ -39,12 +39,32 @@ typedef struct {
      * List of ZOMBIE processes in the system
      */
     struct list_head zombie_pcbs;
+
+    /**
+     * Indicates whether or not the OS should schedule the next 'ready' process
+     * right before returning from the current non-user mode and when all the work required is done.
+     *
+     * Calling schedule() while handling an irq (e.g. without having acknowledged the int
+     * controller yet), may prevent future irqs to be dispatched, will block the current irq
+     * processing, among other unintentional fatal consequences.
+     */
+    bool need_sched;
 } laritos_sched_t;
 
 /**
  * laritOS Global context
  */
 typedef struct {
+    /**
+     *
+     * uint32_t instead of bool to keep the structure 4-byte aligned
+     *
+     * Indicates whether or not the OS has enabled the process execution mode.
+     *    true: Every execution flow runs in a process context
+     *    false: Every execution flow runs in the context of the kernel
+     */
+    uint32_t process_mode;
+
     /**
      * Board information
      */
@@ -57,13 +77,6 @@ typedef struct {
 
     laritos_process_t proc;
     laritos_sched_t sched;
-
-    /**
-     * Indicates whether or not the OS has enabled the process execution mode.
-     *    true: Every execution flow runs in a process context
-     *    false: Every execution flow runs in the context of the kernel
-     */
-    bool process_mode;
 
     /**
      * Time information

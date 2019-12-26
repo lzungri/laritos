@@ -47,10 +47,10 @@ int _svc_handler(int sysno, const spctx_t *ctx) {
 }
 
 void _undef_handler(int32_t pc, spctx_t *ctx) {
-    message_delimiter();
+    debug_message_delimiter();
     error_async("Instruction 0x%08lx at 0x%08lx not recognized", *((uint32_t *) pc), pc);
     // cpsr is backed up in spsr during an exception
-    dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
+    arch_dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
 
     uint32_t *ptr = (uint32_t *) max(pc - 4 * 8, 0);
     error_async("Instructions around pc=0x%p:", (void *) pc);
@@ -58,16 +58,17 @@ void _undef_handler(int32_t pc, spctx_t *ctx) {
     for (i = 0; i < 16; i++, ptr++) {
         error_async(" %s [0x%p] 0x%08lx", ptr == (uint32_t *) pc ? "->" : "  ", ptr, *ptr);
     }
+    error_async("Run gdb-multiarch -batch -n -ex 'file bin/laritos.elf' -ex 'disassemble /m 0x%p'", (void *) pc);
 
     exc_undef_handler(pc, ctx);
 }
 
 void _prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, spctx_t *ctx) {
-    message_delimiter();
+    debug_message_delimiter();
     char *fs = fault_status_msg[ifsr.b.fs_h << 4 | ifsr.b.fs_l];
     error_async("Instruction prefetch exception: %s", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
-    dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
+    arch_dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
 
     exc_prefetch_handler(pc, ctx);
 }
@@ -81,11 +82,11 @@ void _abort_handler(int32_t pc, const dfsr_reg_t dfsr, spctx_t *ctx) {
      */
     asm("clrex");
 
-    message_delimiter();
+    debug_message_delimiter();
     char *fs = fault_status_msg[dfsr.b.fs_h << 4 | dfsr.b.fs_l];
     error_async("Data abort exception. Invalid %s access: %s", dfsr.b.wnr ? "write" : "read", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
-    dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
+    arch_dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
 
     exc_abort_handler(pc, ctx);
 }

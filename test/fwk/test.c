@@ -6,7 +6,9 @@
 
 #define MAX_FILEPATH_LEN 255
 
-int test_run(test_descriptor_t *tests[]) {
+int test_main(void *testdescs) {
+    test_descriptor_t **tests = testdescs;
+
     info("Tests:");
 
     test_ctx_t ctx = { 0 };
@@ -41,6 +43,9 @@ int test_run(test_descriptor_t *tests[]) {
             ctx.passed++;
             break;
         }
+
+        // Release each zombie child that may have been spawn during the test
+        process_unregister_zombie_children(process_get_current());
     }
 
     info("--------------------------------------------------");
@@ -53,6 +58,7 @@ int test_run(test_descriptor_t *tests[]) {
 
     if (heap_avail > heap_get_available()) {
         warn("Tests may be leaking %lu bytes of heap", heap_avail - heap_get_available());
+        heap_dump_info();
     }
     return 0;
 }

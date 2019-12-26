@@ -4,7 +4,8 @@
 
 #include <cpu.h>
 #include <string.h>
-#include <process/pcb.h>
+#include <process/core.h>
+#include <arch/debug.h>
 #include <arch/context-types.h>
 
 static inline bool arch_context_is_usr(spctx_t *ctx) {
@@ -13,6 +14,20 @@ static inline bool arch_context_is_usr(spctx_t *ctx) {
 
 static inline bool arch_context_is_kernel(spctx_t *ctx) {
     return !arch_context_is_usr(ctx);
+}
+
+static inline void *arch_context_get_retaddr(spctx_t *ctx) {
+    return (void *) ctx->ret;
+}
+
+static inline void arch_context_set_first_arg(spctx_t *ctx, void *arg) {
+    // First function argument is passed via R0
+    ctx->r[0] = (int32_t) arg;
+}
+
+static inline void arch_context_set_second_arg(spctx_t *ctx, void *arg) {
+    // Second function argument is passed via R1
+    ctx->r[1] = (int32_t) arg;
 }
 
 static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t mode) {
@@ -37,84 +52,91 @@ static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t 
     ctx->r[9] = (int32_t) pcb->mm.got_start;
 }
 
-static inline void arch_context_restore(pcb_t *pcb) {
-    // The context restore will change based on whether we need to restore an svc
+static inline void arch_context_restore(spctx_t *spctx) {
+    regpsr_t curpsr = arch_get_cpsr();
+    regpsr_t targetpsr = { 0 };
+    // The context restore will change based on whether we need to restore a non-user
     // or user context. Check this by inspecting the psr value saved in the stack
-    if (arch_context_is_kernel(pcb->mm.sp_ctx)) {
-        regsp_t cursp = pcb->mm.sp_ctx;
-        // Restore previous spctx (it was saved in r0 in arch_context_save_and_restore())
-        pcb->mm.sp_ctx = (spctx_t *) pcb->mm.sp_ctx->r[0];
-
-        // volatile to prevent any gcc optimization on the assembly code
-        asm volatile (
-            /* Restore stack pointer from pcb */
-            "mov sp, %0            \n"
-            /* Pop the SPSR and return address */
-            "ldmfd sp!, {r0, lr}   \n"
-            /* Update the SPSR (CPSR will be restored from this value)*/
-            "msr spsr_cxsf, r0     \n"
-            /* Restore all the other registers */
-            "ldmfd sp!, {r0-r12}   \n"
-            /* Save the return address in r0, (don't care if we lose r0 original value) */
-            "mov r0, lr            \n"
-            /* Get the original lr value from the saved context */
-            "ldmfd sp!, {lr}       \n"
-            /* Return to the address specified by the retaddr in the saved context.
-             * subS also restores cpsr from spsr */
-            "subs pc, r0, #0       \n"
-            :
-            : "r" (cursp)
-            : "memory", /* Memory barrier (do not reorder read/writes)*/
-              "cc", /* Tell gcc this code modifies the cpsr */
-              "r0" /* Do not use r0 in compiler generated code since we are using it */);
-
-        return;
+    if (arch_context_is_kernel(spctx)) {
+        targetpsr = spctx->spsr;
+        // Disable IRQs
+        targetpsr.b.irq = 1;
+        // Disable FIQs (not supported yet)
+        targetpsr.b.fiq = 1;
+    } else {
+        // If user mode, then switch to System mode, which will give us access to all the
+        // user registers plus the ability to switch back to curpsr
+        targetpsr.b.mode = ARM_CPU_MODE_SYSTEM;
+        // Disable IRQs
+        targetpsr.b.irq = 1;
+        // Disable FIQs (not supported yet)
+        targetpsr.b.fiq = 1;
     }
 
-    // volatile to prevent any gcc optimization on the assembly code
-    asm volatile (
-        /* Restore stack pointer from pcb */
-        "mov sp, %0               \n"
-        /* Pop the SPSR and link register */
-        "ldmfd sp!, {r0, lr}      \n"
-        /* Update the SPSR (CPSR will be restored from this value)*/
-        "msr spsr_cxsf, r0        \n"
-        /* ^ to save the registers in the user bank (not the svc bank)*/
-        "ldm sp, {r0-r12, lr}^    \n"
-        "add sp, sp, #64          \n"
-        /* Trick to save the sp_svc into sp_user
-         * We could do something like:
-         *   stmdb sp!, {sp}
-         *   ldmfd sp!, {sp}^
-         * But this will generate the warning "writeback of base register is UNPREDICTABLE"
-         *
-         * From ARM docs:
-         *   Unpredictable instruction (forced user mode transfer with write-back to base)
-         *   This is caused by an instruction such as PUSH {r0}^ where the ^ indicates
-         *   access to user registers. The ARM Architectural Reference Manual specifies
-         *   that writeback to the base register is not available with this instruction.
-         **/
-        "str sp, [sp, #-4]        \n"
-        "sub sp, sp, #4           \n"
-        "ldm sp, {sp}^            \n"
-        "add sp, sp, #4           \n"
-        /* subS to also restore cpsr from spsr */
-        "subs pc, lr, #0          \n"
-        :
-        : "r" (pcb->mm.sp_ctx)
-        : "memory", /* Memory barrier (do not reorder read/writes)*/
-          "cc", /* Tell gcc this code modifies the cpsr */
-          "r0" /* Do not use r0 in compiler generated code since we are using it */);
+    // Check if the target and current processor mode are the same. If they are, then the switch
+    // logic is simpler since we don't have to switch modes back and forth
+    if (curpsr.b.mode == targetpsr.b.mode) {
+        // volatile to prevent any gcc optimization on the assembly code
+        asm volatile (
+            /* Copy cursp into r0*/
+            "mov r0, %0              \n"
+            /* Load target mode and ret address (lr will be overwritten later) */
+            "ldmfd r0!, {r1, lr}     \n"
+            /* Save cursp + 8 into sp */
+            "mov sp, r0              \n"
+            /* Set current mode (to update condition flags, etc)*/
+            "msr cpsr, r1            \n"
+            /* Restore registers */
+            "ldmfd sp!, {r0-r12, lr} \n"
+            /* Set pc equals ret address */
+            "ldr pc, [sp, #-60]      \n"
+            :
+            : "r" (spctx)
+            : "memory", /* Memory barrier (do not reorder read/writes)*/
+              "cc", /* Tell gcc this code modifies the cpsr */
+              "r0", "r1" /* Do not use r0, r2 in compiler generated code since we are using it */);
+    } else {
+        // volatile to prevent any gcc optimization on the assembly code
+        asm volatile (
+            /* Copy cursp into r0*/
+            "mov r0, %0              \n"
+            /* Load target mode and ret address */
+            "ldmfd r0!, {r1, lr}     \n"
+            /* Update saved PSR, CPSR wlll be set to this value with the SUBS instr later */
+            "msr spsr_cxsf, r1       \n"
+            /* Save target psr into r1 */
+            "mov r1, %1              \n"
+            /* Change to target mode */
+            "msr cpsr, r1            \n"
+            /* Save curpsr into r1. These kind of instructions will use other auxiliary
+             * registers (e.g. r12) and therefore we need to execute them before
+             * restoring r0-r12 */
+            "mov r1, %2              \n"
+            /* Skip r0 and r1 registers (those are going to be restored later) */
+            "add sp, r0, #8          \n"
+            /* Restore registers (r0, r1, will be used as temporal regs and restored later)*/
+            "ldmfd sp!, {r2-r12, lr} \n"
+            /* Switch back to cursp */
+            "msr cpsr_c, r1          \n"
+            /* Point SP to the beginning of the rX registers */
+            "mov sp, r0              \n"
+            /* Restore r0 and r1 */
+            "ldmfd sp!, {r0, r1}     \n"
+            /* Jump and switch modes */
+            "subs pc, lr, #0         \n"
+            :
+            : "r" (spctx), "r" (targetpsr.v), "r" (curpsr.v)
+            : "memory", /* Memory barrier (do not reorder read/writes)*/
+              "cc", /* Tell gcc this code modifies the cpsr */
+              "r0", "r1" /* Do not use r0, r2 in compiler generated code since we are using it */);
+    }
 }
 
 static inline void arch_context_save_and_restore(pcb_t *spcb, pcb_t *rpcb) {
     bool ctx_saved = false;
     // volatile to prevent any gcc optimization on the assembly code
     asm volatile (
-        /* Save in r0 the previous spcb->mm.sp. We will use this value to restore the
-         * previous pcb->mm.sp once this context is restored, see arch_context_restore()*/
-        "mov r0, %1              \n"
-        /* Push registers into sp_svc stack (remember that svc code uses the process stack) */
+        /* Push registers into sp_svc/irq stack (remember that svc/irq code uses the process stack) */
         "stmfd sp!, {r0-r12, lr} \n"
         /* Save current PSR */
         "mrs r0, cpsr_all        \n"
@@ -131,10 +153,11 @@ static inline void arch_context_save_and_restore(pcb_t *spcb, pcb_t *rpcb) {
         "mov %0, #0              \n"
      "1:                         \n"
         : "=&r" (ctx_saved)
-        : "r" (spcb->mm.sp_ctx)
+        :
         : "memory",  /* Memory barrier (do not reorder read/writes) */
           "cc", /* Tell gcc this code modifies the cpsr */
-          "r0", "r1" /* Do not use r0-r1 in compiler generated code since we are using them */);
+          "r0", "r1", "r2" /* Do not use r0-r1 in compiler generated code since we are using them */
+          /* Do not use r2 since we use it in arch_context_restore() as a temp buffer */);
 
     // Check whether this is a context save or returning from a context restore
     if (ctx_saved) {
@@ -144,7 +167,7 @@ static inline void arch_context_save_and_restore(pcb_t *spcb, pcb_t *rpcb) {
         // Since we screw the stack we need to do the saving and restoring here, that way,
         // when execution goes back to spcb, it will fix the stack and continue execution as
         // normal
-        arch_context_restore(rpcb);
+        arch_context_restore(rpcb->mm.sp_ctx);
 
         // Execution will never reach this point
         // When spcb context is restored, it will continue right in the if (ctx_saved) instruction,

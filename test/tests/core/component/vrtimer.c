@@ -12,11 +12,7 @@
 
 
 static vrtimer_comp_t *get_vrtimer(void) {
-    component_t *c;
-    for_each_component_type(c, COMP_TYPE_VRTIMER) {
-        return (vrtimer_comp_t *) c;
-    }
-    return NULL;
+    return (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
 }
 
 static void pause_ticker(void) {

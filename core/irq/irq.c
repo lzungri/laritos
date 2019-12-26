@@ -2,15 +2,18 @@
 
 #include <irq.h>
 #include <cpu.h>
+#include <core.h>
 #include <component/component.h>
 #include <component/intc.h>
 #include <sched/context.h>
+#include <sched/core.h>
 
 int irq_handler(spctx_t *ctx) {
-    if (arch_context_is_usr(ctx)) {
-        pcb_set_current_pcb_stack_context(ctx);
+    if (_laritos.process_mode) {
+        process_set_current_pcb_stack_context(ctx);
     }
 
+    int fret = 0;
     component_t *c = NULL;
     for_each_component_type(c, COMP_TYPE_INTC) {
         verbose_async("Dispatching irq to int controller '%s'", c->id);
@@ -19,15 +22,19 @@ int irq_handler(spctx_t *ctx) {
         verbose_async("Interrupt controller '%s' returned %s", c->id, get_irqret_str(ret));
         switch (ret) {
         case IRQ_RET_HANDLED:
-            return 0;
+            goto end;
         case IRQ_RET_ERROR:
             error_async("Error while dispatching irq with intc '%s'", c->id);
-            return -1;
+            fret = -1;
+            goto end;
         case IRQ_RET_NOT_HANDLED:
         case IRQ_RET_HANDLED_KEEP_PROCESSING:
         default:
             break;
         }
     }
-    return 0;
+
+end:
+    schedule_if_needed();
+    return fret;
 }

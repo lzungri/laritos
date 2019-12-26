@@ -34,10 +34,10 @@ extern test_descriptor_t *__tests_start[];
 /**
  * Runs all the test cases registered via DEF_TEST macro
  *
- * @param tests: Null-terminated array of pointers to test descriptors
+ * @param testdescs: Null-terminated array of pointers to test descriptors
  * @return 0 on success, <0 on error
  */
-int test_run(test_descriptor_t *tests[]);
+int test_main(void *testdescs);
 
 
 /**

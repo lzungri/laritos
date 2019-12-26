@@ -2,7 +2,10 @@
 
 #include <log.h>
 #include <cpu.h>
+#include <core.h>
 #include <utils/debug.h>
+#include <mm/exc-handlers.h>
+
 
 #define CANARY 0xAACCBBDDL
 
@@ -54,13 +57,26 @@ __attribute__((always_inline)) static inline void free(void *ptr) {
     bufprot_tail_t *t = (bufprot_tail_t *) ((char *) ptr + h->size);
     if (h->canary != CANARY || t->canary != CANARY) {
         regpc_t pc = regs_get_pc();
+        debug_message_delimiter();
         error("Buffer overflow on block with size %zu bytes:", h->size);
         error("  Expected canaries head=0x%lX tail=0x%lX, got head=0x%lX tail=0x%lX", CANARY, CANARY, h->canary, t->canary);
         error("  Allocation at pc=0x%p", h->pc);
         error("  Run gdb-multiarch -batch -n -ex 'file bin/laritos.elf' -ex 'disassemble /m 0x%p'", h->pc);
         error("  Deallocation at pc=0x%p", pc);
         error("  Run gdb-multiarch -batch -n -ex 'file bin/laritos.elf' -ex 'disassemble /m 0x%p'", pc);
-        fatal("ABORT");
+        debug_message_delimiter();
+
+        if (_laritos.process_mode) {
+            // Free chunk anyway
+            _free(h);
+            // Kill process and schedule
+            exc_handle_process_exception(process_get_current());
+            // Execution will never reach this point
+        } else {
+            // Stop the kernel
+            fatal("ABORT: Cannot issue a system call while in kernel mode");
+        }
+
     }
     _free(h);
 }

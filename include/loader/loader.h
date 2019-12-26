@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <loader/elf.h>
-#include <process/pcb.h>
+#include <process/core.h>
 
 /**
  * Temporary api for loading apps
