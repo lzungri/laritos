@@ -43,6 +43,9 @@ int test_main(void *testdescs) {
             ctx.passed++;
             break;
         }
+
+        // Release each zombie child that may have been spawn during the test
+        process_unregister_zombie_children(process_get_current());
     }
 
     info("--------------------------------------------------");
