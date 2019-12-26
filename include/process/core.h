@@ -79,6 +79,7 @@ pcb_t *process_alloc(void);
 int process_free(pcb_t *pcb);
 int process_register(pcb_t *pcb);
 int process_unregister(pcb_t *pcb);
+void process_unregister_zombie_children(pcb_t *pcb);
 void process_kill(pcb_t *pcb);
 void process_kill_and_schedule(pcb_t *pcb);
 int process_set_priority(pcb_t *pcb, uint8_t priority);

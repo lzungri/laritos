@@ -89,6 +89,18 @@ int process_unregister(pcb_t *pcb) {
     return process_free(pcb);
 }
 
+void process_unregister_zombie_children(pcb_t *pcb) {
+    pcb_t *child;
+    pcb_t *temp;
+    verbose("Unregistering dead children of pid=%u", pcb->pid);
+    for_each_child_process_safe(pcb, child, temp) {
+        if (child->sched.status == PROC_STATUS_ZOMBIE) {
+            verbose("Unregistering dead child process pid=%u", child->pid);
+            process_unregister(child);
+        }
+    }
+}
+
 spctx_t *asm_process_get_current_pcb_stack_context(void) {
     return process_get_current()->mm.sp_ctx;
 }
@@ -133,7 +145,7 @@ static void kernel_main_wrapper(kproc_main_t main, void *data) {
     verbose_async("Starting kernel_main_wrapper(main=0x%p, data=0x%p)", main, data);
     pcb_t *pcb = process_get_current();
     pcb->exit_status = main(data);
-    info_async("Exiting kernel process pid=%u, exitcode=%d", pcb->pid, pcb->exit_status);
+    debug_async("Exiting kernel process pid=%u, exitcode=%d", pcb->pid, pcb->exit_status);
     process_kill_and_schedule(pcb);
 
     // Execution will never reach this point
