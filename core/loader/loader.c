@@ -5,6 +5,7 @@
 #include <loader/elf.h>
 #include <loader/loader-elf.h>
 #include <process/core.h>
+#include <sync/spinlock.h>
 
 
 /**
@@ -48,10 +49,13 @@ pcb_t *loader_load_executable_from_memory(uint16_t appidx) {
         return NULL;
     }
 
-    if (process_register(pcb) < 0) {
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proclock, &ctx);
+    if (process_register_locked(pcb) < 0) {
         error_async("Could not register process at 0x%p", pcb);
         process_free(pcb);
     }
+    spinlock_release(&_laritos.proclock, &ctx);
 
     return pcb;
 }

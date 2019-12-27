@@ -4,6 +4,7 @@
 #include <arch/cpu.h>
 #include <utils/assert.h>
 #include <loader/loader.h>
+#include <sync/spinlock.h>
 #include <generated/autoconf.h>
 
 #ifdef CONFIG_TEST_ENABLED
@@ -54,7 +55,11 @@ int init_main(void *data) {
     // Loop forever
     while (1) {
         arch_wfi();
-        process_unregister_zombie_children(process_get_current());
+
+        irqctx_t ctx;
+        spinlock_acquire(&_laritos.proclock, &ctx);
+        process_unregister_zombie_children_locked(process_get_current());
+        spinlock_release(&_laritos.proclock, &ctx);
     }
     return 0;
 }

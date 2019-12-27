@@ -33,7 +33,7 @@ static inline void sched_update_stats(pcb_t *pcb) {
  * @param pcb: Process to add
  * @return void
  */
-static inline void sched_add_ready_proc_sorted(pcb_t *pcb) {
+static inline void _sched_add_ready_proc_sorted(pcb_t *pcb) {
     list_del_init(&pcb->sched.sched_node);
     pcb_t *proc;
     for_each_ready_process(proc) {
@@ -45,13 +45,12 @@ static inline void sched_add_ready_proc_sorted(pcb_t *pcb) {
     list_add_tail(&pcb->sched.sched_node, &_laritos.sched.ready_pcbs);
 }
 
-static inline void sched_move_to_ready(pcb_t *pcb) {
+static inline void sched_move_to_ready_locked(pcb_t *pcb) {
     verbose_async("PID %u: %s -> READY", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
-    // TODO Mutex
-    sched_add_ready_proc_sorted(pcb);
+    _sched_add_ready_proc_sorted(pcb);
     pcb->sched.status = PROC_STATUS_READY;
 
     // Re-schedule in case there is a new higher priority process
@@ -60,28 +59,26 @@ static inline void sched_move_to_ready(pcb_t *pcb) {
     }
 }
 
-static inline void sched_move_to_blocked(pcb_t *pcb) {
+static inline void sched_move_to_blocked_locked(pcb_t *pcb) {
     verbose_async("PID %u: %s -> BLOCKED", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
-    // TODO Mutex
     list_move_tail(&pcb->sched.sched_node, &_laritos.sched.blocked_pcbs);
     pcb->sched.status = PROC_STATUS_BLOCKED;
 }
 
-static inline void sched_move_to_running(pcb_t *pcb) {
+static inline void sched_move_to_running_locked(pcb_t *pcb) {
     verbose_async("PID %u: %s -> RUNNING", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
-    // TODO Mutex
     list_del_init(&pcb->sched.sched_node);
     pcb->sched.status = PROC_STATUS_RUNNING;
     process_set_current(pcb);
 }
 
-static inline void sched_remove_from_zombie(pcb_t *pcb) {
+static inline void sched_remove_from_zombie_locked(pcb_t *pcb) {
     if (pcb->sched.status != PROC_STATUS_ZOMBIE) {
         return;
     }
@@ -89,17 +86,15 @@ static inline void sched_remove_from_zombie(pcb_t *pcb) {
 
     sched_update_stats(pcb);
 
-    // TODO Mutex
     list_del_init(&pcb->sched.sched_node);
     pcb->sched.status = PROC_STATUS_NOT_INIT;
 }
 
-static inline void sched_move_to_zombie(pcb_t *pcb) {
+static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
     verbose_async("PID %u: %s -> ZOMBIE ", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
-    // TODO Mutex
     pcb_t *child;
     pcb_t *temp;
     pcb_t *parent = pcb->parent;

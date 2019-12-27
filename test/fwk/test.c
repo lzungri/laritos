@@ -3,6 +3,7 @@
 #include <string.h>
 #include <mm/heap.h>
 #include <test/test.h>
+#include <sync/spinlock.h>
 
 #define MAX_FILEPATH_LEN 255
 
@@ -44,8 +45,11 @@ int test_main(void *testdescs) {
             break;
         }
 
+        irqctx_t ctx;
+        spinlock_acquire(&_laritos.proclock, &ctx);
         // Release each zombie child that may have been spawn during the test
-        process_unregister_zombie_children(process_get_current());
+        process_unregister_zombie_children_locked(process_get_current());
+        spinlock_release(&_laritos.proclock, &ctx);
     }
 
     info("--------------------------------------------------");
