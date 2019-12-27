@@ -8,6 +8,7 @@
 #include <dstruct/list.h>
 #include <mm/slab.h>
 #include <time/tick.h>
+#include <sync/spinlock.h>
 
 typedef struct {
     /**
@@ -77,6 +78,11 @@ typedef struct {
 
     laritos_process_t proc;
     laritos_sched_t sched;
+
+    /**
+     * Spinlock used to synchronize all process-related lists and data structures
+     */
+    spinlock_t proclock;
 
     /**
      * Time information
