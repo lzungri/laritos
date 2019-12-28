@@ -1,0 +1,12 @@
+menu "Synchronization"
+
+config TEST_CORE_SYNC_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_SYNC_SEMAPHORE
+
+config TEST_CORE_SYNC_SEMAPHORE
+    bool "semaphore.c"
+    default n
+
+endmenu

@@ -9,6 +9,7 @@ config TEST_CORE_ALL
     select TEST_CORE_COMPONENT_ALL
     select TEST_CORE_TIME_ALL
     select TEST_CORE_PROCESS_ALL
+    select TEST_CORE_SYNC_ALL
 
 source "test/tests/core/libc/Kconfig"
 source "test/tests/core/mm/Kconfig"
@@ -16,5 +17,6 @@ source "test/tests/core/dstruct/Kconfig"
 source "test/tests/core/component/Kconfig"
 source "test/tests/core/time/Kconfig"
 source "test/tests/core/process/Kconfig"
+source "test/tests/core/sync/Kconfig"
 
 endmenu
