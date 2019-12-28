@@ -8,11 +8,8 @@
 #include <time/tick.h>
 #include <component/component.h>
 #include <dstruct/list.h>
+#include <test/utils.h>
 
-
-static inline ticker_comp_t *get_ticker(void) {
-    return (ticker_comp_t *) component_first_of_type(COMP_TYPE_TICKER);
-}
 
 static bool is_callback_registered(ticker_comp_t *t, ticker_cb_t cb, void *data) {
     ticker_cb_info_t *ti;

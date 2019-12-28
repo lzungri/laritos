@@ -8,22 +8,12 @@
 #include <time/time.h>
 #include <component/vrtimer.h>
 #include <generated/autoconf.h>
+#include <test/utils.h>
 
-
-static bool is_process_in(struct list_head *pcb, struct list_head *list) {
-    struct list_head *pos;
-    list_for_each(pos, list) {
-        if (pos == pcb) {
-            return true;
-        }
-    }
-    return false;
-}
 
 static bool is_process_active(pcb_t *pcb) {
     return is_process_in(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
 }
-
 
 static int kproc0(void *data) {
     sleep(3);

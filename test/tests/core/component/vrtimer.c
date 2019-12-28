@@ -9,11 +9,7 @@
 #include <time/tick.h>
 #include <component/component.h>
 #include <dstruct/list.h>
-
-
-static vrtimer_comp_t *get_vrtimer(void) {
-    return (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
-}
+#include <test/utils.h>
 
 static void pause_ticker(void) {
     component_t *c;
