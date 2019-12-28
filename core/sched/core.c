@@ -85,10 +85,6 @@ void sched_execute_first_system_proc(pcb_t *pcb) {
     sched_move_to_running_locked(pcb);
     spinlock_release(&_laritos.proclock, &ctx);
 
-    // From now on, everything will be executed in the context of a process
-    _laritos.process_mode = true;
-    info("Process mode started");
-
     context_restore(pcb);
     // Execution will never reach this point
 }
