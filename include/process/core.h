@@ -39,6 +39,12 @@ typedef struct {
     uint8_t priority;
     struct list_head pcb_node;
     struct list_head sched_node;
+
+    /**
+     * List of processes blocked in a particular event.
+     * A process can only be waiting for one event at a time.
+     */
+    struct list_head blockedlst;
 } pcb_sched_t;
 
 typedef struct {
