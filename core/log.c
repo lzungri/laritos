@@ -25,6 +25,11 @@ DEF_STATIC_CIRCBUF(logcb, logb, sizeof(logb));
 
 
 int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
+    // Discard log messages if we are not running in a process context
+    if (!_laritos.process_mode) {
+        return 0;
+    }
+
     int ret = 0;
     char lineb[CONFIG_LOG_MAX_LINE_SIZE] = { 0 };
 
@@ -34,8 +39,9 @@ int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
     }
 
     // TODO: Add msecs resolution
-    int nchars = snprintf(lineb, sizeof(lineb), "[%02d/%02d %02d:%02d:%02d] %3u %s %s: ",
-            cal.mon + 1, cal.mday, cal.hour, cal.min, cal.sec, _laritos.process_mode ? process_get_current()->pid : 0, level, tag);
+    pcb_t *pcb = process_get_current();
+    int nchars = snprintf(lineb, sizeof(lineb), "%02d/%02d %02d:%02d:%02d %3u %-6.6s %s %s: ",
+            cal.mon + 1, cal.mday, cal.hour, cal.min, cal.sec, pcb->pid, pcb->name, level, tag);
     // If the required number of chars is bigger than the size of the buffer, then truncate string
     if (nchars > sizeof(lineb)) {
         goto full_buf;
