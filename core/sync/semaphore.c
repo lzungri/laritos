@@ -6,6 +6,7 @@
 #include <core.h>
 #include <process/core.h>
 #include <sched/core.h>
+#include <utils/assert.h>
 #include <generated/autoconf.h>
 
 int sem_init(sem_t *sem, uint16_t count) {
@@ -22,9 +23,9 @@ int sem_acquire(sem_t *sem) {
     spinlock_acquire(&sem->lock, &ctx);
 
     while (sem->count == 0) {
-        // TODO NON process mode
-
         pcb_t *pcb = process_get_current();
+
+        assert(list_empty(&pcb->sched.blockedlst), "A process can only be waiting for max 1 event");
         list_add_tail(&pcb->sched.blockedlst, &sem->blocked);
 
         irqctx_t ctx2;
