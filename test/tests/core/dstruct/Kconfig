@@ -4,9 +4,14 @@ config TEST_CORE_DSTRUCT_ALL
     bool "Select all"
     default n
     select TEST_CORE_DSTRUCT_BITSET
+    select TEST_CORE_DSTRUCT_CIRCBUF
 
 config TEST_CORE_DSTRUCT_BITSET
     bool "bitset.c"
+    default n
+
+config TEST_CORE_DSTRUCT_CIRCBUF
+    bool "circbuf.c"
     default n
 
 endmenu
