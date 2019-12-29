@@ -38,11 +38,11 @@ void kernel_entry(void)  {
     }
 
     int init_main(void *data);
-    pcb_t *init = process_spawn_kernel_process("init", init_main, NULL,
+    _laritos.proc.init = process_spawn_kernel_process("init", init_main, NULL,
                         CONFIG_PROCESS_INIT_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST - 1);
-    assert(init != NULL, "Could not create init process");
+    assert(_laritos.proc.init != NULL, "Could not create init process");
 
-    sched_execute_first_system_proc(init);
+    sched_execute_first_system_proc(_laritos.proc.init);
 
     // Execution will never reach this point
 }

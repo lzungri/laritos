@@ -106,4 +106,9 @@ static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
 
     list_move_tail(&pcb->sched.sched_node, &_laritos.sched.zombie_pcbs);
     pcb->sched.status = PROC_STATUS_ZOMBIE;
+
+    if (parent == _laritos.proc.init) {
+        // New zombie process child of init, wake up init so that it releases its resources
+        sched_move_to_ready_locked(_laritos.proc.init);
+    }
 }

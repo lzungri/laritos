@@ -12,6 +12,7 @@
 #include <board-types.h>
 #include <board.h>
 #include <utils/debug.h>
+#include <sched/core.h>
 #include <generated/autoconf.h>
 #include <generated/utsrelease.h>
 
@@ -95,9 +96,19 @@ int init_main(void *data) {
 
     // Loop forever
     while (1) {
-        arch_wfi();
-
         irqctx_t ctx;
+
+        // Block and wait for events (e.g. new zombie process)
+        spinlock_acquire(&_laritos.proclock, &ctx);
+        sched_move_to_blocked_locked(process_get_current());
+        spinlock_release(&_laritos.proclock, &ctx);
+
+        // Switch to another process
+        schedule();
+
+        // Someone woke me up, process event/s
+
+        // Release zombie children
         spinlock_acquire(&_laritos.proclock, &ctx);
         process_unregister_zombie_children_locked(process_get_current());
         spinlock_release(&_laritos.proclock, &ctx);

@@ -10,6 +10,7 @@
 #include <time/tick.h>
 #include <sync/spinlock.h>
 
+struct pcb;
 typedef struct {
     /**
      * Slab for pcb_t allocation
@@ -20,9 +21,13 @@ typedef struct {
      * List of processes in the system
      */
     struct list_head pcbs;
+
+    /**
+     * Pointer to the init process pcb_t
+     */
+    struct pcb *init;
 } laritos_process_t;
 
-struct pcb;
 typedef struct {
     struct pcb *running[CONFIG_CPU_MAX_CPUS];
 
