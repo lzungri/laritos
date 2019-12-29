@@ -92,7 +92,6 @@ int process_unregister_locked(pcb_t *pcb) {
 void process_unregister_zombie_children_locked(pcb_t *pcb) {
     pcb_t *child;
     pcb_t *temp;
-    verbose("Unregistering dead children of pid=%u", pcb->pid);
     for_each_child_process_safe(pcb, child, temp) {
         if (child->sched.status == PROC_STATUS_ZOMBIE) {
             verbose("Unregistering dead child process pid=%u", child->pid);
