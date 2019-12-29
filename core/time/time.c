@@ -75,6 +75,7 @@ static inline void _sleep(vrtimer_comp_t *t, tick_t ticks) {
         // Running in process mode, then block the process and schedule()
         if (t->ops.add_vrtimer(t, ticks, process_sleep_cb, pcb, false) < 0) {
             error_async("Failed to create virtual timer ticks=%lu", ticks);
+            spinlock_release(&_laritos.proclock, &ctx);
             return;
         }
         // Make sure we install the timer before blocking the process, otherwise
