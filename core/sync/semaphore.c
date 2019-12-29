@@ -37,7 +37,7 @@ int sem_release(sem_t *sem) {
     spinlock_acquire(&sem->lock, &ctx);
 
     bool proc_awakened = false;
-    if (condition_notify(&sem->cond) != NULL) {
+    if (condition_notify_locked(&sem->cond) != NULL) {
         proc_awakened = true;
     }
     sem->count++;

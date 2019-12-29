@@ -11,8 +11,8 @@ typedef struct {
 } condition_t;
 
 int condition_init(condition_t *cond);
-void condition_wait_spinlock(condition_t *cond, spinlock_t *spin, irqctx_t *ctx);
-pcb_t *condition_notify(condition_t *cond);
+void condition_wait_locked(condition_t *cond, spinlock_t *spin, irqctx_t *ctx);
+pcb_t *condition_notify_locked(condition_t *cond);
 
 #define CONDITION_STATIC_INIT(_cond) { .blocked = LIST_HEAD_INIT(_cond.blocked), }
 

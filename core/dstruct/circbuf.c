@@ -41,7 +41,7 @@ int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
     }
 
     // Notify readers there is some data available to be read
-    condition_notify(&cb->data_avail_cond);
+    condition_notify_locked(&cb->data_avail_cond);
 
     spinlock_release(&cb->lock, &ctx);
 
@@ -86,7 +86,7 @@ static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking, bo
         cb->datalen -= n;
         spinlock_release(&cb->lock, &ctx);
         // Notify writers there is some space available for storing data
-        condition_notify(&cb->space_avail_cond);
+        condition_notify_locked(&cb->space_avail_cond);
     }
 
     return n;
@@ -109,7 +109,7 @@ int circbuf_peek_complete(circbuf_t *cb, bool commit) {
         cb->head = (cb->head + cb->peek_size) % cb->size;
         cb->datalen -= cb->peek_size;
         // Notify writers there is some space available for storing data
-        condition_notify(&cb->space_avail_cond);
+        condition_notify_locked(&cb->space_avail_cond);
     }
     spinlock_release(&cb->lock, &cb->peek_ctx);
     return 0;

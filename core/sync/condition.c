@@ -1,3 +1,4 @@
+#define DEBUG
 #include <log.h>
 
 #include <core.h>
@@ -27,7 +28,7 @@ static void condition_block_current_process(condition_t *cond) {
     verbose_async("pid=%u waiting for condition=0x%p", pcb->pid, cond);
 }
 
-void condition_wait_spinlock(condition_t *cond, spinlock_t *spin, irqctx_t *ctx) {
+void condition_wait_locked(condition_t *cond, spinlock_t *spin, irqctx_t *ctx) {
     condition_block_current_process(cond);
 
     spinlock_release(spin, ctx);
@@ -35,7 +36,7 @@ void condition_wait_spinlock(condition_t *cond, spinlock_t *spin, irqctx_t *ctx)
     spinlock_acquire(spin, ctx);
 }
 
-pcb_t *condition_notify(condition_t *cond) {
+pcb_t *condition_notify_locked(condition_t *cond) {
     pcb_t *pcb = list_first_entry_or_null(&cond->blocked, pcb_t, sched.blockedlst);
     if (pcb != NULL) {
         list_del_init(&pcb->sched.blockedlst);
