@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <core.h>
