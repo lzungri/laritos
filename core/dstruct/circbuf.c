@@ -4,6 +4,7 @@
 #include <utils/math.h>
 #include <dstruct/circbuf.h>
 #include <sync/spinlock.h>
+#include <sync/condition.h>
 
 int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
     if (cb == NULL || buf == NULL) {
@@ -21,12 +22,7 @@ int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
     irqctx_t ctx;
     spinlock_acquire(&cb->lock, &ctx);
     if (blocking) {
-        while (n > cb->size - cb->datalen) {
-            spinlock_release(&cb->lock, &ctx);
-            // TODO Implement a better sync mechanism here
-            asm("wfi");
-            spinlock_acquire(&cb->lock, &ctx);
-        }
+        SLEEP_UNTIL(n <= cb->size - cb->datalen, &cb->space_avail_cond, &cb->lock, &ctx);
     }
 
     uint32_t windex = (cb->head + cb->datalen) % cb->size;
@@ -43,6 +39,9 @@ int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
         cb->head = (cb->head + (cb->datalen - cb->size)) % cb->size;
         cb->datalen = cb->size;
     }
+
+    // Notify readers there is some data available to be read
+    condition_notify(&cb->data_avail_cond);
 
     spinlock_release(&cb->lock, &ctx);
 
@@ -66,13 +65,7 @@ static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking, bo
     spinlock_acquire(&cb->lock, &ctx);
     if (blocking) {
         // Wait until there is some data in the buffer
-        while (cb->datalen == 0) {
-            spinlock_release(&cb->lock, &ctx);
-            // TODO Replace with a nice synchro mechanism
-            // Any interrupt will wake the cpu up
-            asm("wfi");
-            spinlock_acquire(&cb->lock, &ctx);
-        }
+        SLEEP_UNTIL(cb->datalen > 0, &cb->data_avail_cond, &cb->lock, &ctx);
     }
 
     if (n > cb->datalen) {
@@ -92,6 +85,8 @@ static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking, bo
         cb->head = (cb->head + n) % cb->size;
         cb->datalen -= n;
         spinlock_release(&cb->lock, &ctx);
+        // Notify writers there is some space available for storing data
+        condition_notify(&cb->space_avail_cond);
     }
 
     return n;
@@ -113,7 +108,15 @@ int circbuf_peek_complete(circbuf_t *cb, bool commit) {
     if (commit) {
         cb->head = (cb->head + cb->peek_size) % cb->size;
         cb->datalen -= cb->peek_size;
+        // Notify writers there is some space available for storing data
+        condition_notify(&cb->space_avail_cond);
     }
     spinlock_release(&cb->lock, &cb->peek_ctx);
     return 0;
 }
+
+
+
+#ifdef CONFIG_TEST_CORE_DSTRUCT_CIRCBUF
+#include __FILE__
+#endif
