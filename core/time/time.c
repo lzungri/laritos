@@ -71,14 +71,21 @@ static inline void _sleep(vrtimer_comp_t *t, tick_t ticks) {
 
         irqctx_t ctx;
         spinlock_acquire(&_laritos.proclock, &ctx);
-        sched_move_to_blocked_locked(pcb);
-        spinlock_release(&_laritos.proclock, &ctx);
 
         // Running in process mode, then block the process and schedule()
         if (t->ops.add_vrtimer(t, ticks, process_sleep_cb, pcb, false) < 0) {
             error_async("Failed to create virtual timer ticks=%lu", ticks);
             return;
         }
+        // Make sure we install the timer before blocking the process, otherwise
+        // the process may block forever if there is a context switch.
+        // The spinlock, by disabling local irqs, will ensure no other
+        // process preempts the current one until the timer is installed and
+        // the process moved to the blocked list
+        sched_move_to_blocked_locked(pcb);
+
+        spinlock_release(&_laritos.proclock, &ctx);
+
         schedule();
     } else {
         // Running in non-process mode, then block the kernel thread
