@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 #include <sync/semaphore.h>
+#include <sync/spinlock.h>
+#include <sync/condition.h>
 #include <core.h>
 #include <process/core.h>
 #include <sched/core.h>
@@ -10,9 +12,9 @@
 #include <generated/autoconf.h>
 
 int sem_init(sem_t *sem, uint16_t count) {
-    INIT_LIST_HEAD(&sem->blocked);
     spinlock_init(&sem->lock);
     sem->count = count;
+    condition_init(&sem->cond);
     return 0;
 }
 
@@ -22,24 +24,7 @@ int sem_acquire(sem_t *sem) {
     irqctx_t ctx;
     spinlock_acquire(&sem->lock, &ctx);
 
-    while (sem->count == 0) {
-        pcb_t *pcb = process_get_current();
-
-        assert(list_empty(&pcb->sched.blockedlst), "A process can only be waiting for max 1 event");
-        list_add_tail(&pcb->sched.blockedlst, &sem->blocked);
-
-        irqctx_t ctx2;
-        spinlock_acquire(&_laritos.proclock, &ctx2);
-        sched_move_to_blocked_locked(pcb);
-        spinlock_release(&_laritos.proclock, &ctx2);
-
-        verbose_async("sem_acquire(sem=0x%p, count=%u, pid=%u) -> NOT AVAILABLE", sem, sem->count, process_get_current()->pid);
-        spinlock_release(&sem->lock, &ctx);
-
-        schedule();
-
-        spinlock_acquire(&sem->lock, &ctx);
-    }
+    sleep_until(sem->count > 0, &sem->cond, &sem->lock, &ctx);
     sem->count--;
 
     verbose_async("sem_acquire(sem=0x%p, count=%u, pid=%u) -> ACQUIRED", sem, sem->count, process_get_current()->pid);
@@ -52,19 +37,8 @@ int sem_release(sem_t *sem) {
     spinlock_acquire(&sem->lock, &ctx);
 
     bool proc_awakened = false;
-    if (sem->count == 0) {
-        pcb_t *pcb = list_first_entry_or_null(&sem->blocked, pcb_t, sched.blockedlst);
-        if (pcb != NULL) {
-            list_del_init(&pcb->sched.blockedlst);
-
-            verbose_async("sem_release(sem=0x%p, count=%u, pid=%u) -> waking up pid=%u", sem, sem->count, process_get_current()->pid, pcb->pid);
-            irqctx_t ctx2;
-            spinlock_acquire(&_laritos.proclock, &ctx2);
-            sched_move_to_ready_locked(pcb);
-            spinlock_release(&_laritos.proclock, &ctx2);
-
-            proc_awakened = true;
-        }
+    if (condition_notify(&sem->cond) != NULL) {
+        proc_awakened = true;
     }
     sem->count++;
 

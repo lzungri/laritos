@@ -28,4 +28,3 @@ static inline int spinlock_release(spinlock_t *lock, irqctx_t *ctx) {
     arch_spinlock_release(lock);
     return irq_local_restore_ctx(ctx);
 }
-

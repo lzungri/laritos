@@ -102,9 +102,9 @@ T(semaphore_012_sequence) {
 
     sleep(3);
 
-    tassert(is_process_in(&p0->sched.blockedlst, &sems_012[0].blocked));
-    tassert(is_process_in(&p1->sched.blockedlst, &sems_012[1].blocked));
-    tassert(is_process_in(&p2->sched.blockedlst, &sems_012[2].blocked));
+    tassert(is_process_in(&p0->sched.blockedlst, &sems_012[0].cond.blocked));
+    tassert(is_process_in(&p1->sched.blockedlst, &sems_012[1].cond.blocked));
+    tassert(is_process_in(&p2->sched.blockedlst, &sems_012[2].cond.blocked));
 
     sem_release(&sems_012[0]);
     sem_acquire(&sems_012[3]);

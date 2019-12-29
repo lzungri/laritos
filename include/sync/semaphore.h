@@ -2,12 +2,12 @@
 
 #include <stdint.h>
 #include <sync/spinlock.h>
-#include <dstruct/list.h>
+#include <sync/condition.h>
 
 typedef struct {
     uint16_t count;
     spinlock_t lock;
-    struct list_head blocked;
+    condition_t cond;
 } sem_t;
 
 int sem_init(sem_t *sem, uint16_t count);
