@@ -11,6 +11,7 @@
 #include <sched/core.h>
 #include <sched/context.h>
 #include <sync/spinlock.h>
+#include <sync/condition.h>
 #include <generated/autoconf.h>
 
 int process_init_global_context(void) {
@@ -41,6 +42,7 @@ pcb_t *process_alloc(void) {
         INIT_LIST_HEAD(&pcb->sched.blockedlst);
         INIT_LIST_HEAD(&pcb->children);
         INIT_LIST_HEAD(&pcb->siblings);
+        condition_init(&pcb->parent_waiting_cond);
         pcb->sched.status = PROC_STATUS_NOT_INIT;
         process_set_name(pcb, "?");
     }
@@ -68,6 +70,8 @@ int process_register_locked(pcb_t *pcb) {
         pcb_t *parent = process_get_current();
         pcb->parent = parent;
         list_add_tail(&pcb->siblings, &parent->children);
+        // Parent pcb is now referencing its child, increase ref counter
+        ref_inc(&pcb->refcnt);
     }
 
     list_add_tail(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
@@ -80,13 +84,29 @@ int process_unregister_locked(pcb_t *pcb) {
         error_async("You can only unregister a process in either PCB_STATUS_NOT_INIT or PCB_STATUS_ZOMBIE state");
         return -1;
     }
+
     debug_async("Un-registering process with pid=%u, exit status=%d", pcb->pid, pcb->exit_status);
     list_del(&pcb->sched.pcb_node);
     list_del(&pcb->siblings);
     if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
         sched_remove_from_zombie_locked(pcb);
     }
-    return process_free(pcb);
+
+    // No more references, free the pcb_t
+    if (pcb->refcnt == 0) {
+        return process_free(pcb);
+    }
+
+    debug_async("pid=%u still referenced %lu times, will be freed later by the GC", pcb->pid, pcb->refcnt);
+    // pcb_t will be freed later by the GC
+    return 0;
+}
+
+static inline void handle_dead_child_locked(pcb_t *pcb, int *status) {
+    *status = pcb->exit_status;
+    // Parent is no longer referencing its child
+    ref_dec(&pcb->refcnt);
+    process_unregister_locked(pcb);
 }
 
 void process_unregister_zombie_children_locked(pcb_t *pcb) {
@@ -94,8 +114,8 @@ void process_unregister_zombie_children_locked(pcb_t *pcb) {
     pcb_t *temp;
     for_each_child_process_safe(pcb, child, temp) {
         if (child->sched.status == PROC_STATUS_ZOMBIE) {
-            verbose("Unregistering dead child process pid=%u", child->pid);
-            process_unregister_locked(child);
+            int status;
+            handle_dead_child_locked(child, &status);
         }
     }
 }
@@ -160,7 +180,7 @@ static void kernel_main_wrapper(kproc_main_t main, void *data) {
 }
 
 pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, uint32_t stacksize, uint8_t priority) {
-    debug_async("Spawning kernel process (name=%s, main=0x%p, data=0x%p, prio=%u)", name, main, data, priority);
+    debug_async("Spawning kernel process (name=%-7.7s, main=0x%p, data=0x%p, prio=%u)", name, main, data, priority);
 
     // Allocate PCB structure for this new process
     pcb_t *pcb = process_alloc();
@@ -222,6 +242,36 @@ error_imgalloc:
     process_free(pcb);
 error_pcb:
     return NULL;
+}
+
+int process_wait_for(pcb_t *pcb, int *status) {
+    verbose_async("Waiting for pid=%u", pcb->pid);
+
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proclock, &ctx);
+
+    if (pcb->parent != process_get_current()) {
+        spinlock_release(&_laritos.proclock, &ctx);
+        return -1;
+    }
+
+    if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
+        handle_dead_child_locked(pcb, status);
+        spinlock_release(&_laritos.proclock, &ctx);
+        return 0;
+    }
+
+    SLEEP_UNTIL_PROCLOCKED(pcb->sched.status == PROC_STATUS_ZOMBIE, &pcb->parent_waiting_cond, &ctx);
+    handle_dead_child_locked(pcb, status);
+
+    spinlock_release(&_laritos.proclock, &ctx);
+
+    return 0;
+}
+
+int process_wait_pid(uint16_t pid, int *status) {
+    pcb_t *pcb = slab_get_ptr_from_position(_laritos.proc.pcb_slab, pid);
+    return process_wait_for(pcb, status);
 }
 
 

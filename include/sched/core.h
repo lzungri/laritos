@@ -4,6 +4,7 @@
 #include <core.h>
 #include <process/core.h>
 #include <process/status.h>
+#include <sync/condition.h>
 
 void sched_switch_to(pcb_t *cur, pcb_t *pcb);
 void schedule(void);
@@ -106,6 +107,9 @@ static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
 
     list_move_tail(&pcb->sched.sched_node, &_laritos.sched.zombie_pcbs);
     pcb->sched.status = PROC_STATUS_ZOMBIE;
+
+    // Notify blocked parent (if any) about its dead
+    condition_notify_proclocked(&pcb->parent_waiting_cond);
 
     if (parent == _laritos.proc.init) {
         // New zombie process child of init, wake up init so that it releases its resources

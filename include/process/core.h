@@ -8,10 +8,12 @@
 #include <dstruct/list.h>
 #include <cpu.h>
 #include <core.h>
+#include <refcount.h>
 #include <utils/assert.h>
 #include <mm/slab.h>
 #include <process/status.h>
 #include <time/tick.h>
+#include <sync/condition.h>
 #include <generated/autoconf.h>
 
 typedef struct {
@@ -65,8 +67,11 @@ typedef struct pcb {
     int exit_status;
 
     struct pcb *parent;
+    condition_t parent_waiting_cond;
     struct list_head children;
     struct list_head siblings;
+
+    refcount_t refcnt;
 } pcb_t;
 
 
@@ -91,6 +96,8 @@ void process_kill_and_schedule(pcb_t *pcb);
 int process_set_priority(pcb_t *pcb, uint8_t priority);
 spctx_t *process_get_current_pcb_stack_context(void);
 pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, uint32_t stacksize, uint8_t priority);
+int process_wait_for(pcb_t *pcb, int *status);
+int process_wait_pid(uint16_t pid, int *status);
 
 static inline pcb_t *process_get_current(void) {
     pcb_t *pcb = _laritos.sched.running[cpu_get_id()];
