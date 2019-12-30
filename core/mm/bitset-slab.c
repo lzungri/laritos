@@ -79,7 +79,7 @@ void *slab_alloc(slab_t *slab) {
 
     spinlock_release(&s->lock, &ctx);
 
-    return s->data + idx * s->elem_size;
+    return slab_get_ptr_from_position(slab, idx);
 }
 
 void slab_free(slab_t *slab, void *ptr) {
@@ -116,6 +116,11 @@ uint32_t slab_get_avail_elems(slab_t *slab) {
 uint32_t slab_get_slab_position(slab_t *slab, void *ptr) {
     bs_slab_t *s = (bs_slab_t *) slab;
     return ((char *) ptr - s->data) / s->elem_size;
+}
+
+void *slab_get_ptr_from_position(slab_t *slab, uint32_t pos) {
+    bs_slab_t *s = (bs_slab_t *) slab;
+    return (void *) (s->data + pos * s->elem_size);
 }
 
 
