@@ -38,10 +38,7 @@ TEND
 
 
 static int kproc1(void *data) {
-    unsigned long long i = 0;
-    while (i++ < 1000) {
-        verbose("%s: %lu", process_get_current()->name, (uint32_t) i);
-    }
+    TEST_BUSY_WAIT(3);
 
     bool *finish = (bool *) data;
     *finish = true;
@@ -99,10 +96,7 @@ T(process_ready_kernel_threads_with_highest_priority_is_executed_first) {
 TEND
 
 static int kproc3(void *data) {
-    unsigned long long i = 0;
-    while (i++ < 500000000) {
-        verbose("%s: %lu", process_get_current()->name, (uint32_t) i);
-    }
+    TEST_BUSY_WAIT(5);
 
     bool *finish = (bool *) data;
     *finish = true;
@@ -308,4 +302,69 @@ T(process_running_state_stats_are_accurate) {
 
     uint8_t secs = TICK_TO_SEC(hrtimer, p->stats.ticks_spent[PROC_STATUS_RUNNING]);
     tassert(secs >= 5 && secs <= 6);
+TEND
+
+static int waitfor_exitstatus(void *data) {
+    return 12345;
+}
+
+T(process_wait_for_process_returns_exit_status_of_dead_process) {
+    pcb_t *p = process_spawn_kernel_process("exitstatus", waitfor_exitstatus, NULL,
+                        8196,  process_get_current()->sched.priority - 1);
+    tassert(p != NULL);
+    int status;
+    process_wait_for(p, &status);
+    tassert(status == 12345);
+TEND
+
+T(process_wait_for_pid_returns_exit_status_of_dead_process) {
+    pcb_t *p = process_spawn_kernel_process("exitstatus", waitfor_exitstatus, NULL,
+                        8196,  process_get_current()->sched.priority - 1);
+    tassert(p != NULL);
+    int status;
+    process_wait_pid(p->pid, &status);
+    tassert(status == 12345);
+TEND
+
+T(process_can_only_wait_for_children) {
+    int status;
+    // Waiting for init process
+    tassert(process_wait_pid(0, &status) < 0);
+TEND
+
+static int waitfor(void *data) {
+    sleep(3);
+    return 12345;
+}
+
+T(process_wait_for_process_blocks_until_proc_is_dead) {
+    pcb_t *p = process_spawn_kernel_process("waitfor", waitfor, NULL,
+                        8196,  process_get_current()->sched.priority - 1);
+    tassert(p != NULL);
+    int status;
+    process_wait_for(p, &status);
+    tassert(status == 12345);
+TEND
+
+static int wait1(void *data) {
+    sleep(3);
+    return 12345;
+}
+
+static int wait2(void *data) {
+    pcb_t *p1 = process_spawn_kernel_process("wait1", wait1, NULL,
+                        8196,  process_get_current()->sched.priority - 1);
+    int status;
+    process_wait_for(p1, &status);
+    return status - 5;
+}
+
+T(process_multiple_processes_are_blocked_if_waiting_for_another_one_to_die) {
+    pcb_t *p2 = process_spawn_kernel_process("wait2", wait2, NULL,
+                        8196,  process_get_current()->sched.priority - 1);
+    tassert(p2 != NULL);
+
+    int status;
+    process_wait_for(p2, &status);
+    tassert(status == 12340);
 TEND
