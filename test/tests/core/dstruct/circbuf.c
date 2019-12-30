@@ -24,7 +24,7 @@ TEND
 static int reader(void *data) {
     circbuf_t *cb = (circbuf_t *) data;
     char buf[5] = { 0 };
-    int nbytes = circbuf_read(cb, buf, sizeof(buf) - 1, true);
+    __attribute__((unused)) int nbytes = circbuf_read(cb, buf, sizeof(buf) - 1, true);
     debug("Read %u bytes, Data: %s", nbytes, buf);
     return 0;
 }
