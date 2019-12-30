@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <stdbool.h>
@@ -37,7 +36,7 @@ int sem_release(sem_t *sem) {
     spinlock_acquire(&sem->lock, &ctx);
 
     bool proc_awakened = false;
-    if (condition_notify_locked(&sem->cond) != NULL) {
+    if (condition_notify_all_locked(&sem->cond)) {
         proc_awakened = true;
     }
     sem->count++;
