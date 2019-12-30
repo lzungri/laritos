@@ -273,7 +273,8 @@ T(process_ready_state_stats_are_accurate) {
     tassert(p != NULL);
     tassert(is_process_active(p));
 
-    sleep(5);
+    // We need to keep the test process running, otherwise the scheduler will switch to the ready process
+    TEST_BUSY_WAIT(5);
     process_kill(p);
 
     vrtimer_comp_t *vrtimer = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
@@ -282,7 +283,7 @@ T(process_ready_state_stats_are_accurate) {
     tassert(hrtimer != NULL);
 
     uint8_t secs = TICK_TO_SEC(hrtimer, p->stats.ticks_spent[PROC_STATUS_READY]);
-    tassert(secs >= 5 && secs <= 6);
+    tassert(secs >= 4 && secs <= 6);
 TEND
 
 static int running(void *data) {
