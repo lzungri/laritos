@@ -18,7 +18,6 @@ int process_init_global_context(void) {
     INIT_LIST_HEAD(&_laritos.proc.pcbs);
     INIT_LIST_HEAD(&_laritos.sched.ready_pcbs);
     INIT_LIST_HEAD(&_laritos.sched.blocked_pcbs);
-    INIT_LIST_HEAD(&_laritos.sched.zombie_pcbs);
 
     _laritos.proc.pcb_slab = slab_create(CONFIG_PROCESS_MAX_CONCURRENT_PROCS, sizeof(pcb_t));
     return _laritos.proc.pcb_slab != NULL ? 0 : -1;
@@ -45,25 +44,33 @@ pcb_t *process_alloc(void) {
         condition_init(&pcb->parent_waiting_cond);
         pcb->sched.status = PROC_STATUS_NOT_INIT;
         process_set_name(pcb, "?");
+        process_assign_pid(pcb);
     }
     return pcb;
 }
 
 int process_free(pcb_t *pcb) {
-    if (pcb->sched.status != PROC_STATUS_NOT_INIT) {
-        error_async("You can only free a process in PCB_STATUS_NOT_INIT state");
+    if (pcb->sched.status != PROC_STATUS_NOT_INIT && pcb->sched.status != PROC_STATUS_ZOMBIE) {
+        error_async("You can only free a process in NOT_INIT or ZOMBIE state");
         return -1;
     }
     verbose_async("Freeing %s process with pid=%u", pcb->kernel ? "kernel" : "user", pcb->pid);
     // Free process image allocated in the OS heap
     free(pcb->mm.imgaddr);
-    // Free pcb structure allocated in the pcb slab
+    pcb->mm.imgaddr = 0;
+
+    if (pcb->refcnt >= 0) {
+        debug_async("pid=%u still referenced %lu times, its pcb_t will be freed later by the GC", pcb->pid, pcb->refcnt);
+        return 0;
+    }
+
+    // No more references, free pcb structure allocated in the pcb slab
     slab_free(_laritos.proc.pcb_slab, pcb);
+
     return 0;
 }
 
 int process_register_locked(pcb_t *pcb) {
-    process_assign_pid(pcb);
     debug_async("Registering process with pid=%u, priority=%u", pcb->pid, pcb->sched.priority);
 
     if (_laritos.process_mode) {
@@ -79,34 +86,27 @@ int process_register_locked(pcb_t *pcb) {
     return 0;
 }
 
-int process_unregister_locked(pcb_t *pcb) {
-    if (pcb->sched.status != PROC_STATUS_NOT_INIT && pcb->sched.status != PROC_STATUS_ZOMBIE) {
-        error_async("You can only unregister a process in either PCB_STATUS_NOT_INIT or PCB_STATUS_ZOMBIE state");
+int process_release_zombie_resources(pcb_t *pcb) {
+    if (pcb->sched.status != PROC_STATUS_ZOMBIE) {
+        error_async("You can only release resources of a ZOMBIE process");
         return -1;
     }
 
-    debug_async("Un-registering process with pid=%u, exit status=%d", pcb->pid, pcb->exit_status);
+    debug_async("Releasing zombie resources for pid=%u, exit status=%d", pcb->pid, pcb->exit_status);
     list_del(&pcb->sched.pcb_node);
-    list_del(&pcb->siblings);
-    if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
-        sched_remove_from_zombie_locked(pcb);
-    }
+    list_del(&pcb->sched.sched_node);
 
-    // No more references, free the pcb_t
-    if (pcb->refcnt == 0) {
-        return process_free(pcb);
-    }
-
-    debug_async("pid=%u still referenced %lu times, will be freed later by the GC", pcb->pid, pcb->refcnt);
-    // pcb_t will be freed later by the GC
-    return 0;
+    return process_free(pcb);
 }
 
 static inline void handle_dead_child_locked(pcb_t *pcb, int *status) {
-    *status = pcb->exit_status;
+    if (status != NULL) {
+        *status = pcb->exit_status;
+    }
+    // Remove from the children list
+    list_del(&pcb->siblings);
     // Parent is no longer referencing its child
     ref_dec(&pcb->refcnt);
-    process_unregister_locked(pcb);
 }
 
 void process_unregister_zombie_children_locked(pcb_t *pcb) {
@@ -224,7 +224,6 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
     arch_context_set_second_arg(pcb->mm.sp_ctx, data);
 
     process_set_priority(pcb, priority);
-
 
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proclock, &ctx);

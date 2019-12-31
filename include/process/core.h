@@ -89,7 +89,7 @@ void process_assign_pid(pcb_t *pcb);
 pcb_t *process_alloc(void);
 int process_free(pcb_t *pcb);
 int process_register_locked(pcb_t *pcb);
-int process_unregister_locked(pcb_t *pcb);
+int process_release_zombie_resources(pcb_t *pcb);
 void process_unregister_zombie_children_locked(pcb_t *pcb);
 void process_kill(pcb_t *pcb);
 void process_kill_and_schedule(pcb_t *pcb);
