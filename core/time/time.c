@@ -2,6 +2,7 @@
 
 #include <cpu.h>
 #include <core.h>
+#include <refcount.h>
 #include <time/time.h>
 #include <time/tick.h>
 #include <time/timeconv.h>
@@ -85,9 +86,16 @@ static inline void _sleep(vrtimer_comp_t *t, tick_t ticks) {
         // the process moved to the blocked list
         sched_move_to_blocked_locked(pcb);
 
+        // We are gonna need the pcb_t to unblock it once the timer expires.
+        // Make sure it is not released by keeping a reference to it
+        ref_inc(&pcb->refcnt);
+
         spinlock_release(&_laritos.proclock, &ctx);
 
         schedule();
+
+        // pcb_t no longer needed by sleep()
+        ref_dec(&pcb->refcnt);
     } else {
         // Running in non-process mode, then block the kernel thread
         bool timer_expired = false;
