@@ -1,3 +1,4 @@
+#define DEBUG
 #include <log.h>
 
 #include <cpu.h>
@@ -53,10 +54,16 @@ static inline vrtimer_comp_t *get_vrtimer(void) {
 
 static int process_sleep_cb(vrtimer_comp_t *t, void *data) {
     pcb_t *pcb = (pcb_t *) data;
+
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proclock, &ctx);
+
     sched_move_to_ready_locked(pcb);
+    // pcb_t no longer needed by sleep()
+    ref_dec(&pcb->refcnt);
+
     spinlock_release(&_laritos.proclock, &ctx);
+
     return 0;
 }
 
@@ -93,9 +100,6 @@ static inline void _sleep(vrtimer_comp_t *t, tick_t ticks) {
         spinlock_release(&_laritos.proclock, &ctx);
 
         schedule();
-
-        // pcb_t no longer needed by sleep()
-        ref_dec(&pcb->refcnt);
     } else {
         // Running in non-process mode, then block the kernel thread
         bool timer_expired = false;
