@@ -206,8 +206,18 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
 
     process_set_priority(pcb, CONFIG_SCHED_PRIORITY_MAX_USER);
 
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proclock, &ctx);
+    if (process_register_locked(pcb) < 0) {
+        error_async("Could not register process at 0x%p", pcb);
+        spinlock_release(&_laritos.proclock, &ctx);
+        goto error_register;
+    }
+    spinlock_release(&_laritos.proclock, &ctx);
+
     return pcb;
 
+error_register:
 error_reloc:
 error_setup:
 error_load:
@@ -218,6 +228,7 @@ error_bss:
 error_data:
 error_text:
     free(pcb->mm.imgaddr);
+    pcb->mm.imgaddr = NULL;
 error_imgalloc:
 error_reloc_offset:
     process_free(pcb);

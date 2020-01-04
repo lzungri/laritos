@@ -26,9 +26,7 @@ pcb_t *loader_load_executable_from_memory(uint16_t appidx) {
         return NULL;
     }
 
-
     pcb_t *pcb = NULL;
-
     switch (e_ident[EI_CLASS]) {
     case 1:;
         // ELF 32
@@ -44,18 +42,5 @@ pcb_t *loader_load_executable_from_memory(uint16_t appidx) {
         error("Invalid ELF class %u", e_ident[EI_CLASS]);
         break;
     }
-
-    if (pcb == NULL) {
-        return NULL;
-    }
-
-    irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
-    if (process_register_locked(pcb) < 0) {
-        error_async("Could not register process at 0x%p", pcb);
-        process_free(pcb);
-    }
-    spinlock_release(&_laritos.proclock, &ctx);
-
     return pcb;
 }
