@@ -12,6 +12,7 @@
 #include <sched/context.h>
 #include <sync/spinlock.h>
 #include <sync/condition.h>
+#include <utils/utils.h>
 #include <generated/autoconf.h>
 
 int process_init_global_context(void) {
@@ -32,6 +33,22 @@ void process_assign_pid(pcb_t *pcb) {
     pcb->pid = (uint16_t) slab_get_slab_position(_laritos.proc.pcb_slab, pcb);
 }
 
+int process_free(pcb_t *pcb) {
+    if (pcb->sched.status != PROC_STATUS_NOT_INIT && pcb->sched.status != PROC_STATUS_ZOMBIE) {
+        error_async("You can only free a process in NOT_INIT or ZOMBIE state");
+        return -1;
+    }
+    // Wipe memory region for security reasons
+    memset(pcb, 0, sizeof(pcb));
+    slab_free(_laritos.proc.pcb_slab, pcb);
+    return 0;
+}
+
+static void free_process_slab(refcount_t *ref) {
+    pcb_t *pcb = container_of(ref, pcb_t, refcnt);
+    process_free(pcb);
+}
+
 pcb_t *process_alloc(void) {
     pcb_t *pcb = slab_alloc(_laritos.proc.pcb_slab);
     if (pcb != NULL) {
@@ -42,32 +59,12 @@ pcb_t *process_alloc(void) {
         INIT_LIST_HEAD(&pcb->children);
         INIT_LIST_HEAD(&pcb->siblings);
         condition_init(&pcb->parent_waiting_cond);
+        ref_init(&pcb->refcnt, free_process_slab);
         pcb->sched.status = PROC_STATUS_NOT_INIT;
         process_set_name(pcb, "?");
         process_assign_pid(pcb);
     }
     return pcb;
-}
-
-int process_free(pcb_t *pcb) {
-    if (pcb->sched.status != PROC_STATUS_NOT_INIT && pcb->sched.status != PROC_STATUS_ZOMBIE) {
-        error_async("You can only free a process in NOT_INIT or ZOMBIE state");
-        return -1;
-    }
-    verbose_async("Freeing %s process with pid=%u", pcb->kernel ? "kernel" : "user", pcb->pid);
-    // Free process image allocated in the OS heap
-    free(pcb->mm.imgaddr);
-    pcb->mm.imgaddr = 0;
-
-    if (pcb->refcnt >= 0) {
-        debug_async("pid=%u still referenced %lu times, its pcb_t will be freed later by the GC", pcb->pid, pcb->refcnt);
-        return 0;
-    }
-
-    // No more references, free pcb structure allocated in the pcb slab
-    slab_free(_laritos.proc.pcb_slab, pcb);
-
-    return 0;
 }
 
 int process_register_locked(pcb_t *pcb) {
@@ -96,7 +93,10 @@ int process_release_zombie_resources(pcb_t *pcb) {
     list_del(&pcb->sched.pcb_node);
     list_del(&pcb->sched.sched_node);
 
-    return process_free(pcb);
+    free(pcb->mm.imgaddr);
+    pcb->mm.imgaddr = NULL;
+
+    return 0;
 }
 
 static inline void handle_dead_child_locked(pcb_t *pcb, int *status) {
@@ -237,6 +237,8 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
     return pcb;
 
 error_pcbreg:
+    free(pcb->mm.imgaddr);
+    pcb->mm.imgaddr = NULL;
 error_imgalloc:
     process_free(pcb);
 error_pcb:
