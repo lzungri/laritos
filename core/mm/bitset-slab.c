@@ -50,6 +50,8 @@ slab_t *slab_create(uint32_t numelems, size_t elemsize) {
     slab->elem_size = elemsize;
     slab->data = (char *) slab + dataoffset;
 
+    verbose_async("slab=0x%p new", slab);
+
     return (slab_t *) slab;
 }
 
@@ -73,6 +75,8 @@ void *slab_alloc(slab_t *slab) {
         spinlock_release(&s->lock, &ctx);
         return NULL;
     }
+
+    verbose_async("slab=0x%p alloc #%lu", slab, idx);
 
     bitset_array_lm_set(s->bitset, s->bs_elems, idx);
     s->avail_elems--;
@@ -100,6 +104,8 @@ void slab_free(slab_t *slab, void *ptr) {
     }
 
     spinlock_release(&s->lock, &ctx);
+
+    verbose_async("slab=0x%p free #%lu", slab, bsidx);
 }
 
 void slab_destroy(slab_t *slab) {
@@ -107,6 +113,7 @@ void slab_destroy(slab_t *slab) {
         return;
     }
     free(slab);
+    verbose_async("slab=0x%p destroy", slab);
 }
 
 uint32_t slab_get_avail_elems(slab_t *slab) {
