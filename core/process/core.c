@@ -114,8 +114,7 @@ void process_unregister_zombie_children_locked(pcb_t *pcb) {
     pcb_t *temp;
     for_each_child_process_safe(pcb, child, temp) {
         if (child->sched.status == PROC_STATUS_ZOMBIE) {
-            int status;
-            handle_dead_child_locked(child, &status);
+            handle_dead_child_locked(child, NULL);
         }
     }
 }
