@@ -3,7 +3,11 @@
 #include <sync/barrier.h>
 #include <sync/cmpxchg.h>
 
-typedef uint32_t spinlock_t;
+/**
+ * 32-bit spinlock type for ARM.
+ * Must be 4-byte aligned to ensure read/write atomicity.
+ */
+typedef uint32_t spinlock_t __attribute__ ((aligned (4)));
 
 
 static inline int arch_spinlock_set(spinlock_t *lock, unsigned int value) {
