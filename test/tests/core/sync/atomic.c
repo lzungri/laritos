@@ -36,6 +36,12 @@ T(atomic32_add_increments_value_by_x) {
     tassert(atomic32_add(&at, -5) == 0);
 TEND
 
+T(atomic32_overflows_when_value_equals_max32) {
+    atomic32_t at;
+    atomic32_init(&at, S32_MAX);
+    tassert(atomic32_inc(&at) == S32_MIN);
+TEND
+
 T(atomic32_inc_increments_value_by_1) {
     atomic32_t at;
     atomic32_init(&at, 0);
@@ -138,6 +144,12 @@ T(atomic64_inc_increments_value_by_1) {
     atomic64_inc(&at);
     tassert(atomic64_get(&at) == 1);
     tassert(atomic64_inc(&at) == 2);
+TEND
+
+T(atomic64_overflows_when_value_equals_max32) {
+    atomic64_t at;
+    atomic64_init(&at, S64_MAX);
+    tassert(atomic64_inc(&at) == S64_MIN);
 TEND
 
 T(atomic64_inc_of_maxint32_gives_maxint32_plus_1) {
