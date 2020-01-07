@@ -120,7 +120,7 @@ static int proc_acquire(void *data) {
     return 0;
 }
 
-T(semaphore_blocked_proc_with_highest_priority_acquires_semaphore_after_releasing_an_instance) {
+T(semaphore_blocked_proc_with_the_highest_priority_acquires_semaphore_after_it_is_released) {
     sem_t sem;
     sem_init(&sem, 0);
 
