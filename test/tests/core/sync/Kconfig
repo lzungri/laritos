@@ -5,9 +5,14 @@ config TEST_CORE_SYNC_ALL
     default n
     select TEST_CORE_SYNC_SEMAPHORE
     select TEST_CORE_SYNC_ATOMIC
+    select TEST_CORE_SYNC_RMUTEX
 
 config TEST_CORE_SYNC_SEMAPHORE
     bool "semaphore.c"
+    default n
+
+config TEST_CORE_SYNC_RMUTEX
+    bool "rmutex.c"
     default n
 
 config TEST_CORE_SYNC_ATOMIC
