@@ -5,6 +5,7 @@
 #include <process/core.h>
 #include <process/status.h>
 #include <sync/condition.h>
+#include <time/system-tick.h>
 
 void sched_switch_to(pcb_t *cur, pcb_t *pcb);
 void schedule(void);
@@ -20,9 +21,9 @@ static inline void schedule_if_needed(void) {
 }
 
 static inline void sched_update_stats(pcb_t *pcb) {
-    tick_t delta = _laritos.timeinfo.ticks - pcb->stats.last_status_change;
+    tick_t delta = tick_get_system_ticks() - pcb->stats.last_status_change;
     pcb->stats.ticks_spent[pcb->sched.status] += delta;
-    pcb->stats.last_status_change = _laritos.timeinfo.ticks;
+    pcb->stats.last_status_change = tick_get_system_ticks();
 }
 
 /**

@@ -8,6 +8,7 @@
 #include <component/vrtimer.h>
 #include <component/component.h>
 #include <time/tick.h>
+#include <time/system-tick.h>
 #include <utils/math.h>
 #include <dstruct/list.h>
 #include <mm/heap.h>
@@ -15,7 +16,7 @@
 
 static int ticker_cb(vrtimer_comp_t *t, void *data) {
     // Increment global tick
-    _laritos.timeinfo.ticks++;
+    tick_inc_system_ticks();
 
     ticker_comp_t *ticker = (ticker_comp_t *) data;
     ticker_cb_info_t *ti;
@@ -47,7 +48,7 @@ static int ticker_resume(ticker_comp_t *t) {
 
 int ticker_init(ticker_comp_t *t) {
     // Reset global ticks
-    _laritos.timeinfo.ticks = 0;
+    tick_reset_system_ticks();
 
     INIT_LIST_HEAD(&t->cbs);
 

@@ -6,6 +6,7 @@
 #include <test/test.h>
 #include <component/ticker.h>
 #include <time/tick.h>
+#include <time/system-tick.h>
 #include <component/component.h>
 #include <dstruct/list.h>
 #include <test/utils.h>
@@ -25,30 +26,30 @@ T(ticker_global_ctx_tick_is_incremented_periodically) {
     ticker_comp_t *t = get_ticker();
     tassert(t != NULL);
 
-    abstick_t ticks = _laritos.timeinfo.ticks;
+    abstick_t ticks = tick_get_system_ticks();
 
     TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
 
-    tassert(ticks < _laritos.timeinfo.ticks);
+    tassert(ticks < tick_get_system_ticks());
 TEND
 
 T(ticker_can_be_paused_and_resumed) {
     ticker_comp_t *t = get_ticker();
     tassert(t != NULL);
 
-    abstick_t ticks = _laritos.timeinfo.ticks;
+    abstick_t ticks = tick_get_system_ticks();
     TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
-    tassert(ticks < _laritos.timeinfo.ticks);
+    tassert(ticks < tick_get_system_ticks());
 
     t->ops.pause(t);
-    ticks = _laritos.timeinfo.ticks;
+    ticks = tick_get_system_ticks();
     TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
-    tassert(ticks == _laritos.timeinfo.ticks);
+    tassert(ticks == tick_get_system_ticks());
 
     t->ops.resume(t);
-    ticks = _laritos.timeinfo.ticks;
+    ticks = tick_get_system_ticks();
     TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
-    tassert(ticks <= _laritos.timeinfo.ticks);
+    tassert(ticks <= tick_get_system_ticks());
 TEND
 
 static int cb0(ticker_comp_t *t, void *data) {
@@ -100,10 +101,10 @@ static int cb2(ticker_comp_t *t, void *data) {
     if (cb2_ticks == 0) {
         // Initialize boolean used for validation
         *valid_tick = true;
-    } else if (_laritos.timeinfo.ticks != cb2_ticks + 1) {
+    } else if (tick_get_system_ticks() != cb2_ticks + 1) {
         *valid_tick = false;
     }
-    cb2_ticks = _laritos.timeinfo.ticks;
+    cb2_ticks = tick_get_system_ticks();
     return 0;
 }
 
