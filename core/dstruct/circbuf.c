@@ -22,7 +22,7 @@ int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking) {
     irqctx_t ctx;
     spinlock_acquire(&cb->lock, &ctx);
     if (blocking) {
-        SLEEP_UNTIL(n <= cb->size - cb->datalen, &cb->space_avail_cond, &cb->lock, &ctx);
+        BLOCK_UNTIL(n <= cb->size - cb->datalen, &cb->space_avail_cond, &cb->lock, &ctx);
     }
 
     uint32_t windex = (cb->head + cb->datalen) % cb->size;
@@ -65,7 +65,7 @@ static int do_circbuf_read(circbuf_t *cb, void *buf, size_t n, bool blocking, bo
     spinlock_acquire(&cb->lock, &ctx);
     if (blocking) {
         // Wait until there is some data in the buffer
-        SLEEP_UNTIL(cb->datalen > 0, &cb->data_avail_cond, &cb->lock, &ctx);
+        BLOCK_UNTIL(cb->datalen > 0, &cb->data_avail_cond, &cb->lock, &ctx);
     }
 
     if (n > cb->datalen) {

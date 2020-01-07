@@ -24,7 +24,7 @@ int rmutex_acquire(rmutex_t *mutex) {
     irqctx_t ctx;
     spinlock_acquire(&mutex->lock, &ctx);
 
-    SLEEP_UNTIL(mutex->owner == cur || mutex->lock_count == 0, &mutex->cond, &mutex->lock, &ctx);
+    BLOCK_UNTIL(mutex->owner == cur || mutex->lock_count == 0, &mutex->cond, &mutex->lock, &ctx);
     mutex->lock_count++;
     mutex->owner = cur;
 

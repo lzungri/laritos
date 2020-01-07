@@ -32,12 +32,12 @@ bool condition_notify_all_proclocked(condition_t *cond);
 
 #define CONDITION_STATIC_INIT(_cond) { .blocked = LIST_HEAD_INIT(_cond.blocked), }
 
-#define SLEEP_UNTIL(_expr, _cond, _spin, _ctx) \
+#define BLOCK_UNTIL(_expr, _cond, _spin, _ctx) \
     while (!(_expr)) { \
         condition_wait_locked(_cond, _spin, _ctx); \
     }
 
-#define SLEEP_UNTIL_PROCLOCKED(_expr, _cond, _ctx) \
+#define BLOCK_UNTIL_PROCLOCKED(_expr, _cond, _ctx) \
     while (!(_expr)) { \
         condition_wait_proclocked(_cond, _ctx); \
     }

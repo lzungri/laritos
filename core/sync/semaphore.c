@@ -23,7 +23,7 @@ int sem_acquire(sem_t *sem) {
     irqctx_t ctx;
     spinlock_acquire(&sem->lock, &ctx);
 
-    SLEEP_UNTIL(sem->count > 0, &sem->cond, &sem->lock, &ctx);
+    BLOCK_UNTIL(sem->count > 0, &sem->cond, &sem->lock, &ctx);
     sem->count--;
 
     verbose_async("sem_acquire(sem=0x%p, count=%u, pid=%u) -> ACQUIRED", sem, sem->count, process_get_current()->pid);

@@ -261,7 +261,7 @@ int process_wait_for(pcb_t *pcb, int *status) {
         return 0;
     }
 
-    SLEEP_UNTIL_PROCLOCKED(pcb->sched.status == PROC_STATUS_ZOMBIE, &pcb->parent_waiting_cond, &ctx);
+    BLOCK_UNTIL_PROCLOCKED(pcb->sched.status == PROC_STATUS_ZOMBIE, &pcb->parent_waiting_cond, &ctx);
     handle_dead_child_locked(pcb, status);
 
     spinlock_release(&_laritos.proclock, &ctx);
