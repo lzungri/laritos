@@ -9,6 +9,7 @@
 #include <mm/slab.h>
 #include <time/tick.h>
 #include <sync/spinlock.h>
+#include <sync/atomic.h>
 
 struct pcb;
 typedef struct {
@@ -90,7 +91,7 @@ typedef struct {
     struct {
         timezone_t tz;
         bool dst;
-        abstick_t ticks;
+        atomic64_t ticks;
     } timeinfo;
 } laritos_t;
 
