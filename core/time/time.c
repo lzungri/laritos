@@ -73,6 +73,12 @@ static int non_process_sleep_cb(vrtimer_comp_t *t, void *data) {
 }
 
 static inline void _sleep(vrtimer_comp_t *t, tick_t ticks) {
+    verbose_async("Sleeping for %lu ticks", ticks);
+
+    if (ticks == 0) {
+        return;
+    }
+
     if (_laritos.process_mode) {
         pcb_t *pcb = process_get_current();
 
