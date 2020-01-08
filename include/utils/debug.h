@@ -2,6 +2,7 @@
 
 #include <log.h>
 #include <string.h>
+#include <core.h>
 #include <component/component.h>
 #include <arch/debug.h>
 #include <process/core.h>
@@ -18,6 +19,12 @@ static inline void debug_dump_processes(void) {
     pcb_t *proc;
     log_always("Processes:");
     log_always("name    pid ppid type  status   prio       mode       pc          sp_ctx");
+
+    // Prevent the OS from doing any change on the active processes
+    // WARNING: We can only do this here since this is only used for debugging purposes
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proclock, &ctx);
+
     for_each_process(proc) {
         if (proc->sched.status == PROC_STATUS_RUNNING) {
             log_always("%-7.7s %2u  %2u    %s   %7s    %3u   %-12.12s   0x%p           -",
@@ -32,12 +39,20 @@ static inline void debug_dump_processes(void) {
                     arch_context_get_retaddr(proc->mm.sp_ctx), proc->mm.sp_ctx);
         }
     }
+
+    spinlock_release(&_laritos.proclock, &ctx);
 }
 
 static inline void debug_dump_processes_stats(void) {
     pcb_t *proc;
     log_always("Processes stats (ticks):");
     log_always("name   pid    ready  running  blocked   zombie");
+
+    // Prevent the OS from doing any change on the active processes
+    // WARNING: We can only do this here since this is only used for debugging purposes
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proclock, &ctx);
+
     for_each_process(proc) {
         // Update with the latest stats
         sched_update_stats(proc);
@@ -45,6 +60,8 @@ static inline void debug_dump_processes_stats(void) {
                 proc->name, proc->pid, proc->stats.ticks_spent[PROC_STATUS_READY], proc->stats.ticks_spent[PROC_STATUS_RUNNING],
                 proc->stats.ticks_spent[PROC_STATUS_BLOCKED], proc->stats.ticks_spent[PROC_STATUS_ZOMBIE]);
     }
+
+    spinlock_release(&_laritos.proclock, &ctx);
 }
 
 /**
