@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <printf.h>
 #include <dstruct/list.h>
 #include <test/test.h>
 #include <process/core.h>
@@ -367,4 +368,34 @@ T(process_multiple_processes_are_blocked_if_waiting_for_another_one_to_die) {
     int status;
     process_wait_for(p2, &status);
     tassert(status == 12340);
+TEND
+
+static int procn(void *data) {
+    pcb_t *cur = process_get_current();
+    // Sleep for "random" seconds
+    sleep(cur->pid % 7 + 1);
+    return cur->pid;
+}
+
+T(process_spawning_lots_of_processes_doesnt_crash_the_system) {
+    pcb_t *procs[CONFIG_PROCESS_MAX_CONCURRENT_PROCS - 10];
+    int i;
+    for (i = 0; i < ARRAYSIZE(procs); i++) {
+        char buf[CONFIG_PROCESS_MAX_NAME_LEN] = { 0 };
+        snprintf(buf, sizeof(buf), "p%d", i);
+
+        procs[i] = process_spawn_kernel_process(buf, procn, NULL,
+                            8196,  process_get_current()->sched.priority);
+        tassert(procs[i] != NULL);
+    }
+
+    for (i = 0; i < ARRAYSIZE(procs); i++) {
+        uint16_t pid = procs[i]->pid;
+        debug("waiting for pid=%u", pid);
+        int status;
+        process_wait_for(procs[i], &status);
+        // We can no longer use the pcb_t since it was probably garbage collected
+        procs[i] = NULL;
+        tassert(status == pid);
+    }
 TEND
