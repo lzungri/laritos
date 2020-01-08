@@ -1,3 +1,4 @@
+#define DEBUG
 #include <log.h>
 
 #include <stdbool.h>
@@ -13,9 +14,14 @@
 #include <component/sched.h>
 #include <mm/spprot.h>
 #include <mm/exc-handlers.h>
+#include <sync/spinlock.h>
 
 void sched_switch_to(pcb_t *from, pcb_t *to) {
-    sched_move_to_running(to);
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proclock, &ctx);
+    sched_move_to_running_locked(to);
+    spinlock_release(&_laritos.proclock, &ctx);
+
     context_save_and_restore(from, to);
 
     // Once the *from* context is restored, it will continue execution from
@@ -32,10 +38,15 @@ void sched_switch_to(pcb_t *from, pcb_t *to) {
 
 static void context_switch(pcb_t *cur, pcb_t *to) {
     verbose_async("Context switch pid=%u -> pid=%u", cur->pid, to->pid);
+
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proclock, &ctx);
     // Check whether the process is actually running (i.e. not a zombie)
     if (cur->sched.status == PROC_STATUS_RUNNING) {
-        sched_move_to_ready(cur);
+        sched_move_to_ready_locked(cur);
     }
+    spinlock_release(&_laritos.proclock, &ctx);
+
     sched_switch_to(cur, to);
 }
 
@@ -68,12 +79,11 @@ void schedule(void) {
 }
 
 void sched_execute_first_system_proc(pcb_t *pcb) {
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proclock, &ctx);
     // Execute the first process
-    sched_move_to_running(pcb);
-
-    // From now on, everything will be executed in the context of a process
-    _laritos.process_mode = true;
-    info("Process mode started");
+    sched_move_to_running_locked(pcb);
+    spinlock_release(&_laritos.proclock, &ctx);
 
     context_restore(pcb);
     // Execution will never reach this point

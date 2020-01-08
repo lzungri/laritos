@@ -77,3 +77,29 @@ TEND
 //    }
 //    resume_ticker();
 //TEND
+
+static int sleepproc(void *data) {
+    sleep(5);
+    return 0;
+}
+
+static pcb_t *sleep_proc;
+static int sleepparent(void *data) {
+    sleep_proc = process_spawn_kernel_process("sleep", sleepproc, NULL,
+                        8196,  process_get_current()->sched.priority - 1);
+    process_wait_for(sleep_proc, NULL);
+    return 0;
+}
+
+T(time_killing_a_process_while_sleeping_doesnt_free_its_pcb_due_to_refcount) {
+    pcb_t *p = process_spawn_kernel_process("sleepparent", sleepparent, NULL,
+                        8196,  process_get_current()->sched.priority - 2);
+    tassert(p != NULL);
+
+    schedule();
+
+    tassert(sleep_proc != NULL);
+    process_kill(sleep_proc);
+
+    process_wait_for(sleep_proc, NULL);
+TEND

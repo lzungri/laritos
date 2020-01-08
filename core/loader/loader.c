@@ -5,6 +5,7 @@
 #include <loader/elf.h>
 #include <loader/loader-elf.h>
 #include <process/core.h>
+#include <sync/spinlock.h>
 
 
 /**
@@ -25,9 +26,7 @@ pcb_t *loader_load_executable_from_memory(uint16_t appidx) {
         return NULL;
     }
 
-
     pcb_t *pcb = NULL;
-
     switch (e_ident[EI_CLASS]) {
     case 1:;
         // ELF 32
@@ -43,15 +42,5 @@ pcb_t *loader_load_executable_from_memory(uint16_t appidx) {
         error("Invalid ELF class %u", e_ident[EI_CLASS]);
         break;
     }
-
-    if (pcb == NULL) {
-        return NULL;
-    }
-
-    if (process_register(pcb) < 0) {
-        error_async("Could not register process at 0x%p", pcb);
-        process_free(pcb);
-    }
-
     return pcb;
 }

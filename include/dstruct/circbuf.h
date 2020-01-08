@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <sync/spinlock.h>
+#include <sync/condition.h>
 
 typedef struct {
     uint8_t *buf;
@@ -11,6 +12,8 @@ typedef struct {
     uint32_t head;
     uint32_t datalen;
     spinlock_t lock;
+    condition_t data_avail_cond;
+    condition_t space_avail_cond;
     irqctx_t peek_ctx;
     size_t peek_size;
 } circbuf_t;
@@ -20,6 +23,8 @@ typedef struct {
         .buf = (uint8_t *) (_buf), \
         .size = (_size), \
         .head = 0, \
+        .data_avail_cond = CONDITION_STATIC_INIT(_name.data_avail_cond), \
+        .space_avail_cond = CONDITION_STATIC_INIT(_name.space_avail_cond), \
     }
 
 int circbuf_write(circbuf_t *cb, const void *buf, size_t n, bool blocking);
@@ -35,6 +40,8 @@ static inline int circbuf_init(circbuf_t *cb, void *buf, uint32_t size) {
     cb->datalen = 0;
     cb->size = size;
     spinlock_init(&cb->lock);
+    condition_init(&cb->data_avail_cond);
+    condition_init(&cb->space_avail_cond);
     return 0;
 }
 

@@ -8,7 +8,10 @@
 #include <dstruct/list.h>
 #include <mm/slab.h>
 #include <time/tick.h>
+#include <sync/spinlock.h>
+#include <sync/atomic.h>
 
+struct pcb;
 typedef struct {
     /**
      * Slab for pcb_t allocation
@@ -19,9 +22,13 @@ typedef struct {
      * List of processes in the system
      */
     struct list_head pcbs;
+
+    /**
+     * Pointer to the init process pcb_t
+     */
+    struct pcb *init;
 } laritos_process_t;
 
-struct pcb;
 typedef struct {
     struct pcb *running[CONFIG_CPU_MAX_CPUS];
 
@@ -34,11 +41,6 @@ typedef struct {
      * List of BLOCKED processes in the system
      */
     struct list_head blocked_pcbs;
-
-    /**
-     * List of ZOMBIE processes in the system
-     */
-    struct list_head zombie_pcbs;
 
     /**
      * Indicates whether or not the OS should schedule the next 'ready' process
@@ -79,12 +81,17 @@ typedef struct {
     laritos_sched_t sched;
 
     /**
+     * Spinlock used to synchronize all process-related lists and data structures
+     */
+    spinlock_t proclock;
+
+    /**
      * Time information
      */
     struct {
         timezone_t tz;
         bool dst;
-        abstick_t ticks;
+        atomic64_t ticks;
     } timeinfo;
 } laritos_t;
 

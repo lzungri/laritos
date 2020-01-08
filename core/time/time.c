@@ -2,6 +2,7 @@
 
 #include <cpu.h>
 #include <core.h>
+#include <refcount.h>
 #include <time/time.h>
 #include <time/tick.h>
 #include <time/timeconv.h>
@@ -11,6 +12,7 @@
 #include <utils/assert.h>
 #include <process/core.h>
 #include <sched/core.h>
+#include <sync/spinlock.h>
 
 int time_rtc_gettime(time_t *t) {
     timer_comp_t *rtc = (timer_comp_t *) component_first_of_type(COMP_TYPE_RTC);
@@ -51,7 +53,16 @@ static inline vrtimer_comp_t *get_vrtimer(void) {
 
 static int process_sleep_cb(vrtimer_comp_t *t, void *data) {
     pcb_t *pcb = (pcb_t *) data;
-    sched_move_to_ready(pcb);
+
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proclock, &ctx);
+
+    sched_move_to_ready_locked(pcb);
+    // pcb_t no longer needed by sleep()
+    ref_dec(&pcb->refcnt);
+
+    spinlock_release(&_laritos.proclock, &ctx);
+
     return 0;
 }
 
@@ -64,12 +75,29 @@ static int non_process_sleep_cb(vrtimer_comp_t *t, void *data) {
 static inline void _sleep(vrtimer_comp_t *t, tick_t ticks) {
     if (_laritos.process_mode) {
         pcb_t *pcb = process_get_current();
-        sched_move_to_blocked(pcb);
+
+        irqctx_t ctx;
+        spinlock_acquire(&_laritos.proclock, &ctx);
+
         // Running in process mode, then block the process and schedule()
         if (t->ops.add_vrtimer(t, ticks, process_sleep_cb, pcb, false) < 0) {
             error_async("Failed to create virtual timer ticks=%lu", ticks);
+            spinlock_release(&_laritos.proclock, &ctx);
             return;
         }
+        // Make sure we install the timer before blocking the process, otherwise
+        // the process may block forever if there is a context switch.
+        // The spinlock, by disabling local irqs, will ensure no other
+        // process preempts the current one until the timer is installed and
+        // the process moved to the blocked list
+        sched_move_to_blocked_locked(pcb);
+
+        // We are gonna need the pcb_t to unblock it once the timer expires.
+        // Make sure it is not released by keeping a reference to it
+        ref_inc(&pcb->refcnt);
+
+        spinlock_release(&_laritos.proclock, &ctx);
+
         schedule();
     } else {
         // Running in non-process mode, then block the kernel thread

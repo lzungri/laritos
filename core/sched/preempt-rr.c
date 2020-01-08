@@ -14,9 +14,7 @@ static inline pcb_t *pick_ready(sched_comp_t *sched, struct cpu *cpu, pcb_t *cur
 }
 
 static int rr_ticker_cb(ticker_comp_t *t, void *data) {
-    if (_laritos.process_mode) {
-        _laritos.sched.need_sched = true;
-    }
+    _laritos.sched.need_sched = true;
     return 0;
 }
 

@@ -19,7 +19,7 @@ int irq_handler(spctx_t *ctx) {
         verbose_async("Dispatching irq to int controller '%s'", c->id);
         intc_t *intc = (intc_t *) c;
         irqret_t ret = intc->ops.dispatch_irq(intc);
-        verbose_async("Interrupt controller '%s' returned %s", c->id, get_irqret_str(ret));
+        verbose_async("Interrupt controller '%s' returned %s", c->id, irq_get_irqret_str(ret));
         switch (ret) {
         case IRQ_RET_HANDLED:
             goto end;

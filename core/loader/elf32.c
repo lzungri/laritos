@@ -151,42 +151,25 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
         goto error_imgalloc;
     }
 
-    if (populate_addr_and_size(".text", &pcb->mm.text_start, &pcb->mm.text_size, pcb, elf, shstrtab_offset) < 0) {
-        error_async("Couldn't find .text section");
-        goto error_text;
-    }
+    debug_async("Process image: 0x%p-0x%p", pcb->mm.imgaddr, (char *) pcb->mm.imgaddr + pcb->mm.imgsize);
 
-    if (populate_addr_and_size(".data", &pcb->mm.data_start, &pcb->mm.data_size, pcb, elf, shstrtab_offset) < 0) {
-        error_async("Couldn't find .data section");
-        goto error_data;
-    }
+#define POPULATE_ADDR_AND_SIZE(_sect) \
+    if (populate_addr_and_size("." #_sect, &pcb->mm._sect##_start, &pcb->mm._sect##_size, pcb, elf, shstrtab_offset) < 0) { \
+        error_async("Couldn't find ." #_sect " section"); \
+        goto error_##_sect; \
+    } \
+    debug_async(#_sect ":          0x%p-0x%p", pcb->mm._sect##_start, (char *) pcb->mm._sect##_start + pcb->mm._sect##_size);
 
-    if (populate_addr_and_size(".bss", &pcb->mm.bss_start, &pcb->mm.bss_size, pcb, elf, shstrtab_offset) < 0) {
-        error_async("Couldn't find .bss section");
-        goto error_bss;
-    }
-
-    if (populate_addr_and_size(".got", &pcb->mm.got_start, &pcb->mm.got_size, pcb, elf, shstrtab_offset) < 0) {
-        error_async("Couldn't find .got section");
-        goto error_got;
-    }
-
-    if (populate_addr_and_size(".heap", &pcb->mm.heap_start, &pcb->mm.heap_size, pcb, elf, shstrtab_offset) < 0) {
-        error_async("Couldn't find .heap section");
-        goto error_heap;
-    }
+    POPULATE_ADDR_AND_SIZE(text);
+    POPULATE_ADDR_AND_SIZE(data);
+    POPULATE_ADDR_AND_SIZE(bss);
+    POPULATE_ADDR_AND_SIZE(got);
+    POPULATE_ADDR_AND_SIZE(heap);
 
     if (populate_addr_and_size(".stack", &pcb->mm.stack_bottom, &pcb->mm.stack_size, pcb, elf, shstrtab_offset) < 0) {
         error_async("Couldn't find .stack section");
         goto error_stack;
     }
-
-    debug_async("Process image: 0x%p-0x%p", pcb->mm.imgaddr, (char *) pcb->mm.imgaddr + pcb->mm.imgsize);
-    debug_async("text:          0x%p-0x%p", pcb->mm.text_start, (char *) pcb->mm.text_start + pcb->mm.text_size);
-    debug_async("data:          0x%p-0x%p", pcb->mm.data_start, (char *) pcb->mm.data_start + pcb->mm.data_size);
-    debug_async("got:           0x%p-0x%p", pcb->mm.got_start, (char *) pcb->mm.got_start + pcb->mm.got_size);
-    debug_async("bss:           0x%p-0x%p", pcb->mm.bss_start, (char *) pcb->mm.bss_start + pcb->mm.bss_size);
-    debug_async("heap:          0x%p-0x%p", pcb->mm.heap_start, (char *) pcb->mm.heap_start + pcb->mm.heap_size);
     debug_async("stack:         0x%p-0x%p", pcb->mm.stack_bottom, (char *) pcb->mm.stack_bottom + pcb->mm.stack_size);
 
     if (load_image_from_memory(elf, pcb->mm.imgaddr) < 0) {
@@ -206,8 +189,18 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
 
     process_set_priority(pcb, CONFIG_SCHED_PRIORITY_MAX_USER);
 
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proclock, &ctx);
+    if (process_register_locked(pcb) < 0) {
+        error_async("Could not register process at 0x%p", pcb);
+        spinlock_release(&_laritos.proclock, &ctx);
+        goto error_register;
+    }
+    spinlock_release(&_laritos.proclock, &ctx);
+
     return pcb;
 
+error_register:
 error_reloc:
 error_setup:
 error_load:
@@ -218,6 +211,7 @@ error_bss:
 error_data:
 error_text:
     free(pcb->mm.imgaddr);
+    pcb->mm.imgaddr = NULL;
 error_imgalloc:
 error_reloc_offset:
     process_free(pcb);

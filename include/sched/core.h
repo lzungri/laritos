@@ -4,6 +4,8 @@
 #include <core.h>
 #include <process/core.h>
 #include <process/status.h>
+#include <sync/condition.h>
+#include <time/system-tick.h>
 
 void sched_switch_to(pcb_t *cur, pcb_t *pcb);
 void schedule(void);
@@ -19,9 +21,9 @@ static inline void schedule_if_needed(void) {
 }
 
 static inline void sched_update_stats(pcb_t *pcb) {
-    tick_t delta = _laritos.timeinfo.ticks - pcb->stats.last_status_change;
+    tick_t delta = tick_get_system_ticks() - pcb->stats.last_status_change;
     pcb->stats.ticks_spent[pcb->sched.status] += delta;
-    pcb->stats.last_status_change = _laritos.timeinfo.ticks;
+    pcb->stats.last_status_change = tick_get_system_ticks();
 }
 
 /**
@@ -33,7 +35,7 @@ static inline void sched_update_stats(pcb_t *pcb) {
  * @param pcb: Process to add
  * @return void
  */
-static inline void sched_add_ready_proc_sorted(pcb_t *pcb) {
+static inline void _sched_add_ready_proc_sorted(pcb_t *pcb) {
     list_del_init(&pcb->sched.sched_node);
     pcb_t *proc;
     for_each_ready_process(proc) {
@@ -45,13 +47,16 @@ static inline void sched_add_ready_proc_sorted(pcb_t *pcb) {
     list_add_tail(&pcb->sched.sched_node, &_laritos.sched.ready_pcbs);
 }
 
-static inline void sched_move_to_ready(pcb_t *pcb) {
+static inline void sched_move_to_ready_locked(pcb_t *pcb) {
+    if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
+        error_async("Cannot move a ZOMBIE process to READY");
+        return;
+    }
     verbose_async("PID %u: %s -> READY", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
-    // TODO Mutex
-    sched_add_ready_proc_sorted(pcb);
+    _sched_add_ready_proc_sorted(pcb);
     pcb->sched.status = PROC_STATUS_READY;
 
     // Re-schedule in case there is a new higher priority process
@@ -60,55 +65,57 @@ static inline void sched_move_to_ready(pcb_t *pcb) {
     }
 }
 
-static inline void sched_move_to_blocked(pcb_t *pcb) {
+static inline void sched_move_to_blocked_locked(pcb_t *pcb) {
+    if (pcb->sched.status == PROC_STATUS_ZOMBIE || pcb->sched.status == PROC_STATUS_NOT_INIT) {
+        error_async("Cannot move a ZOMBIE or NOT_INIT process to BLOCKED");
+        return;
+    }
     verbose_async("PID %u: %s -> BLOCKED", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
-    // TODO Mutex
     list_move_tail(&pcb->sched.sched_node, &_laritos.sched.blocked_pcbs);
     pcb->sched.status = PROC_STATUS_BLOCKED;
 }
 
-static inline void sched_move_to_running(pcb_t *pcb) {
+static inline void sched_move_to_running_locked(pcb_t *pcb) {
+    if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
+        error_async("Cannot move a ZOMBIE process to RUNNING");
+        return;
+    }
     verbose_async("PID %u: %s -> RUNNING", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
-    // TODO Mutex
     list_del_init(&pcb->sched.sched_node);
     pcb->sched.status = PROC_STATUS_RUNNING;
     process_set_current(pcb);
 }
 
-static inline void sched_remove_from_zombie(pcb_t *pcb) {
-    if (pcb->sched.status != PROC_STATUS_ZOMBIE) {
-        return;
-    }
-    verbose_async("PID %u: %s -> NOT_INIT", pcb->pid, pcb_get_status_str(pcb->sched.status));
-
-    sched_update_stats(pcb);
-
-    // TODO Mutex
-    list_del_init(&pcb->sched.sched_node);
-    pcb->sched.status = PROC_STATUS_NOT_INIT;
-}
-
-static inline void sched_move_to_zombie(pcb_t *pcb) {
+static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
     verbose_async("PID %u: %s -> ZOMBIE ", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
-    // TODO Mutex
     pcb_t *child;
     pcb_t *temp;
-    pcb_t *parent = pcb->parent;
+    pcb_t *gparent = pcb->parent;
+    // Grandparent will become the new parent
     for_each_child_process_safe(pcb, child, temp) {
-        verbose_async("pid=%u new parent pid=%u", child->pid, parent->pid);
-        child->parent = parent;
-        list_move_tail(&child->siblings, &parent->children);
+        verbose_async("pid=%u new parent pid=%u", child->pid, gparent->pid);
+        child->parent = gparent;
+        list_move_tail(&child->siblings, &gparent->children);
     }
 
-    list_move_tail(&pcb->sched.sched_node, &_laritos.sched.zombie_pcbs);
     pcb->sched.status = PROC_STATUS_ZOMBIE;
+
+    process_release_zombie_resources(pcb);
+
+    // Notify blocked parent (if any) about its dead
+    condition_notify_proclocked(&pcb->parent_waiting_cond);
+
+    if (gparent == _laritos.proc.init) {
+        // New zombie process child of init, wake up init so that it releases its resources
+        sched_move_to_ready_locked(_laritos.proc.init);
+    }
 }

@@ -37,7 +37,7 @@ int irq_handler(spctx_t *ctx);
 /**
  * @return: IRQ return value string for the given <value>
  */
-static inline const char *get_irqret_str(irqret_t ret) {
+static inline const char *irq_get_irqret_str(irqret_t ret) {
     static const char *str[IRQ_RET_LEN + 1] = {
         "IRQ_RET_ERROR", "IRQ_RET_HANDLED", "IRQ_RET_HANDLED_KEEP_PROCESSING", "IRQ_RET_NOT_HANDLED",
     };
@@ -45,18 +45,18 @@ static inline const char *get_irqret_str(irqret_t ret) {
     return ret < ARRAYSIZE(str) && ret >= 0 && str[ret] != NULL ? str[ret] : "???";
 }
 
-static inline int disable_local_irq(void) {
-    return arch_disable_local_irq();
+static inline int irq_disable_local(void) {
+    return arch_irq_disable_local();
 }
 
-static inline int enable_local_irq(void) {
-    return arch_enable_local_irq();
+static inline int irq_enable_local(void) {
+    return arch_irq_enable_local();
 }
 
-static inline int disable_local_irq_save_ctx(irqctx_t *ctx) {
-    return arch_disable_local_irq_save_ctx(ctx);
+static inline int irq_disable_local_and_save_ctx(irqctx_t *ctx) {
+    return arch_irq_disable_local_and_save_ctx(ctx);
 }
 
-static inline int local_irq_restore_ctx(irqctx_t *ctx) {
-    return arch_local_irq_restore_ctx(ctx);
+static inline int irq_local_restore_ctx(irqctx_t *ctx) {
+    return arch_irq_local_restore_ctx(ctx);
 }

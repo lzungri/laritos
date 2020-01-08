@@ -7,6 +7,7 @@
 #include <component/timer.h>
 #include <component/component.h>
 #include <mm/heap.h>
+#include <time/system-tick.h>
 #include <utils/debug.h>
 
 int shell_main(void *data) {
@@ -91,7 +92,7 @@ int shell_main(void *data) {
                         log_always("rtc remaining: %ld", (int32_t) v);
                     }
 
-                    log_always("_laritos.timeinfo.ticks: %lu", (uint32_t) _laritos.timeinfo.ticks);
+                    log_always("tick_get_system_ticks(): %lu", (uint32_t) tick_get_system_ticks());
                     break;
                 case 'm':;
                     char *p = malloc(10);
