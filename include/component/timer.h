@@ -7,6 +7,7 @@
 #include <component/component.h>
 #include <component/intc.h>
 #include <time/tick.h>
+#include <sync/spinlock.h>
 
 
 typedef enum {
@@ -60,6 +61,8 @@ typedef struct timer_comp {
     } curtimer;
 
     timer_comp_ops_t ops;
+
+    spinlock_t lock;
 } timer_comp_t;
 
 irqret_t timer_handle_expiration(timer_comp_t *t);
