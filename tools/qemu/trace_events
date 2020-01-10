@@ -16,3 +16,6 @@
 #gic_disable_irq
 #gic_cpu_write
 #gic_dist_write
+
+#arm_gt_*
+#gt_*
