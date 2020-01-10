@@ -4,5 +4,6 @@ source "drivers/intc/Kconfig"
 source "drivers/uart/Kconfig"
 source "drivers/rtc/Kconfig"
 source "drivers/cpu/Kconfig"
+source "drivers/timer/Kconfig"
 
 endmenu

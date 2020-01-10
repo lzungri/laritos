@@ -1,0 +1,7 @@
+menu "Timer"
+
+config TIMER_ARM_V7_GENERIC
+    bool "ARM v7 generic timer"
+    default n
+
+endmenu
