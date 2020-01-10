@@ -21,6 +21,10 @@ log_uart:logger|transport=bytestream@uart0
 # RTC component, using irq 34
 rtc0:pl031|mmbase=0x09010000,maxfreq=1,intio=true,intc=@gic,irq=34,trigger=level_hi
 
+# ARM v7 generic timer. One timer per processor. Each timer signals its interrupts to
+# the GIC via a private peripheral interrupt (PPI). IRQ 30 is for cpu #0
+hrtimer0:armv7_generic_timer|maxfreq=62500000,intio=true,intc=@gic,irq=30,trigger=level_hi
+
 # CPUs
 cpu0:cortex_a15|id=0,intc=@gic,sched=@rrsched
 cpu1:cortex_a15|id=1,intc=@gic,sched=@rrsched
@@ -37,10 +41,10 @@ input_uart:inputdev|transport=bytestream@uart0
 gic:gicv2|distaddr=0x08000000,cpuaddr=0x08010000
 
 # OS Ticker
-ticker0:generic_ticker|vrtimer=@vrtimer0,ticks_per_sec=1
+ticker0:generic_ticker|vrtimer=@vrtimer0,ticks_per_sec=10
 
-# Virtual timer component, we are currently using the rtc as a hrtimer until we implement a higher-res timer
-vrtimer0:generic_vrtimer|hrtimer=@rtc0,low_power_timer=@rtc0
+# Virtual timer component
+vrtimer0:generic_vrtimer|hrtimer=@hrtimer0,low_power_timer=@rtc0
 
 # Preemptive round robin scheduler
 rrsched:preempt_rr|ticker=@ticker0
