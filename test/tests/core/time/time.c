@@ -48,35 +48,35 @@ T(time_sleep_blocks_kernel_then_wakes_it_up) {
     resume_ticker();
 TEND
 
-//T(time_msleep_blocks_kernel_then_wakes_it_up) {
-//    pause_ticker();
-//    vrtimer_comp_t *vrt = get_vrtimer();
-//    int i;
-//    for (i = 100; i < 1000; i += 100) {
-//        debug("Sleeping for %u msecs", i);
-//        abstick_t ticks = get_timer_cur_value(vrt);
-//        msleep(i);
-//        abstick_t now = get_timer_cur_value(vrt);
-//        tassert(now > ticks);
-//        tassert((now - ticks) >= MS_TO_TICK(vrt->hrtimer, i));
-//    }
-//    resume_ticker();
-//TEND
-//
-//T(time_usleep_blocks_kernel_then_wakes_it_up) {
-//    pause_ticker();
-//    vrtimer_comp_t *vrt = get_vrtimer();
-//    int i;
-//    for (i = 100; i < 1000; i += 100) {
-//        debug("Sleeping for %u usecs", i);
-//        abstick_t ticks = get_timer_cur_value(vrt);
-//        usleep(i);
-//        abstick_t now = get_timer_cur_value(vrt);
-//        tassert(now > ticks);
-//        tassert((now - ticks) >= US_TO_TICK(vrt->hrtimer, i));
-//    }
-//    resume_ticker();
-//TEND
+T(time_msleep_blocks_kernel_then_wakes_it_up) {
+    pause_ticker();
+    vrtimer_comp_t *vrt = get_vrtimer();
+    int i;
+    for (i = 100; i < 1000; i += 100) {
+        debug("Sleeping for %u msecs", i);
+        abstick_t ticks = get_timer_cur_value(vrt);
+        msleep(i);
+        abstick_t now = get_timer_cur_value(vrt);
+        tassert(now > ticks);
+        tassert((now - ticks) >= MS_TO_TICK(vrt->hrtimer, i));
+    }
+    resume_ticker();
+TEND
+
+T(time_usleep_blocks_kernel_then_wakes_it_up) {
+    pause_ticker();
+    vrtimer_comp_t *vrt = get_vrtimer();
+    int i;
+    for (i = 100; i < 1000; i += 100) {
+        debug("Sleeping for %u usecs", i);
+        abstick_t ticks = get_timer_cur_value(vrt);
+        usleep(i);
+        abstick_t now = get_timer_cur_value(vrt);
+        tassert(now > ticks);
+        tassert((now - ticks) >= US_TO_TICK(vrt->hrtimer, i));
+    }
+    resume_ticker();
+TEND
 
 static int sleepproc(void *data) {
     sleep(5);
