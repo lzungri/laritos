@@ -25,7 +25,7 @@ void exc_dump_process_info(pcb_t *pcb) {
 void exc_handle_process_exception(pcb_t *pcb) {
     exc_dump_process_info(pcb);
     debug_message_delimiter();
-    error_async("ABORT");
+    error("ABORT");
     // Kill the offending process
     process_kill(pcb);
 
