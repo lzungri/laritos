@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <time/time.h>
+#include <component/component.h>
 
 /**
  * Type representing a relative amount of ticks
@@ -20,3 +21,10 @@ typedef uint64_t abstick_t;
 #define TICK_TO_SEC(_timer, _ticks) ((_ticks) / (_timer)->curfreq)
 #define TICK_TO_MS(_timer, _ticks) (((_ticks) * MSEC_PER_SEC) / (_timer)->curfreq)
 #define TICK_TO_US(_timer, _ticks) (((_ticks) * USEC_PER_SEC) / (_timer)->curfreq)
+
+
+#define _OSTICKS_PER_SEC (((ticker_comp_t *) component_first_of_type(COMP_TYPE_TICKER))->ticks_per_sec)
+
+#define OSTICK_TO_SEC(_ticks) ((_ticks) / _OSTICKS_PER_SEC)
+#define OSTICK_TO_MS(_ticks) (((_ticks) * MSEC_PER_SEC) / _OSTICKS_PER_SEC)
+#define OSTICK_TO_US(_ticks) (((_ticks) * USEC_PER_SEC) / _OSTICKS_PER_SEC)
