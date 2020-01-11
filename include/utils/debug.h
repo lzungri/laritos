@@ -45,7 +45,7 @@ static inline void debug_dump_processes(void) {
 
 static inline void debug_dump_processes_stats(void) {
     pcb_t *proc;
-    log_always("Processes stats (ticks):");
+    log_always("Processes stats (OS ticks):");
     log_always("name   pid    ready  running  blocked   zombie");
 
     // Prevent the OS from doing any change on the active processes
