@@ -74,7 +74,7 @@ __attribute__((always_inline)) static inline void free(void *ptr) {
             // Execution will never reach this point
         } else {
             // Stop the kernel
-            fatal("ABORT: Cannot issue a system call while in kernel mode");
+            fatal("ABORT: Heap buffer overflow");
         }
 
     }
