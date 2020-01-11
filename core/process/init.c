@@ -31,7 +31,7 @@ static void spawn_system_processes(void) {
     info("Spawning shell process");
     int shell_main(void *data);
     pcb_t *shell = process_spawn_kernel_process("shell", shell_main, NULL,
-                        8196, CONFIG_SCHED_PRIORITY_LOWEST - 10);
+                        8196, CONFIG_SCHED_PRIORITY_MAX_USER - 10);
     assert(shell != NULL, "Could not create shell process");
 
 #ifdef CONFIG_TEST_ENABLED
@@ -43,19 +43,11 @@ static void spawn_system_processes(void) {
 #else
     // Launch a few processes for testing
     // TODO: This code will disappear once we implement a shell and file system
-
-    if (loader_load_executable_from_memory(0) == NULL) {
-        error("Failed to load app #0");
-    }
-
-    // Load the same program, just to have 2 processes for testing
-    if (loader_load_executable_from_memory(0) == NULL) {
-        error("Failed to load app #1");
-    }
-
-    // Load the same program, just to have 3 processes for testing
-    if (loader_load_executable_from_memory(0) == NULL) {
-        error("Failed to load app #2");
+    int i;
+    for (i = 0; i < 3; i++) {
+        if (loader_load_executable_from_memory(0) == NULL) {
+            error("Failed to load app #%d", i);
+        }
     }
 #endif
 }
