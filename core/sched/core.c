@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 #include <log.h>
 
 #include <stdbool.h>
@@ -51,6 +51,9 @@ static void context_switch(pcb_t *cur, pcb_t *to) {
 }
 
 void schedule(void) {
+    irqctx_t ctx;
+    irq_disable_local_and_save_ctx(&ctx);
+
     cpu_t *c = cpu();
     pcb_t *curpcb = process_get_current();
     pcb_t *pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);;
@@ -68,6 +71,7 @@ void schedule(void) {
     // then continue execution of the current process
     if (curpcb->sched.status == PROC_STATUS_RUNNING) {
         if (pcb == NULL || (curpcb->sched.priority < pcb->sched.priority)) {
+            irq_local_restore_ctx(&ctx);
             return;
         }
     }
@@ -76,6 +80,8 @@ void schedule(void) {
     if (curpcb != pcb) {
         context_switch(curpcb, pcb);
     }
+
+    irq_local_restore_ctx(&ctx);
 }
 
 void sched_execute_first_system_proc(pcb_t *pcb) {

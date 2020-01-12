@@ -10,9 +10,6 @@
 #include <mm/exc-handlers.h>
 
 int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5) {
-    // Enable interrupts while processing system calls
-    irq_enable_local();
-
     if (_laritos.process_mode) {
         process_set_current_pcb_stack_context(ctx);
     }
@@ -28,6 +25,9 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
             fatal("ABORT: Cannot issue a system call while in kernel mode");
         }
     }
+
+    // Enable interrupts while processing system calls
+    irq_enable_local();
 
     verbose_async("syscall_%d(%lx, %lx, %lx, %lx, %lx, %lx)", sysno, arg0, arg1, arg2, arg3, arg4, arg5);
 
@@ -70,6 +70,8 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
         error_async("Unrecognized system call #%d", sysno);
         process_kill_and_schedule(pcb);
     }
+
+    irq_disable_local();
 
     // About to finish the svc call, re-schedule if needed
     schedule_if_needed();
