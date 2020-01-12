@@ -26,23 +26,20 @@ static void update_expiration(vrtimer_comp_t *t) {
     t->hrtimer->ops.get_value(t->hrtimer, &deltaticks);
     deltaticks = vrt->abs_ticks - deltaticks;
 
-    // If already expired, execute vrtimer callback and return
+    // If already expired, trigger the timer on the next tick
     if (deltaticks <= 0) {
-        vrtimer_cb(t->hrtimer, t);
-        return;
-    }
-
-    // If the ticks-to-expire value is lower that the high-res timer frequency
-    // (i.e. we need to wake up in less than a second), then use the hrtimer.
-    // Otherwise, use the low power timer, since we don't need that much precision
-    if ((uint32_t) deltaticks <= t->hrtimer->curfreq) {
         t->low_power_timer->ops.clear_expiration(t->low_power_timer);
-
+        t->hrtimer->ops.set_expiration_ticks(t->hrtimer, 1,
+                TIMER_EXP_RELATIVE, vrtimer_cb, t, false);
+    } else if ((uint32_t) deltaticks <= t->hrtimer->curfreq) {
+        // If the ticks-to-expire value is lower that the high-res timer frequency
+        // (i.e. we need to wake up in less than a second), then use the hrtimer.
+        // Otherwise, use the low power timer, since we don't need that much precision
+        t->low_power_timer->ops.clear_expiration(t->low_power_timer);
         t->hrtimer->ops.set_expiration_ticks(t->hrtimer, vrt->abs_ticks,
                 TIMER_EXP_ABSOLUTE, vrtimer_cb, t, false);
     } else {
         t->hrtimer->ops.clear_expiration(t->hrtimer);
-
         // Round up and normalize ticks for the low power timer
         abstick_t norm_ticks = ((deltaticks + t->hrtimer->curfreq / 2) / t->hrtimer->curfreq) * t->low_power_timer->curfreq;
         t->low_power_timer->ops.set_expiration_ticks(t->low_power_timer, norm_ticks,
