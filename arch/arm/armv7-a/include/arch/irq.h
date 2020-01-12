@@ -15,7 +15,6 @@ static inline int arch_irq_enable_local(void) {
 }
 
 static inline int arch_irq_disable_local_and_save_ctx(irqctx_t *ctx) {
-    // TODO Prevent the race condition between get_cpsr() and disable irq
     *ctx = arch_get_cpsr();
     return arch_irq_disable_local();
 }
