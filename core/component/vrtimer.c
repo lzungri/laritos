@@ -44,7 +44,7 @@ static void update_expiration(vrtimer_comp_t *t) {
 
         // Normalized ticks for the low power timer
         abstick_t norm_ticks = (deltaticks / t->hrtimer->curfreq) * t->low_power_timer->curfreq;
-        t->low_power_timer->ops.set_expiration_ticks(t->hrtimer, norm_ticks,
+        t->low_power_timer->ops.set_expiration_ticks(t->low_power_timer, norm_ticks,
                 TIMER_EXP_RELATIVE, vrtimer_cb, t, false);
     }
 }
