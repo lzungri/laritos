@@ -37,13 +37,14 @@ static void update_expiration(vrtimer_comp_t *t) {
     // Otherwise, use the low power timer, since we don't need that much precision
     if ((uint32_t) deltaticks <= t->hrtimer->curfreq) {
         t->low_power_timer->ops.clear_expiration(t->low_power_timer);
+
         t->hrtimer->ops.set_expiration_ticks(t->hrtimer, vrt->abs_ticks,
                 TIMER_EXP_ABSOLUTE, vrtimer_cb, t, false);
     } else {
         t->hrtimer->ops.clear_expiration(t->hrtimer);
 
-        // Normalized ticks for the low power timer
-        abstick_t norm_ticks = (deltaticks / t->hrtimer->curfreq) * t->low_power_timer->curfreq;
+        // Round up and normalize ticks for the low power timer
+        abstick_t norm_ticks = ((deltaticks + t->hrtimer->curfreq / 2) / t->hrtimer->curfreq) * t->low_power_timer->curfreq;
         t->low_power_timer->ops.set_expiration_ticks(t->low_power_timer, norm_ticks,
                 TIMER_EXP_RELATIVE, vrtimer_cb, t, false);
     }
