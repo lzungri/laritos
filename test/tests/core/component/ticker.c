@@ -27,7 +27,7 @@ T(ticker_global_ctx_tick_is_incremented_periodically_secs) {
     tassert(t != NULL);
 
     int i;
-    for (i = 2; i < 40; i += 10) {
+    for (i = 2; i < 30; i += 10) {
         abstick_t ticks = tick_get_system_ticks();
         sleep(i);
         uint32_t delta = OSTICK_TO_SEC(tick_get_system_ticks() - ticks);
