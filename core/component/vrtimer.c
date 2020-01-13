@@ -68,7 +68,7 @@ static int vrtimer_cb(timer_comp_t *t, void *data) {
     vrtimer_t *tmp;
 
     abstick_t curticks;
-    t->ops.get_value(t, &curticks);
+    vrt->hrtimer->ops.get_value(t, &curticks);
 
     list_for_each_entry_safe(pos, tmp, &vrt->timers, list) {
         if (curticks >= pos->abs_ticks) {
