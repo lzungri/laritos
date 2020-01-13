@@ -229,8 +229,8 @@ T(process_blocked_state_stats_are_accurate) {
         process_wait_for(p, NULL);
 
         uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_BLOCKED]);
-        // 20% tolerance for lower limit
-        tassert(secs >= (i * 80) / 100);
+        // 30% tolerance for lower limit
+        tassert(secs >= (i * 70) / 100);
         tassert(secs <=  i);
     }
 TEND
@@ -251,8 +251,8 @@ T(process_ready_state_stats_are_accurate) {
     process_kill(p);
 
     uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_READY]);
-    // 20% tolerance for lower limit
-    tassert(secs >= (5 * 80) / 100);
+    // 30% tolerance for lower limit
+    tassert(secs >= (5 * 70) / 100);
     tassert(secs <=  5);
 TEND
 
@@ -272,8 +272,8 @@ T(process_running_state_stats_are_accurate) {
     process_kill(p);
 
     uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_RUNNING]);
-    // 20% tolerance for lower limit
-    tassert(secs >= (5 * 80) / 100);
+    // 30% tolerance for lower limit
+    tassert(secs >= (5 * 70) / 100);
     tassert(secs <=  5);
 TEND
 
