@@ -213,23 +213,26 @@ T(process_orphan_proc_grandparent_becomes_new_parent) {
 TEND
 
 static int blocked(void *data) {
-    sleep(10);
+    int *i = (int *) data;
+    sleep(*i);
     return 0;
 }
 
 T(process_blocked_state_stats_are_accurate) {
-    pcb_t *p = process_spawn_kernel_process("blocked", blocked, NULL,
-                        8196, process_get_current()->sched.priority);
-    tassert(p != NULL);
-    tassert(is_process_active(p));
+    int i;
+    for (i = 10; i <= 30; i += 10) {
+        pcb_t *p = process_spawn_kernel_process("blocked", blocked, &i,
+                            8196, process_get_current()->sched.priority);
+        tassert(p != NULL);
+        tassert(is_process_active(p));
 
-    while (p->sched.status != PROC_STATUS_ZOMBIE) {
-        sleep(1);
+        process_wait_for(p, NULL);
+
+        uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_BLOCKED]);
+        // 20% tolerance for lower limit
+        tassert(secs >= (i * 80) / 100);
+        tassert(secs <=  i);
     }
-
-    uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_BLOCKED]);
-    info("secs: %u", secs);
-    tassert(secs >= 9 && secs <= 11);
 TEND
 
 static int ready(void *data) {
@@ -248,7 +251,9 @@ T(process_ready_state_stats_are_accurate) {
     process_kill(p);
 
     uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_READY]);
-    tassert(secs >= 3 && secs <= 6);
+    // 20% tolerance for lower limit
+    tassert(secs >= (5 * 80) / 100);
+    tassert(secs <=  5);
 TEND
 
 static int running(void *data) {
@@ -267,7 +272,9 @@ T(process_running_state_stats_are_accurate) {
     process_kill(p);
 
     uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_RUNNING]);
-    tassert(secs >= 4 && secs <= 6);
+    // 20% tolerance for lower limit
+    tassert(secs >= (5 * 80) / 100);
+    tassert(secs <=  5);
 TEND
 
 static int waitfor_exitstatus(void *data) {
