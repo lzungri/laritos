@@ -47,6 +47,7 @@ static int ticker_resume(ticker_comp_t *t) {
 }
 
 int ticker_init(ticker_comp_t *t) {
+    info("OS ticker frequency: %lu HZ", t->ticks_per_sec);
     // Reset global ticks
     tick_reset_system_ticks();
 

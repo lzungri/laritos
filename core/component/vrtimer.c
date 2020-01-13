@@ -136,6 +136,8 @@ static int remove_vrtimer(vrtimer_comp_t *t, vrtimer_cb_t cb, void *data, bool p
 
 int vrtimer_init(vrtimer_comp_t *t) {
     INIT_LIST_HEAD(&t->timers);
+    info("High-res timer frequency: %lu HZ", t->hrtimer->curfreq);
+    info("Low power timer frequency: %lu HZ", t->low_power_timer->curfreq);
     return 0;
 }
 
