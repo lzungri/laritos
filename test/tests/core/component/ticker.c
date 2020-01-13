@@ -26,11 +26,16 @@ T(ticker_global_ctx_tick_is_incremented_periodically) {
     ticker_comp_t *t = get_ticker();
     tassert(t != NULL);
 
-    abstick_t ticks = tick_get_system_ticks();
-
-    TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
-
-    tassert(ticks < tick_get_system_ticks());
+    int i;
+    for (i = 2; i < 40; i += 10) {
+        abstick_t ticks = tick_get_system_ticks();
+        sleep(i);
+        uint32_t delta = OSTICK_TO_SEC(tick_get_system_ticks() - ticks);
+        info("delta=%lu, i=%d, limit=%lu", delta, i, (i * 80) / 100);
+        tassert(delta <= i);
+        // 20% tolerance for lower limit
+        tassert(delta >= (i * 80) / 100);
+    }
 TEND
 
 T(ticker_can_be_paused_and_resumed) {
