@@ -31,7 +31,6 @@ T(ticker_global_ctx_tick_is_incremented_periodically) {
         abstick_t ticks = tick_get_system_ticks();
         sleep(i);
         uint32_t delta = OSTICK_TO_SEC(tick_get_system_ticks() - ticks);
-        info("delta=%lu, i=%d, limit=%lu", delta, i, (i * 80) / 100);
         tassert(delta <= i);
         // 20% tolerance for lower limit
         tassert(delta >= (i * 80) / 100);
