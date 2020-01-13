@@ -41,7 +41,7 @@ input_uart:inputdev|transport=bytestream@uart0
 gic:gicv2|distaddr=0x08000000,cpuaddr=0x08010000
 
 # OS Ticker
-ticker0:generic_ticker|vrtimer=@vrtimer0,ticks_per_sec=10
+ticker0:generic_ticker|vrtimer=@vrtimer0,ticks_per_sec=100
 
 # Virtual timer component
 vrtimer0:generic_vrtimer|hrtimer=@hrtimer0,low_power_timer=@rtc0
