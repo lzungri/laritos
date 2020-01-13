@@ -22,7 +22,7 @@ static bool is_callback_registered(ticker_comp_t *t, ticker_cb_t cb, void *data)
     return false;
 }
 
-T(ticker_global_ctx_tick_is_incremented_periodically) {
+T(ticker_global_ctx_tick_is_incremented_periodically_secs) {
     ticker_comp_t *t = get_ticker();
     tassert(t != NULL);
 
@@ -34,6 +34,21 @@ T(ticker_global_ctx_tick_is_incremented_periodically) {
         tassert(delta <= i);
         // 20% tolerance for lower limit
         tassert(delta >= (i * 80) / 100);
+    }
+TEND
+
+T(ticker_global_ctx_tick_is_incremented_periodically_msecs) {
+    ticker_comp_t *t = get_ticker();
+    tassert(t != NULL);
+
+    int i;
+    for (i = max(1000 / t->ticks_per_sec, 100); i < 1000; i += 100) {
+        abstick_t ticks = tick_get_system_ticks();
+        msleep(i);
+        uint32_t delta = OSTICK_TO_MS(tick_get_system_ticks() - ticks);
+        tassert(delta <= i);
+        // 30% tolerance for lower limit
+        tassert(delta >= (i * 70) / 100);
     }
 TEND
 
