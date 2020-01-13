@@ -40,7 +40,6 @@ TEND
 
 static int kproc1(void *data) {
     TEST_BUSY_WAIT(3);
-
     bool *finish = (bool *) data;
     *finish = true;
     return 0;
@@ -51,83 +50,63 @@ T(process_spawning_kernel_process_with_highest_priority_switches_to_it) {
     pcb_t *p1 = process_spawn_kernel_process("high prio 1", kproc1, &finish1,
                         8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
     tassert(p1 != NULL);
-    tassert(is_process_active(p1));
-
-    while (!finish1);
-
-    tassert(p1->sched.status == PROC_STATUS_ZOMBIE);
-    debug("Kernel thread finished");
+    schedule();
+    tassert(finish1 == true);
+    process_wait_for(p1, NULL);
 TEND
 
 
 static int kproc2(void *data) {
-    int i;
-    for (i = 1; i < 4; i++) {
-        sleep(i);
-    }
-    bool *finish = (bool *) data;
-    *finish = true;
+    time_rtc_gettime((time_t *) data);
+    TEST_BUSY_WAIT(3);
     return 0;
 }
 
 T(process_ready_kernel_threads_with_highest_priority_is_executed_first) {
-    bool finish1 = false;
-    pcb_t *p1 = process_spawn_kernel_process("high", kproc2, &finish1,
-                        8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL + 2);
+    time_t t1;
+    pcb_t *p1 = process_spawn_kernel_process("high", kproc2, &t1,
+                        8196, process_get_current()->sched.priority + 3);
     tassert(p1 != NULL);
-    tassert(is_process_active(p1));
 
-    bool finish2 = false;
-    pcb_t *p2 = process_spawn_kernel_process("higher", kproc2, &finish2,
-                        8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL + 1);
+    time_t t2;
+    pcb_t *p2 = process_spawn_kernel_process("higher", kproc2, &t2,
+                        8196, process_get_current()->sched.priority + 2);
     tassert(p2 != NULL);
-    tassert(is_process_active(p2));
 
-    bool finish3 = false;
-    pcb_t *p3 = process_spawn_kernel_process("highest", kproc2, &finish3,
-                        8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
+    time_t t3;
+    pcb_t *p3 = process_spawn_kernel_process("highest", kproc2, &t3,
+                        8196, process_get_current()->sched.priority + 1);
     tassert(p3 != NULL);
-    tassert(is_process_active(p3));
 
-    while (!finish1 || !finish2 || !finish3);
+    process_wait_for(p1, NULL);
+    process_wait_for(p2, NULL);
+    process_wait_for(p3, NULL);
 
-    tassert(p1->sched.status == PROC_STATUS_ZOMBIE);
-    tassert(p2->sched.status == PROC_STATUS_ZOMBIE);
-    tassert(p3->sched.status == PROC_STATUS_ZOMBIE);
+    tassert(t1.secs > t2.secs);
+    tassert(t2.secs > t3.secs);
 TEND
 
 static int kproc3(void *data) {
     TEST_BUSY_WAIT(5);
-
-    bool *finish = (bool *) data;
-    *finish = true;
     return 0;
 }
 
 T(process_round_robin_on_high_priority_kernel_threads) {
-    bool finish1 = false;
-    pcb_t *p1 = process_spawn_kernel_process("high", kproc3, &finish1,
+    pcb_t *p1 = process_spawn_kernel_process("high", kproc3, NULL,
                         8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
     tassert(p1 != NULL);
-    tassert(is_process_active(p1));
 
-    bool finish2 = false;
-    pcb_t *p2 = process_spawn_kernel_process("high", kproc3, &finish2,
+    pcb_t *p2 = process_spawn_kernel_process("high", kproc3, NULL,
                         8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
     tassert(p2 != NULL);
-    tassert(is_process_active(p2));
 
-    bool finish3 = false;
-    pcb_t *p3 = process_spawn_kernel_process("high", kproc3, &finish3,
+    pcb_t *p3 = process_spawn_kernel_process("high", kproc3, NULL,
                         8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
     tassert(p3 != NULL);
-    tassert(is_process_active(p3));
 
-    while (!finish1 || !finish2 || !finish3);
-
-    tassert(p1->sched.status == PROC_STATUS_ZOMBIE);
-    tassert(p2->sched.status == PROC_STATUS_ZOMBIE);
-    tassert(p3->sched.status == PROC_STATUS_ZOMBIE);
+    process_wait_for(p1, NULL);
+    process_wait_for(p2, NULL);
+    process_wait_for(p3, NULL);
 TEND
 
 static int test_child(void *data) {
@@ -248,13 +227,9 @@ T(process_blocked_state_stats_are_accurate) {
         sleep(1);
     }
 
-    vrtimer_comp_t *vrtimer = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
-    tassert(vrtimer != NULL);
-    timer_comp_t *hrtimer = vrtimer->hrtimer;
-    tassert(hrtimer != NULL);
-
-    uint8_t secs = TICK_TO_SEC(hrtimer, p->stats.ticks_spent[PROC_STATUS_BLOCKED]);
-    tassert(secs >= 10 && secs <= 11);
+    uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_BLOCKED]);
+    info("secs: %u", secs);
+    tassert(secs >= 9 && secs <= 11);
 TEND
 
 static int ready(void *data) {
@@ -272,13 +247,8 @@ T(process_ready_state_stats_are_accurate) {
     TEST_BUSY_WAIT(5);
     process_kill(p);
 
-    vrtimer_comp_t *vrtimer = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
-    tassert(vrtimer != NULL);
-    timer_comp_t *hrtimer = vrtimer->hrtimer;
-    tassert(hrtimer != NULL);
-
-    uint8_t secs = TICK_TO_SEC(hrtimer, p->stats.ticks_spent[PROC_STATUS_READY]);
-    tassert(secs >= 4 && secs <= 6);
+    uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_READY]);
+    tassert(secs >= 3 && secs <= 6);
 TEND
 
 static int running(void *data) {
@@ -296,13 +266,8 @@ T(process_running_state_stats_are_accurate) {
     sleep(5);
     process_kill(p);
 
-    vrtimer_comp_t *vrtimer = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
-    tassert(vrtimer != NULL);
-    timer_comp_t *hrtimer = vrtimer->hrtimer;
-    tassert(hrtimer != NULL);
-
-    uint8_t secs = TICK_TO_SEC(hrtimer, p->stats.ticks_spent[PROC_STATUS_RUNNING]);
-    tassert(secs >= 5 && secs <= 6);
+    uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_RUNNING]);
+    tassert(secs >= 4 && secs <= 6);
 TEND
 
 static int waitfor_exitstatus(void *data) {
