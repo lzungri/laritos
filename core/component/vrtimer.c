@@ -9,10 +9,11 @@
 #include <utils/function.h>
 #include <dstruct/list.h>
 #include <mm/heap.h>
+#include <sync/spinlock.h>
 
 static int vrtimer_cb(timer_comp_t *t, void *data);
 
-static void update_expiration(vrtimer_comp_t *t) {
+static void update_expiration_locked(vrtimer_comp_t *t) {
     if (list_empty(&t->timers)) {
         t->hrtimer->ops.clear_expiration(t->hrtimer);
         t->low_power_timer->ops.clear_expiration(t->low_power_timer);
@@ -48,7 +49,7 @@ static void update_expiration(vrtimer_comp_t *t) {
 }
 
 // TODO: We should use a rbtree here instead
-static void add_vrtimer_sorted(vrtimer_comp_t *t, vrtimer_t *vrt) {
+static void add_vrtimer_sorted_locked(vrtimer_comp_t *t, vrtimer_t *vrt) {
     verbose_async("Adding vrtimer id=0x%p abs_ticks=%lu, ticks=%lu, periodic=%u", vrt, (uint32_t) vrt->abs_ticks, vrt->ticks, vrt->periodic);
 
     vrtimer_t *pos;
@@ -62,13 +63,16 @@ static void add_vrtimer_sorted(vrtimer_comp_t *t, vrtimer_t *vrt) {
     list_add_tail(&vrt->list, &t->timers);
 }
 
-static int vrtimer_cb(timer_comp_t *t, void *data) {
+static int vrtimer_cb(timer_comp_t *tcomp, void *data) {
     vrtimer_comp_t *vrt = (vrtimer_comp_t *) data;
     vrtimer_t *pos;
     vrtimer_t *tmp;
 
     abstick_t curticks;
-    vrt->hrtimer->ops.get_value(t, &curticks);
+    vrt->hrtimer->ops.get_value(vrt->hrtimer, &curticks);
+
+    irqctx_t ctx;
+    spinlock_acquire(&vrt->lock, &ctx);
 
     list_for_each_entry_safe(pos, tmp, &vrt->timers, list) {
         if (curticks >= pos->abs_ticks) {
@@ -82,7 +86,7 @@ static int vrtimer_cb(timer_comp_t *t, void *data) {
             list_del_init(&pos->list);
             if (pos->periodic) {
                 pos->abs_ticks = curticks + pos->ticks;
-                add_vrtimer_sorted(vrt, pos);
+                add_vrtimer_sorted_locked(vrt, pos);
             } else {
                 free(pos);
             }
@@ -91,7 +95,9 @@ static int vrtimer_cb(timer_comp_t *t, void *data) {
         }
     }
 
-    update_expiration(vrt);
+    update_expiration_locked(vrt);
+
+    spinlock_release(&vrt->lock, &ctx);
 
     return 0;
 }
@@ -111,16 +117,23 @@ static int add_vrtimer(vrtimer_comp_t *t, tick_t ticks, vrtimer_cb_t cb, void *d
     vrt->data = data;
     INIT_LIST_HEAD(&vrt->list);
 
-    add_vrtimer_sorted(t, vrt);
+    irqctx_t ctx;
+    spinlock_acquire(&t->lock, &ctx);
 
+    add_vrtimer_sorted_locked(t, vrt);
     // If the recently added timer is the soonest to be expired, then update
     // the timer expiration
-    update_expiration(t);
+    update_expiration_locked(t);
+
+    spinlock_release(&t->lock, &ctx);
 
     return 0;
 }
 
 static int remove_vrtimer(vrtimer_comp_t *t, vrtimer_cb_t cb, void *data, bool periodic) {
+    irqctx_t ctx;
+    spinlock_acquire(&t->lock, &ctx);
+
     vrtimer_t *pos;
     vrtimer_t *tmp;
     list_for_each_entry_safe(pos, tmp, &t->timers, list) {
@@ -131,11 +144,14 @@ static int remove_vrtimer(vrtimer_comp_t *t, vrtimer_cb_t cb, void *data, bool p
             break;
         }
     }
+
+    spinlock_release(&t->lock, &ctx);
     return 0;
 }
 
 int vrtimer_init(vrtimer_comp_t *t) {
     INIT_LIST_HEAD(&t->timers);
+    spinlock_init(&t->lock);
     info("High-res timer frequency: %lu HZ", t->hrtimer->curfreq);
     info("Low power timer frequency: %lu HZ", t->low_power_timer->curfreq);
     return 0;
