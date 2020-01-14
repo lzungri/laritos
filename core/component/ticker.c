@@ -53,7 +53,7 @@ int ticker_init(ticker_comp_t *t) {
 
     INIT_LIST_HEAD(&t->cbs);
 
-    return ticker_resume(t);
+    return 0;
 }
 
 int ticker_deinit(ticker_comp_t *t) {

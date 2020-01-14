@@ -7,6 +7,7 @@
 #include <loader/loader.h>
 #include <sync/spinlock.h>
 #include <component/component.h>
+#include <component/ticker.h>
 #include <loader/loader.h>
 #include <process/core.h>
 #include <board-types.h>
@@ -44,7 +45,7 @@ static void spawn_system_processes(void) {
     // Launch a few processes for testing
     // TODO: This code will disappear once we implement a shell and file system
     int i;
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 5; i++) {
         if (loader_load_executable_from_memory(0) == NULL) {
             error("Failed to load app #%d", i);
         }
@@ -53,6 +54,8 @@ static void spawn_system_processes(void) {
 }
 
 int init_main(void *data) {
+    pcb_t *init = process_get_current();
+
     // We are now running in process mode, i.e. everything will be executed in the context of a process
     _laritos.process_mode = true;
 
@@ -86,13 +89,21 @@ int init_main(void *data) {
 
     spawn_system_processes();
 
+    // Start OS tickers
+    component_t *comp;
+    for_each_component_type(comp, COMP_TYPE_TICKER) {
+        ticker_comp_t *ticker = (ticker_comp_t *) comp;
+        info("Starting ticker '%s'", comp->id);
+        assert(ticker->ops.resume(ticker) >= 0, "Could not start ticker %s", comp->id);
+    }
+
     // Loop forever
     while (1) {
         irqctx_t ctx;
 
         // Block and wait for events (e.g. new zombie process)
         spinlock_acquire(&_laritos.proclock, &ctx);
-        sched_move_to_blocked_locked(process_get_current());
+        sched_move_to_blocked_locked(init);
         spinlock_release(&_laritos.proclock, &ctx);
 
         // Switch to another process
@@ -102,7 +113,7 @@ int init_main(void *data) {
 
         // Release zombie children
         spinlock_acquire(&_laritos.proclock, &ctx);
-        process_unregister_zombie_children_locked(process_get_current());
+        process_unregister_zombie_children_locked(init);
         spinlock_release(&_laritos.proclock, &ctx);
     }
     return 0;
