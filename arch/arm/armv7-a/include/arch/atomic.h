@@ -24,7 +24,7 @@
  * 32-bit atomic type for ARM.
  * Must be 4-byte aligned to ensure read/write atomicity.
  */
-typedef int32_t atomic32_t __attribute__ ((aligned (4)));
+typedef volatile int32_t atomic32_t __attribute__ ((aligned (4)));
 
 /**
  * 64-bit atomic type for ARM.
@@ -33,7 +33,7 @@ typedef int32_t atomic32_t __attribute__ ((aligned (4)));
  * TODO: For some reason aligned(8) doesn't seem to be working so I worked around
  * it with aligned(16)
  */
-typedef int64_t atomic64_t __attribute__ ((aligned (16)));
+typedef volatile int64_t atomic64_t __attribute__ ((aligned (16)));
 
 
 #define ATOMIC32_INIT(_value) { _value }
