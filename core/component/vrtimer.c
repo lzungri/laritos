@@ -24,7 +24,10 @@ static void update_expiration_locked(vrtimer_comp_t *t) {
 
     // Remaining ticks to expire
     int64_t deltaticks;
-    t->hrtimer->ops.get_value(t->hrtimer, &deltaticks);
+    if (t->hrtimer->ops.get_value(t->hrtimer, &deltaticks) < 0) {
+        error_async("Failed to read hrtimer value");
+        return;
+    }
     deltaticks = vrt->abs_ticks - deltaticks;
 
     // If already expired, trigger the timer on the next tick
@@ -69,7 +72,10 @@ static int vrtimer_cb(timer_comp_t *tcomp, void *data) {
     vrtimer_t *tmp;
 
     abstick_t curticks;
-    vrt->hrtimer->ops.get_value(vrt->hrtimer, &curticks);
+    if (vrt->hrtimer->ops.get_value(vrt->hrtimer, &curticks) < 0) {
+        error_async("Failed to read hrtimer value");
+        return -1;
+    }
 
     irqctx_t ctx;
     spinlock_acquire(&vrt->lock, &ctx);
@@ -105,11 +111,14 @@ static int vrtimer_cb(timer_comp_t *tcomp, void *data) {
 static int add_vrtimer(vrtimer_comp_t *t, tick_t ticks, vrtimer_cb_t cb, void *data, bool periodic) {
     vrtimer_t *vrt = calloc(1, sizeof(vrtimer_t));
     if (vrt == NULL) {
-        error("Couldn't allocate memory for vrtimer_t");
+        error_async("Couldn't allocate memory for vrtimer_t");
         return -1;
     }
 
-    t->hrtimer->ops.get_value(t->hrtimer, &vrt->abs_ticks);
+    if (t->hrtimer->ops.get_value(t->hrtimer, &vrt->abs_ticks) < 0) {
+        error_async("Failed to read hrtimer value");
+        return -1;
+    }
     vrt->abs_ticks += ticks;
     vrt->ticks = ticks;
     vrt->periodic = periodic;
