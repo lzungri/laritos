@@ -19,8 +19,13 @@ static int get_value(timer_comp_t *t, uint64_t *v) {
 }
 
 static int set_value(timer_comp_t *t, uint64_t v) {
+    irqctx_t ctx;
+    spinlock_acquire(&t->lock, &ctx);
+
     rtc_t *rtc = (rtc_t *) t;
     rtc->mm->load = (uint32_t) v;
+
+    spinlock_release(&t->lock, &ctx);
     return 0;
 }
 
@@ -31,6 +36,9 @@ static int get_remaining(timer_comp_t *t, int64_t *v) {
 }
 
 static int reset(timer_comp_t *t) {
+    irqctx_t ctx;
+    spinlock_acquire(&t->lock, &ctx);
+
     rtc_t *rtc = (rtc_t *) t;
     // According to the pl031 doc, writing 1 to ctrl reg will reset the rtc value,
     // but qemu just ignores this write operation
@@ -38,18 +46,37 @@ static int reset(timer_comp_t *t) {
     rtc->mm->load = 0;
     rtc->mm->int_clear = 1;
     rtc->mm->int_mask = 0;
+
+    spinlock_release(&t->lock, &ctx);
     return 0;
 }
 
-static int set_enable(timer_comp_t *t, bool enable) {
+static int set_enable_locked(timer_comp_t *t, bool enable) {
     rtc_t *rtc = (rtc_t *) t;
     rtc->mm->control = enable ? 1 : 0;
     rtc->mm->int_mask = enable ? 1 : 0;
     return 0;
 }
 
+static int set_enable(timer_comp_t *t, bool enable) {
+    irqctx_t ctx;
+    spinlock_acquire(&t->lock, &ctx);
+
+    set_enable_locked(t, enable);
+
+    spinlock_release(&t->lock, &ctx);
+    return 0;
+}
+
 static int set_expiration_ticks(timer_comp_t *t, int64_t timer_ticks, timer_exp_type_t type,
         timer_cb_t cb, void *data, bool periodic) {
+    irqctx_t ctx;
+    spinlock_acquire(&t->lock, &ctx);
+
+    // Disable the timer. We may not need to do this since we are already disabling
+    // irqs, but just in case
+    set_enable_locked(t, false);
+
     rtc_t *rtc = (rtc_t *) t;
 
     switch (type) {
@@ -69,13 +96,23 @@ static int set_expiration_ticks(timer_comp_t *t, int64_t timer_ticks, timer_exp_
     t->curtimer.periodic = periodic;
     t->curtimer.enabled = true;
 
+    // Re-enable the timer
+    set_enable_locked(t, true);
+
+    spinlock_release(&t->lock, &ctx);
+
     return 0;
 }
 
 static int clear_expiration(timer_comp_t *t) {
+    irqctx_t ctx;
+    spinlock_acquire(&t->lock, &ctx);
+
     rtc_t *rtc = (rtc_t *) t;
     rtc->mm->match = 0;
     t->curtimer.enabled = false;
+
+    spinlock_release(&t->lock, &ctx);
     return 0;
 }
 

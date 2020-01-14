@@ -45,7 +45,6 @@ static int set_enable(timer_comp_t *t, bool enable) {
 
 static int set_expiration_ticks(timer_comp_t *t, int64_t timer_ticks, timer_exp_type_t type,
         timer_cb_t cb, void *data, bool periodic) {
-
     irqctx_t ctx;
     spinlock_acquire(&t->lock, &ctx);
 
