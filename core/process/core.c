@@ -127,11 +127,15 @@ pcb_t *asm_process_get_current(void) {
     return process_get_current();
 }
 
-void process_kill(pcb_t *pcb) {
+void process_kill_locked(pcb_t *pcb) {
     verbose_async("Killing process pid=%u", pcb->pid);
+    sched_move_to_zombie_locked(pcb);
+}
+
+void process_kill(pcb_t *pcb) {
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proclock, &ctx);
-    sched_move_to_zombie_locked(pcb);
+    process_kill_locked(pcb);
     spinlock_release(&_laritos.proclock, &ctx);
 }
 

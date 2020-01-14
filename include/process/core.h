@@ -92,6 +92,7 @@ int process_register_locked(pcb_t *pcb);
 int process_release_zombie_resources(pcb_t *pcb);
 void process_unregister_zombie_children_locked(pcb_t *pcb);
 void process_kill(pcb_t *pcb);
+void process_kill_locked(pcb_t *pcb);
 void process_kill_and_schedule(pcb_t *pcb);
 int process_set_priority(pcb_t *pcb, uint8_t priority);
 spctx_t *process_get_current_pcb_stack_context(void);
