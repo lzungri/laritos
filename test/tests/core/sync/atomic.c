@@ -92,13 +92,13 @@ T(atomic32_concurrent_changes_to_atomic_var_generate_correct_output) {
     atomic32_t at = ATOMIC32_INIT(0);
     tassert(atomic32_get(&at) == 0);
 
-    pcb_t *p1 = process_spawn_kernel_process("inc", atominc, &at,
+    pcb_t *p1 = process_spawn_kernel_process("inc", atominc, (void *) &at,
                         8196, process_get_current()->sched.priority);
     tassert(p1 != NULL);
-    pcb_t *p2 = process_spawn_kernel_process("inc2", atominc, &at,
+    pcb_t *p2 = process_spawn_kernel_process("inc2", atominc, (void *) &at,
                         8196, process_get_current()->sched.priority);
     tassert(p2 != NULL);
-    pcb_t *p3 = process_spawn_kernel_process("dec", atomdec, &at,
+    pcb_t *p3 = process_spawn_kernel_process("dec", atomdec, (void *) &at,
                         8196, process_get_current()->sched.priority);
     tassert(p3 != NULL);
 
@@ -202,13 +202,13 @@ T(atomic64_concurrent_changes_to_atomic_var_generate_correct_output) {
     atomic64_t at = ATOMIC64_INIT(0);
     tassert(atomic64_get(&at) == 0);
 
-    pcb_t *p1 = process_spawn_kernel_process("64inc", at64inc, &at,
+    pcb_t *p1 = process_spawn_kernel_process("64inc", at64inc, (void *) &at,
                         8196, process_get_current()->sched.priority);
     tassert(p1 != NULL);
-    pcb_t *p2 = process_spawn_kernel_process("64inc2", at64inc, &at,
+    pcb_t *p2 = process_spawn_kernel_process("64inc2", at64inc, (void *) &at,
                         8196, process_get_current()->sched.priority);
     tassert(p2 != NULL);
-    pcb_t *p3 = process_spawn_kernel_process("64dec", at64dec, &at,
+    pcb_t *p3 = process_spawn_kernel_process("64dec", at64dec, (void *) &at,
                         8196, process_get_current()->sched.priority);
     tassert(p3 != NULL);
 
