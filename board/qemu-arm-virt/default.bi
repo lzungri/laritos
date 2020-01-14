@@ -16,7 +16,7 @@
 # Boolean attributes can take one of the following values: n, false, 0, y, true, 1
 
 # Logger using the uart as output transport
-log_uart:logger|transport=bytestream@uart0
+log_uart:generic_logger|transport=bytestream@uart0
 
 # RTC component, using irq 34
 rtc0:pl031|mmbase=0x09010000,maxfreq=1,intio=true,intc=@gic,irq=34,trigger=level_hi
