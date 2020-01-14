@@ -27,9 +27,9 @@ static inline void schedule_if_needed(void) {
 }
 
 static inline void sched_update_stats(pcb_t *pcb) {
-    tick_t delta = tick_get_system_ticks() - pcb->stats.last_status_change;
+    tick_t delta = tick_get_os_ticks() - pcb->stats.last_status_change;
     pcb->stats.ticks_spent[pcb->sched.status] += delta;
-    pcb->stats.last_status_change = tick_get_system_ticks();
+    pcb->stats.last_status_change = tick_get_os_ticks();
 }
 
 /**

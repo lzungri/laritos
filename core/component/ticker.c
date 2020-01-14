@@ -16,7 +16,7 @@
 
 static int ticker_cb(vrtimer_comp_t *t, void *data) {
     // Increment global tick
-    tick_inc_system_ticks();
+    tick_inc_os_ticks();
 
     ticker_comp_t *ticker = (ticker_comp_t *) data;
     ticker_cb_info_t *ti;
@@ -49,7 +49,7 @@ static int ticker_resume(ticker_comp_t *t) {
 int ticker_init(ticker_comp_t *t) {
     info("OS ticker frequency: %lu HZ", t->ticks_per_sec);
     // Reset global ticks
-    tick_reset_system_ticks();
+    tick_reset_os_ticks();
 
     INIT_LIST_HEAD(&t->cbs);
 

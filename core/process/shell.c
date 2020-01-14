@@ -92,7 +92,7 @@ int shell_main(void *data) {
                         log_always("rtc remaining: %ld", (int32_t) v);
                     }
 
-                    log_always("tick_get_system_ticks(): %lu", (uint32_t) tick_get_system_ticks());
+                    log_always("tick_get_os_ticks(): %lu", (uint32_t) tick_get_os_ticks());
                     break;
                 case 'm':;
                     char *p = malloc(10);

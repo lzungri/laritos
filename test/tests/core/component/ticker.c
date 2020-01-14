@@ -28,9 +28,9 @@ T(ticker_global_ctx_tick_is_incremented_periodically_secs) {
 
     int i;
     for (i = 2; i < 30; i += 10) {
-        abstick_t ticks = tick_get_system_ticks();
+        abstick_t ticks = tick_get_os_ticks();
         sleep(i);
-        uint32_t delta = OSTICK_TO_SEC(tick_get_system_ticks() - ticks);
+        uint32_t delta = OSTICK_TO_SEC(tick_get_os_ticks() - ticks);
         tassert(delta <= i);
         // 20% tolerance for lower limit
         tassert(delta >= (i * 80) / 100);
@@ -43,9 +43,9 @@ T(ticker_global_ctx_tick_is_incremented_periodically_msecs) {
 
     int i;
     for (i = max(1000 / t->ticks_per_sec, 100); i < 1000; i += 100) {
-        abstick_t ticks = tick_get_system_ticks();
+        abstick_t ticks = tick_get_os_ticks();
         msleep(i);
-        uint32_t delta = OSTICK_TO_MS(tick_get_system_ticks() - ticks);
+        uint32_t delta = OSTICK_TO_MS(tick_get_os_ticks() - ticks);
         tassert(delta <= i);
         // 30% tolerance for lower limit
         tassert(delta >= (i * 70) / 100);
@@ -56,19 +56,19 @@ T(ticker_can_be_paused_and_resumed) {
     ticker_comp_t *t = get_ticker();
     tassert(t != NULL);
 
-    abstick_t ticks = tick_get_system_ticks();
+    abstick_t ticks = tick_get_os_ticks();
     TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
-    tassert(ticks < tick_get_system_ticks());
+    tassert(ticks < tick_get_os_ticks());
 
     t->ops.pause(t);
-    ticks = tick_get_system_ticks();
+    ticks = tick_get_os_ticks();
     TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
-    tassert(ticks == tick_get_system_ticks());
+    tassert(ticks == tick_get_os_ticks());
 
     t->ops.resume(t);
-    ticks = tick_get_system_ticks();
+    ticks = tick_get_os_ticks();
     TEST_BUSY_WAIT(t->ticks_per_sec == 1 ? 2 : 1);
-    tassert(ticks <= tick_get_system_ticks());
+    tassert(ticks <= tick_get_os_ticks());
 TEND
 
 static int cb0(ticker_comp_t *t, void *data) {
@@ -120,10 +120,10 @@ static int cb2(ticker_comp_t *t, void *data) {
     if (cb2_ticks == 0) {
         // Initialize boolean used for validation
         *valid_tick = true;
-    } else if (tick_get_system_ticks() != cb2_ticks + 1) {
+    } else if (tick_get_os_ticks() != cb2_ticks + 1) {
         *valid_tick = false;
     }
-    cb2_ticks = tick_get_system_ticks();
+    cb2_ticks = tick_get_os_ticks();
     return 0;
 }
 

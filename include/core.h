@@ -91,7 +91,7 @@ typedef struct {
     struct {
         timezone_t tz;
         bool dst;
-        atomic64_t ticks;
+        atomic64_t osticks;
     } timeinfo;
 } laritos_t;
 
