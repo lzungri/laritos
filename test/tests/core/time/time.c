@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <test/test.h>
 #include <component/component.h>
@@ -9,6 +10,7 @@
 #include <component/vrtimer.h>
 #include <time/time.h>
 #include <time/tick.h>
+#include <utils/math.h>
 
 
 static void pause_ticker(void) {
@@ -102,4 +104,100 @@ T(time_killing_a_process_while_sleeping_doesnt_free_its_pcb_due_to_refcount) {
     process_kill(sleep_proc);
 
     process_wait_for(sleep_proc, NULL);
+TEND
+
+T(time_add_handles_overflows_correctly) {
+    time_t t, t2, res;
+    t.secs = S64_MAX;
+    t.ns = 10;
+    t2.secs = S64_MAX;
+    t2.ns = 0;
+    time_add(&t, &t2, &res);
+    tassert(res.secs == S64_MAX);
+    tassert(res.ns == 0);
+
+    t.secs = S64_MAX;
+    t.ns = 10;
+    t2.secs = 10;
+    t2.ns = 0;
+    time_add(&t, &t2, &res);
+    tassert(res.secs == S64_MAX);
+    tassert(res.ns == 0);
+
+    t.secs = 0;
+    t.ns = NSEC_PER_SEC - 1;
+    t2.secs = 0;
+    t2.ns = NSEC_PER_SEC - 1;
+    time_add(&t, &t2, &res);
+    tassert(res.secs == 1);
+    tassert(res.ns == NSEC_PER_SEC - 2);
+
+    t.secs = 0;
+    t.ns = NSEC_PER_SEC - 1;
+    t2.secs = 0;
+    t2.ns = 10;
+    time_add(&t, &t2, &res);
+    tassert(res.secs == 1);
+    tassert(res.ns == 9);
+TEND
+
+T(time_sub_handles_overflows_correctly) {
+    time_t t, t2, res;
+    t.secs = 3;
+    t.ns = 0;
+    t2.secs = 1;
+    t2.ns = 1;
+    time_sub(&t, &t2, &res);
+    tassert(res.secs == 1);
+    tassert(res.ns == NSEC_PER_SEC - 1);
+
+    t.secs = 5;
+    t.ns = 10;
+    t2.secs = 0;
+    t2.ns = NSEC_PER_SEC - 1;
+    time_sub(&t, &t2, &res);
+    tassert(res.secs == 4);
+    tassert(res.ns == 11);
+TEND
+
+T(time_get_monotonic_returns_time_with_the_expected_resolution_in_usecs) {
+    time_t t, t2, res;
+    int i;
+    for (i = 10; i < 1000; i += 100) {
+        time_get_monotonic_time(&t);
+        usleep(i);
+        time_get_monotonic_time(&t2);
+        time_sub(&t2, &t, &res);
+        tassert(res.secs == US_TO_SEC(i));
+        // ns == US_TO_NS(i) +/- 10 msecs (yeah... pretty bad)
+        tassert(nearly_equal(res.ns, US_TO_NS(i), MS_TO_NS(10)));
+    }
+TEND
+
+T(time_get_monotonic_returns_time_with_the_expected_resolution_in_msecs) {
+    time_t t, t2, res;
+    int i;
+    for (i = 10; i < 1000; i += 100) {
+        time_get_monotonic_time(&t);
+        msleep(i);
+        time_get_monotonic_time(&t2);
+        time_sub(&t2, &t, &res);
+        tassert(res.secs == MS_TO_SEC(i));
+        // ns == MS_TO_NS(i) +/- 10 msecs
+        tassert(nearly_equal(res.ns, MS_TO_NS(i), MS_TO_NS(10)));
+    }
+TEND
+
+T(time_get_monotonic_returns_time_with_the_expected_resolution_in_secs) {
+    time_t t, t2, res;
+    int i;
+    for (i = 1; i < 6; i++) {
+        time_get_monotonic_time(&t);
+        sleep(i);
+        time_get_monotonic_time(&t2);
+        time_sub(&t2, &t, &res);
+        // secs == i +/- 1 sec
+        tassert(nearly_equal(res.secs, i, 1));
+        tassert(res.ns < NSEC_PER_SEC);
+    }
 TEND
