@@ -2,6 +2,7 @@
 
 #include <cpu.h>
 #include <core.h>
+#include <limits.h>
 #include <refcount.h>
 #include <time/time.h>
 #include <time/tick.h>
@@ -13,6 +14,12 @@
 #include <process/core.h>
 #include <sched/core.h>
 #include <sync/spinlock.h>
+
+static inline vrtimer_comp_t *get_vrtimer(void) {
+    vrtimer_comp_t *vrt = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
+    assert(vrt != NULL, "Cannot use xsleep() family without a virtual timer");
+    return vrt;
+}
 
 int time_rtc_gettime(time_t *t) {
     timer_comp_t *rtc = (timer_comp_t *) component_first_of_type(COMP_TYPE_RTC);
@@ -31,6 +38,18 @@ int time_rtc_get_localtime_calendar(calendar_t *c) {
     return epoch_to_localtime_calendar(time.secs, c);
 }
 
+int time_get_monotonic_time(time_t *t) {
+    timer_comp_t *hrt = get_vrtimer()->hrtimer;
+    uint64_t v;
+    if (hrt->ops.get_value(hrt, &v) < 0) {
+        return -1;
+    }
+    t->secs = TICK_TO_SEC(hrt, v);
+    v -= SEC_TO_TICK(hrt, t->secs);
+    t->ns = TICK_TO_NS(hrt, v);
+    return 0;
+}
+
 int time_set_timezone(timezone_t t, bool daylight) {
     _laritos.timeinfo.tz = t;
     _laritos.timeinfo.dst = daylight;
@@ -42,13 +61,6 @@ int time_get_localtime_offset(void) {
     secs += _laritos.timeinfo.dst ? 1 : 0;
     secs *= SECS_PER_HOUR;
     return secs;
-}
-
-
-static inline vrtimer_comp_t *get_vrtimer(void) {
-    vrtimer_comp_t *vrt = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
-    assert(vrt != NULL, "Cannot use xsleep() family without a virtual timer");
-    return vrt;
 }
 
 static int process_sleep_cb(vrtimer_comp_t *t, void *data) {
@@ -133,6 +145,41 @@ void msleep(uint32_t ms) {
 void usleep(uint32_t us) {
     vrtimer_comp_t *vrt = get_vrtimer();
     _sleep(vrt, US_TO_TICK(vrt->hrtimer, us));
+}
+
+/**
+ * NOTES:
+ *  1. left.secs >= 0 && right.secs >=0
+ *  2. left.ns < NSEC_PER_SEC && right.ns < NSEC_PER_SEC
+ */
+void time_add(time_t *left, time_t *right, time_t *res) {
+    res->secs = left->secs + right->secs;
+    res->ns = left->ns + right->ns;
+    if (res->ns >= NSEC_PER_SEC) {
+        res->secs++;
+        res->ns -= NSEC_PER_SEC;
+    }
+
+    // On overflow, use max value
+    if (res->secs < left->secs || res->secs < right->secs) {
+        res->secs = S64_MAX;
+        res->ns = 0;
+    }
+}
+
+/**
+ * NOTES:
+ *  1. left.secs >= 0 && right.secs >=0
+ *  2. left.ns < NSEC_PER_SEC && right.ns < NSEC_PER_SEC
+ */
+void time_sub(time_t *left, time_t *right, time_t *res) {
+    res->secs = left->secs - right->secs;
+    if (right->ns > left->ns) {
+        res->ns = NSEC_PER_SEC + left->ns - right->ns;
+        res->secs--;
+    } else {
+        res->ns = left->ns - right->ns;
+    }
 }
 
 
