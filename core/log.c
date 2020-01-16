@@ -11,6 +11,7 @@
 #include <dstruct/circbuf.h>
 #include <utils/utils.h>
 #include <time/time.h>
+#include <time/timeconv.h>
 #include <mm/heap.h>
 #include <dstruct/list.h>
 #include <component/timer.h>
@@ -33,15 +34,18 @@ int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
     int ret = 0;
     char lineb[CONFIG_LOG_MAX_LINE_SIZE] = { 0 };
 
+    time_t curtime = { 0 };
     calendar_t cal = { 0 };
-    if (time_get_rtc_localtime_calendar(&cal) < 0) {
-        memset(&cal, 0, sizeof(cal));
+    if (time_get_ns_rtc_time(&curtime) >= 0) {
+        if (epoch_to_localtime_calendar(curtime.secs, &cal) < 0) {
+            memset(&cal, 0, sizeof(cal));
+        }
     }
 
-    // TODO: Add msecs resolution
     pcb_t *pcb = process_get_current();
-    int nchars = snprintf(lineb, sizeof(lineb), "%02d/%02d %02d:%02d:%02d %3u %-6.6s %s %s: ",
-            cal.mon + 1, cal.mday, cal.hour, cal.min, cal.sec, pcb->pid, pcb->name, level, tag);
+    int nchars = snprintf(lineb, sizeof(lineb), "%02d/%02d %02d:%02d:%02d.%03d %3u %-6.6s %s %s: ",
+            cal.mon + 1, cal.mday, cal.hour, cal.min, cal.sec, NS_TO_MS(curtime.ns),
+            pcb->pid, pcb->name, level, tag);
     // If the required number of chars is bigger than the size of the buffer, then truncate string
     if (nchars > sizeof(lineb)) {
         goto full_buf;
