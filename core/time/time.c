@@ -21,7 +21,7 @@ static inline vrtimer_comp_t *get_vrtimer(void) {
     return vrt;
 }
 
-int time_rtc_gettime(time_t *t) {
+int time_get_rtc_time(time_t *t) {
     timer_comp_t *rtc = (timer_comp_t *) component_first_of_type(COMP_TYPE_RTC);
     if (rtc == NULL) {
         return -1;
@@ -30,9 +30,9 @@ int time_rtc_gettime(time_t *t) {
     return rtc->ops.get_value(rtc, &t->secs);
 }
 
-int time_rtc_get_localtime_calendar(calendar_t *c) {
+int time_get_rtc_localtime_calendar(calendar_t *c) {
     time_t time = { 0 };
-    if (time_rtc_gettime(&time) < 0) {
+    if (time_get_rtc_time(&time) < 0) {
         return -1;
     }
     return epoch_to_localtime_calendar(time.secs, c);

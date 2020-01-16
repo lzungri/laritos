@@ -57,7 +57,7 @@ TEND
 
 
 static int kproc2(void *data) {
-    time_rtc_gettime((time_t *) data);
+    time_get_rtc_time((time_t *) data);
     TEST_BUSY_WAIT(3);
     return 0;
 }

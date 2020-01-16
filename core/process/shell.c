@@ -74,14 +74,14 @@ int shell_main(void *data) {
                     break;
                 case 'c':;
                     calendar_t c = { 0 };
-                    time_rtc_get_localtime_calendar(&c);
+                    time_get_rtc_localtime_calendar(&c);
                     log_always("calendar: %02d/%02d/%ld %02d:%02d:%02d",
                             c.mon + 1, c.mday, c.year + 1900, c.hour, c.min, c.sec);
                     break;
                 case 't':;
                     // rtc timer status
                     time_t t = { 0 };
-                    time_rtc_gettime(&t);
+                    time_get_rtc_time(&t);
                     log_always("rtc_gettime(): %lu", (uint32_t) t.secs);
 
                     component_t *c1;

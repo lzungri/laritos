@@ -5,5 +5,5 @@
 #include <time/time.h>
 
 int syscall_time(time_t *t) {
-    return time_rtc_gettime(t);
+    return time_get_rtc_time(t);
 }

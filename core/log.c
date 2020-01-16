@@ -34,7 +34,7 @@ int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
     char lineb[CONFIG_LOG_MAX_LINE_SIZE] = { 0 };
 
     calendar_t cal = { 0 };
-    if (time_rtc_get_localtime_calendar(&cal) < 0) {
+    if (time_get_rtc_localtime_calendar(&cal) < 0) {
         memset(&cal, 0, sizeof(cal));
     }
 
