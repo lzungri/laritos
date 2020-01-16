@@ -93,7 +93,7 @@ static int sleepparent(void *data) {
     return 0;
 }
 
-T(time_killing_a_process_while_sleeping_doesnt_free_its_pcb_due_to_refcount) {
+T(time_killing_a_proc_while_sleeping_doesnt_free_its_pcb_due_to_refcount) {
     pcb_t *p = process_spawn_kernel_process("sleepparent", sleepparent, NULL,
                         8196,  process_get_current()->sched.priority - 2);
     tassert(p != NULL);
@@ -160,7 +160,7 @@ T(time_sub_handles_overflows_correctly) {
     tassert(res.ns == 11);
 TEND
 
-T(time_get_monotonic_returns_time_with_the_expected_resolution_in_usecs) {
+T(time_get_monotonic_returns_time_with_the_expected_res_in_usecs) {
     time_t t, t2, res;
     int i;
     for (i = 10; i < 1000; i += 100) {
@@ -174,7 +174,7 @@ T(time_get_monotonic_returns_time_with_the_expected_resolution_in_usecs) {
     }
 TEND
 
-T(time_get_monotonic_returns_time_with_the_expected_resolution_in_msecs) {
+T(time_get_monotonic_returns_time_with_the_expected_res_in_msecs) {
     time_t t, t2, res;
     int i;
     for (i = 10; i < 1000; i += 100) {
@@ -188,13 +188,55 @@ T(time_get_monotonic_returns_time_with_the_expected_resolution_in_msecs) {
     }
 TEND
 
-T(time_get_monotonic_returns_time_with_the_expected_resolution_in_secs) {
+T(time_get_monotonic_returns_time_with_the_expected_res_in_secs) {
     time_t t, t2, res;
     int i;
     for (i = 1; i < 6; i++) {
         time_get_monotonic_time(&t);
         sleep(i);
         time_get_monotonic_time(&t2);
+        time_sub(&t2, &t, &res);
+        // secs == i +/- 1 sec
+        tassert(nearly_equal(res.secs, i, 1));
+        tassert(res.ns < NSEC_PER_SEC);
+    }
+TEND
+
+T(time_get_ns_rtc_returns_time_with_the_expected_res_in_usecs) {
+    time_t t, t2, res;
+    int i;
+    for (i = 10; i < 1000; i += 100) {
+        time_get_ns_rtc_time(&t);
+        usleep(i);
+        time_get_ns_rtc_time(&t2);
+        time_sub(&t2, &t, &res);
+        tassert(res.secs == US_TO_SEC(i));
+        // ns == US_TO_NS(i) +/- 10 msecs (yeah... pretty bad)
+        tassert(nearly_equal(res.ns, US_TO_NS(i), MS_TO_NS(10)));
+    }
+TEND
+
+T(time_get_ns_rtc_returns_time_with_the_expected_res_in_msecs) {
+    time_t t, t2, res;
+    int i;
+    for (i = 1; i < 6; i++) {
+        time_get_ns_rtc_time(&t);
+        msleep(i);
+        time_get_ns_rtc_time(&t2);
+        time_sub(&t2, &t, &res);
+        tassert(res.secs == MS_TO_SEC(i));
+        // ns == MS_TO_NS(i) +/- 10 msecs
+        tassert(nearly_equal(res.ns, MS_TO_NS(i), MS_TO_NS(10)));
+    }
+TEND
+
+T(time_get_ns_rtc_returns_time_with_the_expected_res_in_secs) {
+    time_t t, t2, res;
+    int i;
+    for (i = 1; i < 6; i++) {
+        time_get_ns_rtc_time(&t);
+        sleep(i);
+        time_get_ns_rtc_time(&t2);
         time_sub(&t2, &t, &res);
         // secs == i +/- 1 sec
         tassert(nearly_equal(res.secs, i, 1));
