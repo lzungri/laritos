@@ -78,6 +78,12 @@ int time_get_localtime_offset(void) {
     return secs;
 }
 
+void time_to_hms(time_t *t, uint16_t *h, uint16_t *m, uint16_t *s) {
+    *h = SEC_TO_HOUR(t->secs);
+    *m = SEC_TO_MINUTE(t->secs % SECS_PER_HOUR);
+    *s = t->secs % 60;
+}
+
 static int process_sleep_cb(vrtimer_comp_t *t, void *data) {
     pcb_t *pcb = (pcb_t *) data;
 

@@ -13,6 +13,9 @@
 #define NSEC_PER_MSEC   1000000L
 #define NSEC_PER_USEC   1000L
 
+#define SEC_TO_MINUTE(_s) ((_s) / 60)
+#define SEC_TO_HOUR(_s) ((_s) / SECS_PER_HOUR)
+
 #define SEC_TO_MS(_s) ((_s) * MSEC_PER_SEC)
 #define SEC_TO_US(_s) ((_s) * USEC_PER_SEC)
 #define SEC_TO_NS(_s) ((_s) * NSEC_PER_SEC)
@@ -74,6 +77,7 @@ int time_set_timezone(timezone_t t, bool daylight);
 int time_get_localtime_offset(void);
 void time_sub(time_t *left, time_t *right, time_t *res);
 void time_add(time_t *left, time_t *right, time_t *res);
+void time_to_hms(time_t *t, uint16_t *h, uint16_t *m, uint16_t *s);
 
 void sleep(uint32_t secs);
 void msleep(uint32_t ms);
