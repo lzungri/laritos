@@ -82,7 +82,7 @@ int init_main(void *data) {
     time_get_rtc_time(&_laritos.timeinfo.boottime);
 
     info("Setting default timezone as PDT");
-    if (time_set_timezone(TZ_PST, true) < 0) {
+    if (time_set_timezone(TZ_PST, false) < 0) {
         error("Couldn't set default timezone");
     }
 
