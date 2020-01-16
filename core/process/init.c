@@ -77,6 +77,10 @@ int init_main(void *data) {
 
     assert(component_are_mandatory_comps_present(), "Not all mandatory board components were found");
 
+    // Save the RTC boot time. Useful for calculating the current time with nanoseconds
+    // resolution (rtc just provides second resolution)
+    time_get_rtc_time(&_laritos.timeinfo.boottime);
+
     info("Setting default timezone as PDT");
     if (time_set_timezone(TZ_PST, true) < 0) {
         error("Couldn't set default timezone");
