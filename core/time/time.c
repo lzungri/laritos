@@ -30,6 +30,15 @@ int time_get_rtc_time(time_t *t) {
     return rtc->ops.get_value(rtc, &t->secs);
 }
 
+int time_get_ns_rtc_time(time_t *t) {
+    time_t temp;
+    if (time_get_monotonic_time(&temp) < 0) {
+        return -1;
+    }
+    time_add(&temp, &_laritos.timeinfo.boottime, t);
+    return 0;
+}
+
 int time_get_rtc_localtime_calendar(calendar_t *c) {
     time_t time = { 0 };
     if (time_get_rtc_time(&time) < 0) {
@@ -39,11 +48,17 @@ int time_get_rtc_localtime_calendar(calendar_t *c) {
 }
 
 int time_get_monotonic_time(time_t *t) {
-    timer_comp_t *hrt = get_vrtimer()->hrtimer;
+    vrtimer_comp_t *vrt = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
+    if (vrt == NULL) {
+        return -1;
+    }
+
+    timer_comp_t *hrt = vrt->hrtimer;
     uint64_t v;
     if (hrt->ops.get_value(hrt, &v) < 0) {
         return -1;
     }
+
     t->secs = TICK_TO_SEC(hrt, v);
     v -= SEC_TO_TICK(hrt, t->secs);
     t->ns = TICK_TO_NS(hrt, v);

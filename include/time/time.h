@@ -67,6 +67,7 @@ typedef struct {
 } calendar_t;
 
 int time_get_rtc_time(time_t *t);
+int time_get_ns_rtc_time(time_t *t);
 int time_get_rtc_localtime_calendar(calendar_t *c);
 int time_get_monotonic_time(time_t *t);
 int time_set_timezone(timezone_t t, bool daylight);
