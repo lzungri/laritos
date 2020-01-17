@@ -16,11 +16,11 @@
 #include <sync/spinlock.h>
 
 static inline vrtimer_comp_t *get_vrtimer(void) {
-    return (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
+    return component_get_default(COMP_TYPE_VRTIMER, vrtimer_comp_t);
 }
 
 int time_get_rtc_time(time_t *t) {
-    timer_comp_t *rtc = (timer_comp_t *) component_first_of_type(COMP_TYPE_RTC);
+    timer_comp_t *rtc = component_get_default(COMP_TYPE_RTC, timer_comp_t);
     t->ns = 0;
     return rtc->ops.get_value(rtc, &t->secs);
 }
