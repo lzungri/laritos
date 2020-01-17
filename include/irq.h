@@ -45,6 +45,10 @@ static inline const char *irq_get_irqret_str(irqret_t ret) {
     return ret < ARRAYSIZE(str) && ret >= 0 && str[ret] != NULL ? str[ret] : "???";
 }
 
+static inline bool irq_is_enabled(void) {
+    return arch_irq_is_enabled();
+}
+
 static inline int irq_disable_local(void) {
     return arch_irq_disable_local();
 }

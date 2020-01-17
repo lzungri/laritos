@@ -1,8 +1,13 @@
 #pragma once
 
+#include <stdbool.h>
 #include <arch/cpu.h>
 
 typedef regpsr_t irqctx_t;
+
+static inline bool arch_irq_is_enabled(void) {
+    return !arch_get_cpsr().b.irq;
+}
 
 static inline int arch_irq_disable_local(void) {
     asm("cpsid i");
