@@ -36,7 +36,9 @@ int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
 
     time_t curtime = { 0 };
     calendar_t cal = { 0 };
-    if (time_get_ns_rtc_time(&curtime) >= 0) {
+    // Do not add any timestamp info if there are still some time-related
+    // components yet to be loaded
+    if (_laritos.components_loaded && time_get_ns_rtc_time(&curtime) >= 0) {
         if (epoch_to_localtime_calendar(curtime.secs, &cal) < 0) {
             memset(&cal, 0, sizeof(cal));
         }
