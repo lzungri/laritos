@@ -21,9 +21,6 @@ static inline vrtimer_comp_t *get_vrtimer(void) {
 
 int time_get_rtc_time(time_t *t) {
     timer_comp_t *rtc = (timer_comp_t *) component_first_of_type(COMP_TYPE_RTC);
-    if (rtc == NULL) {
-        return -1;
-    }
     t->ns = 0;
     return rtc->ops.get_value(rtc, &t->secs);
 }
@@ -52,11 +49,10 @@ uint64_t time_get_monotonic_cpu_cycles(void) {
 }
 
 int time_get_monotonic_time(time_t *t) {
-    timer_comp_t *hrt = get_vrtimer()->hrtimer;
     uint64_t v = time_get_monotonic_cpu_cycles();
-    t->secs = TICK_TO_SEC(hrt, v);
-    v -= SEC_TO_TICK(hrt, t->secs);
-    t->ns = TICK_TO_NS(hrt, v);
+    t->secs = TICK_TO_SEC(v);
+    v -= SEC_TO_TICK(t->secs);
+    t->ns = TICK_TO_NS(v);
     return 0;
 }
 
@@ -100,12 +96,14 @@ static int non_process_sleep_cb(vrtimer_comp_t *t, void *data) {
     return 0;
 }
 
-static inline void _sleep(vrtimer_comp_t *t, tick_t ticks) {
+static inline void _sleep(tick_t ticks) {
     verbose_async("Sleeping for %lu ticks", ticks);
 
     if (ticks == 0) {
         return;
     }
+
+    vrtimer_comp_t *t = get_vrtimer();
 
     if (_laritos.process_mode) {
         pcb_t *pcb = process_get_current();
@@ -149,18 +147,15 @@ static inline void _sleep(vrtimer_comp_t *t, tick_t ticks) {
 }
 
 void sleep(uint32_t secs) {
-    vrtimer_comp_t *vrt = get_vrtimer();
-    _sleep(vrt, SEC_TO_TICK(vrt->hrtimer, secs));
+    _sleep(SEC_TO_TICK(secs));
 }
 
 void msleep(uint32_t ms) {
-    vrtimer_comp_t *vrt = get_vrtimer();
-    _sleep(vrt, MS_TO_TICK(vrt->hrtimer, ms));
+    _sleep(MS_TO_TICK(ms));
 }
 
 void usleep(uint32_t us) {
-    vrtimer_comp_t *vrt = get_vrtimer();
-    _sleep(vrt, US_TO_TICK(vrt->hrtimer, us));
+    _sleep(US_TO_TICK(us));
 }
 
 /**

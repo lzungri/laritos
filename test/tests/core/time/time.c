@@ -29,53 +29,44 @@ static void resume_ticker(void) {
     }
 }
 
-static inline abstick_t get_timer_cur_value(vrtimer_comp_t *t) {
-    abstick_t cur;
-    t->hrtimer->ops.get_value(t->hrtimer, &cur);
-    return cur;
-}
-
 T(time_sleep_blocks_kernel_then_wakes_it_up) {
     pause_ticker();
-    vrtimer_comp_t *vrt = get_vrtimer();
     int i;
     for (i = 1; i < 6; i++) {
         debug("Sleeping for %u secs", i);
-        abstick_t ticks = get_timer_cur_value(vrt);
+        uint64_t ticks = time_get_monotonic_cpu_cycles();
         sleep(i);
-        abstick_t now = get_timer_cur_value(vrt);
+        uint64_t now = time_get_monotonic_cpu_cycles();
         tassert(now > ticks);
-        tassert((now - ticks) >= SEC_TO_TICK(vrt->hrtimer, i));
+        tassert((now - ticks) >= SEC_TO_TICK(i));
     }
     resume_ticker();
 TEND
 
 T(time_msleep_blocks_kernel_then_wakes_it_up) {
     pause_ticker();
-    vrtimer_comp_t *vrt = get_vrtimer();
     int i;
     for (i = 100; i < 1000; i += 100) {
         debug("Sleeping for %u msecs", i);
-        abstick_t ticks = get_timer_cur_value(vrt);
+        uint64_t ticks = time_get_monotonic_cpu_cycles();
         msleep(i);
-        abstick_t now = get_timer_cur_value(vrt);
+        uint64_t now = time_get_monotonic_cpu_cycles();
         tassert(now > ticks);
-        tassert((now - ticks) >= MS_TO_TICK(vrt->hrtimer, i));
+        tassert((now - ticks) >= MS_TO_TICK(i));
     }
     resume_ticker();
 TEND
 
 T(time_usleep_blocks_kernel_then_wakes_it_up) {
     pause_ticker();
-    vrtimer_comp_t *vrt = get_vrtimer();
     int i;
     for (i = 100; i < 1000; i += 100) {
         debug("Sleeping for %u usecs", i);
-        abstick_t ticks = get_timer_cur_value(vrt);
+        uint64_t ticks = time_get_monotonic_cpu_cycles();
         usleep(i);
-        abstick_t now = get_timer_cur_value(vrt);
+        uint64_t now = time_get_monotonic_cpu_cycles();
         tassert(now > ticks);
-        tassert((now - ticks) >= US_TO_TICK(vrt->hrtimer, i));
+        tassert((now - ticks) >= US_TO_TICK(i));
     }
     resume_ticker();
 TEND
