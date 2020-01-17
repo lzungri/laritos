@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <core.h>
 #include <board-types.h>
 #include <board.h>
 #include <driver/driver.h>
@@ -89,5 +90,16 @@ int driver_process_board_components(board_info_t *bi) {
             nerrors++;
         }
     }
-    return -nerrors;
+
+    if (nerrors > 0) {
+        return -nerrors;
+    }
+
+    if (!component_are_mandatory_comps_present()) {
+        error("Not all mandatory board components were found");
+        return -1;
+    }
+
+    _laritos.components_loaded = true;
+    return 0;
 }

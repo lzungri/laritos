@@ -76,6 +76,7 @@ typedef struct {
      * List of components grouped by type (for performance reasons)
      */
     struct list_head comps[COMP_TYPE_LEN];
+    bool components_loaded;
 
     laritos_process_t proc;
     laritos_sched_t sched;
