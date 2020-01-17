@@ -47,18 +47,23 @@ int time_get_rtc_localtime_calendar(calendar_t *c) {
     return epoch_to_localtime_calendar(time.secs, c);
 }
 
+uint64_t time_get_monotonic_cpu_cycles(void) {
+    vrtimer_comp_t *vrt = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
+    if (vrt == NULL) {
+        return 0;
+    }
+    timer_comp_t *hrt = vrt->hrtimer;
+    uint64_t v;
+    return hrt->ops.get_value(hrt, &v) < 0 ? 0 : v;
+}
+
 int time_get_monotonic_time(time_t *t) {
     vrtimer_comp_t *vrt = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
     if (vrt == NULL) {
         return -1;
     }
-
     timer_comp_t *hrt = vrt->hrtimer;
-    uint64_t v;
-    if (hrt->ops.get_value(hrt, &v) < 0) {
-        return -1;
-    }
-
+    uint64_t v = time_get_monotonic_cpu_cycles();
     t->secs = TICK_TO_SEC(hrt, v);
     v -= SEC_TO_TICK(hrt, t->secs);
     t->ns = TICK_TO_NS(hrt, v);
