@@ -75,8 +75,6 @@ int init_main(void *data) {
     debug_dump_registered_comps();
 #endif
 
-    assert(component_are_mandatory_comps_present(), "Not all mandatory board components were found");
-
     // Save the RTC boot time. Useful for calculating the current time with nanoseconds
     // resolution (rtc just provides second resolution)
     time_get_rtc_time(&_laritos.timeinfo.boottime);
