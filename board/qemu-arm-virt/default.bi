@@ -30,7 +30,7 @@ rtc0:pl031|mmbase=0x09010000,maxfreq=1,intio=true,intc=@gic,irq=34,trigger=level
 hrtimer0:armv7_generic_timer|maxfreq=62500000,intio=true,intc=@gic,irq=30,trigger=level_hi
 
 # CPUs
-cpu0:cortex_a15|id=0,intc=@gic,sched=@rrsched
+cpu0:cortex_a15|id=0,intc=@gic,sched=@rrsched,default=y
 cpu1:cortex_a15|id=1,intc=@gic,sched=@rrsched
 cpu2:cortex_a15|id=2,intc=@gic,sched=@rrsched
 cpu3:cortex_a15|id=3,intc=@gic,sched=@rrsched

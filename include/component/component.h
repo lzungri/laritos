@@ -48,6 +48,13 @@ typedef struct component {
     char description[CONFIG_COMP_INFO_SIZE];
 
     /**
+     * Indicates whether or not this component is the default one from a set of
+     * components of the same type.
+     * You can access the default component via component_get_default()
+     */
+    bool dflt;
+
+    /**
      * List of components
      */
     struct list_head list;
@@ -55,8 +62,11 @@ typedef struct component {
     component_ops_t ops;
 } component_t;
 
-#define component_first_of_type(_t) \
-    list_first_entry_or_null(&_laritos.comps[_t], component_t, list)
+#define component_first_of_type(_t, _type) \
+    ((_type *) list_first_entry_or_null(&_laritos.comps[_t], component_t, list))
+
+#define component_get_default(_ct, _type) \
+    component_first_of_type(_ct, _type)
 
 #define for_each_component_type(_c, _t) \
     list_for_each_entry(_c, &_laritos.comps[_t], list)
