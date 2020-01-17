@@ -16,9 +16,7 @@
 #include <sync/spinlock.h>
 
 static inline vrtimer_comp_t *get_vrtimer(void) {
-    vrtimer_comp_t *vrt = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
-    assert(vrt != NULL, "Cannot use xsleep() family without a virtual timer");
-    return vrt;
+    return (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
 }
 
 int time_get_rtc_time(time_t *t) {
@@ -48,21 +46,13 @@ int time_get_rtc_localtime_calendar(calendar_t *c) {
 }
 
 uint64_t time_get_monotonic_cpu_cycles(void) {
-    vrtimer_comp_t *vrt = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
-    if (vrt == NULL) {
-        return 0;
-    }
-    timer_comp_t *hrt = vrt->hrtimer;
+    timer_comp_t *hrt = get_vrtimer()->hrtimer;
     uint64_t v;
     return hrt->ops.get_value(hrt, &v) < 0 ? 0 : v;
 }
 
 int time_get_monotonic_time(time_t *t) {
-    vrtimer_comp_t *vrt = (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
-    if (vrt == NULL) {
-        return -1;
-    }
-    timer_comp_t *hrt = vrt->hrtimer;
+    timer_comp_t *hrt = get_vrtimer()->hrtimer;
     uint64_t v = time_get_monotonic_cpu_cycles();
     t->secs = TICK_TO_SEC(hrt, v);
     v -= SEC_TO_TICK(hrt, t->secs);
