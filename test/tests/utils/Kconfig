@@ -4,9 +4,14 @@ config TEST_UTILS_ALL
     bool "Select all"
     default n
     select TEST_UTILS_MATH
+    select TEST_UTILS_LATENCY
 
 config TEST_UTILS_MATH
     bool "math.c"
+    default n
+
+config TEST_UTILS_LATENCY
+    bool "latency.c"
     default n
 
 endmenu

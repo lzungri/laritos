@@ -20,3 +20,7 @@
 #ifdef CONFIG_TEST_UTILS_MATH
 #include <utils/math.c>
 #endif
+
+#ifdef CONFIG_TEST_UTILS_LATENCY
+#include <utils/latency.c>
+#endif
