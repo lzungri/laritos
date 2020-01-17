@@ -15,6 +15,10 @@
 #
 # Boolean attributes can take one of the following values: n, false, 0, y, true, 1
 
+# Virtual timer component
+# Load it first, since it is probably used by the other components
+vrtimer0:generic_vrtimer|hrtimer=@hrtimer0,low_power_timer=@rtc0
+
 # Logger using the uart as output transport
 log_uart:generic_logger|transport=bytestream@uart0
 
@@ -42,9 +46,6 @@ gic:gicv2|distaddr=0x08000000,cpuaddr=0x08010000
 
 # OS Ticker
 ticker0:generic_ticker|vrtimer=@vrtimer0,ticks_per_sec=100
-
-# Virtual timer component
-vrtimer0:generic_vrtimer|hrtimer=@hrtimer0,low_power_timer=@rtc0
 
 # Preemptive round robin scheduler
 rrsched:preempt_rr|ticker=@ticker0
