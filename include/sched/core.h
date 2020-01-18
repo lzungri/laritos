@@ -18,7 +18,7 @@ static inline void schedule_if_needed(void) {
 
     // Check whether we need to schedule
     if (_laritos.sched.need_sched && _laritos.process_mode) {
-        verbose_async("Re-schedule needed");
+        insane_async("Re-schedule needed");
         _laritos.sched.need_sched = false;
         schedule();
     }
@@ -58,7 +58,7 @@ static inline void sched_move_to_ready_locked(pcb_t *pcb) {
         error_async("Cannot move a ZOMBIE process to READY");
         return;
     }
-    verbose_async("PID %u: %s -> READY", pcb->pid, pcb_get_status_str(pcb->sched.status));
+    insane_async("PID %u: %s -> READY", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
@@ -76,7 +76,7 @@ static inline void sched_move_to_blocked_locked(pcb_t *pcb) {
         error_async("Cannot move a ZOMBIE or NOT_INIT process to BLOCKED");
         return;
     }
-    verbose_async("PID %u: %s -> BLOCKED", pcb->pid, pcb_get_status_str(pcb->sched.status));
+    insane_async("PID %u: %s -> BLOCKED", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
@@ -89,7 +89,7 @@ static inline void sched_move_to_running_locked(pcb_t *pcb) {
         error_async("Cannot move a ZOMBIE process to RUNNING");
         return;
     }
-    verbose_async("PID %u: %s -> RUNNING", pcb->pid, pcb_get_status_str(pcb->sched.status));
+    insane_async("PID %u: %s -> RUNNING", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
@@ -99,7 +99,7 @@ static inline void sched_move_to_running_locked(pcb_t *pcb) {
 }
 
 static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
-    verbose_async("PID %u: %s -> ZOMBIE ", pcb->pid, pcb_get_status_str(pcb->sched.status));
+    insane_async("PID %u: %s -> ZOMBIE ", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
     sched_update_stats(pcb);
 
@@ -108,7 +108,7 @@ static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
     pcb_t *gparent = pcb->parent;
     // Grandparent will become the new parent
     for_each_child_process_safe(pcb, child, temp) {
-        verbose_async("pid=%u new parent pid=%u", child->pid, gparent->pid);
+        insane_async("pid=%u new parent pid=%u", child->pid, gparent->pid);
         child->parent = gparent;
         list_move_tail(&child->siblings, &gparent->children);
     }

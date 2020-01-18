@@ -21,7 +21,7 @@ static int ticker_cb(vrtimer_comp_t *t, void *data) {
     ticker_comp_t *ticker = (ticker_comp_t *) data;
     ticker_cb_info_t *ti;
     list_for_each_entry(ti, &ticker->cbs, list) {
-        verbose_async("Executing ticker callback 0x%p(data=0x%p)", ti->cb, ti->data);
+        insane_async("Executing ticker callback 0x%p(data=0x%p)", ti->cb, ti->data);
         if (ti->cb(ticker, ti->data) < 0) {
             error_async("Failed to execute callback 0x%p(data=0x%p)", ti->cb, ti->data);
         }

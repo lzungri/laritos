@@ -112,7 +112,7 @@ static inline void process_set_current(pcb_t *pcb) {
 
 static inline void process_set_current_pcb_stack_context(spctx_t *spctx) {
     pcb_t *pcb = process_get_current();
-    verbose_async("Setting current context for pid=%u to 0x%p", pcb->pid, spctx);
+    insane_async("Setting current context for pid=%u to 0x%p", pcb->pid, spctx);
     pcb->mm.sp_ctx = spctx;
 }
 

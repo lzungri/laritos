@@ -5,7 +5,7 @@
 
 int idle_main(void *data) {
     while (1) {
-        verbose("IDLE");
+        insane("IDLE");
         arch_wfi();
     }
     return 0;

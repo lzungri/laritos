@@ -27,7 +27,7 @@ void sched_switch_to(pcb_t *from, pcb_t *to) {
     // Once the *from* context is restored, it will continue execution from
     // here (actually from within the context_save_and_restore() function)
 
-    verbose_async("Resuming execution of pid=%u", process_get_current()->pid);
+    insane_async("Resuming execution of pid=%u", process_get_current()->pid);
     // Check if the stack has been corrupted
     spprot_check(process_get_current());
 
@@ -37,7 +37,7 @@ void sched_switch_to(pcb_t *from, pcb_t *to) {
 }
 
 static void context_switch(pcb_t *cur, pcb_t *to) {
-    verbose_async("Context switch pid=%u -> pid=%u", cur->pid, to->pid);
+    insane_async("Context switch pid=%u -> pid=%u", cur->pid, to->pid);
 
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proclock, &ctx);

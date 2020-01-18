@@ -16,10 +16,10 @@ int irq_handler(spctx_t *ctx) {
     int fret = 0;
     component_t *c = NULL;
     for_each_component_type(c, COMP_TYPE_INTC) {
-        verbose_async("Dispatching irq to int controller '%s'", c->id);
+        insane_async("Dispatching irq to int controller '%s'", c->id);
         intc_t *intc = (intc_t *) c;
         irqret_t ret = intc->ops.dispatch_irq(intc);
-        verbose_async("Interrupt controller '%s' returned %s", c->id, irq_get_irqret_str(ret));
+        insane_async("Interrupt controller '%s' returned %s", c->id, irq_get_irqret_str(ret));
         switch (ret) {
         case IRQ_RET_HANDLED:
             goto end;

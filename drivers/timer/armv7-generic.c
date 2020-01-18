@@ -54,11 +54,11 @@ static int set_expiration_ticks(timer_comp_t *t, int64_t timer_ticks, timer_exp_
 
     switch (type) {
     case TIMER_EXP_ABSOLUTE:
-        verbose_async("setexpticks(armv7, ticks=%lu, TIMER_EXP_ABSOLUTE)", (uint32_t) timer_ticks);
+        insane_async("setexpticks(armv7, ticks=%lu, TIMER_EXP_ABSOLUTE)", (uint32_t) timer_ticks);
         arch_set_cntp_cval(max(timer_ticks, 0));
         break;
     case TIMER_EXP_RELATIVE:
-        verbose_async("setexpticks(armv7, ticks=%lu, TIMER_EXP_RELATIVE)", (uint32_t) timer_ticks);
+        insane_async("setexpticks(armv7, ticks=%lu, TIMER_EXP_RELATIVE)", (uint32_t) timer_ticks);
         arch_set_cntp_cval(max((int64_t) arch_get_cntp_cval() + timer_ticks, 0));
         break;
     }
@@ -89,7 +89,7 @@ static int clear_expiration(timer_comp_t *t) {
 }
 
 static irqret_t armv7_timer_irq_handler(irq_t irq, void *data) {
-    verbose_async("armv7-timer '%s' expired", ((component_t *) data)->id);
+    insane_async("armv7-timer '%s' expired", ((component_t *) data)->id);
 
     timer_comp_t *t = (timer_comp_t *) data;
     // Disable future irqs coming from the same compare value

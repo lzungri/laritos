@@ -339,7 +339,7 @@ static inline uint8_t arch_cpu_get_id(void) {
 }
 
 static inline void arch_wfi(void) {
-    debug_async("Putting CPU #%u to sleep", arch_cpu_get_id());
+    insane_async("Putting CPU #%u to sleep", arch_cpu_get_id());
     asm("wfi");
-    debug_async("CPU #%u is now awake", arch_cpu_get_id());
+    insane_async("CPU #%u is now awake", arch_cpu_get_id());
 }
