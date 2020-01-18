@@ -53,6 +53,16 @@ static void spawn_system_processes(void) {
 #endif
 }
 
+static void start_os_tickers(void) {
+    // Start OS tickers
+    component_t *comp;
+    for_each_component_type(comp, COMP_TYPE_TICKER) {
+        ticker_comp_t *ticker = (ticker_comp_t *) comp;
+        info("Starting ticker '%s'", comp->id);
+        assert(ticker->ops.resume(ticker) >= 0, "Could not start ticker %s", comp->id);
+    }
+}
+
 static void init_loop(void) {
     pcb_t *init = process_get_current();
 
@@ -111,13 +121,7 @@ int init_main(void *data) {
 
     spawn_system_processes();
 
-    // Start OS tickers
-    component_t *comp;
-    for_each_component_type(comp, COMP_TYPE_TICKER) {
-        ticker_comp_t *ticker = (ticker_comp_t *) comp;
-        info("Starting ticker '%s'", comp->id);
-        assert(ticker->ops.resume(ticker) >= 0, "Could not start ticker %s", comp->id);
-    }
+    start_os_tickers();
 
     init_loop();
     return 0;
