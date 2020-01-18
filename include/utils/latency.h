@@ -22,12 +22,16 @@
         if (_diff < _min) { \
             _min = _diff; \
         } \
-        info_async(_tag " #%-4lu | cur=%llu min=%llu max=%llu avg=%llu", _count, _diff, _min, _max, _avg / _count); \
+        log_always_async(_tag " #%-4lu | cur=%llu min=%llu max=%llu avg=%llu", _count, _diff, _min, _max, _avg / _count); \
     } while (0);
 
+/**
+ * NOTE: Make sure you don't use any return/goto statement in your code,
+ * otherwise the IRQ mask may not be restored.
+ */
 #define LATENCY_NOIRQ(_tag, _expr) do { \
-        irqctx_t ctx; \
-        irq_disable_local_and_save_ctx(&ctx); \
+        irqctx_t _ctx; \
+        irq_disable_local_and_save_ctx(&_ctx); \
         LATENCY(_tag, _expr); \
-        irq_local_restore_ctx(&ctx); \
+        irq_local_restore_ctx(&_ctx); \
     } while (0);
