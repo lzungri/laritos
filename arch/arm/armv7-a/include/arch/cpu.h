@@ -272,18 +272,6 @@ static inline const regpsr_t arch_cpu_get_saved_psr(void) {
     return spsr;
 }
 
-static inline bool arch_cpu_is_irq_mode(regpsr_t psr) {
-    return psr.b.mode == ARM_CPU_MODE_IRQ;
-}
-
-static inline bool arch_cpu_is_svc_mode(regpsr_t psr) {
-    return psr.b.mode == ARM_CPU_MODE_SUPERVISOR;
-}
-
-static inline bool arch_cpu_is_user_mode(regpsr_t psr) {
-    return psr.b.mode == ARM_CPU_MODE_USER;
-}
-
 /**
  * Note: __attribute__((always_inline)) so that this function is always expanded and thus
  * we get a useful PC, not just the PC inside the arch_regs_get_pc() function (in case it
@@ -342,4 +330,16 @@ static inline void arch_cpu_wfi(void) {
     insane_async("Putting CPU #%u to sleep", arch_cpu_get_id());
     asm("wfi");
     insane_async("CPU #%u is now awake", arch_cpu_get_id());
+}
+
+static inline bool arch_cpu_is_irq_mode(regpsr_t psr) {
+    return psr.b.mode == ARM_CPU_MODE_IRQ;
+}
+
+static inline bool arch_cpu_is_svc_mode(regpsr_t psr) {
+    return psr.b.mode == ARM_CPU_MODE_SUPERVISOR;
+}
+
+static inline bool arch_cpu_is_user_mode(regpsr_t psr) {
+    return psr.b.mode == ARM_CPU_MODE_USER;
 }
