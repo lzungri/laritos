@@ -30,12 +30,12 @@ static inline void debug_dump_processes(void) {
             log_always("%-7.7s %2u  %2u    %s   %7s    %3u   %-12.12s   0x%p           -",
                     proc->name, proc->pid, proc->parent != NULL ? proc->parent->pid : 0, proc->kernel ? "K" : "U",
                     pcb_get_status_str(proc->sched.status), proc->sched.priority,
-                    arch_get_psr_str(arch_cpu_get_cpsr(), buf, sizeof(buf)), arch_cpu_get_pc());
+                    arch_debug_get_psr_str(arch_cpu_get_cpsr(), buf, sizeof(buf)), arch_cpu_get_pc());
         } else {
             log_always("%-7.7s %2u  %2u    %s   %7s    %3u   %-12.12s   0x%p  0x%p",
                     proc->name, proc->pid, proc->parent != NULL ? proc->parent->pid : 0, proc->kernel ? "K" : "U",
                     pcb_get_status_str(proc->sched.status), proc->sched.priority,
-                    arch_get_psr_str_from_ctx(proc->mm.sp_ctx, buf, sizeof(buf)),
+                    arch_debug_get_psr_str_from_ctx(proc->mm.sp_ctx, buf, sizeof(buf)),
                     arch_context_get_retaddr(proc->mm.sp_ctx), proc->mm.sp_ctx);
         }
     }
@@ -74,7 +74,7 @@ static inline void debug_dump_processes_stats(void) {
 __attribute__((always_inline)) static inline void debug_dump_cur_state(void) {
     // IMPORTANT: Make sure you don't change any relevant registers before
     // calling dump_all_regs()
-    arch_dump_all_regs();
+    arch_debug_dump_all_regs();
     // TODO: Dump kernel info
     void heap_dump_info(void);
     heap_dump_info();

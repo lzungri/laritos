@@ -18,8 +18,8 @@ void exc_dump_process_info(pcb_t *pcb) {
     error_async("pid=%u, name=%s, type=%s, status=%s, spsr=%s, cpsr=%s",
             pcb->pid, pcb->name, pcb->kernel ? "K" : "U",
             pcb_get_status_str(pcb->sched.status),
-            arch_get_psr_str(arch_cpu_get_saved_psr(), buf, sizeof(buf)),
-            arch_get_psr_str(arch_cpu_get_cpsr(), buf2, sizeof(buf2)));
+            arch_debug_get_psr_str(arch_cpu_get_saved_psr(), buf, sizeof(buf)),
+            arch_debug_get_psr_str(arch_cpu_get_cpsr(), buf2, sizeof(buf2)));
 }
 
 void exc_handle_process_exception(pcb_t *pcb) {
