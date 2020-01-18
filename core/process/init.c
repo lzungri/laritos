@@ -53,9 +53,31 @@ static void spawn_system_processes(void) {
 #endif
 }
 
-int init_main(void *data) {
+static void init_loop(void) {
     pcb_t *init = process_get_current();
 
+    // Loop forever
+    while (1) {
+        irqctx_t ctx;
+
+        // Block and wait for events (e.g. new zombie process)
+        spinlock_acquire(&_laritos.proclock, &ctx);
+        sched_move_to_blocked_locked(init);
+        spinlock_release(&_laritos.proclock, &ctx);
+
+        // Switch to another process
+        schedule();
+
+        // Someone woke me up, process event/s
+
+        // Release zombie children
+        spinlock_acquire(&_laritos.proclock, &ctx);
+        process_unregister_zombie_children_locked(init);
+        spinlock_release(&_laritos.proclock, &ctx);
+    }
+}
+
+int init_main(void *data) {
     // We are now running in process mode, i.e. everything will be executed in the context of a process
     _laritos.process_mode = true;
 
@@ -85,9 +107,7 @@ int init_main(void *data) {
     }
 
     cpu_t *c = cpu();
-    if (c->ops.set_irqs_enable(c, true) < 0) {
-        fatal("Failed to enable irqs for cpu %u", c->id);
-    }
+    assert(c->ops.set_irqs_enable(c, true) >= 0, "Failed to enable irqs for cpu %u", c->id);
 
     spawn_system_processes();
 
@@ -99,24 +119,6 @@ int init_main(void *data) {
         assert(ticker->ops.resume(ticker) >= 0, "Could not start ticker %s", comp->id);
     }
 
-    // Loop forever
-    while (1) {
-        irqctx_t ctx;
-
-        // Block and wait for events (e.g. new zombie process)
-        spinlock_acquire(&_laritos.proclock, &ctx);
-        sched_move_to_blocked_locked(init);
-        spinlock_release(&_laritos.proclock, &ctx);
-
-        // Switch to another process
-        schedule();
-
-        // Someone woke me up, process event/s
-
-        // Release zombie children
-        spinlock_acquire(&_laritos.proclock, &ctx);
-        process_unregister_zombie_children_locked(init);
-        spinlock_release(&_laritos.proclock, &ctx);
-    }
+    init_loop();
     return 0;
 }
