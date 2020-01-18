@@ -42,8 +42,8 @@ static inline cpu_t *cpu(void) {
  *
  * @return Current program counter
  */
-__attribute__((always_inline)) static inline regpc_t regs_get_pc(void) {
-    return arch_regs_get_pc();
+__attribute__((always_inline)) static inline regpc_t cpu_get_pc(void) {
+    return arch_cpu_get_pc();
 }
 
 /**
@@ -53,6 +53,6 @@ __attribute__((always_inline)) static inline regpc_t regs_get_pc(void) {
  *
  * @return: Function return address
  */
-__attribute__((always_inline)) static inline regpc_t regs_get_retaddr(void) {
-    return arch_regs_get_retaddr();
+__attribute__((always_inline)) static inline regpc_t cpu_get_retaddr(void) {
+    return arch_cpu_get_retaddr();
 }

@@ -30,7 +30,7 @@ static inline void debug_dump_processes(void) {
             log_always("%-7.7s %2u  %2u    %s   %7s    %3u   %-12.12s   0x%p           -",
                     proc->name, proc->pid, proc->parent != NULL ? proc->parent->pid : 0, proc->kernel ? "K" : "U",
                     pcb_get_status_str(proc->sched.status), proc->sched.priority,
-                    arch_get_psr_str(arch_get_cpsr(), buf, sizeof(buf)), arch_regs_get_pc());
+                    arch_get_psr_str(arch_cpu_get_cpsr(), buf, sizeof(buf)), arch_cpu_get_pc());
         } else {
             log_always("%-7.7s %2u  %2u    %s   %7s    %3u   %-12.12s   0x%p  0x%p",
                     proc->name, proc->pid, proc->parent != NULL ? proc->parent->pid : 0, proc->kernel ? "K" : "U",

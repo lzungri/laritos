@@ -35,7 +35,7 @@ __attribute__((always_inline)) static inline void *malloc(size_t size) {
         return NULL;
     }
 
-    h->pc = regs_get_pc();
+    h->pc = cpu_get_pc();
     h->canary = CANARY;
     h->size = size;
     bufprot_tail_t *t = (bufprot_tail_t *) ((char *) h + sizeof(bufprot_head_t) + size);
@@ -56,7 +56,7 @@ __attribute__((always_inline)) static inline void free(void *ptr) {
     bufprot_head_t *h = (bufprot_head_t *) ((char *) ptr - sizeof(bufprot_head_t));
     bufprot_tail_t *t = (bufprot_tail_t *) ((char *) ptr + h->size);
     if (h->canary != CANARY || t->canary != CANARY) {
-        regpc_t pc = regs_get_pc();
+        regpc_t pc = cpu_get_pc();
         debug_message_delimiter();
         error("Buffer overflow on block with size %zu bytes:", h->size);
         error("  Expected canaries head=0x%lX tail=0x%lX, got head=0x%lX tail=0x%lX", CANARY, CANARY, h->canary, t->canary);

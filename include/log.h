@@ -56,7 +56,7 @@ int log_flush(void);
 #define fatal_sync(_sync, _msg, ...)  do { \
         log(_sync, FATAL_COLOR "F", _msg RESTORE_COLOR, ##__VA_ARGS__); \
         while (1) { \
-            arch_wfi(); \
+            arch_cpu_wfi(); \
         } \
     } while(0)
 

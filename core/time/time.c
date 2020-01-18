@@ -141,7 +141,7 @@ static inline void _sleep(tick_t ticks) {
 
         // Put the cpu to sleep until the timer expires
         while (!timer_expired) {
-            arch_wfi();
+            arch_cpu_wfi();
         }
     }
 }
