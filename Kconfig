@@ -30,6 +30,10 @@ config LOG_LEVEL_VERBOSE
     bool "VERBOSE"
     select LOG_LEVEL_DEBUG
 
+config LOG_LEVEL_INSANE
+    bool "INSANE"
+    select LOG_LEVEL_VERBOSE
+
 endmenu
 
 config LOG_MAX_LINE_SIZE
