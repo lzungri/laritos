@@ -34,9 +34,9 @@ T(time_sleep_blocks_kernel_then_wakes_it_up) {
     int i;
     for (i = 1; i < 6; i++) {
         debug("Sleeping for %u secs", i);
-        uint64_t ticks = time_get_monotonic_cpu_cycles();
+        uint64_t ticks = time_get_monotonic_hrtimer_ticks();
         sleep(i);
-        uint64_t now = time_get_monotonic_cpu_cycles();
+        uint64_t now = time_get_monotonic_hrtimer_ticks();
         tassert(now > ticks);
         tassert((now - ticks) >= SEC_TO_TICK(i));
     }
@@ -48,9 +48,9 @@ T(time_msleep_blocks_kernel_then_wakes_it_up) {
     int i;
     for (i = 100; i < 1000; i += 100) {
         debug("Sleeping for %u msecs", i);
-        uint64_t ticks = time_get_monotonic_cpu_cycles();
+        uint64_t ticks = time_get_monotonic_hrtimer_ticks();
         msleep(i);
-        uint64_t now = time_get_monotonic_cpu_cycles();
+        uint64_t now = time_get_monotonic_hrtimer_ticks();
         tassert(now > ticks);
         tassert((now - ticks) >= MS_TO_TICK(i));
     }
@@ -62,9 +62,9 @@ T(time_usleep_blocks_kernel_then_wakes_it_up) {
     int i;
     for (i = 100; i < 1000; i += 100) {
         debug("Sleeping for %u usecs", i);
-        uint64_t ticks = time_get_monotonic_cpu_cycles();
+        uint64_t ticks = time_get_monotonic_hrtimer_ticks();
         usleep(i);
-        uint64_t now = time_get_monotonic_cpu_cycles();
+        uint64_t now = time_get_monotonic_hrtimer_ticks();
         tassert(now > ticks);
         tassert((now - ticks) >= US_TO_TICK(i));
     }

@@ -11,9 +11,9 @@
         static uint32_t _count = 0; \
         static uint64_t _min = U64_MAX; \
         static uint64_t _max = 0; \
-        uint64_t _start = time_get_monotonic_cpu_cycles(); \
+        uint64_t _start = time_get_monotonic_hrtimer_ticks(); \
             (_expr); \
-        uint64_t _diff = time_get_monotonic_cpu_cycles() - _start; \
+        uint64_t _diff = time_get_monotonic_hrtimer_ticks() - _start; \
         _avg += _diff; \
         _count++; \
         if (_diff > _max) { \

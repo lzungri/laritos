@@ -42,14 +42,14 @@ int time_get_rtc_localtime_calendar(calendar_t *c) {
     return epoch_to_localtime_calendar(time.secs, c);
 }
 
-uint64_t time_get_monotonic_cpu_cycles(void) {
+uint64_t time_get_monotonic_hrtimer_ticks(void) {
     timer_comp_t *hrt = get_vrtimer()->hrtimer;
     uint64_t v;
     return hrt->ops.get_value(hrt, &v) < 0 ? 0 : v;
 }
 
 int time_get_monotonic_time(time_t *t) {
-    uint64_t v = time_get_monotonic_cpu_cycles();
+    uint64_t v = time_get_monotonic_hrtimer_ticks();
     t->secs = TICK_TO_SEC(v);
     v -= SEC_TO_TICK(t->secs);
     t->ns = TICK_TO_NS(v);

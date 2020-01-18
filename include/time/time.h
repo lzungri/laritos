@@ -72,7 +72,7 @@ typedef struct {
 int time_get_rtc_time(time_t *t);
 int time_get_ns_rtc_time(time_t *t);
 int time_get_rtc_localtime_calendar(calendar_t *c);
-uint64_t time_get_monotonic_cpu_cycles(void);
+uint64_t time_get_monotonic_hrtimer_ticks(void);
 int time_get_monotonic_time(time_t *t);
 int time_set_timezone(timezone_t t, bool daylight);
 int time_get_localtime_offset(void);
