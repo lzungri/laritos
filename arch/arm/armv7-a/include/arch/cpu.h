@@ -272,6 +272,78 @@ static inline const regpsr_t arch_cpu_get_saved_psr(void) {
     return spsr;
 }
 
+static inline int arch_cpu_set_cycle_count_enable(bool enable) {
+    /**
+     * From ARM ARM:
+     * The PMCR provides details of the Performance Monitors implementation, including the
+     * number of counters implemented, and configures and controls the counters.
+     * This register is a Performance Monitors register.
+     *
+     * D, bit[3]: Cycle counter clock divider. The possible values of this bit are:
+     *    - 0 When enabled, PMCCNTR counts every clock cycle.
+     *    - 1 When enabled, PMCCNTR counts once every 64 clock cycles.
+     * This bit is RW. Its non-debug logic reset value is 0.
+     *
+     * C, bit[2]: Cycle counter reset. This bit is WO. The effects of writing to this bit are:
+     *    - 0 No action.
+     *    - 1 Reset PMCCNTR to zero
+     *
+     * E, bit[0]: Enable. The possible values of this bit are:
+     *    - 0 All counters, including PMCCNTR, are disabled.
+     *    - 1 All counters are enabled.
+     */
+    uint32_t orig;
+    asm("mrc p15, 0, %0, c9, c12, 0" : "=r" (orig));
+    // Clear enable bit
+    orig &= ~((uint32_t) 1);
+    // Set D and C bit
+    orig |= 0b1100;
+    // Set/clear enable bit based on <enable> argument
+    orig |= enable ? 1 : 0;
+    asm("mcr p15, 0, %0, c9, c12, 0" : : "r" (orig));
+
+    /**
+     * From ARM ARM:
+     * The PMCNTENSET register enables the Cycle Count Register, PMCCNTR, and any
+     * implemented event counters, PMNx. Reading this register shows which counters are
+     * enabled.
+     * This register is a Performance Monitors register
+     *
+     * C, bit[31]: PMCCNTR enable bi
+     */
+    asm("mrc p15, 0, %0, c9, c12, 1" : "=r" (orig));
+    // Clear enable bit
+    orig &= ~(((uint32_t) 1) << 31);
+    // Set/clear enable bit based on <enable> argument
+    orig |= enable ? 1 << 31 : 0;
+    asm("mcr p15, 0, %0, c9, c12, 1" : : "r" (orig));
+    return 0;
+}
+
+static inline int arch_cpu_reset_cycle_count(void) {
+    uint32_t pmcr_orig;
+    asm("mrc p15, 0, %0, c9, c12, 0" : "=r" (pmcr_orig));
+    asm("mcr p15, 0, %0, c9, c12, 0" : : "r" (pmcr_orig | 0x4));
+    return 0;
+}
+
+static inline uint64_t arch_cpu_get_cycle_count(void) {
+    /**
+     * From ARM ARM:
+     * The PMCCNTR holds the value of the processor Cycle Counter, CCNT, that counts
+     * processor clock cycles.
+     * This register is a Performance Monitors register.
+     *
+     * CCNT, bits[31:0] Cycle count. Depending on the value of the PMCR.D bit, this field increments either:
+     *      - once every processor clock cycle
+     *      - once every 64 processor clock cycles.
+     */
+    uint32_t v;
+    asm("mrc p15, 0, %0, c9, c13, 0" : "=r" (v));
+    // Counter is incremented every 64 clock cycles
+    return v << 6;
+}
+
 /**
  * Note: __attribute__((always_inline)) so that this function is always expanded and thus
  * we get a useful PC, not just the PC inside the arch_regs_get_pc() function (in case it

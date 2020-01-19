@@ -56,3 +56,15 @@ __attribute__((always_inline)) static inline regpc_t cpu_get_pc(void) {
 __attribute__((always_inline)) static inline regpc_t cpu_get_retaddr(void) {
     return arch_cpu_get_retaddr();
 }
+
+static inline int cpu_set_cycle_count_enable(bool enable) {
+    return arch_cpu_set_cycle_count_enable(enable);
+}
+
+static inline int cpu_reset_cycle_count(void) {
+    return arch_cpu_reset_cycle_count();
+}
+
+static inline uint64_t cpu_get_cycle_count(void) {
+    return arch_cpu_get_cycle_count();
+}
