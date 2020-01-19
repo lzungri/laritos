@@ -3,6 +3,7 @@
 #include <log.h>
 #include <stdint.h>
 #include <limits.h>
+#include <cpu.h>
 #include <time/time.h>
 #include <irq.h>
 
@@ -11,9 +12,9 @@
         static uint32_t _count = 0; \
         static uint64_t _min = U64_MAX; \
         static uint64_t _max = 0; \
-        uint64_t _start = time_get_monotonic_hrtimer_ticks(); \
+        uint64_t _start = cpu_get_cycle_count(); \
             (_expr); \
-        uint64_t _diff = time_get_monotonic_hrtimer_ticks() - _start; \
+        uint64_t _diff = cpu_get_cycle_count() - _start; \
         _avg += _diff; \
         _count++; \
         if (_diff > _max) { \
@@ -22,7 +23,7 @@
         if (_diff < _min) { \
             _min = _diff; \
         } \
-        log_always_async(_tag " #%-4lu | cur=%llu min=%llu max=%llu avg=%llu", _count, _diff, _min, _max, _avg / _count); \
+        log_always_async(_tag " #%lu | cur=%llu min=%llu max=%llu avg=%llu", _count, _diff, _min, _max, _avg / _count); \
     } while (0);
 
 /**
