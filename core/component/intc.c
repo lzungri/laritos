@@ -81,7 +81,16 @@ static int add_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h, void *data)
         return -1;
     }
 
-    irq_handler_info_t *hi = calloc(1, sizeof(irq_handler_info_t));
+    // Make sure the handler is not already there
+    irq_handler_info_t *hi;
+    list_for_each_entry(hi, &intc->handlers[irq], list) {
+        if (hi->h == h) {
+            verbose("Handler 0x%p(data=0x%p) for irq %u already setup, ignoring...", h, data, irq);
+            return 0;
+        }
+    }
+
+    hi = calloc(1, sizeof(irq_handler_info_t));
     if (hi == NULL) {
         error("Couldn't allocate memory for irq_handler_info_t");
         return -1;
@@ -99,16 +108,13 @@ static int remove_irq_handler(intc_t *intc, irq_t irq, irq_handler_t h) {
         error("Invalid irq %u, max_supported: %u", irq, CONFIG_INT_MAX_IRQS);
         return -1;
     }
-    int i;
-    for (i = 0; i < ARRAYSIZE(intc->handlers); i++) {
-        irq_handler_info_t *hi;
-        irq_handler_info_t *hitemp;
-        list_for_each_entry_safe(hi, hitemp, &intc->handlers[irq], list) {
-            if (hi->h == h) {
-                list_del(&hi->list);
-                free(hi);
-                return 0;
-            }
+    irq_handler_info_t *hi;
+    irq_handler_info_t *hitemp;
+    list_for_each_entry_safe(hi, hitemp, &intc->handlers[irq], list) {
+        if (hi->h == h) {
+            list_del(&hi->list);
+            free(hi);
+            return 0;
         }
     }
     return 0;
