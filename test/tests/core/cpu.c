@@ -46,3 +46,11 @@ T(cpu_cycle_count_properly_handles_values_bigger_than_32bits) {
         countprev = count;
     }
 TEND
+
+T(cpu_reset_cycle_count_works_as_expected) {
+    cpu_set_cycle_count_enable(true);
+    sleep(3);
+    uint64_t count = cpu_get_cycle_count();
+    cpu_reset_cycle_count();
+    tassert(cpu_get_cycle_count() < count);
+TEND
