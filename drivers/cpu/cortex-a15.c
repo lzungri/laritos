@@ -16,6 +16,28 @@ static int set_irqs_enable(cpu_t *c, bool enabled) {
     return c->intc->ops.set_irqs_enable_for_this_cpu(c->intc, enabled);
 }
 
+static int init(component_t *c) {
+    arm_cpu_t *armcpu = (arm_cpu_t *) c;
+    // init() will only be executed by the matching processor
+    if (armcpu->parent.id != cpu()->id) {
+        return 0;
+    }
+    // Enable cpu cycle counter
+    cpu_set_cycle_count_enable(true);
+    return 0;
+}
+
+static int deinit(component_t *c) {
+    arm_cpu_t *armcpu = (arm_cpu_t *) c;
+    // deinit() will only be executed by the matching processor
+    if (armcpu->parent.id != cpu()->id) {
+        return 0;
+    }
+    // Disable cpu cycle counter
+    cpu_set_cycle_count_enable(false);
+    return 0;
+}
+
 static int process(board_comp_t *comp) {
     arm_cpu_t *cpu = component_alloc(sizeof(arm_cpu_t));
     if (cpu == NULL) {
@@ -23,7 +45,7 @@ static int process(board_comp_t *comp) {
         return -1;
     }
 
-    if (cpu_component_init((cpu_t *) cpu, comp, NULL, NULL) < 0){
+    if (cpu_component_init((cpu_t *) cpu, comp, init, deinit) < 0){
         error("Failed to register '%s'", comp->id);
         goto fail;
     }
