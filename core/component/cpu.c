@@ -32,5 +32,10 @@ int cpu_component_init(cpu_t *c, board_comp_t *bcomp,
         return -1;
     }
 
+    if (board_get_u64_attr(bcomp, "freq", &c->freq) < 0) {
+        error("invalid or no cpu frequency specified in the board info");
+        return -1;
+    }
+
     return 0;
 }
