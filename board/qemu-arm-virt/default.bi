@@ -30,10 +30,11 @@ rtc0:pl031|mmbase=0x09010000,maxfreq=1,intio=true,intc=@gic,irq=34,trigger=level
 hrtimer0:armv7_generic_timer|maxfreq=62500000,intio=true,intc=@gic,irq=30,trigger=level_hi
 
 # CPUs
-cpu0:cortex_a15|id=0,intc=@gic,sched=@rrsched,default=y
-cpu1:cortex_a15|id=1,intc=@gic,sched=@rrsched
-cpu2:cortex_a15|id=2,intc=@gic,sched=@rrsched
-cpu3:cortex_a15|id=3,intc=@gic,sched=@rrsched
+# PMU unit sends a PPI #23 to cpu #0 to notify about cycle counter overflow
+cpu0:cortex_a15|id=0,intc=@gic,sched=@rrsched,default=y,pmu_irq=23,pmu_trigger=level_hi
+cpu1:cortex_a15|id=1,intc=@gic,sched=@rrsched,pmu_irq=54,pmu_trigger=level_hi
+cpu2:cortex_a15|id=2,intc=@gic,sched=@rrsched,pmu_irq=85,pmu_trigger=level_hi
+cpu3:cortex_a15|id=3,intc=@gic,sched=@rrsched,pmu_irq=116,pmu_trigger=level_hi
 
 # UART component using irq 33
 uart0:pl011|baseaddr=0x09000000,blocking=true,intio=true,intc=@gic,irq=33,trigger=level_hi
