@@ -10,6 +10,7 @@
 #include <time/tick.h>
 #include <sync/spinlock.h>
 #include <sync/atomic.h>
+#include <arch/core.h>
 
 struct pcb;
 typedef struct {
@@ -95,6 +96,8 @@ typedef struct {
         atomic64_t osticks;
         time_t boottime;
     } timeinfo;
+
+    arch_data_t arch_data;
 } laritos_t;
 
 // Global structure used as an entry point for accessing the main pieces of information
