@@ -10,7 +10,6 @@ config TEST_CORE_ALL
     select TEST_CORE_TIME_ALL
     select TEST_CORE_PROCESS_ALL
     select TEST_CORE_SYNC_ALL
-    select TEST_CORE_CPU
 
 source "test/tests/core/libc/Kconfig"
 source "test/tests/core/mm/Kconfig"
@@ -19,9 +18,5 @@ source "test/tests/core/component/Kconfig"
 source "test/tests/core/time/Kconfig"
 source "test/tests/core/process/Kconfig"
 source "test/tests/core/sync/Kconfig"
-
-config TEST_CORE_CPU
-    bool "cpu.c"
-    default n
 
 endmenu

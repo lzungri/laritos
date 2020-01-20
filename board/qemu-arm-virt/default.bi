@@ -31,7 +31,7 @@ hrtimer0:armv7_generic_timer|maxfreq=62500000,intio=true,intc=@gic,irq=30,trigge
 
 # CPUs
 # PMU unit sends a PPI #23 to cpu #0 to notify about cycle counter overflow
-# QEMU virtualizes an arm cpu running at 1GHz
+# QEMU virtualizes arm cpus running at 1GHz
 cpu0:cortex_a15|id=0,freq=1000000000,intc=@gic,sched=@rrsched,default=y,pmu_irq=23,pmu_trigger=level_hi
 cpu1:cortex_a15|id=1,freq=1000000000,intc=@gic,sched=@rrsched,pmu_irq=54,pmu_trigger=level_hi
 cpu2:cortex_a15|id=2,freq=1000000000,intc=@gic,sched=@rrsched,pmu_irq=85,pmu_trigger=level_hi

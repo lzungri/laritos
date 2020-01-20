@@ -5,6 +5,7 @@ config TEST_CORE_COMPONENT_ALL
     default n
     select TEST_CORE_COMPONENT_TICKER
     select TEST_CORE_COMPONENT_VRTIMER
+    select TEST_CORE_COMPONENT_CPU
 
 config TEST_CORE_COMPONENT_TICKER
     bool "ticker.c"
@@ -12,6 +13,10 @@ config TEST_CORE_COMPONENT_TICKER
 
 config TEST_CORE_COMPONENT_VRTIMER
     bool "vrtimer.c"
+    default n
+
+config TEST_CORE_COMPONENT_CPU
+    bool "cpu.c"
     default n
 
 endmenu
