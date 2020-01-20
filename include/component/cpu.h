@@ -17,6 +17,7 @@ typedef struct cpu {
     uint8_t id;
     struct intc *intc;
     struct sched_comp *sched;
+    uint64_t freq;
 
     cpu_ops_t ops;
 } cpu_t;
