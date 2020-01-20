@@ -37,8 +37,7 @@ T(cpu_cycle_count_properly_handles_values_bigger_than_32bits) {
     uint64_t countprev = 0;
     int i;
     // Counter overflows every (U32_MAX / cpufreq) seconds, we wait that amount times 2
-    uint64_t cpufreq = 1000000000;
-    for (i = 0; i < (U32_MAX / cpufreq) * 2; i++) {
+    for (i = 0; i < (U32_MAX / cpu()->freq) * 2; i++) {
         sleep(1);
         count = cpu_get_cycle_count();
         // Counter should always increase, if not, there was probably an unhandled overflow
