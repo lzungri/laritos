@@ -2,6 +2,7 @@
 
 #include <log.h>
 #include <string.h>
+#include <printf.h>
 #include <core.h>
 #include <component/component.h>
 #include <arch/debug.h>
@@ -9,6 +10,7 @@
 #include <process/status.h>
 #include <sched/context.h>
 #include <sched/core.h>
+#include <syscall/syscall-no.h>
 
 static inline void debug_message_delimiter(void) {
     error_async("*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
@@ -45,20 +47,34 @@ static inline void debug_dump_processes(void) {
 
 static inline void debug_dump_processes_stats(void) {
     pcb_t *proc;
-    log_always("Processes stats (OS ticks):");
-    log_always("name   pid    ready  running  blocked   zombie");
 
     // Prevent the OS from doing any change on the active processes
     // WARNING: We can only do this here since this is only used for debugging purposes
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proclock, &ctx);
 
+    log_always("Processes stats:");
     for_each_process(proc) {
+        log_always("%s (pid=%u)", proc->name, proc->pid);
+
+        // Number of syscalls stats
+        int i;
+        char buf[128] = { 0 };
+        int written = 0;
+        for (i = 0; i < SYSCALL_LEN; i++) {
+            written += snprintf(buf + written, sizeof(buf) - written, "%d=%lu ", i, proc->stats.syscalls[i]);
+            if ((i + 1) % 10 == 0 || i == SYSCALL_LEN - 1) {
+                written = 0;
+                log_always("  syscall | %s", buf);
+            }
+        }
+
+        // Scheduling stats
         // Update with the latest stats
         sched_update_stats(proc);
-        log_always("%-7.7s %2u  %7lu  %7lu  %7lu  %7lu",
-                proc->name, proc->pid, proc->stats.ticks_spent[PROC_STATUS_READY], proc->stats.ticks_spent[PROC_STATUS_RUNNING],
-                proc->stats.ticks_spent[PROC_STATUS_BLOCKED], proc->stats.ticks_spent[PROC_STATUS_ZOMBIE]);
+        log_always("    sched | ready=%lu running=%lu blocked=%lu zombie=%lu", proc->stats.ticks_spent[PROC_STATUS_READY], proc->stats.ticks_spent[PROC_STATUS_RUNNING],
+                    proc->stats.ticks_spent[PROC_STATUS_BLOCKED], proc->stats.ticks_spent[PROC_STATUS_ZOMBIE]);
+        log_always("-----");
     }
 
     spinlock_release(&_laritos.proclock, &ctx);
