@@ -12,6 +12,7 @@
 #include <sched/context.h>
 #include <sync/spinlock.h>
 #include <sync/condition.h>
+#include <sync/atomic.h>
 #include <utils/utils.h>
 #include <generated/autoconf.h>
 
@@ -60,6 +61,10 @@ pcb_t *process_alloc(void) {
         INIT_LIST_HEAD(&pcb->siblings);
         condition_init(&pcb->parent_waiting_cond);
         ref_init(&pcb->refcnt, free_process_slab);
+        int i;
+        for (i = 0; i < ARRAYSIZE(pcb->stats.syscalls); i++) {
+            atomic32_init(&pcb->stats.syscalls[i], 0);
+        }
         pcb->sched.status = PROC_STATUS_NOT_INIT;
         process_set_name(pcb, "?");
         process_assign_pid(pcb);

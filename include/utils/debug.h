@@ -10,6 +10,7 @@
 #include <process/status.h>
 #include <sched/context.h>
 #include <sched/core.h>
+#include <sync/atomic.h>
 #include <syscall/syscall-no.h>
 
 static inline void debug_message_delimiter(void) {
@@ -62,7 +63,8 @@ static inline void debug_dump_processes_stats(void) {
         char buf[128] = { 0 };
         int written = 0;
         for (i = 0; i < SYSCALL_LEN; i++) {
-            written += snprintf(buf + written, sizeof(buf) - written, "%d=%lu ", i, proc->stats.syscalls[i]);
+            written += snprintf(buf + written, sizeof(buf) - written,
+                    "%d=%ld ", i, atomic32_get(&proc->stats.syscalls[i]));
             if ((i + 1) % 10 == 0 || i == SYSCALL_LEN - 1) {
                 written = 0;
                 log_always("  syscall | %s", buf);

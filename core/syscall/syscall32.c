@@ -9,6 +9,7 @@
 #include <utils/utils.h>
 #include <sched/context.h>
 #include <time/time.h>
+#include <sync/atomic.h>
 #include <mm/exc-handlers.h>
 
 
@@ -61,7 +62,7 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
     }
 
     // Update process system calls stats
-    pcb->stats.syscalls[sysno]++;
+    atomic32_inc(&pcb->stats.syscalls[sysno]);
 
     // Enable interrupts while processing system calls
     irq_enable_local();
