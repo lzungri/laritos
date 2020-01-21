@@ -17,6 +17,23 @@ static inline void debug_message_delimiter(void) {
     error_async("*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
 }
 
+static inline void debug_dump_kernel_stats(void) {
+    log_always("Kernel stats:");
+    log_always("  switches | %lu", atomic32_get(&_laritos.stats.ctx_switches));
+
+    int i;
+    char buf[128] = { 0 };
+    int written = 0;
+    for (i = 0; i < ARRAYSIZE(_laritos.stats.nirqs); i++) {
+        written += snprintf(buf + written, sizeof(buf) - written,
+                "%d=%ld ", i, atomic32_get(&_laritos.stats.nirqs[i]));
+        if ((i + 1) % 10 == 0 || i == ARRAYSIZE(_laritos.stats.nirqs) - 1) {
+            written = 0;
+            log_always("      irqs | %s", buf);
+        }
+    }
+}
+
 static inline void debug_dump_processes(void) {
     char buf[64] = { 0 };
     pcb_t *proc;
@@ -56,7 +73,7 @@ static inline void debug_dump_processes_stats(void) {
 
     log_always("Processes stats:");
     for_each_process(proc) {
-        log_always("%s (pid=%u)", proc->name, proc->pid);
+        log_always("  %s (pid=%u)", proc->name, proc->pid);
 
         // Number of syscalls stats
         int i;
@@ -67,16 +84,16 @@ static inline void debug_dump_processes_stats(void) {
                     "%d=%ld ", i, atomic32_get(&proc->stats.syscalls[i]));
             if ((i + 1) % 10 == 0 || i == SYSCALL_LEN - 1) {
                 written = 0;
-                log_always("  syscall | %s", buf);
+                log_always("    syscall | %s", buf);
             }
         }
 
         // Scheduling stats
         // Update with the latest stats
         sched_update_stats(proc);
-        log_always("    sched | ready=%lu running=%lu blocked=%lu zombie=%lu", proc->stats.ticks_spent[PROC_STATUS_READY], proc->stats.ticks_spent[PROC_STATUS_RUNNING],
+        log_always("      sched | ready=%lu running=%lu blocked=%lu zombie=%lu", proc->stats.ticks_spent[PROC_STATUS_READY], proc->stats.ticks_spent[PROC_STATUS_RUNNING],
                     proc->stats.ticks_spent[PROC_STATUS_BLOCKED], proc->stats.ticks_spent[PROC_STATUS_ZOMBIE]);
-        log_always("-----");
+        log_always("  -----");
     }
 
     spinlock_release(&_laritos.proclock, &ctx);
@@ -93,6 +110,7 @@ __attribute__((always_inline)) static inline void debug_dump_cur_state(void) {
     // IMPORTANT: Make sure you don't change any relevant registers before
     // calling dump_all_regs()
     arch_debug_dump_all_regs();
+    debug_dump_kernel_stats();
     // TODO: Dump kernel info
     void heap_dump_info(void);
     heap_dump_info();
