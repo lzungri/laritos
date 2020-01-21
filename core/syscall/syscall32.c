@@ -63,9 +63,8 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
         // Execution will never reach this point
     }
 
-    syscall_entry_t *sce = &systable[sysno];
-    verbose_async("%s(0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx)", sce->scname, arg0, arg1, arg2, arg3, arg4, arg5);
-    int ret = sce->call(arg0, arg1, arg2, arg3, arg4, arg5);
+    verbose_async("%s(0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx)", systable[sysno].scname, arg0, arg1, arg2, arg3, arg4, arg5);
+    int ret = systable[sysno].call(arg0, arg1, arg2, arg3, arg4, arg5);
 
     irq_disable_local();
 
