@@ -51,9 +51,6 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
         }
     }
 
-    // Enable interrupts while processing system calls
-    irq_enable_local();
-
     pcb_t *pcb = process_get_current();
     assert(pcb != NULL, "process_get_current() cannot be NULL on system call");
 
@@ -62,6 +59,12 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
         process_kill_and_schedule(pcb);
         // Execution will never reach this point
     }
+
+    // Update process system calls stats
+    pcb->stats.syscalls[sysno]++;
+
+    // Enable interrupts while processing system calls
+    irq_enable_local();
 
     verbose_async("%s(0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx)", systable[sysno].scname, arg0, arg1, arg2, arg3, arg4, arg5);
     int ret = systable[sysno].call(arg0, arg1, arg2, arg3, arg4, arg5);

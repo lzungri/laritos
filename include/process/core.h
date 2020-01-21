@@ -14,6 +14,7 @@
 #include <process/status.h>
 #include <time/tick.h>
 #include <sync/condition.h>
+#include <syscall/syscall-no.h>
 #include <generated/autoconf.h>
 
 typedef struct {
@@ -52,6 +53,7 @@ typedef struct {
 typedef struct {
     abstick_t last_status_change;
     tick_t ticks_spent[PROC_STATUS_LEN];
+    uint32_t syscalls[SYSCALL_LEN];
 } pcb_stats_t;
 
 typedef struct pcb {
