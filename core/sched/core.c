@@ -15,6 +15,7 @@
 #include <mm/spprot.h>
 #include <mm/exc-handlers.h>
 #include <sync/spinlock.h>
+#include <sync/atomic.h>
 
 void sched_switch_to(pcb_t *from, pcb_t *to) {
     irqctx_t ctx;
@@ -38,6 +39,9 @@ void sched_switch_to(pcb_t *from, pcb_t *to) {
 
 static void context_switch(pcb_t *cur, pcb_t *to) {
     insane_async("Context switch pid=%u -> pid=%u", cur->pid, to->pid);
+
+    // Update context switch stats
+    atomic32_inc(&_laritos.stats.ctx_switches);
 
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proclock, &ctx);

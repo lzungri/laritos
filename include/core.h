@@ -11,6 +11,7 @@
 #include <sync/spinlock.h>
 #include <sync/atomic.h>
 #include <arch/core.h>
+#include <generated/autoconf.h>
 
 struct pcb;
 typedef struct {
@@ -54,6 +55,11 @@ typedef struct {
     bool need_sched;
 } laritos_sched_t;
 
+typedef struct {
+    atomic32_t ctx_switches;
+    atomic32_t nirqs[CONFIG_INT_MAX_IRQS];
+} laritos_stats_t;
+
 /**
  * laritOS Global context
  */
@@ -81,6 +87,7 @@ typedef struct {
 
     laritos_process_t proc;
     laritos_sched_t sched;
+    laritos_stats_t stats;
 
     /**
      * Spinlock used to synchronize all process-related lists and data structures

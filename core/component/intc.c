@@ -9,6 +9,7 @@
 #include <utils/utils.h>
 #include <utils/function.h>
 #include <mm/heap.h>
+#include <sync/atomic.h>
 #include <generated/autoconf.h>
 
 int intc_enable_irq_with_handler(intc_t *intc, irq_t irq, irq_trigger_mode_t tmode, irq_handler_t h, void *data) {
@@ -41,6 +42,9 @@ error_irq_enable:
 
 static irqret_t handle_irq(intc_t *intc, irq_t irq) {
     insane_async("Handling irq %u with int controller '%s'", irq, ((component_t *) intc)->id);
+
+    // Update IRQs stats
+    atomic32_inc(&_laritos.stats.nirqs[irq]);
 
     irqret_t ret = IRQ_RET_NOT_HANDLED;
 

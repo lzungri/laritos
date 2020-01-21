@@ -6,6 +6,8 @@
 #include <component/component.h>
 #include <process/core.h>
 #include <sched/core.h>
+#include <sync/atomic.h>
+#include <utils/utils.h>
 
 laritos_t _laritos;
 
@@ -17,6 +19,12 @@ static int initialize_global_context(void) {
     if (process_init_global_context() < 0) {
         goto error_pcb;
     }
+
+    int i;
+    for (i = 0; i < ARRAYSIZE(_laritos.stats.nirqs); i++) {
+        atomic32_init(&_laritos.stats.nirqs[i], 0);
+    }
+    atomic32_init(&_laritos.stats.ctx_switches, 0);
 
     return 0;
 
