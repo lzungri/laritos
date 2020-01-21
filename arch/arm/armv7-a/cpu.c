@@ -50,13 +50,18 @@ int arch_cpu_set_cycle_count_enable(bool enable) {
      */
     uint32_t orig;
     asm("mrc p15, 0, %0, c9, c12, 0" : "=r" (orig));
-    // Clear enable bit
-    orig &= ~((uint32_t) 1);
+    // Clear enable and D bits
+    orig &= ~((uint32_t) 0b1001);
     // Set C bit
     orig |= 0b100;
     // Set/clear all counters enable bit based on <enable> argument
     orig |= enable ? 1 : 0;
     asm("mcr p15, 0, %0, c9, c12, 0" : : "r" (orig));
+
+    if (!enable) {
+        // Reset high-order part of the cycle counter
+        _laritos.arch_data.high_cycle_counter = 0;
+    }
 
     /**
      * From ARM ARM:
