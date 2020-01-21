@@ -52,6 +52,9 @@ int shell_main(void *data) {
                     debug_dump_processes();
                     debug_dump_processes_stats();
                     break;
+                case 'k':
+                    debug_dump_kernel_stats();
+                    break;
                 case 'r':
                     // reset
                     asm("b 0");
