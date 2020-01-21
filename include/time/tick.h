@@ -43,3 +43,8 @@ typedef uint64_t abstick_t;
 #define OSTICK_TO_MS(_ticks) (((uint64_t) (_ticks) * MSEC_PER_SEC) / _OSTICKS_PER_SEC)
 #define OSTICK_TO_US(_ticks) (((uint64_t) (_ticks) * USEC_PER_SEC) / _OSTICKS_PER_SEC)
 #define OSTICK_TO_NS(_ticks) (((uint64_t) (_ticks) * NSEC_PER_SEC) / _OSTICKS_PER_SEC)
+
+#define CPUTICK_TO_SEC(_ticks) ((uint64_t) (_ticks) / (cpu()->freq))
+#define CPUTICK_TO_MS(_ticks) (((uint64_t) (_ticks) * MSEC_PER_SEC) / (cpu()->freq))
+#define CPUTICK_TO_US(_ticks) (((uint64_t) (_ticks) * USEC_PER_SEC) / (cpu()->freq))
+#define CPUTICK_TO_NS(_ticks) (((uint64_t) (_ticks) * NSEC_PER_SEC) / (cpu()->freq))
