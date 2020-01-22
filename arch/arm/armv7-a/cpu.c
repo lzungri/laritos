@@ -2,9 +2,9 @@
 
 #include <cpu/cpu.h>
 #include <core.h>
-#include <irq/irq.h>
 #include <component/intc.h>
 #include <arch/cpu-types.h>
+#include <irq/types.h>
 
 static irqret_t pmu_irq_handler(irq_t irq, void *data) {
     verbose_async("PMU overflow interrupt");

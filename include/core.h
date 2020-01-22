@@ -12,8 +12,8 @@
 #include <sync/spinlock.h>
 #include <sync/atomic.h>
 #include <arch/core.h>
-#include <irq/irq.h>
 #include <generated/autoconf.h>
+#include "irq/types.h"
 
 struct pcb;
 typedef struct {

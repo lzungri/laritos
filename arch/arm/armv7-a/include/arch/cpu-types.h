@@ -3,8 +3,8 @@
 #include <log.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <irq/irq.h>
 #include <component/cpu.h>
+#include <irq/types.h>
 
 typedef struct {
     cpu_t parent;

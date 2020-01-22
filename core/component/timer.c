@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <board/board.h>
-#include <irq/irq.h>
+#include <irq/types.h>
 #include <component/component.h>
 #include <component/timer.h>
 #include <utils/function.h>

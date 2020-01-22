@@ -1,5 +1,5 @@
 #include <log.h>
-#include <irq/irq.h>
+#include <irq/types.h>
 #include <board/board-types.h>
 #include <board/board.h>
 #include <time/time.h>

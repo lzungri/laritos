@@ -1,6 +1,5 @@
 #include <log.h>
 
-#include <irq/irq.h>
 #include <board/board-types.h>
 #include <cpu/cpu.h>
 #include <dstruct/list.h>
@@ -11,6 +10,7 @@
 #include <mm/heap.h>
 #include <sync/atomic.h>
 #include <generated/autoconf.h>
+#include <irq/types.h>
 
 int intc_enable_irq_with_handler(intc_t *intc, irq_t irq, irq_trigger_mode_t tmode, irq_handler_t h, void *data) {
     if (intc->ops.set_irq_trigger_mode(intc, irq, tmode) < 0) {
