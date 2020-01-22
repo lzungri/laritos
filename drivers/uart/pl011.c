@@ -1,7 +1,7 @@
 #include <log.h>
 #include <component/uart.h>
 #include <component/stream.h>
-#include <irq.h>
+#include <irq/irq.h>
 #include <board/board-types.h>
 #include <driver/driver.h>
 #include <driver/pl011.h>

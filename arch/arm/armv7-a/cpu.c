@@ -2,7 +2,7 @@
 
 #include <cpu/cpu.h>
 #include <core.h>
-#include <irq.h>
+#include <irq/irq.h>
 #include <component/intc.h>
 #include <arch/cpu-types.h>
 

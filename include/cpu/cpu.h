@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <irq.h>
+#include <irq/irq.h>
 #include <core.h>
 #include <arch/cpu.h>
 #include <component/cpu.h>

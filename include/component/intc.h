@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <cpu/cpu.h>
-#include <irq.h>
+#include <irq/irq.h>
 #include <dstruct/list.h>
 #include <component/component.h>
 #include <generated/autoconf.h>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <irq.h>
+#include <irq/irq.h>
 #include <sync/cmpxchg.h>
 #include <arch/spinlock.h>
 #include <generated/autoconf.h>

@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 #include <component/intc.h>
-#include <irq.h>
+#include <irq/irq.h>
 #include <cpu/cpu.h>
 #include <board/board-types.h>
 #include <board/board.h>

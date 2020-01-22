@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <strtoxl.h>
-#include <irq.h>
+#include <irq/irq.h>
 #include <board/board-types.h>
 #include <board/board.h>
 #include <component/component.h>

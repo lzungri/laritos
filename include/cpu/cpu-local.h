@@ -1,6 +1,6 @@
 #pragma once
 
-#include <irq.h>
+#include <irq/irq.h>
 #include <generated/autoconf.h>
 
 #define DEF_CPU_LOCAL(_type, _name) \

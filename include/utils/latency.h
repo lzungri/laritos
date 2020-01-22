@@ -5,7 +5,7 @@
 #include <limits.h>
 #include <cpu/cpu.h>
 #include <time/time.h>
-#include <irq.h>
+#include <irq/irq.h>
 #include <time/tick.h>
 
 /**

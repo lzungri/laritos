@@ -3,7 +3,7 @@
 #include <log.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <irq.h>
+#include <irq/irq.h>
 #include <component/cpu.h>
 
 typedef struct {

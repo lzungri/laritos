@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <irq.h>
+#include <irq/irq.h>
 #include <generated/autoconf.h>
 
 typedef struct {

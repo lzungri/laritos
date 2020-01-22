@@ -1,6 +1,6 @@
 #include <log.h>
 
-#include <irq.h>
+#include <irq/irq.h>
 #include <board/board-types.h>
 #include <cpu/cpu.h>
 #include <dstruct/list.h>

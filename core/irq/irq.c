@@ -1,6 +1,6 @@
 #include <log.h>
 
-#include <irq.h>
+#include <irq/irq.h>
 #include <cpu/cpu.h>
 #include <core.h>
 #include <component/component.h>
