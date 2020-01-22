@@ -1,7 +1,7 @@
 obj-y += core.o
-obj-y += board.o
-obj-y += driver.o
-obj-y += log.o
+obj-y += board/
+obj-y += log/
+obj-y += driver/
 obj-y += libc/
 obj-y += component/
 obj-y += dstruct/

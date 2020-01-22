@@ -9,6 +9,7 @@ source "core/process/Kconfig"
 source "core/sched/Kconfig"
 source "core/irq/Kconfig"
 source "core/sync/Kconfig"
+source "core/board/Kconfig"
 
 menu "Symmetric multiprocessing"
 
@@ -19,22 +20,6 @@ config SMP
 config CPU_MAX_CPUS
     int "Maximum number of supported cpus"
     default 4
-
-endmenu
-
-menu "Board"
-
-config BOARD_MAX_COMPONENTS
-    int "Max number of components in the board info (*.bi)"
-    default 32
-
-config BOARD_MAX_COMPONENT_ATTRS
-    int "Max number of attributes per component in the board info (*.bi)"
-    default 10
-
-config BOARD_INFO_MAX_TOKEN_LEN_BYTES
-    int "Maximum length in bytes for board properties names/ids/values (includes '\0')"
-    default 32
 
 endmenu
 
