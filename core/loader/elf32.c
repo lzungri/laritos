@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <limits.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <mm/heap.h>
 #include <mm/spprot.h>
 #include <loader/loader.h>

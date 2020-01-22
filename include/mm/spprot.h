@@ -2,7 +2,7 @@
 
 #include <log.h>
 #include <stdint.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <core.h>
 #include <process/core.h>
 #include <mm/exc-handlers.h>

@@ -1,6 +1,6 @@
 #include <log.h>
 
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <board/board.h>
 #include <driver/driver.h>
 #include <mm/heap.h>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <log.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <core.h>
 #include <utils/debug.h>
 #include <mm/exc-handlers.h>

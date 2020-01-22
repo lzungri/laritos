@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <process/core.h>
 #include <process/validation.h>
 #include <sched/core.h>

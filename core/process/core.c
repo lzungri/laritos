@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <dstruct/list.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <core.h>
 #include <mm/slab.h>
 #include <mm/heap.h>

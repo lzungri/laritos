@@ -1,8 +1,8 @@
 #include <log.h>
 
 #include <stdint.h>
-#include <cpu.h>
-#include <cpu-local.h>
+#include <cpu/cpu.h>
+#include <cpu/cpu-local.h>
 #include <limits.h>
 #include <test/test.h>
 #include <time/time.h>

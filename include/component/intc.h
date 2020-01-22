@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <irq.h>
 #include <dstruct/list.h>
 #include <component/component.h>

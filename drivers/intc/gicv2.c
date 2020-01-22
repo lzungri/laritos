@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <component/intc.h>
 #include <irq.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <board/board-types.h>
 #include <board/board.h>
 #include <driver/driver.h>

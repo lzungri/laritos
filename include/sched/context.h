@@ -2,7 +2,7 @@
 
 #include <log.h>
 
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <process/core.h>
 #include <arch/context-types.h>
 #include <arch/context.h>

@@ -1,7 +1,7 @@
 #include <log.h>
 #include <string.h>
 #include <core.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <mm/heap.h>
 #include <component/component.h>
 #include <process/core.h>

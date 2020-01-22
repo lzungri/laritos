@@ -2,7 +2,7 @@
 
 #include <irq.h>
 #include <board/board-types.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <dstruct/list.h>
 #include <component/component.h>
 #include <component/intc.h>

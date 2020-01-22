@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include <dstruct/list.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <core.h>
 #include <refcount.h>
 #include <utils/assert.h>

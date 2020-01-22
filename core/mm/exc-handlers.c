@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <stdint.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <sched/context.h>
 #include <mm/exc-handlers.h>
 #include <process/core.h>

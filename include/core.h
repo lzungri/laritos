@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 #include <board/board-types.h>
-#include <cpu-local.h>
+#include <cpu/cpu-local.h>
 #include <component/component.h>
 #include <driver/driver.h>
 #include <time/time.h>
