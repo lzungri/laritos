@@ -104,13 +104,13 @@ int process_wait_for(pcb_t *pcb, int *status);
 int process_wait_pid(uint16_t pid, int *status);
 
 static inline pcb_t *process_get_current(void) {
-    pcb_t *pcb = _laritos.sched.running[cpu_get_id()];
+    pcb_t *pcb = CPU_LOCAL_GET(_laritos.sched.running);
     assert(pcb != NULL, "Current pcb cannot be NULL, make sure you are running in process mode");
     return pcb;
 }
 
 static inline void process_set_current(pcb_t *pcb) {
-    _laritos.sched.running[cpu_get_id()] = pcb;
+    CPU_LOCAL_SET(_laritos.sched.running, pcb);
 }
 
 static inline void process_set_current_pcb_stack_context(spctx_t *spctx) {

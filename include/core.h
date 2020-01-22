@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <board-types.h>
+#include <cpu-local.h>
 #include <component/component.h>
 #include <driver/driver.h>
 #include <time/time.h>
@@ -32,7 +33,7 @@ typedef struct {
 } laritos_process_t;
 
 typedef struct {
-    struct pcb *running[CONFIG_CPU_MAX_CPUS];
+    DEF_CPU_LOCAL(struct pcb *, running);
 
     /**
      * List of READY processes in the system
