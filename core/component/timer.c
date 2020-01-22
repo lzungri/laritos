@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <stdint.h>
-#include <board.h>
+#include <board/board.h>
 #include <irq.h>
 #include <component/component.h>
 #include <component/timer.h>

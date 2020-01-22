@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <core.h>
-#include <board-types.h>
-#include <board.h>
+#include <board/board-types.h>
+#include <board/board.h>
 #include <driver/driver.h>
 
 static int search_drivermgr_and_process(board_info_t *bi, board_comp_t *comp);

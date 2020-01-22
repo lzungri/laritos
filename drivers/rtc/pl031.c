@@ -1,7 +1,7 @@
 #include <log.h>
 #include <irq.h>
-#include <board-types.h>
-#include <board.h>
+#include <board/board-types.h>
+#include <board/board.h>
 #include <time/time.h>
 #include <driver/driver.h>
 #include <driver/pl031.h>

@@ -1,8 +1,8 @@
 #include <log.h>
 #include <stdbool.h>
 #include <irq.h>
-#include <board-types.h>
-#include <board.h>
+#include <board/board-types.h>
+#include <board/board.h>
 #include <component/component.h>
 #include <component/intc.h>
 #include <component/bytestream.h>

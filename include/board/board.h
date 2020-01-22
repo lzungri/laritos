@@ -1,6 +1,6 @@
 #pragma once
 
-#include <board-types.h>
+#include <board/board-types.h>
 #include <component/component.h>
 
 int board_init(board_info_t *binfo);

@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <stdbool.h>
-#include <board.h>
+#include <board/board.h>
 #include <core.h>
 #include <component/ticker.h>
 #include <component/timer.h>

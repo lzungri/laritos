@@ -1,7 +1,7 @@
 #include <log.h>
 
-#include <board.h>
-#include <board-types.h>
+#include <board/board.h>
+#include <board/board-types.h>
 #include <component/component.h>
 #include <string.h>
 #include <core.h>

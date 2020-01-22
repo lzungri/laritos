@@ -10,8 +10,8 @@
 #include <component/ticker.h>
 #include <loader/loader.h>
 #include <process/core.h>
-#include <board-types.h>
-#include <board.h>
+#include <board/board-types.h>
+#include <board/board.h>
 #include <utils/debug.h>
 #include <sched/core.h>
 #include <generated/autoconf.h>

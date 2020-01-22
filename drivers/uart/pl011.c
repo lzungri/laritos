@@ -2,7 +2,7 @@
 #include <component/uart.h>
 #include <component/stream.h>
 #include <irq.h>
-#include <board-types.h>
+#include <board/board-types.h>
 #include <driver/driver.h>
 #include <driver/pl011.h>
 #include <utils/utils.h>

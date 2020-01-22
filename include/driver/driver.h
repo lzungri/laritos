@@ -1,6 +1,6 @@
 #pragma once
 
-#include <board-types.h>
+#include <board/board-types.h>
 
 #include <generated/autoconf.h>
 

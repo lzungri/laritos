@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <stdbool.h>
-#include <board.h>
+#include <board/board.h>
 #include <utils/function.h>
 #include <component/cpu.h>
 

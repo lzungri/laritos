@@ -5,8 +5,8 @@
 #include <string.h>
 
 #include <core.h>
-#include <board-types.h>
-#include <board.h>
+#include <board/board-types.h>
+#include <board/board.h>
 #include <driver/driver.h>
 #include <dstruct/circbuf.h>
 #include <utils/utils.h>

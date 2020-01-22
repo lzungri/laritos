@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include <board-types.h>
+#include <board/board-types.h>
 #include <cpu-local.h>
 #include <component/component.h>
 #include <driver/driver.h>
