@@ -40,11 +40,6 @@ typedef struct {
     struct list_head ready_pcbs;
 
     /**
-     * List of BLOCKED processes in the system
-     */
-    struct list_head blocked_pcbs;
-
-    /**
      * Indicates whether or not the OS should schedule the next 'ready' process
      * right before returning from the current non-user mode and when all the work required is done.
      *

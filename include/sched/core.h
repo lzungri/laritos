@@ -80,13 +80,13 @@ static inline void sched_move_to_blocked_locked(pcb_t *pcb) {
 
     sched_update_stats(pcb);
 
-    list_move_tail(&pcb->sched.sched_node, &_laritos.sched.blocked_pcbs);
+    list_del_init(&pcb->sched.sched_node);
     pcb->sched.status = PROC_STATUS_BLOCKED;
 }
 
 static inline void sched_move_to_running_locked(pcb_t *pcb) {
-    if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
-        error_async("Cannot move a ZOMBIE process to RUNNING");
+    if (pcb->sched.status != PROC_STATUS_READY) {
+        error_async("Cannot move a non READY process to RUNNING");
         return;
     }
     insane_async("PID %u: %s -> RUNNING", pcb->pid, pcb_get_status_str(pcb->sched.status));
@@ -113,6 +113,7 @@ static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
         list_move_tail(&child->siblings, &gparent->children);
     }
 
+    list_del_init(&pcb->sched.sched_node);
     pcb->sched.status = PROC_STATUS_ZOMBIE;
 
     process_release_zombie_resources(pcb);
