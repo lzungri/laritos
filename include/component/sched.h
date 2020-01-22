@@ -8,7 +8,7 @@
 
 struct sched_comp;
 typedef struct {
-    pcb_t *(*pick_ready)(struct sched_comp *sched, cpu_t *cpu, pcb_t *curpcb);
+    pcb_t *(*pick_ready_locked)(struct sched_comp *sched, cpu_t *cpu, pcb_t *curpcb);
 } sched_comp_ops_t;
 
 struct ticker_comp;

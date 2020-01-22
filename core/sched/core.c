@@ -60,13 +60,13 @@ void schedule(void) {
 
     cpu_t *c = cpu();
     pcb_t *curpcb = process_get_current();
-    pcb_t *pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);;
+    pcb_t *pcb = c->sched->ops.pick_ready_locked(c->sched, c, curpcb);;
 
     while (pcb != NULL && pcb != curpcb && !process_is_valid_context(pcb, pcb->mm.sp_ctx)) {
         exc_dump_process_info(pcb);
         error("Cannot switch to pid=%u, invalid context. Killing process...", pcb->pid);
         process_kill(pcb);
-        pcb = c->sched->ops.pick_ready(c->sched, c, curpcb);;
+        pcb = c->sched->ops.pick_ready_locked(c->sched, c, curpcb);;
     }
 
     // If the current process is running and:

@@ -6,7 +6,7 @@
 #include <component/sched.h>
 #include <mm/heap.h>
 
-static inline pcb_t *pick_ready(sched_comp_t *sched, struct cpu *cpu, pcb_t *curpcb) {
+static inline pcb_t *pick_ready_locked(sched_comp_t *sched, struct cpu *cpu, pcb_t *curpcb) {
     return list_first_entry_or_null(&_laritos.sched.ready_pcbs, pcb_t, sched.sched_node);
 }
 
@@ -17,7 +17,7 @@ static int process(board_comp_t *comp) {
         return -1;
     }
 
-    s->ops.pick_ready = pick_ready;
+    s->ops.pick_ready_locked = pick_ready_locked;
 
     if (component_init((component_t *) s, comp->id, comp, COMP_TYPE_SCHED, NULL, NULL) < 0) {
         error("Failed to initialize '%s' scheduler component", comp->id);
