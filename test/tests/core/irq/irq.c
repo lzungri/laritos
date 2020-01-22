@@ -16,11 +16,13 @@ T(irq_enable_disable_calls_should_match_to_actually_change_irqs) {
     tassert(!irq_is_enabled());
     irq_disable_local();
     tassert(!irq_is_enabled());
-    irq_disable_local();
-    tassert(!irq_is_enabled());
 
     irq_enable_local();
     tassert(!irq_is_enabled());
+
+    irq_disable_local();
+    tassert(!irq_is_enabled());
+
     irq_enable_local();
     tassert(!irq_is_enabled());
     irq_enable_local();
