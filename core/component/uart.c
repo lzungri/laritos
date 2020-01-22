@@ -1,6 +1,6 @@
 #include <log.h>
 #include <stdbool.h>
-#include <irq/irq.h>
+#include <irq/core.h>
 #include <board/board-types.h>
 #include <board/board.h>
 #include <component/component.h>

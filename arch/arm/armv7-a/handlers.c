@@ -3,7 +3,7 @@
 #include <core.h>
 #include <component/component.h>
 #include <component/intc.h>
-#include <irq/irq.h>
+#include <irq/core.h>
 #include <generated/autoconf.h>
 #include <syscall/syscall.h>
 #include <utils/utils.h>

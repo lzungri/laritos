@@ -6,7 +6,7 @@
 #include <process/status.h>
 #include <sync/condition.h>
 #include <time/system-tick.h>
-#include <irq/irq.h>
+#include <irq/core.h>
 
 void sched_switch_to(pcb_t *cur, pcb_t *pcb);
 void schedule(void);

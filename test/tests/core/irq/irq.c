@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <test/test.h>
-#include <irq/irq.h>
+#include <irq/core.h>
 
 T(irq_disable_enable_works_as_expected) {
     irq_disable_local();
