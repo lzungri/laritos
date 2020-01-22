@@ -1,4 +1,4 @@
-obj-y += core.o
+obj-y += entry/
 obj-y += board/
 obj-y += log/
 obj-y += driver/
