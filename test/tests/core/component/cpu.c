@@ -54,6 +54,16 @@ T(cpu_reset_cycle_count_works_as_expected) {
     cpu_reset_cycle_count();
     tassert(cpu_get_cycle_count() < count);
 TEND
+//
+//T(cpu_cpu_local_defines_a_new_var_with_the_right_type) {
+//    DEF_CPU_LOCAL(uint16_t, var);
+//    tassert(sizeof(CPU_LOCAL_ATOMIC_GET_START(var)) == uint16_t);
+//    CPU_LOCAL_ATOMIC_GET_END(var);
+//
+//    DEF_CPU_LOCAL(uint32_t, var2);
+//    tassert(sizeof(CPU_LOCAL_ATOMIC_GET_START(var2)) == uint32_t);
+//    CPU_LOCAL_ATOMIC_GET_END(var2);
+//TEND
 
 T(cpu_cpu_local_setter_and_getter_work_as_expected) {
     DEF_CPU_LOCAL(uint16_t, var);

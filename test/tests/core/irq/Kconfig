@@ -1,0 +1,12 @@
+menu "IRQ"
+
+config TEST_CORE_IRQ_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_IRQ
+
+config TEST_CORE_IRQ
+    bool "irq.c"
+    default n
+
+endmenu

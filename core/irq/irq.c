@@ -7,6 +7,7 @@
 #include <component/intc.h>
 #include <sched/context.h>
 #include <sched/core.h>
+#include <generated/autoconf.h>
 
 int irq_handler(spctx_t *ctx) {
     if (_laritos.process_mode) {
@@ -38,3 +39,9 @@ end:
     schedule_if_needed();
     return fret;
 }
+
+
+
+#ifdef CONFIG_TEST_CORE_IRQ
+#include __FILE__
+#endif

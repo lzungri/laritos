@@ -12,6 +12,7 @@
 #include <sync/spinlock.h>
 #include <sync/atomic.h>
 #include <arch/core.h>
+#include <irq/irq.h>
 #include <generated/autoconf.h>
 
 struct pcb;
@@ -99,6 +100,8 @@ typedef struct {
         atomic64_t osticks;
         time_t boottime;
     } timeinfo;
+
+    irqctx_t cpu_local_ctx[CONFIG_CPU_MAX_CPUS];
 
     arch_data_t arch_data;
 } laritos_t;
