@@ -4,6 +4,7 @@
 #include <board/board-types.h>
 #include <cpu/cpu-local.h>
 #include <component/component.h>
+#include <component/cpu.h>
 #include <driver/driver.h>
 #include <time/time.h>
 #include <dstruct/list.h>
@@ -80,6 +81,12 @@ typedef struct {
      * List of components grouped by type (for performance reasons)
      */
     struct list_head comps[COMP_TYPE_LEN];
+
+    /**
+     * CPU shortcuts, will be initialized by cpu_init()
+     */
+    DEF_CPU_LOCAL(cpu_t *, cpu);
+
     bool components_loaded;
 
     laritos_process_t proc;
@@ -100,8 +107,6 @@ typedef struct {
         atomic64_t osticks;
         time_t boottime;
     } timeinfo;
-
-    irqctx_t cpu_local_ctx[CONFIG_CPU_MAX_CPUS];
 
     arch_data_t arch_data;
 } laritos_t;

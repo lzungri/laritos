@@ -4,6 +4,7 @@
 #include <irq/types.h>
 #include <core.h>
 #include <arch/cpu.h>
+#include <cpu/cpu-local.h>
 #include <component/cpu.h>
 #include <component/component.h>
 #include <utils/assert.h>
@@ -24,19 +25,10 @@ static inline uint8_t cpu_get_id(void) {
     return arch_cpu_get_id();
 }
 
-// TODO: Optimize this
-// Use CPU_LOCAL?
 static inline cpu_t *cpu(void) {
-    uint8_t cpuid = cpu_get_id();
-    component_t *c;
-    for_each_component_type(c, COMP_TYPE_CPU) {
-        cpu_t *cpu = (cpu_t *) c;
-        if (cpu->id == cpuid) {
-            return cpu;
-        }
-    }
-    assert(false, "cpu() cannot be NULL");
-    return NULL;
+    cpu_t *c = CPU_LOCAL_GET(_laritos.cpu);
+    assert(c != NULL, "cpu() cannot be NULL");
+    return c;
 }
 
 /**

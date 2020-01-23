@@ -17,24 +17,48 @@ static int set_irqs_enable(cpu_t *c, bool enabled) {
 }
 
 static int init(component_t *c) {
+    // Make sure we keep the same cpu during the entire function
+    irqctx_t ctx;
+    irq_disable_local_and_save_ctx(&ctx);
+
     arm_cpu_t *armcpu = (arm_cpu_t *) c;
     // init() will only be executed by the matching processor
-    if (armcpu->parent.id != cpu()->id) {
+    if (cpu_get_id() != armcpu->parent.id) {
+        irq_local_restore_ctx(&ctx);
         return 0;
+    }
+
+    if (cpu_init((cpu_t *) c) < 0) {
+        error("Couldn't init cpu '%s'", c->id);
+        irq_local_restore_ctx(&ctx);
+        return -1;
     }
     // Enable cpu cycle counter
     cpu_set_cycle_count_enable(true);
+
+    irq_local_restore_ctx(&ctx);
+
     return 0;
 }
 
 static int deinit(component_t *c) {
+    // Make sure we keep the same cpu during the entire function
+    irqctx_t ctx;
+    irq_disable_local_and_save_ctx(&ctx);
+
     arm_cpu_t *armcpu = (arm_cpu_t *) c;
     // deinit() will only be executed by the matching processor
-    if (armcpu->parent.id != cpu()->id) {
+    if (cpu_get_id() != armcpu->parent.id) {
+        irq_local_restore_ctx(&ctx);
         return 0;
     }
     // Disable cpu cycle counter
     cpu_set_cycle_count_enable(false);
+
+    cpu_deinit((cpu_t *) c);
+
+    irq_local_restore_ctx(&ctx);
+
     return 0;
 }
 
