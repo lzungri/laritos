@@ -8,17 +8,6 @@
 
 DEF_NOT_IMPL_FUNC(ni_set_irqs_enable, cpu_t *c, bool enabled);
 
-int cpu_init(cpu_t *c) {
-    // Save current cpu shortcut
-    CPU_LOCAL_SET(_laritos.cpu, c);
-    return 0;
-}
-
-int cpu_deinit(cpu_t *c) {
-    CPU_LOCAL_SET(_laritos.cpu, NULL);
-    return 0;
-}
-
 int cpu_component_init(cpu_t *c, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
 

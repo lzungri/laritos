@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <irq/types.h>
+#include <irq/core.h>
 #include <core.h>
 #include <arch/cpu.h>
 #include <cpu/cpu-local.h>
@@ -29,6 +30,28 @@ static inline cpu_t *cpu(void) {
     cpu_t *c = CPU_LOCAL_GET(_laritos.cpu);
     assert(c != NULL, "cpu() cannot be NULL");
     return c;
+}
+
+static inline int cpu_initialize(void) {
+    // Make sure we keep the same cpu during the entire function
+    irqctx_t ctx;
+    irq_disable_local_and_save_ctx(&ctx);
+
+    cpu_t *c = cpu();
+    if (c->ops.set_irqs_enable(c, true) < 0) {
+        error_async("Failed to enable irqs for cpu %u", c->id);
+        irq_local_restore_ctx(&ctx);
+        return -1;
+    }
+
+    if (c->ops.custom_initialization != NULL && c->ops.custom_initialization(c) < 0) {
+        error_async("Failed to perform custom initialization for cpu %u", c->id);
+        irq_local_restore_ctx(&ctx);
+        return -1;
+    }
+
+    irq_local_restore_ctx(&ctx);
+    return 0;
 }
 
 /**

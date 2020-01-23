@@ -2,7 +2,7 @@
 
 #include <mm/heap.h>
 #include <process/core.h>
-#include <arch/cpu.h>
+#include <cpu/cpu.h>
 #include <utils/assert.h>
 #include <loader/loader.h>
 #include <sync/spinlock.h>
@@ -107,6 +107,9 @@ int init_main(void *data) {
     debug_dump_registered_comps();
 #endif
 
+    // TODO Once we implement SMP, we should do this for each cpu
+    assert(cpu_initialize() >= 0, "Failed to initialize cpu #%u", cpu_get_id());
+
     // Save the RTC boot time. Useful for calculating the current time with nanoseconds
     // resolution (rtc just provides second resolution)
     time_get_rtc_time(&_laritos.timeinfo.boottime);
@@ -115,9 +118,6 @@ int init_main(void *data) {
     if (time_set_timezone(TZ_PST, false) < 0) {
         error("Couldn't set default timezone");
     }
-
-    cpu_t *c = cpu();
-    assert(c->ops.set_irqs_enable(c, true) >= 0, "Failed to enable irqs for cpu %u", c->id);
 
     spawn_system_processes();
 

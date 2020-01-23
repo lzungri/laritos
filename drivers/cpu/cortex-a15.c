@@ -1,5 +1,6 @@
 #include <log.h>
 
+#include <core.h>
 #include <cpu/cpu.h>
 #include <board/board.h>
 #include <driver/driver.h>
@@ -16,50 +17,9 @@ static int set_irqs_enable(cpu_t *c, bool enabled) {
     return c->intc->ops.set_irqs_enable_for_this_cpu(c->intc, enabled);
 }
 
-static int init(component_t *c) {
-    // Make sure we keep the same cpu during the entire function
-    irqctx_t ctx;
-    irq_disable_local_and_save_ctx(&ctx);
-
-    arm_cpu_t *armcpu = (arm_cpu_t *) c;
-    // init() will only be executed by the matching processor
-    if (cpu_get_id() != armcpu->parent.id) {
-        irq_local_restore_ctx(&ctx);
-        return 0;
-    }
-
-    if (cpu_init((cpu_t *) c) < 0) {
-        error("Couldn't init cpu '%s'", c->id);
-        irq_local_restore_ctx(&ctx);
-        return -1;
-    }
+static int custom_initialization(cpu_t *c) {
     // Enable cpu cycle counter
-    cpu_set_cycle_count_enable(true);
-
-    irq_local_restore_ctx(&ctx);
-
-    return 0;
-}
-
-static int deinit(component_t *c) {
-    // Make sure we keep the same cpu during the entire function
-    irqctx_t ctx;
-    irq_disable_local_and_save_ctx(&ctx);
-
-    arm_cpu_t *armcpu = (arm_cpu_t *) c;
-    // deinit() will only be executed by the matching processor
-    if (cpu_get_id() != armcpu->parent.id) {
-        irq_local_restore_ctx(&ctx);
-        return 0;
-    }
-    // Disable cpu cycle counter
-    cpu_set_cycle_count_enable(false);
-
-    cpu_deinit((cpu_t *) c);
-
-    irq_local_restore_ctx(&ctx);
-
-    return 0;
+    return cpu_set_cycle_count_enable(true);
 }
 
 static int process(board_comp_t *comp) {
@@ -69,16 +29,17 @@ static int process(board_comp_t *comp) {
         return -1;
     }
 
-    if (cpu_component_init((cpu_t *) cpu, comp, init, deinit) < 0){
+    if (cpu_component_init((cpu_t *) cpu, comp, NULL, NULL) < 0){
         error("Failed to register '%s'", comp->id);
         goto fail;
     }
     cpu->parent.ops.set_irqs_enable = set_irqs_enable;
+    cpu->parent.ops.custom_initialization = custom_initialization;
 
     int irq;
     if (board_get_int_attr(comp, "pmu_irq", &irq) < 0 || irq < 0) {
         error("Invalid or no PMU irq was specified in the board info");
-        return -1;
+        goto fail;
     }
     cpu->pmu_irq = irq;
     board_get_irq_trigger_attr_def(comp, "pmu_trigger", &cpu->pmu_irq_trigger, IRQ_TRIGGER_LEVEL_HIGH);
@@ -89,6 +50,9 @@ static int process(board_comp_t *comp) {
         error("Couldn't register cpu '%s'", comp->id);
         goto fail;
     }
+
+    // Save CPU shortcut
+    _laritos.cpu[cpu->parent.id] = (cpu_t *) cpu;
 
     return 0;
 
