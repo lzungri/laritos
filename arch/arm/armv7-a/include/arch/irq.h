@@ -28,20 +28,15 @@ static inline int arch_irq_save_context(irqctx_t *ctx) {
     return 0;
 }
 
-static inline int arch_irq_restore_context(irqctx_t *ctx) {
-    // Note that cpsr_c (control flags) is used instead of cpsr in
-    // the msr instruction. This will just copy the control flags instead of
-    // the control + condition code flags
-    asm("msr cpsr_c, %0" : : "r" (*ctx));
-    return 0;
-}
-
 static inline int arch_irq_disable_local_and_save_ctx(irqctx_t *ctx) {
     arch_irq_save_context(ctx);
     return arch_irq_disable_local();
 }
 
 static inline int arch_irq_local_restore_ctx(irqctx_t *ctx) {
-    arch_irq_restore_context(ctx);
+    // Note that cpsr_c (control flags) is used instead of cpsr in
+    // the msr instruction. This will just copy the control flags instead of
+    // the control + condition code flags
+    asm("msr cpsr_c, %0" : : "r" (*ctx));
     return 0;
 }
