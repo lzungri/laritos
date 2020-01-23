@@ -1,6 +1,8 @@
 #pragma once
 
 #include <irq/core.h>
+#include <utils/assert.h>
+#include <utils/utils.h>
 #include <generated/autoconf.h>
 
 #define DEF_CPU_LOCAL(_type, _name) \
@@ -10,7 +12,11 @@
     (({ \
         irqctx_t _ctx; \
         irq_disable_local_and_save_ctx(&_ctx); \
-        typeof(_name[0]) _value = _name[cpu_get_id()]; \
+        \
+        uint8_t cpuid = arch_cpu_get_id(); \
+        assert(cpuid < ARRAYSIZE(_name), "Invalid cpu id #%u", cpuid); \
+        typeof(_name[0]) _value = _name[cpuid]; \
+        \
         irq_local_restore_ctx(&_ctx); \
         _value; \
     }))
@@ -18,6 +24,10 @@
 #define CPU_LOCAL_SET(_name, _value) do { \
         irqctx_t _ctx; \
         irq_disable_local_and_save_ctx(&_ctx); \
-        (_name)[cpu_get_id()] = _value; \
+        \
+        uint8_t cpuid = arch_cpu_get_id(); \
+        assert(cpuid < ARRAYSIZE(_name), "Invalid cpu id #%u", cpuid); \
+        (_name)[cpuid] = _value; \
+        \
         irq_local_restore_ctx(&_ctx); \
     } while (0)
