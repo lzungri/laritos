@@ -46,13 +46,10 @@ static int process(board_comp_t *comp) {
 
     component_set_info((component_t *) cpu, "Cortex-A15", "ARM", "Cortex-A15 armv7-a processor");
 
-    if (component_register((component_t *) cpu) < 0) {
+    if (cpu_component_register((cpu_t *) cpu) < 0) {
         error("Couldn't register cpu '%s'", comp->id);
         goto fail;
     }
-
-    // Save CPU shortcut
-    _laritos.cpu[cpu->parent.id] = (cpu_t *) cpu;
 
     return 0;
 

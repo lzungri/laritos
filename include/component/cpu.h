@@ -28,3 +28,4 @@ typedef struct cpu {
 
 int cpu_component_init(cpu_t *c, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c));
+int cpu_component_register(cpu_t *c);

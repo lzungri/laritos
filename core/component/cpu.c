@@ -40,3 +40,14 @@ int cpu_component_init(cpu_t *c, board_comp_t *bcomp,
 
     return 0;
 }
+
+int cpu_component_register(cpu_t *c) {
+    if (component_register((component_t *) c) < 0) {
+        error("Couldn't register cpu '%s'", c->parent.id);
+        return -1;
+    }
+
+    // Save CPU shortcut
+    _laritos.cpu[c->id] = (cpu_t *) c;
+    return 0;
+}
