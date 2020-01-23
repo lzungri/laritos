@@ -29,6 +29,18 @@ static inline bool irq_is_enabled(void) {
     return arch_irq_is_enabled();
 }
 
+static inline bool irq_is_enabled_in_ctx(irqctx_t *ctx) {
+    return arch_irq_is_enabled_in_ctx(ctx);
+}
+
+static inline int irq_save_context(irqctx_t *ctx) {
+    return arch_irq_save_context(ctx);
+}
+
+static inline int irq_restore_context(irqctx_t *ctx) {
+    return arch_irq_restore_context(ctx);
+}
+
 static inline int irq_disable_local(void) {
     return arch_irq_disable_local();
 }
