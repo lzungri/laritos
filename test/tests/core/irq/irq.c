@@ -25,7 +25,7 @@ T(irq_enable_disable_calls_work_as_expected) {
     irq_enable_local();
     tassert(irq_is_enabled());
 
-    irq_restore_context(&ctx);
+    irq_local_restore_ctx(&ctx);
 TEND
 
 T(irq_enable_disable_with_ctx_calls_work_as_expected) {
@@ -43,11 +43,11 @@ T(irq_enable_disable_with_ctx_calls_work_as_expected) {
             tassert(!irq_is_enabled());
             tassert(!irq_is_enabled_in_ctx(&ctx2));
         }
-        arch_irq_restore_context(&ctx2);
+        irq_local_restore_ctx(&ctx2);
 
         tassert(!irq_is_enabled());
     }
-    arch_irq_restore_context(&ctx);
+    irq_local_restore_ctx(&ctx);
 
     tassert(irq_is_enabled() == irq_orig_enabled);
 TEND
