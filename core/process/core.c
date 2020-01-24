@@ -19,6 +19,8 @@
 
 int process_init_global_context(void) {
     INIT_LIST_HEAD(&_laritos.proc.pcbs);
+    spinlock_init(&_laritos.proc.pcbs_lock);
+
     struct list_head *l;
     CPU_LOCAL_FOR_EACH_CPU_VAR(_laritos.sched.ready_pcbs, l) {
         INIT_LIST_HEAD(l);
@@ -141,9 +143,10 @@ void process_kill_locked(pcb_t *pcb) {
 
 void process_kill(pcb_t *pcb) {
     irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
+
+    irq_disable_local_and_save_ctx(&ctx);
     process_kill_locked(pcb);
-    spinlock_release(&_laritos.proclock, &ctx);
+    irq_local_restore_ctx(&ctx);
 }
 
 void process_kill_and_schedule(pcb_t *pcb) {
@@ -153,11 +156,11 @@ void process_kill_and_schedule(pcb_t *pcb) {
 
 int process_set_priority(pcb_t *pcb, uint8_t priority) {
     irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
+    irq_disable_local_and_save_ctx(&ctx);
 
     if (!pcb->kernel && priority < CONFIG_SCHED_PRIORITY_MAX_USER) {
         error_async("Invalid priority for a user process, max priority = %u", CONFIG_SCHED_PRIORITY_MAX_USER);
-        spinlock_release(&_laritos.proclock, &ctx);
+        irq_local_restore_ctx(&ctx);
         return -1;
     }
 
@@ -174,7 +177,7 @@ int process_set_priority(pcb_t *pcb, uint8_t priority) {
         _laritos.sched.need_sched = true;
     }
 
-    spinlock_release(&_laritos.proclock, &ctx);
+    irq_local_restore_ctx(&ctx);
 
     return 0;
 }
@@ -236,13 +239,15 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
     process_set_priority(pcb, priority);
 
     irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
+    irq_disable_local_and_save_ctx(&ctx);
+
     if (process_register_locked(pcb) < 0) {
         error_async("Could not register process loaded at 0x%p", pcb);
-        spinlock_release(&_laritos.proclock, &ctx);
+        irq_local_restore_ctx(&ctx);
         goto error_pcbreg;
     }
-    spinlock_release(&_laritos.proclock, &ctx);
+
+    irq_local_restore_ctx(&ctx);
 
     return pcb;
 
@@ -259,23 +264,23 @@ int process_wait_for(pcb_t *pcb, int *status) {
     verbose_async("Waiting for pid=%u", pcb->pid);
 
     irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
+    irq_disable_local_and_save_ctx(&ctx);
 
     if (pcb->parent != process_get_current()) {
-        spinlock_release(&_laritos.proclock, &ctx);
+        irq_local_restore_ctx(&ctx);
         return -1;
     }
 
     if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
         handle_dead_child_locked(pcb, status);
-        spinlock_release(&_laritos.proclock, &ctx);
+        irq_local_restore_ctx(&ctx);
         return 0;
     }
 
-    BLOCK_UNTIL_PROCLOCKED(pcb->sched.status == PROC_STATUS_ZOMBIE, &pcb->parent_waiting_cond, &ctx);
+    BLOCK_UNTIL_IRQ_DISABLED(pcb->sched.status == PROC_STATUS_ZOMBIE, &pcb->parent_waiting_cond, &ctx);
     handle_dead_child_locked(pcb, status);
 
-    spinlock_release(&_laritos.proclock, &ctx);
+    irq_local_restore_ctx(&ctx);
 
     return 0;
 }

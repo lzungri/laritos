@@ -13,16 +13,16 @@ int condition_init(condition_t *cond) {
     return 0;
 }
 
-static void condition_block_current_process(condition_t *cond, bool proclocked) {
+static void condition_block_current_process(condition_t *cond, bool irq_disabled) {
     pcb_t *pcb = process_get_current();
 
-    if (proclocked) {
+    if (irq_disabled) {
         sched_move_to_blocked_locked(pcb, &cond->blocked);
     } else {
         irqctx_t ctx2;
-        spinlock_acquire(&_laritos.proclock, &ctx2);
+        irq_disable_local_and_save_ctx(&ctx2);
         sched_move_to_blocked_locked(pcb, &cond->blocked);
-        spinlock_release(&_laritos.proclock, &ctx2);
+        irq_local_restore_ctx(&ctx2);
     }
 
     verbose_async("pid=%u waiting for condition=0x%p", pcb->pid, cond);
@@ -36,15 +36,15 @@ void condition_wait_locked(condition_t *cond, spinlock_t *spin, irqctx_t *ctx) {
     spinlock_acquire(spin, ctx);
 }
 
-void condition_wait_proclocked(condition_t *cond, irqctx_t *ctx) {
+void condition_wait_irq_disabled(condition_t *cond, irqctx_t *ctx) {
     condition_block_current_process(cond, true);
 
-    spinlock_release(&_laritos.proclock, ctx);
+    irq_local_restore_ctx(ctx);
     schedule();
-    spinlock_acquire(&_laritos.proclock, ctx);
+    irq_disable_local_and_save_ctx(ctx);
 }
 
-static inline void wakeup_pcb(pcb_t *pcb, condition_t *cond, bool proclocked) {
+static inline void wakeup_pcb(pcb_t *pcb, condition_t *cond, bool irq_disabled) {
     if (pcb == NULL) {
         return;
     }
@@ -53,23 +53,23 @@ static inline void wakeup_pcb(pcb_t *pcb, condition_t *cond, bool proclocked) {
 
     verbose_async("Waking up pid=%u waiting for condition=0x%p", pcb->pid, cond);
 
-    if (proclocked) {
+    if (irq_disabled) {
         sched_move_to_ready_locked(pcb);
     } else {
-        irqctx_t ctx2;
-        spinlock_acquire(&_laritos.proclock, &ctx2);
+        irqctx_t ctx;
+        irq_disable_local_and_save_ctx(&ctx);
         sched_move_to_ready_locked(pcb);
-        spinlock_release(&_laritos.proclock, &ctx2);
+        irq_local_restore_ctx(&ctx);
     }
 }
 
-static inline pcb_t *notify_locked(condition_t *cond, bool proclocked) {
+static inline pcb_t *notify_locked(condition_t *cond, bool irq_disabled) {
     pcb_t *pcb = list_first_entry_or_null(&cond->blocked, pcb_t, sched.sched_node);
-    wakeup_pcb(pcb, cond, proclocked);
+    wakeup_pcb(pcb, cond, irq_disabled);
     return pcb;
 }
 
-pcb_t *condition_notify_proclocked(condition_t *cond) {
+pcb_t *condition_notify_irq_disabled(condition_t *cond) {
     return notify_locked(cond, true);
 }
 
@@ -77,18 +77,18 @@ pcb_t *condition_notify_locked(condition_t *cond) {
     return notify_locked(cond, false);
 }
 
-bool notify_all_locked(condition_t *cond, bool proclocked) {
+bool notify_all_locked(condition_t *cond, bool irq_disabled) {
     pcb_t *pcb;
     pcb_t *tmp;
     bool proc_awakened = false;
     list_for_each_entry_safe(pcb, tmp, &cond->blocked, sched.sched_node) {
-        wakeup_pcb(pcb, cond, proclocked);
+        wakeup_pcb(pcb, cond, irq_disabled);
         proc_awakened = true;
     }
     return proc_awakened;
 }
 
-bool condition_notify_all_proclocked(condition_t *cond) {
+bool condition_notify_all_irq_disabled(condition_t *cond) {
     return notify_all_locked(cond, true);
 }
 

@@ -69,11 +69,10 @@ static void init_loop(void) {
     // Loop forever
     while (1) {
         irqctx_t ctx;
-
+        irq_disable_local_and_save_ctx(&ctx);
         // Block and wait for events (e.g. new zombie process)
-        spinlock_acquire(&_laritos.proclock, &ctx);
         sched_move_to_blocked_locked(init, NULL);
-        spinlock_release(&_laritos.proclock, &ctx);
+        irq_local_restore_ctx(&ctx);
 
         // Switch to another process
         schedule();
@@ -81,9 +80,9 @@ static void init_loop(void) {
         // Someone woke me up, process event/s
 
         // Release zombie children
-        spinlock_acquire(&_laritos.proclock, &ctx);
+        irq_disable_local_and_save_ctx(&ctx);
         process_unregister_zombie_children_locked(init);
-        spinlock_release(&_laritos.proclock, &ctx);
+        irq_local_restore_ctx(&ctx);
     }
 }
 

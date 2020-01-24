@@ -43,7 +43,7 @@ static inline void debug_dump_processes(void) {
     // Prevent the OS from doing any change on the active processes
     // WARNING: We can only do this here since this is only used for debugging purposes
     irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
+    spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
 
     for_each_process(proc) {
         if (proc->sched.status == PROC_STATUS_RUNNING) {
@@ -60,7 +60,7 @@ static inline void debug_dump_processes(void) {
         }
     }
 
-    spinlock_release(&_laritos.proclock, &ctx);
+    spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
 }
 
 static inline void debug_dump_processes_stats(void) {
@@ -69,7 +69,7 @@ static inline void debug_dump_processes_stats(void) {
     // Prevent the OS from doing any change on the active processes
     // WARNING: We can only do this here since this is only used for debugging purposes
     irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
+    spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
 
     log_always("Processes stats:");
     for_each_process(proc) {
@@ -96,7 +96,7 @@ static inline void debug_dump_processes_stats(void) {
         log_always("  -----");
     }
 
-    spinlock_release(&_laritos.proclock, &ctx);
+    spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
 }
 
 /**

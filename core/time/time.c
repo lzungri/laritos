@@ -79,13 +79,13 @@ static int process_sleep_cb(vrtimer_comp_t *t, void *data) {
     pcb_t *pcb = (pcb_t *) data;
 
     irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
+    irq_disable_local_and_save_ctx(&ctx);
 
     sched_move_to_ready_locked(pcb);
     // pcb_t no longer needed by sleep()
     ref_dec(&pcb->refcnt);
 
-    spinlock_release(&_laritos.proclock, &ctx);
+    irq_local_restore_ctx(&ctx);
 
     return 0;
 }
@@ -109,12 +109,12 @@ static inline void _sleep(tick_t ticks) {
         pcb_t *pcb = process_get_current();
 
         irqctx_t ctx;
-        spinlock_acquire(&_laritos.proclock, &ctx);
+        irq_disable_local_and_save_ctx(&ctx);
 
         // Running in process mode, then block the process and schedule()
         if (t->ops.add_vrtimer(t, ticks, process_sleep_cb, pcb, false) < 0) {
             error_async("Failed to create virtual timer ticks=%lu", ticks);
-            spinlock_release(&_laritos.proclock, &ctx);
+            irq_local_restore_ctx(&ctx);
             return;
         }
         // Make sure we install the timer before blocking the process, otherwise
@@ -128,7 +128,7 @@ static inline void _sleep(tick_t ticks) {
         // Make sure it is not released by keeping a reference to it
         ref_inc(&pcb->refcnt);
 
-        spinlock_release(&_laritos.proclock, &ctx);
+        irq_local_restore_ctx(&ctx);
 
         schedule();
     } else {

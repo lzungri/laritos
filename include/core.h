@@ -27,6 +27,10 @@ typedef struct {
      * List of processes in the system
      */
     struct list_head pcbs;
+    /**
+     * Spinlock used to synchronize the _laritos.proc.pcbs list
+     */
+    spinlock_t pcbs_lock;
 
     /**
      * Pointer to the init process pcb_t
@@ -99,11 +103,6 @@ typedef struct {
     laritos_process_t proc;
     laritos_sched_t sched;
     laritos_stats_t stats;
-
-    /**
-     * Spinlock used to synchronize all process-related lists and data structures
-     */
-    spinlock_t proclock;
 
     /**
      * Time information

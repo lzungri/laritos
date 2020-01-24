@@ -4,6 +4,8 @@
 #include <string.h>
 #include <limits.h>
 #include <cpu/cpu.h>
+#include <irq/core.h>
+#include <irq/types.h>
 #include <mm/heap.h>
 #include <mm/spprot.h>
 #include <loader/loader.h>
@@ -190,13 +192,15 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
     process_set_priority(pcb, CONFIG_SCHED_PRIORITY_MAX_USER);
 
     irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
+    irq_disable_local_and_save_ctx(&ctx);
+
     if (process_register_locked(pcb) < 0) {
         error_async("Could not register process at 0x%p", pcb);
-        spinlock_release(&_laritos.proclock, &ctx);
+        irq_local_restore_ctx(&ctx);
         goto error_register;
     }
-    spinlock_release(&_laritos.proclock, &ctx);
+
+    irq_local_restore_ctx(&ctx);
 
     return pcb;
 

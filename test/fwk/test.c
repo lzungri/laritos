@@ -69,10 +69,10 @@ int test_main(void *testdescs) {
         }
 
         irqctx_t ctx;
-        spinlock_acquire(&_laritos.proclock, &ctx);
+        irq_disable_local_and_save_ctx(&ctx);
         // Release each zombie child that may have been spawn during the test
         process_unregister_zombie_children_locked(process_get_current());
-        spinlock_release(&_laritos.proclock, &ctx);
+        irq_local_restore_ctx(&ctx);
     }
 
     time_get_ns_rtc_time(&end);
