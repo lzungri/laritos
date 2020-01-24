@@ -8,6 +8,9 @@
 #define DEF_CPU_LOCAL(_type, _name) \
     __typeof__(_type) _name[CONFIG_CPU_MAX_CPUS]
 
+#define CPU_LOCAL_FOR_EACH_CPU_VAR(_varname, _var) \
+    for (_var = _varname; _var <= &_varname[CONFIG_CPU_MAX_CPUS - 1]; _var++)
+
 #define CPU_LOCAL_GET_PTR_LOCKED(_name) \
     (({ \
         uint8_t cpuid = arch_cpu_get_id(); \

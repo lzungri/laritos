@@ -2,6 +2,7 @@
 
 #include <dstruct/list.h>
 #include <cpu/cpu.h>
+#include <cpu/cpu-local.h>
 #include <core.h>
 #include <mm/slab.h>
 #include <mm/heap.h>
@@ -18,9 +19,9 @@
 
 int process_init_global_context(void) {
     INIT_LIST_HEAD(&_laritos.proc.pcbs);
-    int i;
-    for (i = 0; i < ARRAYSIZE(_laritos.sched.ready_pcbs); i++) {
-        INIT_LIST_HEAD(&_laritos.sched.ready_pcbs[i]);
+    struct list_head *l;
+    CPU_LOCAL_FOR_EACH_CPU_VAR(_laritos.sched.ready_pcbs, l) {
+        INIT_LIST_HEAD(l);
     }
 
     _laritos.proc.pcb_slab = slab_create(CONFIG_PROCESS_MAX_CONCURRENT_PROCS, sizeof(pcb_t));
