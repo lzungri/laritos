@@ -44,7 +44,7 @@ static inline void sched_update_stats(pcb_t *pcb) {
 static inline void _sched_add_ready_proc_sorted(pcb_t *pcb) {
     list_del_init(&pcb->sched.sched_node);
     pcb_t *proc;
-    for_each_ready_process(proc) {
+    for_each_ready_process_locked(proc) {
         if (pcb->sched.priority < proc->sched.priority) {
             list_add(&pcb->sched.sched_node, proc->sched.sched_node.prev);
             return;
