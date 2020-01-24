@@ -35,12 +35,19 @@ typedef struct {
 } laritos_process_t;
 
 typedef struct {
+    /**
+     * Process currently running on each cpu.
+     *
+     * Ideally, this should be part of each cpu_t, but we need access to this data structure
+     * even before the cpu_t instances are created. May need to rethink this architecture
+     * to improve this.
+     */
     DEF_CPU_LOCAL(struct pcb *, running);
 
     /**
-     * List of READY processes in the system
+     * List of READY processes per cpu
      */
-    struct list_head ready_pcbs;
+    DEF_CPU_LOCAL(struct list_head, ready_pcbs);
 
     /**
      * Indicates whether or not the OS should schedule the next 'ready' process

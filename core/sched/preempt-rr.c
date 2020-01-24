@@ -8,9 +8,10 @@
 #include <component/ticker.h>
 #include <component/sched.h>
 #include <mm/heap.h>
+#include <cpu/cpu-local.h>
 
 static inline pcb_t *pick_ready_locked(sched_comp_t *sched, struct cpu *cpu, pcb_t *curpcb) {
-    return list_first_entry_or_null(&_laritos.sched.ready_pcbs, pcb_t, sched.sched_node);
+    return list_first_entry_or_null(CPU_LOCAL_GET_PTR_LOCKED(_laritos.sched.ready_pcbs), pcb_t, sched.sched_node);
 }
 
 static int rr_ticker_cb(ticker_comp_t *t, void *data) {

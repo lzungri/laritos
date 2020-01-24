@@ -7,6 +7,7 @@
 
 #include <dstruct/list.h>
 #include <cpu/cpu.h>
+#include <cpu/cpu-local.h>
 #include <core.h>
 #include <refcount.h>
 #include <utils/assert.h>
@@ -130,13 +131,7 @@ static inline void process_set_name(pcb_t *pcb, char *name) {
     list_for_each_entry_safe(_child, _temp, &_parent->children, siblings)
 
 #define for_each_ready_process(_p) \
-    list_for_each_entry(_p, &_laritos.sched.ready_pcbs, sched.sched_node)
+    list_for_each_entry(_p, CPU_LOCAL_GET_PTR_LOCKED(_laritos.sched.ready_pcbs), sched.sched_node)
 
 #define for_each_ready_process_safe(_p, _n) \
-    list_for_each_entry_safe(_p, _n, &_laritos.sched.ready_pcbs, sched.sched_node)
-
-#define for_each_blocked_process(_p) \
-    list_for_each_entry(_p, &_laritos.sched.blocked_pcbs, sched.sched_node)
-
-#define for_each_zombie_process(_p) \
-    list_for_each_entry(_p, &_laritos.sched.zombie_pcbs, sched.sched_node)
+    list_for_each_entry_safe(_p, _n, CPU_LOCAL_GET_PTR_LOCKED(_laritos.sched.ready_pcbs), sched.sched_node)

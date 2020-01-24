@@ -2,6 +2,7 @@
 
 #include <log.h>
 #include <core.h>
+#include <cpu/cpu-local.h>
 #include <process/core.h>
 #include <process/status.h>
 #include <sync/condition.h>
@@ -50,7 +51,7 @@ static inline void _sched_add_ready_proc_sorted(pcb_t *pcb) {
             return;
         }
     }
-    list_add_tail(&pcb->sched.sched_node, &_laritos.sched.ready_pcbs);
+    list_add_tail(&pcb->sched.sched_node, CPU_LOCAL_GET_PTR_LOCKED(_laritos.sched.ready_pcbs));
 }
 
 static inline void sched_move_to_ready_locked(pcb_t *pcb) {
@@ -66,7 +67,7 @@ static inline void sched_move_to_ready_locked(pcb_t *pcb) {
     pcb->sched.status = PROC_STATUS_READY;
 
     // Re-schedule in case there is a new higher priority process
-    if (list_first_entry(&_laritos.sched.ready_pcbs, pcb_t, sched.sched_node) == pcb) {
+    if (list_first_entry(CPU_LOCAL_GET_PTR_LOCKED(_laritos.sched.ready_pcbs), pcb_t, sched.sched_node) == pcb) {
         _laritos.sched.need_sched = true;
     }
 }

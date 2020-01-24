@@ -18,7 +18,10 @@
 
 int process_init_global_context(void) {
     INIT_LIST_HEAD(&_laritos.proc.pcbs);
-    INIT_LIST_HEAD(&_laritos.sched.ready_pcbs);
+    int i;
+    for (i = 0; i < ARRAYSIZE(_laritos.sched.ready_pcbs); i++) {
+        INIT_LIST_HEAD(&_laritos.sched.ready_pcbs[i]);
+    }
 
     _laritos.proc.pcb_slab = slab_create(CONFIG_PROCESS_MAX_CONCURRENT_PROCS, sizeof(pcb_t));
     return _laritos.proc.pcb_slab != NULL ? 0 : -1;
