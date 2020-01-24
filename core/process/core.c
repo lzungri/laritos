@@ -59,7 +59,6 @@ pcb_t *process_alloc(void) {
         memset(pcb, 0, sizeof(pcb_t));
         INIT_LIST_HEAD(&pcb->sched.pcb_node);
         INIT_LIST_HEAD(&pcb->sched.sched_node);
-        INIT_LIST_HEAD(&pcb->sched.blockedlst);
         INIT_LIST_HEAD(&pcb->children);
         INIT_LIST_HEAD(&pcb->siblings);
         condition_init(&pcb->parent_waiting_cond);

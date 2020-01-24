@@ -165,9 +165,9 @@ T(rmutex_blocked_proc_with_the_highest_priority_acquires_mutex_after_it_is_relea
     tassert(p2 != NULL);
     schedule();
 
-    tassert(is_process_in(&p0->sched.blockedlst, &m.cond.blocked));
-    tassert(is_process_in(&p1->sched.blockedlst, &m.cond.blocked));
-    tassert(is_process_in(&p2->sched.blockedlst, &m.cond.blocked));
+    tassert(is_process_in(&p0->sched.sched_node, &m.cond.blocked));
+    tassert(is_process_in(&p1->sched.sched_node, &m.cond.blocked));
+    tassert(is_process_in(&p2->sched.sched_node, &m.cond.blocked));
 
     rmutex_release(&m);
     schedule();

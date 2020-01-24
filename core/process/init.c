@@ -72,7 +72,7 @@ static void init_loop(void) {
 
         // Block and wait for events (e.g. new zombie process)
         spinlock_acquire(&_laritos.proclock, &ctx);
-        sched_move_to_blocked_locked(init);
+        sched_move_to_blocked_locked(init, NULL);
         spinlock_release(&_laritos.proclock, &ctx);
 
         // Switch to another process

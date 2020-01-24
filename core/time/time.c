@@ -122,7 +122,7 @@ static inline void _sleep(tick_t ticks) {
         // The spinlock, by disabling local irqs, will ensure no other
         // process preempts the current one until the timer is installed and
         // the process moved to the blocked list
-        sched_move_to_blocked_locked(pcb);
+        sched_move_to_blocked_locked(pcb, NULL);
 
         // We are gonna need the pcb_t to unblock it once the timer expires.
         // Make sure it is not released by keeping a reference to it

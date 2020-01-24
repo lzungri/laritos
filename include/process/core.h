@@ -43,13 +43,13 @@ typedef struct {
     process_status_t status;
     uint8_t priority;
     struct list_head pcb_node;
-    struct list_head sched_node;
 
     /**
-     * List of processes blocked in a particular event.
-     * A process can only be waiting for one event at a time.
+     * Node used to link a process to a particular scheduling list. So far,
+     * it could be a per-cpu READY list or a blocked list (if the blocking
+     * event has any).
      */
-    struct list_head blockedlst;
+    struct list_head sched_node;
 } pcb_sched_t;
 
 typedef struct {

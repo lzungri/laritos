@@ -72,7 +72,11 @@ static inline void sched_move_to_ready_locked(pcb_t *pcb) {
     }
 }
 
-static inline void sched_move_to_blocked_locked(pcb_t *pcb) {
+/**
+ * @param blocked_list: List associated with the event the process is waiting for (may be
+ *        NULL is the event doesn't keep any list)
+ */
+static inline void sched_move_to_blocked_locked(pcb_t *pcb, struct list_head *blocked_list) {
     if (pcb->sched.status == PROC_STATUS_ZOMBIE || pcb->sched.status == PROC_STATUS_NOT_INIT) {
         error_async("Cannot move a ZOMBIE or NOT_INIT process to BLOCKED");
         return;
@@ -82,6 +86,9 @@ static inline void sched_move_to_blocked_locked(pcb_t *pcb) {
     sched_update_stats(pcb);
 
     list_del_init(&pcb->sched.sched_node);
+    if (blocked_list != NULL) {
+        list_add_tail(&pcb->sched.sched_node, blocked_list);
+    }
     pcb->sched.status = PROC_STATUS_BLOCKED;
 }
 

@@ -16,15 +16,12 @@ int condition_init(condition_t *cond) {
 static void condition_block_current_process(condition_t *cond, bool proclocked) {
     pcb_t *pcb = process_get_current();
 
-    assert(list_empty(&pcb->sched.blockedlst), "A process can only be waiting for max 1 event");
-    list_add_tail(&pcb->sched.blockedlst, &cond->blocked);
-
     if (proclocked) {
-        sched_move_to_blocked_locked(pcb);
+        sched_move_to_blocked_locked(pcb, &cond->blocked);
     } else {
         irqctx_t ctx2;
         spinlock_acquire(&_laritos.proclock, &ctx2);
-        sched_move_to_blocked_locked(pcb);
+        sched_move_to_blocked_locked(pcb, &cond->blocked);
         spinlock_release(&_laritos.proclock, &ctx2);
     }
 
@@ -52,7 +49,7 @@ static inline void wakeup_pcb(pcb_t *pcb, condition_t *cond, bool proclocked) {
         return;
     }
 
-    list_del_init(&pcb->sched.blockedlst);
+    list_del_init(&pcb->sched.sched_node);
 
     verbose_async("Waking up pid=%u waiting for condition=0x%p", pcb->pid, cond);
 
@@ -67,7 +64,7 @@ static inline void wakeup_pcb(pcb_t *pcb, condition_t *cond, bool proclocked) {
 }
 
 static inline pcb_t *notify_locked(condition_t *cond, bool proclocked) {
-    pcb_t *pcb = list_first_entry_or_null(&cond->blocked, pcb_t, sched.blockedlst);
+    pcb_t *pcb = list_first_entry_or_null(&cond->blocked, pcb_t, sched.sched_node);
     wakeup_pcb(pcb, cond, proclocked);
     return pcb;
 }
@@ -84,7 +81,7 @@ bool notify_all_locked(condition_t *cond, bool proclocked) {
     pcb_t *pcb;
     pcb_t *tmp;
     bool proc_awakened = false;
-    list_for_each_entry_safe(pcb, tmp, &cond->blocked, sched.blockedlst) {
+    list_for_each_entry_safe(pcb, tmp, &cond->blocked, sched.sched_node) {
         wakeup_pcb(pcb, cond, proclocked);
         proc_awakened = true;
     }
