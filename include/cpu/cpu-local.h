@@ -8,6 +8,13 @@
 #define DEF_CPU_LOCAL(_type, _name) \
     __typeof__(_type) _name[CONFIG_CPU_MAX_CPUS]
 
+#define CPU_LOCAL_GET_PTR_LOCKED(_name) \
+    (({ \
+        uint8_t cpuid = arch_cpu_get_id(); \
+        assert(cpuid < ARRAYSIZE(_name), "Invalid cpu id #%u", cpuid); \
+        &_name[cpuid]; \
+    }))
+
 #define CPU_LOCAL_GET(_name) \
     (({ \
         irqctx_t _ctx; \

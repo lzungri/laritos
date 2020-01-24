@@ -73,3 +73,11 @@ T(cpu_cpu_local_setter_and_getter_work_as_expected) {
         tassert(CPU_LOCAL_GET(var) == i);
     }
 TEND
+
+T(cpu_cpu_local_get_ptr_returns_the_cpu_local_reference) {
+    DEF_CPU_LOCAL(uint16_t, var);
+    irqctx_t ctx;
+    irq_disable_local_and_save_ctx(&ctx);
+    tassert(CPU_LOCAL_GET_PTR_LOCKED(var) == &var[cpu_get_id()]);
+    irq_local_restore_ctx(&ctx);
+TEND
