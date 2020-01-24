@@ -8,6 +8,8 @@
 #include <process/core.h>
 #include <time/time.h>
 #include <component/vrtimer.h>
+#include <irq/types.h>
+#include <sync/spinlock.h>
 #include <generated/autoconf.h>
 #include <test/utils.h>
 
@@ -197,11 +199,17 @@ T(process_orphan_proc_grandparent_becomes_new_parent) {
 
     uint16_t child_pid = parent->exit_status;
     pcb_t *pcb = NULL;
-    for_each_process(pcb) {
+
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
+
+    for_each_process_locked(pcb) {
         if (pcb->pid == child_pid) {
             break;
         }
     }
+
+    spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
 
     tassert(pcb != NULL);
     tassert(is_process_active(pcb));

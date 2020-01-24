@@ -124,7 +124,7 @@ static inline void process_set_name(pcb_t *pcb, char *name) {
     strncpy(pcb->name, name, sizeof(pcb->name));
 }
 
-#define for_each_process(_p) \
+#define for_each_process_locked(_p) \
     list_for_each_entry(_p, &_laritos.proc.pcbs, sched.pcb_node)
 
 #define for_each_child_process_safe(_parent, _child, _temp) \

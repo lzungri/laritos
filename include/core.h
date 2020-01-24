@@ -27,6 +27,7 @@ typedef struct {
      * List of processes in the system
      */
     struct list_head pcbs;
+
     /**
      * Spinlock used to synchronize the _laritos.proc.pcbs list
      */

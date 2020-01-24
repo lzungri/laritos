@@ -45,7 +45,7 @@ static inline void debug_dump_processes(void) {
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
 
-    for_each_process(proc) {
+    for_each_process_locked(proc) {
         if (proc->sched.status == PROC_STATUS_RUNNING) {
             log_always("%-7.7s %2u  %2u    %s   %7s    %3u   %-12.12s   0x%p           -",
                     proc->name, proc->pid, proc->parent != NULL ? proc->parent->pid : 0, proc->kernel ? "K" : "U",
@@ -72,7 +72,7 @@ static inline void debug_dump_processes_stats(void) {
     spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
 
     log_always("Processes stats:");
-    for_each_process(proc) {
+    for_each_process_locked(proc) {
         log_always("  %s (pid=%u)", proc->name, proc->pid);
 
         // Number of syscalls stats
