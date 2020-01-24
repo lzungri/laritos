@@ -6,6 +6,7 @@
 #include <process/core.h>
 #include <process/status.h>
 #include <sync/condition.h>
+#include <sync/spinlock.h>
 #include <time/system-tick.h>
 #include <irq/core.h>
 
@@ -110,11 +111,17 @@ static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
 
     sched_update_stats(pcb);
 
+    // We are going to access other processes that may be running in other cpus,
+    // use a spinlock to protect this critical section
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+
     pcb_t *child;
     pcb_t *temp;
     pcb_t *gparent = pcb->parent;
+
     // Grandparent will become the new parent
-    for_each_child_process_safe(pcb, child, temp) {
+    for_each_child_process_safe_locked(pcb, child, temp) {
         insane_async("pid=%u new parent pid=%u", child->pid, gparent->pid);
         child->parent = gparent;
         list_move_tail(&child->siblings, &gparent->children);
@@ -123,7 +130,7 @@ static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
     list_del_init(&pcb->sched.sched_node);
     pcb->sched.status = PROC_STATUS_ZOMBIE;
 
-    process_release_zombie_resources(pcb);
+    process_release_zombie_resources_locked(pcb);
 
     // Notify blocked parent (if any) about its dead
     condition_notify_irq_disabled(&pcb->parent_waiting_cond);
@@ -132,4 +139,6 @@ static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
         // New zombie process child of init, wake up init so that it releases its resources
         sched_move_to_ready_locked(_laritos.proc.init);
     }
+
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 }

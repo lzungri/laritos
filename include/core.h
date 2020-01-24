@@ -34,6 +34,12 @@ typedef struct {
     spinlock_t pcbs_lock;
 
     /**
+     * Spinlock used to protect any pcb_t data structure that may be changed by
+     * two or more processors at the same time
+     */
+    spinlock_t pcbs_data_lock;
+
+    /**
      * Pointer to the init process pcb_t
      */
     struct pcb *init;

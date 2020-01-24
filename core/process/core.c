@@ -20,6 +20,7 @@
 int process_init_global_context(void) {
     INIT_LIST_HEAD(&_laritos.proc.pcbs);
     spinlock_init(&_laritos.proc.pcbs_lock);
+    spinlock_init(&_laritos.proc.pcbs_data_lock);
 
     struct list_head *l;
     CPU_LOCAL_FOR_EACH_CPU_VAR(_laritos.sched.ready_pcbs, l) {
@@ -92,7 +93,7 @@ int process_register_locked(pcb_t *pcb) {
     return 0;
 }
 
-int process_release_zombie_resources(pcb_t *pcb) {
+int process_release_zombie_resources_locked(pcb_t *pcb) {
     if (pcb->sched.status != PROC_STATUS_ZOMBIE) {
         error_async("You can only release resources of a ZOMBIE process");
         return -1;
@@ -121,11 +122,17 @@ static inline void handle_dead_child_locked(pcb_t *pcb, int *status) {
 void process_unregister_zombie_children_locked(pcb_t *pcb) {
     pcb_t *child;
     pcb_t *temp;
-    for_each_child_process_safe(pcb, child, temp) {
+
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+
+    for_each_child_process_safe_locked(pcb, child, temp) {
         if (child->sched.status == PROC_STATUS_ZOMBIE) {
             handle_dead_child_locked(child, NULL);
         }
     }
+
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 }
 
 spctx_t *asm_process_get_current_pcb_stack_context(void) {
@@ -271,14 +278,20 @@ int process_wait_for(pcb_t *pcb, int *status) {
         return -1;
     }
 
+    irqctx_t pcbs_data_ctx;
     if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
+        spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbs_data_ctx);
         handle_dead_child_locked(pcb, status);
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbs_data_ctx);
         irq_local_restore_ctx(&ctx);
         return 0;
     }
 
     BLOCK_UNTIL_IRQ_DISABLED(pcb->sched.status == PROC_STATUS_ZOMBIE, &pcb->parent_waiting_cond, &ctx);
+
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbs_data_ctx);
     handle_dead_child_locked(pcb, status);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbs_data_ctx);
 
     irq_local_restore_ctx(&ctx);
 

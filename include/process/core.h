@@ -42,6 +42,10 @@ typedef struct {
 typedef struct {
     process_status_t status;
     uint8_t priority;
+
+    /**
+     * Node used to link a process to the _laritos.proc.pcbs list
+     */
     struct list_head pcb_node;
 
     /**
@@ -93,7 +97,7 @@ void process_assign_pid(pcb_t *pcb);
 pcb_t *process_alloc(void);
 int process_free(pcb_t *pcb);
 int process_register_locked(pcb_t *pcb);
-int process_release_zombie_resources(pcb_t *pcb);
+int process_release_zombie_resources_locked(pcb_t *pcb);
 void process_unregister_zombie_children_locked(pcb_t *pcb);
 void process_kill(pcb_t *pcb);
 void process_kill_locked(pcb_t *pcb);
@@ -127,7 +131,7 @@ static inline void process_set_name(pcb_t *pcb, char *name) {
 #define for_each_process_locked(_p) \
     list_for_each_entry(_p, &_laritos.proc.pcbs, sched.pcb_node)
 
-#define for_each_child_process_safe(_parent, _child, _temp) \
+#define for_each_child_process_safe_locked(_parent, _child, _temp) \
     list_for_each_entry_safe(_child, _temp, &_parent->children, siblings)
 
 #define for_each_ready_process_locked(_p) \
