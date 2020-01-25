@@ -93,7 +93,10 @@ int process_register_locked(pcb_t *pcb) {
         ref_inc(&pcb->refcnt);
     }
 
+    spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
     list_add_tail(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
+    spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
+
     sched_move_to_ready_locked(pcb);
     return 0;
 }
@@ -105,7 +108,12 @@ int process_release_zombie_resources_locked(pcb_t *pcb) {
     }
 
     debug_async("Releasing zombie resources for pid=%u, exit status=%d", pcb->pid, pcb->exit_status);
+
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
     list_del(&pcb->sched.pcb_node);
+    spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
+
     list_del(&pcb->sched.sched_node);
 
     free(pcb->mm.imgaddr);

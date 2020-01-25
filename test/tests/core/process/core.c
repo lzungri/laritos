@@ -15,7 +15,11 @@
 
 
 static bool is_process_active(pcb_t *pcb) {
-    return is_process_in(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
+    bool active = is_process_in(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
+    spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
+    return active;
 }
 
 static int kproc0(void *data) {
