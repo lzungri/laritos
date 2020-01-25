@@ -133,7 +133,7 @@ static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
     process_release_zombie_resources_locked(pcb);
 
     // Notify blocked parent (if any) about its dead
-    condition_notify_irq_disabled(&pcb->parent_waiting_cond);
+    condition_notify_locked(&pcb->parent_waiting_cond);
 
     if (gparent == _laritos.proc.init) {
         // New zombie process child of init, wake up init so that it releases its resources

@@ -284,29 +284,24 @@ int process_wait_for(pcb_t *pcb, int *status) {
     verbose_async("Waiting for pid=%u", pcb->pid);
 
     irqctx_t ctx;
-    irq_disable_local_and_save_ctx(&ctx);
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
 
     if (pcb->parent != process_get_current()) {
-        irq_local_restore_ctx(&ctx);
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
         return -1;
     }
 
-    irqctx_t pcbs_data_ctx;
     if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
-        spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbs_data_ctx);
         handle_dead_child_locked(pcb, status);
-        spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbs_data_ctx);
-        irq_local_restore_ctx(&ctx);
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
         return 0;
     }
 
-    BLOCK_UNTIL_IRQ_DISABLED(pcb->sched.status == PROC_STATUS_ZOMBIE, &pcb->parent_waiting_cond, &ctx);
-
-    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbs_data_ctx);
+    BLOCK_UNTIL(pcb->sched.status == PROC_STATUS_ZOMBIE, &pcb->parent_waiting_cond,
+                &_laritos.proc.pcbs_data_lock, &ctx);
     handle_dead_child_locked(pcb, status);
-    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbs_data_ctx);
 
-    irq_local_restore_ctx(&ctx);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
     return 0;
 }
