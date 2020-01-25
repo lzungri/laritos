@@ -126,7 +126,11 @@ T(process_new_kernel_process_is_child_of_test_process) {
     tassert(child != NULL);
     tassert(is_process_active(child));
     tassert(child->parent == process_get_current());
+
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
     tassert(is_process_in(&child->siblings, &process_get_current()->children));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
     terminate = true;
     while (child->sched.status != PROC_STATUS_ZOMBIE);
@@ -147,7 +151,11 @@ static int test_parent1(void *data) {
     tassert(child != NULL);
     tassert(is_process_active(child));
     tassert(child->parent == process_get_current());
+
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
     tassert(is_process_in(&child->siblings, &process_get_current()->children));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
     bool *terminate = (bool *) data;
     while (!*terminate) {
@@ -214,7 +222,11 @@ T(process_orphan_proc_grandparent_becomes_new_parent) {
     tassert(pcb != NULL);
     tassert(is_process_active(pcb));
     tassert(pcb->parent == process_get_current());
+
+    irqctx_t pcbs_data_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbs_data_ctx);
     tassert(is_process_in(&pcb->siblings, &process_get_current()->children));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbs_data_ctx);
 
     terminate_child = true;
     while (pcb->sched.status != PROC_STATUS_ZOMBIE);

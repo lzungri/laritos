@@ -80,10 +80,15 @@ pcb_t *process_alloc(void) {
 int process_register_locked(pcb_t *pcb) {
     debug_async("Registering process with pid=%u, priority=%u", pcb->pid, pcb->sched.priority);
 
+    irqctx_t ctx;
     if (_laritos.process_mode) {
         pcb_t *parent = process_get_current();
         pcb->parent = parent;
+
+        spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
         list_add_tail(&pcb->siblings, &parent->children);
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+
         // Parent pcb is now referencing its child, increase ref counter
         ref_inc(&pcb->refcnt);
     }
