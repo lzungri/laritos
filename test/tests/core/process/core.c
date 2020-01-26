@@ -395,3 +395,52 @@ T(process_spawning_lots_of_processes_doesnt_crash_the_system) {
         tassert(status == pid);
     }
 TEND
+
+static int chain(void *data) {
+    uint8_t *nprocs = (uint8_t *) data;
+    if (++(*nprocs) >= CONFIG_PROCESS_MAX_CONCURRENT_PROCS - 10) {
+        return 0;
+    }
+    char buf[CONFIG_PROCESS_MAX_NAME_LEN] = { 0 };
+    snprintf(buf, sizeof(buf), "proc%u", *nprocs);
+    pcb_t *p = process_spawn_kernel_process(buf, chain, nprocs,
+                        8196, process_get_current()->sched.priority);
+    process_wait_for(p, NULL);
+    return 0;
+}
+
+T(process_all_parents_wait_for_their_children) {
+    uint8_t nprocs = 0;
+    pcb_t *proc = process_spawn_kernel_process("proc0", chain, &nprocs,
+                        8196,  process_get_current()->sched.priority);
+    tassert(proc != NULL);
+    process_wait_for(proc, NULL);
+TEND
+
+static bool end_orphan_test = false;
+static int future_orphan(void *data) {
+    uint8_t *nprocs = (uint8_t *) data;
+    if (++(*nprocs) >= CONFIG_PROCESS_MAX_CONCURRENT_PROCS - 10) {
+        sleep(5);
+        end_orphan_test = true;
+        return 0;
+    }
+    char buf[CONFIG_PROCESS_MAX_NAME_LEN] = { 0 };
+    snprintf(buf, sizeof(buf), "proc%u", *nprocs);
+    process_spawn_kernel_process(buf, future_orphan, nprocs,
+                        8196, process_get_current()->sched.priority);
+    msleep((CONFIG_PROCESS_MAX_CONCURRENT_PROCS - 10 - *nprocs) * 100);
+    return 0;
+}
+
+T(process_orphan_children_are_adopted_by_grandparent) {
+    uint8_t nprocs = 0;
+    pcb_t *proc = process_spawn_kernel_process("proc0", future_orphan, &nprocs,
+                        8196,  process_get_current()->sched.priority);
+    tassert(proc != NULL);
+    process_wait_for(proc, NULL);
+
+    while (!end_orphan_test) {
+        sleep(1);
+    }
+TEND
