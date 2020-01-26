@@ -131,6 +131,9 @@ static inline void process_set_name(pcb_t *pcb, char *name) {
 #define for_each_process_locked(_p) \
     list_for_each_entry(_p, &_laritos.proc.pcbs, sched.pcb_node)
 
+#define for_each_child_process_locked(_parent, _child) \
+    list_for_each_entry(_child, &_parent->children, siblings)
+
 #define for_each_child_process_safe_locked(_parent, _child, _temp) \
     list_for_each_entry_safe(_child, _temp, &_parent->children, siblings)
 
