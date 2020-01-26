@@ -31,7 +31,38 @@ int shell_main(void *data) {
                 case '-':;
                     process_set_priority(proc, proc->sched.priority - 1);
                     break;
+                case '0':;
+                    // Heap buffer overflow
+                    char *ptr = malloc(10);
+                    ptr[10] = 0xCA;
+                    ptr[11] = 0xCA;
+                    ptr[12] = 0xCA;
+                    ptr[13] = 0xCA;
+                    free(ptr);
+                    break;
                 case '1':
+                    // undef exc
+                    asm(".word 0xffffffff");
+                    break;
+                case '2':;
+                    uint32_t *bottom = proc->mm.stack_bottom;
+                    *bottom = 0xCACACACA;
+                    uint32_t *top = (uint32_t *) ((char *) proc->mm.stack_bottom + proc->mm.stack_size - 4);
+                    *top = 0xBABABABA;
+                    break;
+                case '3':
+                    // data abort exc
+                    asm("movw r7, #0xffff");
+                    asm("movt r7, #0xffff");
+                    asm("str r6, [r7]");
+                    break;
+                case '4':
+                    // prefetch exc
+                    asm("movw r7, #0xffff");
+                    asm("movt r7, #0xffff");
+                    asm("mov pc, r7");
+                    break;
+                case '5':
                     // system call
                     asm("mov r0, %[c]" : : [c] "r" (buf[0]));
                     asm("mov r1, #2");
@@ -42,12 +73,6 @@ int shell_main(void *data) {
                     asm("mov r6, #7");
                     asm("svc 1");
                     break;
-                case '2':;
-                    uint32_t *bottom = proc->mm.stack_bottom;
-                    *bottom = 0xCACACACA;
-                    uint32_t *top = (uint32_t *) ((char *) proc->mm.stack_bottom + proc->mm.stack_size - 4);
-                    *top = 0xBABABABA;
-                    break;
                 case 's':
                     debug_dump_processes();
                     debug_dump_processes_stats();
@@ -55,25 +80,12 @@ int shell_main(void *data) {
                 case 'k':
                     debug_dump_kernel_stats();
                     break;
+                case 'p':
+                    debug_dump_pstree();
+                    break;
                 case 'r':
                     // reset
                     asm("b 0");
-                    break;
-                case 'd':
-                    // data abort exc
-                    asm("movw r7, #0xffff");
-                    asm("movt r7, #0xffff");
-                    asm("str r6, [r7]");
-                    break;
-                case 'p':
-                    // prefetch exc
-                    asm("movw r7, #0xffff");
-                    asm("movt r7, #0xffff");
-                    asm("mov pc, r7");
-                    break;
-                case 'u':
-                    // undef exc
-                    asm(".word 0xffffffff");
                     break;
                 case 'c':;
                     calendar_t c = { 0 };
@@ -105,15 +117,6 @@ int shell_main(void *data) {
                     free(p);
                     free(p3);
                     heap_dump_info();
-                    break;
-                case 'h':;
-                    // Heap buffer overflow
-                    char *ptr = malloc(10);
-                    ptr[10] = 0xCA;
-                    ptr[11] = 0xCA;
-                    ptr[12] = 0xCA;
-                    ptr[13] = 0xCA;
-                    free(ptr);
                     break;
                 }
             }
