@@ -11,6 +11,7 @@
 #include <sched/context.h>
 #include <sched/core.h>
 #include <sync/atomic.h>
+#include <utils/math.h>
 #include <syscall/syscall-no.h>
 
 static inline void debug_message_delimiter(void) {
@@ -61,6 +62,37 @@ static inline void debug_dump_processes(void) {
     }
 
     spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
+}
+
+static inline void _dump_pstree_for(pcb_t *pcb, uint8_t level) {
+    char buf[128];
+    uint8_t nspaces = min(sizeof(buf) - 1, level * 2);
+    memset(buf, ' ', nspaces);
+
+    if (level > 20) {
+        strncpy(buf + nspaces, "...", sizeof(buf) - nspaces - 1);
+        log_always("%s", buf);
+        // To prevent stack overflows
+        return;
+    }
+
+    strncpy(buf + nspaces, pcb->name, sizeof(buf) - nspaces - 1);
+    log_always("%s", buf);
+
+    pcb_t *child;
+    for_each_child_process_locked(pcb, child) {
+        _dump_pstree_for(child, level + 1);
+    }
+}
+
+static inline void debug_dump_pstree(void) {
+    log_always("pstree:");
+    // Prevent the OS from doing any change on the active processes
+    // WARNING: We can only do this here since this is only used for debugging purposes
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    _dump_pstree_for(_laritos.proc.init, 1);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 }
 
 static inline void debug_dump_processes_stats(void) {
