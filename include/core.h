@@ -111,6 +111,8 @@ typedef struct {
     laritos_sched_t sched;
     laritos_stats_t stats;
 
+    int32_t rndseed;
+
     /**
      * Time information
      */
