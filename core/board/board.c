@@ -4,9 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <strtoxl.h>
-#include <irq.h>
-#include <board-types.h>
-#include <board.h>
+#include <irq/types.h>
+#include <board/board-types.h>
+#include <board/board.h>
 #include <component/component.h>
 
 int board_init(board_info_t *bi) {
@@ -175,6 +175,21 @@ int board_get_ptr_attr(board_comp_t *bc, char *attr, void **buf) {
 
 void board_get_ptr_attr_def(board_comp_t *bc, char *attr, void **buf, void *def) {
     if (board_get_ptr_attr(bc, attr, buf) < 0) {
+        *buf = def;
+    }
+}
+
+long board_get_u64_attr(board_comp_t *bc, char *attr, uint64_t *buf) {
+    char str[CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES] = { 0 };
+    if (board_get_str_attr(bc, attr, str) < 0 || strnlen(str, sizeof(str)) < 0) {
+        return -1;
+    }
+    *buf = (uint64_t) strtol(str, NULL, 0);
+    return 0;
+}
+
+void board_get_u64_attr_def(board_comp_t *bc, char *attr, uint64_t *buf, uint64_t def) {
+    if (board_get_u64_attr(bc, attr, buf) < 0) {
         *buf = def;
     }
 }

@@ -102,9 +102,9 @@ T(semaphore_012_sequence) {
 
     schedule();
 
-    tassert(is_process_in(&p0->sched.blockedlst, &sems_012[0].cond.blocked));
-    tassert(is_process_in(&p1->sched.blockedlst, &sems_012[1].cond.blocked));
-    tassert(is_process_in(&p2->sched.blockedlst, &sems_012[2].cond.blocked));
+    tassert(is_process_in(&p0->sched.sched_node, &sems_012[0].cond.blocked));
+    tassert(is_process_in(&p1->sched.sched_node, &sems_012[1].cond.blocked));
+    tassert(is_process_in(&p2->sched.sched_node, &sems_012[2].cond.blocked));
 
     sem_release(&sems_012[0]);
     sem_acquire(&sems_012[3]);
@@ -139,9 +139,9 @@ T(semaphore_blocked_proc_with_the_highest_priority_acquires_semaphore_after_it_i
     tassert(p2 != NULL);
     schedule();
 
-    tassert(is_process_in(&p0->sched.blockedlst, &sem.cond.blocked));
-    tassert(is_process_in(&p1->sched.blockedlst, &sem.cond.blocked));
-    tassert(is_process_in(&p2->sched.blockedlst, &sem.cond.blocked));
+    tassert(is_process_in(&p0->sched.sched_node, &sem.cond.blocked));
+    tassert(is_process_in(&p1->sched.sched_node, &sem.cond.blocked));
+    tassert(is_process_in(&p2->sched.sched_node, &sem.cond.blocked));
 
     sem_release(&sem);
     sleep(1);

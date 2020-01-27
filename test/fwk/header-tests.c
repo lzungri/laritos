@@ -17,6 +17,14 @@
 #include <core/sync/atomic.c>
 #endif
 
-#ifdef CONFIG_TEST_UTILS_MATH
-#include <utils/math.c>
+#ifdef CONFIG_TEST_CORE_COMPONENT_CPU
+#include <core/component/cpu.c>
+#endif
+
+#ifdef CONFIG_TEST_CORE_UTILS_MATH
+#include <core/utils/math.c>
+#endif
+
+#ifdef CONFIG_TEST_CORE_UTILS_LATENCY
+#include <core/utils/latency.c>
 #endif

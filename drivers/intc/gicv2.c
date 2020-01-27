@@ -2,10 +2,10 @@
 
 #include <stdbool.h>
 #include <component/intc.h>
-#include <irq.h>
-#include <cpu.h>
-#include <board-types.h>
-#include <board.h>
+#include <irq/types.h>
+#include <cpu/cpu.h>
+#include <board/board-types.h>
+#include <board/board.h>
 #include <driver/driver.h>
 #include <driver/gicv2.h>
 #include <utils/math.h>

@@ -1,0 +1,22 @@
+menu "Utils"
+
+config TEST_CORE_UTILS_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_UTILS_MATH
+    select TEST_CORE_UTILS_LATENCY
+    select TEST_CORE_UTILS_RANDOM_LCG
+
+config TEST_CORE_UTILS_MATH
+    bool "math.c"
+    default n
+
+config TEST_CORE_UTILS_LATENCY
+    bool "latency.c"
+    default n
+
+config TEST_CORE_UTILS_RANDOM_LCG
+    bool "random-lcg.c"
+    default n
+
+endmenu

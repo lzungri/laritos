@@ -2,7 +2,7 @@
 
 #include <log.h>
 
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <string.h>
 #include <process/core.h>
 #include <arch/debug.h>
@@ -53,7 +53,7 @@ static inline void arch_context_init(struct pcb *pcb, void *retaddr, cpu_mode_t 
 }
 
 static inline void arch_context_restore(spctx_t *spctx) {
-    regpsr_t curpsr = arch_get_cpsr();
+    regpsr_t curpsr = arch_cpu_get_cpsr();
     regpsr_t targetpsr = { 0 };
     // The context restore will change based on whether we need to restore a non-user
     // or user context. Check this by inspecting the psr value saved in the stack
@@ -162,7 +162,7 @@ static inline void arch_context_save_and_restore(pcb_t *spcb, pcb_t *rpcb) {
     // Check whether this is a context save or returning from a context restore
     if (ctx_saved) {
         // Update the context pointer
-        spcb->mm.sp_ctx = (spctx_t *) arch_regs_get_sp();
+        spcb->mm.sp_ctx = (spctx_t *) arch_cpu_get_sp();
 
         // Since we screw the stack we need to do the saving and restoring here, that way,
         // when execution goes back to spcb, it will fix the stack and continue execution as

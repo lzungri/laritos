@@ -94,16 +94,20 @@ T(vrtimer_callback_is_called_after_n_ticks) {
 TEND
 
 static abstick_t cb2_ticks = 0;
-static tick_t cb2_n = 3;
+static tick_t cb2_n;
 static int cb2(vrtimer_comp_t *t, void *data) {
     bool *valid_tick = (bool *) data;
+
+    abstick_t cur = get_timer_cur_value(t);
+    abstick_t toler = (t->hrtimer->curfreq * 10) / 100;
+    abstick_t expected = cb2_ticks + cb2_n;
     if (cb2_ticks == 0) {
         // Initialize boolean used for validation
         *valid_tick = true;
-    } else if (get_timer_cur_value(t) != cb2_ticks + cb2_n) {
+    } else if (cur < expected - toler || cur > expected + toler) {
         *valid_tick = false;
     }
-    cb2_ticks = get_timer_cur_value(t);
+    cb2_ticks = cur;
     return 0;
 }
 
@@ -113,6 +117,10 @@ T(vrtimer_callbacks_are_called_on_every_n_ticks_if_vrtimer_is_periodic) {
     vrtimer_comp_t *t = get_vrtimer();
     tassert(t != NULL);
 
+    // 3 seconds period timer
+    cb2_n = 3 * t->hrtimer->curfreq;
+
+    // deadline = 12 seconds from now
     abstick_t deadline = get_timer_cur_value(t) + 4 * cb2_n;
     bool valid_tick = false;
 
@@ -120,8 +128,6 @@ T(vrtimer_callbacks_are_called_on_every_n_ticks_if_vrtimer_is_periodic) {
     tassert(is_vrtimer_registered(t, cb2, &valid_tick, true));
 
     while(get_timer_cur_value(t) < deadline);
-
-    tassert(valid_tick);
 
     // Timer should still be there since it is periodic
     tassert(is_vrtimer_registered(t, cb2, &valid_tick, true));
@@ -131,4 +137,6 @@ T(vrtimer_callbacks_are_called_on_every_n_ticks_if_vrtimer_is_periodic) {
     tassert(!is_vrtimer_registered(t, cb2, &valid_tick, true));
 
     resume_ticker();
+
+    tassert(valid_tick);
 TEND

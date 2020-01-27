@@ -1,6 +1,6 @@
 #include <log.h>
-#include <board-types.h>
-#include <board.h>
+#include <board/board-types.h>
+#include <board/board.h>
 #include <mm/heap.h>
 #include <component/inputdev.h>
 #include <driver/driver.h>

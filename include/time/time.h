@@ -13,6 +13,9 @@
 #define NSEC_PER_MSEC   1000000L
 #define NSEC_PER_USEC   1000L
 
+#define SEC_TO_MINUTE(_s) ((_s) / 60)
+#define SEC_TO_HOUR(_s) ((_s) / SECS_PER_HOUR)
+
 #define SEC_TO_MS(_s) ((_s) * MSEC_PER_SEC)
 #define SEC_TO_US(_s) ((_s) * USEC_PER_SEC)
 #define SEC_TO_NS(_s) ((_s) * NSEC_PER_SEC)
@@ -21,6 +24,7 @@
 #define MS_TO_US(_ms) ((_ms) * USEC_PER_MSEC)
 #define MS_TO_NS(_ms) ((_ms) * NSEC_PER_MSEC)
 
+#define US_TO_SEC(_us) ((_us) / USEC_PER_SEC)
 #define US_TO_MS(_us) ((_us) / USEC_PER_MSEC)
 #define US_TO_NS(_us) ((_us) * NSEC_PER_USEC)
 
@@ -38,8 +42,8 @@ typedef enum {
 } timezone_t;
 
 typedef struct {
-    uint64_t secs;
-    uint32_t ns;
+    int64_t secs;
+    int32_t ns;
 } time_t;
 
 // Imported from linux source tree
@@ -65,10 +69,16 @@ typedef struct {
     int yday;
 } calendar_t;
 
-int time_rtc_gettime(time_t *t);
-int time_rtc_get_localtime_calendar(calendar_t *c);
+int time_get_rtc_time(time_t *t);
+int time_get_ns_rtc_time(time_t *t);
+int time_get_rtc_localtime_calendar(calendar_t *c);
+uint64_t time_get_monotonic_hrtimer_ticks(void);
+int time_get_monotonic_time(time_t *t);
 int time_set_timezone(timezone_t t, bool daylight);
 int time_get_localtime_offset(void);
+void time_sub(time_t *left, time_t *right, time_t *res);
+void time_add(time_t *left, time_t *right, time_t *res);
+void time_to_hms(time_t *t, uint16_t *h, uint16_t *m, uint16_t *s);
 
 void sleep(uint32_t secs);
 void msleep(uint32_t ms);

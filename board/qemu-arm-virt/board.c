@@ -1,6 +1,6 @@
 #include <log.h>
-#include <board-types.h>
-#include <board.h>
+#include <board/board-types.h>
+#include <board/board.h>
 
 
 static int qemu_board_init(board_info_t *bi) {

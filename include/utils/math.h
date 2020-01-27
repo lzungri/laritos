@@ -15,3 +15,8 @@
 #define sign_extend_32(_n, _bits) (int32_t) \
     (((_n) & (1 << ((_bits) - 1))) ? ((int32_t) (_n) - (1 << (_bits))) : (_n))
 
+
+#define nearly_equal(a, b, epsilon) \
+    ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a >= _b - epsilon && _a <= _b + epsilon;})

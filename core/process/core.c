@@ -1,7 +1,8 @@
 #include <log.h>
 
 #include <dstruct/list.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
+#include <cpu/cpu-local.h>
 #include <core.h>
 #include <mm/slab.h>
 #include <mm/heap.h>
@@ -12,13 +13,19 @@
 #include <sched/context.h>
 #include <sync/spinlock.h>
 #include <sync/condition.h>
+#include <sync/atomic.h>
 #include <utils/utils.h>
 #include <generated/autoconf.h>
 
 int process_init_global_context(void) {
     INIT_LIST_HEAD(&_laritos.proc.pcbs);
-    INIT_LIST_HEAD(&_laritos.sched.ready_pcbs);
-    INIT_LIST_HEAD(&_laritos.sched.blocked_pcbs);
+    spinlock_init(&_laritos.proc.pcbs_lock);
+    spinlock_init(&_laritos.proc.pcbs_data_lock);
+
+    struct list_head *l;
+    CPU_LOCAL_FOR_EACH_CPU_VAR(_laritos.sched.ready_pcbs, l) {
+        INIT_LIST_HEAD(l);
+    }
 
     _laritos.proc.pcb_slab = slab_create(CONFIG_PROCESS_MAX_CONCURRENT_PROCS, sizeof(pcb_t));
     return _laritos.proc.pcb_slab != NULL ? 0 : -1;
@@ -55,11 +62,14 @@ pcb_t *process_alloc(void) {
         memset(pcb, 0, sizeof(pcb_t));
         INIT_LIST_HEAD(&pcb->sched.pcb_node);
         INIT_LIST_HEAD(&pcb->sched.sched_node);
-        INIT_LIST_HEAD(&pcb->sched.blockedlst);
         INIT_LIST_HEAD(&pcb->children);
         INIT_LIST_HEAD(&pcb->siblings);
         condition_init(&pcb->parent_waiting_cond);
         ref_init(&pcb->refcnt, free_process_slab);
+        int i;
+        for (i = 0; i < ARRAYSIZE(pcb->stats.syscalls); i++) {
+            atomic32_init(&pcb->stats.syscalls[i], 0);
+        }
         pcb->sched.status = PROC_STATUS_NOT_INIT;
         process_set_name(pcb, "?");
         process_assign_pid(pcb);
@@ -70,27 +80,40 @@ pcb_t *process_alloc(void) {
 int process_register_locked(pcb_t *pcb) {
     debug_async("Registering process with pid=%u, priority=%u", pcb->pid, pcb->sched.priority);
 
+    irqctx_t ctx;
     if (_laritos.process_mode) {
         pcb_t *parent = process_get_current();
         pcb->parent = parent;
+
+        spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
         list_add_tail(&pcb->siblings, &parent->children);
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+
         // Parent pcb is now referencing its child, increase ref counter
         ref_inc(&pcb->refcnt);
     }
 
+    spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
     list_add_tail(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
+    spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
+
     sched_move_to_ready_locked(pcb);
     return 0;
 }
 
-int process_release_zombie_resources(pcb_t *pcb) {
+int process_release_zombie_resources_locked(pcb_t *pcb) {
     if (pcb->sched.status != PROC_STATUS_ZOMBIE) {
         error_async("You can only release resources of a ZOMBIE process");
         return -1;
     }
 
     debug_async("Releasing zombie resources for pid=%u, exit status=%d", pcb->pid, pcb->exit_status);
+
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
     list_del(&pcb->sched.pcb_node);
+    spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
+
     list_del(&pcb->sched.sched_node);
 
     free(pcb->mm.imgaddr);
@@ -112,11 +135,17 @@ static inline void handle_dead_child_locked(pcb_t *pcb, int *status) {
 void process_unregister_zombie_children_locked(pcb_t *pcb) {
     pcb_t *child;
     pcb_t *temp;
-    for_each_child_process_safe(pcb, child, temp) {
+
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+
+    for_each_child_process_safe_locked(pcb, child, temp) {
         if (child->sched.status == PROC_STATUS_ZOMBIE) {
             handle_dead_child_locked(child, NULL);
         }
     }
+
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 }
 
 spctx_t *asm_process_get_current_pcb_stack_context(void) {
@@ -127,12 +156,17 @@ pcb_t *asm_process_get_current(void) {
     return process_get_current();
 }
 
-void process_kill(pcb_t *pcb) {
+void process_kill_locked(pcb_t *pcb) {
     verbose_async("Killing process pid=%u", pcb->pid);
-    irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
     sched_move_to_zombie_locked(pcb);
-    spinlock_release(&_laritos.proclock, &ctx);
+}
+
+void process_kill(pcb_t *pcb) {
+    irqctx_t ctx;
+
+    irq_disable_local_and_save_ctx(&ctx);
+    process_kill_locked(pcb);
+    irq_local_restore_ctx(&ctx);
 }
 
 void process_kill_and_schedule(pcb_t *pcb) {
@@ -142,11 +176,11 @@ void process_kill_and_schedule(pcb_t *pcb) {
 
 int process_set_priority(pcb_t *pcb, uint8_t priority) {
     irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
+    irq_disable_local_and_save_ctx(&ctx);
 
     if (!pcb->kernel && priority < CONFIG_SCHED_PRIORITY_MAX_USER) {
         error_async("Invalid priority for a user process, max priority = %u", CONFIG_SCHED_PRIORITY_MAX_USER);
-        spinlock_release(&_laritos.proclock, &ctx);
+        irq_local_restore_ctx(&ctx);
         return -1;
     }
 
@@ -163,7 +197,7 @@ int process_set_priority(pcb_t *pcb, uint8_t priority) {
         _laritos.sched.need_sched = true;
     }
 
-    spinlock_release(&_laritos.proclock, &ctx);
+    irq_local_restore_ctx(&ctx);
 
     return 0;
 }
@@ -225,13 +259,15 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
     process_set_priority(pcb, priority);
 
     irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
+    irq_disable_local_and_save_ctx(&ctx);
+
     if (process_register_locked(pcb) < 0) {
         error_async("Could not register process loaded at 0x%p", pcb);
-        spinlock_release(&_laritos.proclock, &ctx);
+        irq_local_restore_ctx(&ctx);
         goto error_pcbreg;
     }
-    spinlock_release(&_laritos.proclock, &ctx);
+
+    irq_local_restore_ctx(&ctx);
 
     return pcb;
 
@@ -248,23 +284,24 @@ int process_wait_for(pcb_t *pcb, int *status) {
     verbose_async("Waiting for pid=%u", pcb->pid);
 
     irqctx_t ctx;
-    spinlock_acquire(&_laritos.proclock, &ctx);
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
 
     if (pcb->parent != process_get_current()) {
-        spinlock_release(&_laritos.proclock, &ctx);
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
         return -1;
     }
 
     if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
         handle_dead_child_locked(pcb, status);
-        spinlock_release(&_laritos.proclock, &ctx);
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
         return 0;
     }
 
-    BLOCK_UNTIL_PROCLOCKED(pcb->sched.status == PROC_STATUS_ZOMBIE, &pcb->parent_waiting_cond, &ctx);
+    BLOCK_UNTIL(pcb->sched.status == PROC_STATUS_ZOMBIE, &pcb->parent_waiting_cond,
+                &_laritos.proc.pcbs_data_lock, &ctx);
     handle_dead_child_locked(pcb, status);
 
-    spinlock_release(&_laritos.proclock, &ctx);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
     return 0;
 }

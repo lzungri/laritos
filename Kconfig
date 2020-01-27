@@ -30,6 +30,10 @@ config LOG_LEVEL_VERBOSE
     bool "VERBOSE"
     select LOG_LEVEL_DEBUG
 
+config LOG_LEVEL_INSANE
+    bool "INSANE"
+    select LOG_LEVEL_VERBOSE
+
 endmenu
 
 config LOG_MAX_LINE_SIZE
@@ -54,6 +58,10 @@ menu "Debugging"
 
 config DEBUG_INFO
     bool "Add debugging info"
+    default y
+
+config ASSERT_PRINT_MSG
+    bool "Print error msg on assertion failure (may cause subsequent errors if log mechanism is corrupted)"
     default y
 
 endmenu

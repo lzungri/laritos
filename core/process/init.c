@@ -2,15 +2,17 @@
 
 #include <mm/heap.h>
 #include <process/core.h>
-#include <arch/cpu.h>
+#include <cpu/cpu.h>
 #include <utils/assert.h>
 #include <loader/loader.h>
 #include <sync/spinlock.h>
 #include <component/component.h>
+#include <component/ticker.h>
 #include <loader/loader.h>
 #include <process/core.h>
-#include <board-types.h>
-#include <board.h>
+#include <board/board-types.h>
+#include <board/board.h>
+#include <utils/random.h>
 #include <utils/debug.h>
 #include <sched/core.h>
 #include <generated/autoconf.h>
@@ -31,7 +33,7 @@ static void spawn_system_processes(void) {
     info("Spawning shell process");
     int shell_main(void *data);
     pcb_t *shell = process_spawn_kernel_process("shell", shell_main, NULL,
-                        8196, CONFIG_SCHED_PRIORITY_LOWEST - 10);
+                        8196, CONFIG_SCHED_PRIORITY_MAX_USER - 10);
     assert(shell != NULL, "Could not create shell process");
 
 #ifdef CONFIG_TEST_ENABLED
@@ -43,21 +45,46 @@ static void spawn_system_processes(void) {
 #else
     // Launch a few processes for testing
     // TODO: This code will disappear once we implement a shell and file system
-
-    if (loader_load_executable_from_memory(0) == NULL) {
-        error("Failed to load app #0");
-    }
-
-    // Load the same program, just to have 2 processes for testing
-    if (loader_load_executable_from_memory(0) == NULL) {
-        error("Failed to load app #1");
-    }
-
-    // Load the same program, just to have 3 processes for testing
-    if (loader_load_executable_from_memory(0) == NULL) {
-        error("Failed to load app #2");
+    int i;
+    for (i = 0; i < 5; i++) {
+        if (loader_load_executable_from_memory(0) == NULL) {
+            error("Failed to load app #%d", i);
+        }
     }
 #endif
+}
+
+static void start_os_tickers(void) {
+    // Start OS tickers
+    component_t *comp;
+    for_each_component_type(comp, COMP_TYPE_TICKER) {
+        ticker_comp_t *ticker = (ticker_comp_t *) comp;
+        info("Starting ticker '%s'", comp->id);
+        assert(ticker->ops.resume(ticker) >= 0, "Could not start ticker %s", comp->id);
+    }
+}
+
+static void init_loop(void) {
+    pcb_t *init = process_get_current();
+
+    // Loop forever
+    while (1) {
+        irqctx_t ctx;
+        irq_disable_local_and_save_ctx(&ctx);
+        // Block and wait for events (e.g. new zombie process)
+        sched_move_to_blocked_locked(init, NULL);
+        irq_local_restore_ctx(&ctx);
+
+        // Switch to another process
+        schedule();
+
+        // Someone woke me up, process event/s
+
+        // Release zombie children
+        irq_disable_local_and_save_ctx(&ctx);
+        process_unregister_zombie_children_locked(init);
+        irq_local_restore_ctx(&ctx);
+    }
 }
 
 int init_main(void *data) {
@@ -80,38 +107,25 @@ int init_main(void *data) {
     debug_dump_registered_comps();
 #endif
 
-    assert(component_are_mandatory_comps_present(), "Not all mandatory board components were found");
+    // TODO Once we implement SMP, we should do this for each cpu
+    assert(cpu_initialize() >= 0, "Failed to initialize cpu #%u", cpu_get_id());
+
+    // Save the RTC boot time. Useful for calculating the current time with nanoseconds
+    // resolution (rtc just provides second resolution)
+    time_get_rtc_time(&_laritos.timeinfo.boottime);
 
     info("Setting default timezone as PDT");
-    if (time_set_timezone(TZ_PST, true) < 0) {
+    if (time_set_timezone(TZ_PST, false) < 0) {
         error("Couldn't set default timezone");
     }
 
-    cpu_t *c = cpu();
-    if (c->ops.set_irqs_enable(c, true) < 0) {
-        fatal("Failed to enable irqs for cpu %u", c->id);
-    }
+    // Seed random generator from current time
+    random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
 
     spawn_system_processes();
 
-    // Loop forever
-    while (1) {
-        irqctx_t ctx;
+    start_os_tickers();
 
-        // Block and wait for events (e.g. new zombie process)
-        spinlock_acquire(&_laritos.proclock, &ctx);
-        sched_move_to_blocked_locked(process_get_current());
-        spinlock_release(&_laritos.proclock, &ctx);
-
-        // Switch to another process
-        schedule();
-
-        // Someone woke me up, process event/s
-
-        // Release zombie children
-        spinlock_acquire(&_laritos.proclock, &ctx);
-        process_unregister_zombie_children_locked(process_get_current());
-        spinlock_release(&_laritos.proclock, &ctx);
-    }
+    init_loop();
     return 0;
 }

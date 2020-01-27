@@ -3,7 +3,6 @@
 #include <arch/cpu.h>
 #include <stdint.h>
 
-
 /**
  * Process context saved by the os in the process stack every time there
  * is an exception or context switch.

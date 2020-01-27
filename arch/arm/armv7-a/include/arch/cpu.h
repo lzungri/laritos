@@ -251,13 +251,13 @@ typedef struct {
  *
  * @return: Current program status register
  */
-static inline const regpsr_t arch_get_cpsr(void) {
+static inline const regpsr_t arch_cpu_get_cpsr(void) {
     regpsr_t cpsr;
     asm("mrs %0, cpsr" : "=r" (cpsr.v));
     return cpsr;
 }
 
-static inline void arch_set_cpsr(regpsr_t *psr) {
+static inline void arch_cpu_set_cpsr(regpsr_t *psr) {
     asm("msr cpsr, %0" : : "r" (psr->v));
 }
 
@@ -266,22 +266,10 @@ static inline void arch_set_cpsr(regpsr_t *psr) {
  *
  * @return: Saved program status register
  */
-static inline const regpsr_t arch_get_saved_psr(void) {
+static inline const regpsr_t arch_cpu_get_saved_psr(void) {
     regpsr_t spsr;
     asm("mrs %0, spsr" : "=r" (spsr.v));
     return spsr;
-}
-
-static inline bool arch_is_irq(regpsr_t psr) {
-    return psr.b.mode == ARM_CPU_MODE_IRQ;
-}
-
-static inline bool arch_is_svc(regpsr_t psr) {
-    return psr.b.mode == ARM_CPU_MODE_SUPERVISOR;
-}
-
-static inline bool arch_is_user(regpsr_t psr) {
-    return psr.b.mode == ARM_CPU_MODE_USER;
 }
 
 /**
@@ -291,7 +279,7 @@ static inline bool arch_is_user(regpsr_t psr) {
  *
  * @return: Current program counter
  */
-__attribute__((always_inline)) static inline regpc_t arch_regs_get_pc(void) {
+__attribute__((always_inline)) static inline regpc_t arch_cpu_get_pc(void) {
     regpc_t pc;
     asm("mov %0, pc" : "=r" (pc));
     return (char *) pc - 4;
@@ -304,7 +292,7 @@ __attribute__((always_inline)) static inline regpc_t arch_regs_get_pc(void) {
  *
  * @return: Function return address
  */
-__attribute__((always_inline)) static inline regret_t arch_regs_get_retaddr(void) {
+__attribute__((always_inline)) static inline regret_t arch_cpu_get_retaddr(void) {
     regret_t ret;
     asm("mov %0, lr" : "=r" (ret));
     return ret;
@@ -316,7 +304,7 @@ __attribute__((always_inline)) static inline regret_t arch_regs_get_retaddr(void
  *
  * @return: Function return address
  */
-__attribute__((always_inline)) static inline regsp_t arch_regs_get_sp(void) {
+__attribute__((always_inline)) static inline regsp_t arch_cpu_get_sp(void) {
     regsp_t ret;
     asm("mov %0, sp" : "=r" (ret));
     return ret;
@@ -338,8 +326,24 @@ static inline uint8_t arch_cpu_get_id(void) {
     return v & 0b11;
 }
 
-static inline void arch_wfi(void) {
-    debug_async("Putting CPU #%u to sleep", arch_cpu_get_id());
+static inline void arch_cpu_wfi(void) {
+    insane_async("Putting CPU #%u to sleep", arch_cpu_get_id());
     asm("wfi");
-    debug_async("CPU #%u is now awake", arch_cpu_get_id());
+    insane_async("CPU #%u is now awake", arch_cpu_get_id());
 }
+
+static inline bool arch_cpu_is_irq_mode(regpsr_t psr) {
+    return psr.b.mode == ARM_CPU_MODE_IRQ;
+}
+
+static inline bool arch_cpu_is_svc_mode(regpsr_t psr) {
+    return psr.b.mode == ARM_CPU_MODE_SUPERVISOR;
+}
+
+static inline bool arch_cpu_is_user_mode(regpsr_t psr) {
+    return psr.b.mode == ARM_CPU_MODE_USER;
+}
+
+int arch_cpu_set_cycle_count_enable(bool enable);
+int arch_cpu_reset_cycle_count(void);
+uint64_t arch_cpu_get_cycle_count(void);

@@ -1,13 +1,15 @@
 #include <log.h>
 
 #include <stdint.h>
-#include <board.h>
-#include <irq.h>
+#include <board/board.h>
+#include <irq/types.h>
 #include <component/component.h>
 #include <component/timer.h>
 #include <utils/function.h>
+#include <sync/spinlock.h>
 
 int timer_init(timer_comp_t *t) {
+    spinlock_init(&t->lock);
     // Setup irq stuff if using interrupt-driven io
     if (t->intio) {
         if (intc_enable_irq_with_handler(t->intc,

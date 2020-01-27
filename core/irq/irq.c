@@ -1,12 +1,13 @@
 #include <log.h>
 
-#include <irq.h>
-#include <cpu.h>
+#include <irq/types.h>
+#include <cpu/cpu.h>
 #include <core.h>
 #include <component/component.h>
 #include <component/intc.h>
 #include <sched/context.h>
 #include <sched/core.h>
+#include <generated/autoconf.h>
 
 int irq_handler(spctx_t *ctx) {
     if (_laritos.process_mode) {
@@ -16,10 +17,10 @@ int irq_handler(spctx_t *ctx) {
     int fret = 0;
     component_t *c = NULL;
     for_each_component_type(c, COMP_TYPE_INTC) {
-        verbose_async("Dispatching irq to int controller '%s'", c->id);
+        insane_async("Dispatching irq to int controller '%s'", c->id);
         intc_t *intc = (intc_t *) c;
         irqret_t ret = intc->ops.dispatch_irq(intc);
-        verbose_async("Interrupt controller '%s' returned %s", c->id, irq_get_irqret_str(ret));
+        insane_async("Interrupt controller '%s' returned %s", c->id, irq_get_irqret_str(ret));
         switch (ret) {
         case IRQ_RET_HANDLED:
             goto end;
@@ -38,3 +39,9 @@ end:
     schedule_if_needed();
     return fret;
 }
+
+
+
+#ifdef CONFIG_TEST_CORE_IRQ
+#include __FILE__
+#endif

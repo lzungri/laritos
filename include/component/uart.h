@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <irq.h>
+#include <irq/types.h>
 #include <component/component.h>
 #include <component/intc.h>
 #include <component/bytestream.h>

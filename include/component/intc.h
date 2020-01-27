@@ -2,8 +2,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <cpu.h>
-#include <irq.h>
+#include <cpu/cpu.h>
+#include <irq/types.h>
 #include <dstruct/list.h>
 #include <component/component.h>
 #include <generated/autoconf.h>
@@ -48,7 +48,6 @@ typedef struct intc{
  */
 static inline int intc_disable_irq_with_handler(intc_t *intc, irq_t irq, irq_handler_t h) {
     intc->ops.remove_irq_handler(intc, irq, h);
-    intc->ops.set_irqs_enable_for_this_cpu(intc, false);
     intc->ops.set_irq_target_cpus(intc, irq, 0);
     return intc->ops.set_irq_enable(intc, irq, false);
 }

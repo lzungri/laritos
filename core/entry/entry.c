@@ -1,11 +1,13 @@
 #include <log.h>
 #include <string.h>
 #include <core.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <mm/heap.h>
 #include <component/component.h>
 #include <process/core.h>
 #include <sched/core.h>
+#include <sync/atomic.h>
+#include <utils/utils.h>
 
 laritos_t _laritos;
 
@@ -17,6 +19,12 @@ static int initialize_global_context(void) {
     if (process_init_global_context() < 0) {
         goto error_pcb;
     }
+
+    int i;
+    for (i = 0; i < ARRAYSIZE(_laritos.stats.nirqs); i++) {
+        atomic32_init(&_laritos.stats.nirqs[i], 0);
+    }
+    atomic32_init(&_laritos.stats.ctx_switches, 0);
 
     return 0;
 
@@ -39,7 +47,7 @@ void kernel_entry(void)  {
 
     int init_main(void *data);
     _laritos.proc.init = process_spawn_kernel_process("init", init_main, NULL,
-                        CONFIG_PROCESS_INIT_STACK_SIZE, CONFIG_SCHED_PRIORITY_MAX_USER - 1);
+                        CONFIG_PROCESS_INIT_STACK_SIZE, 0 /* Max priority */);
     assert(_laritos.proc.init != NULL, "Could not create init process");
 
     sched_execute_first_system_proc(_laritos.proc.init);

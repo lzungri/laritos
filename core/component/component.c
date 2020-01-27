@@ -1,6 +1,7 @@
 #include <log.h>
 
-#include <board-types.h>
+#include <board/board.h>
+#include <board/board-types.h>
 #include <component/component.h>
 #include <string.h>
 #include <core.h>
@@ -47,12 +48,20 @@ int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_t
     comp->ops.init = init == NULL ? nop_init : init;
     comp->ops.deinit = deinit == NULL ? nop_deinit : deinit;
     INIT_LIST_HEAD(&comp->list);
+
+    board_get_bool_attr_def(bcomp, "default", &comp->dflt, false);
     return 0;
 }
 
 int component_register(component_t *comp) {
     debug("Registering component '%s' of type %d", comp->id, comp->type);
-    list_add(&comp->list, &_laritos.comps[comp->type]);
+
+    // If it is the default component, then add it as the first element in the list
+    if (comp->dflt) {
+        list_add(&comp->list, &_laritos.comps[comp->type]);
+    } else {
+        list_add_tail(&comp->list, &_laritos.comps[comp->type]);
+    }
 
     verbose("Initializing component '%s'", comp->id);
     if (comp->ops.init(comp) < 0) {
@@ -60,7 +69,7 @@ int component_register(component_t *comp) {
         list_del(&comp->list);
         return -1;
     }
-    info("'%s' component (type %d) registered", comp->id, comp->type);
+    info("'%s' component (type %d%s) registered", comp->id, comp->type, comp->dflt ? ", default" : "");
     return 0;
 }
 
@@ -100,7 +109,8 @@ bool component_any_of(component_type_t t) {
 }
 
 bool component_are_mandatory_comps_present(void) {
-    component_type_t mand[] = { COMP_TYPE_CPU, COMP_TYPE_RTC };
+    component_type_t mand[] = { COMP_TYPE_CPU, COMP_TYPE_RTC, COMP_TYPE_VRTIMER,
+                                COMP_TYPE_SCHED, COMP_TYPE_TICKER };
     int i;
     for (i = 0; i < ARRAYSIZE(mand); i++) {
         if (component_any_of(mand[i])) {

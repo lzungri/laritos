@@ -3,5 +3,5 @@
 #include <arch/barrier.h>
 
 static inline void dmb(void) {
-    arch_dmb();
+    arch_barrier_dmb();
 }

@@ -19,6 +19,7 @@
 #define INFO_COLOR "\e[92m"
 #define DEBUG_COLOR "\e[94m"
 #define VERBOSE_COLOR "\e[38;5;244m"
+#define INSANE_COLOR VERBOSE_COLOR
 #else
 #define RESTORE_COLOR ""
 #define FATAL_COLOR ""
@@ -27,6 +28,7 @@
 #define INFO_COLOR ""
 #define DEBUG_COLOR ""
 #define VERBOSE_COLOR ""
+#define INSANE_COLOR ""
 #endif
 
 /**
@@ -54,7 +56,7 @@ int log_flush(void);
 #define fatal_sync(_sync, _msg, ...)  do { \
         log(_sync, FATAL_COLOR "F", _msg RESTORE_COLOR, ##__VA_ARGS__); \
         while (1) { \
-            arch_wfi(); \
+            arch_cpu_wfi(); \
         } \
     } while(0)
 
@@ -110,3 +112,13 @@ int log_flush(void);
 
 #define verbose(_msg, ...) verbose_sync(true, _msg, ##__VA_ARGS__)
 #define verbose_async(_msg, ...) verbose_sync(false, _msg, ##__VA_ARGS__)
+
+
+#if defined(CONFIG_LOG_LEVEL_INSANE) || defined(DEBUG)
+#define insane_sync(_sync, _msg, ...) log(_sync, INSANE_COLOR "V", _msg RESTORE_COLOR, ##__VA_ARGS__)
+#else
+#define insane_sync(_sync, _msg, ...)
+#endif
+
+#define insane(_msg, ...) insane_sync(true, _msg, ##__VA_ARGS__)
+#define insane_async(_msg, ...) insane_sync(false, _msg, ##__VA_ARGS__)

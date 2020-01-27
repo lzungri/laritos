@@ -6,14 +6,17 @@
 #include <string.h>
 
 #include <dstruct/list.h>
-#include <cpu.h>
+#include <cpu/cpu.h>
+#include <cpu/cpu-local.h>
 #include <core.h>
 #include <refcount.h>
 #include <utils/assert.h>
 #include <mm/slab.h>
 #include <process/status.h>
 #include <time/tick.h>
+#include <sync/atomic.h>
 #include <sync/condition.h>
+#include <syscall/syscall-no.h>
 #include <generated/autoconf.h>
 
 typedef struct {
@@ -39,19 +42,24 @@ typedef struct {
 typedef struct {
     process_status_t status;
     uint8_t priority;
-    struct list_head pcb_node;
-    struct list_head sched_node;
 
     /**
-     * List of processes blocked in a particular event.
-     * A process can only be waiting for one event at a time.
+     * Node used to link a process to the _laritos.proc.pcbs list
      */
-    struct list_head blockedlst;
+    struct list_head pcb_node;
+
+    /**
+     * Node used to link a process to a particular scheduling list. So far,
+     * it could be a per-cpu READY list or a blocked list (if the blocking
+     * event has any).
+     */
+    struct list_head sched_node;
 } pcb_sched_t;
 
 typedef struct {
     abstick_t last_status_change;
     tick_t ticks_spent[PROC_STATUS_LEN];
+    atomic32_t syscalls[SYSCALL_LEN];
 } pcb_stats_t;
 
 typedef struct pcb {
@@ -89,9 +97,10 @@ void process_assign_pid(pcb_t *pcb);
 pcb_t *process_alloc(void);
 int process_free(pcb_t *pcb);
 int process_register_locked(pcb_t *pcb);
-int process_release_zombie_resources(pcb_t *pcb);
+int process_release_zombie_resources_locked(pcb_t *pcb);
 void process_unregister_zombie_children_locked(pcb_t *pcb);
 void process_kill(pcb_t *pcb);
+void process_kill_locked(pcb_t *pcb);
 void process_kill_and_schedule(pcb_t *pcb);
 int process_set_priority(pcb_t *pcb, uint8_t priority);
 spctx_t *process_get_current_pcb_stack_context(void);
@@ -100,18 +109,18 @@ int process_wait_for(pcb_t *pcb, int *status);
 int process_wait_pid(uint16_t pid, int *status);
 
 static inline pcb_t *process_get_current(void) {
-    pcb_t *pcb = _laritos.sched.running[cpu_get_id()];
+    pcb_t *pcb = CPU_LOCAL_GET(_laritos.sched.running);
     assert(pcb != NULL, "Current pcb cannot be NULL, make sure you are running in process mode");
     return pcb;
 }
 
 static inline void process_set_current(pcb_t *pcb) {
-    _laritos.sched.running[cpu_get_id()] = pcb;
+    CPU_LOCAL_SET(_laritos.sched.running, pcb);
 }
 
 static inline void process_set_current_pcb_stack_context(spctx_t *spctx) {
     pcb_t *pcb = process_get_current();
-    verbose_async("Setting current context for pid=%u to 0x%p", pcb->pid, spctx);
+    insane_async("Setting current context for pid=%u to 0x%p", pcb->pid, spctx);
     pcb->mm.sp_ctx = spctx;
 }
 
@@ -119,20 +128,17 @@ static inline void process_set_name(pcb_t *pcb, char *name) {
     strncpy(pcb->name, name, sizeof(pcb->name));
 }
 
-#define for_each_process(_p) \
+#define for_each_process_locked(_p) \
     list_for_each_entry(_p, &_laritos.proc.pcbs, sched.pcb_node)
 
-#define for_each_child_process_safe(_parent, _child, _temp) \
+#define for_each_child_process_locked(_parent, _child) \
+    list_for_each_entry(_child, &_parent->children, siblings)
+
+#define for_each_child_process_safe_locked(_parent, _child, _temp) \
     list_for_each_entry_safe(_child, _temp, &_parent->children, siblings)
 
-#define for_each_ready_process(_p) \
-    list_for_each_entry(_p, &_laritos.sched.ready_pcbs, sched.sched_node)
+#define for_each_ready_process_locked(_p) \
+    list_for_each_entry(_p, CPU_LOCAL_GET_PTR_LOCKED(_laritos.sched.ready_pcbs), sched.sched_node)
 
-#define for_each_ready_process_safe(_p, _n) \
-    list_for_each_entry_safe(_p, _n, &_laritos.sched.ready_pcbs, sched.sched_node)
-
-#define for_each_blocked_process(_p) \
-    list_for_each_entry(_p, &_laritos.sched.blocked_pcbs, sched.sched_node)
-
-#define for_each_zombie_process(_p) \
-    list_for_each_entry(_p, &_laritos.sched.zombie_pcbs, sched.sched_node)
+#define for_each_ready_process_safe_locked(_p, _n) \
+    list_for_each_entry_safe(_p, _n, CPU_LOCAL_GET_PTR_LOCKED(_laritos.sched.ready_pcbs), sched.sched_node)

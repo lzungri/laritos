@@ -1,7 +1,8 @@
 #include <log.h>
 
 #include <stdbool.h>
-#include <board.h>
+#include <core.h>
+#include <board/board.h>
 #include <utils/function.h>
 #include <component/cpu.h>
 
@@ -32,5 +33,21 @@ int cpu_component_init(cpu_t *c, board_comp_t *bcomp,
         return -1;
     }
 
+    if (board_get_u64_attr(bcomp, "freq", &c->freq) < 0) {
+        error("invalid or no cpu frequency specified in the board info");
+        return -1;
+    }
+
+    return 0;
+}
+
+int cpu_component_register(cpu_t *c) {
+    if (component_register((component_t *) c) < 0) {
+        error("Couldn't register cpu '%s'", c->parent.id);
+        return -1;
+    }
+
+    // Save CPU shortcut
+    _laritos.cpu[c->id] = (cpu_t *) c;
     return 0;
 }

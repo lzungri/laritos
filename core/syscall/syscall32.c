@@ -1,18 +1,41 @@
 #include <log.h>
 
-#include <cpu.h>
+#include <stdbool.h>
+#include <cpu/cpu.h>
 #include <process/core.h>
 #include <sched/core.h>
 #include <syscall/syscall.h>
 #include <utils/assert.h>
+#include <utils/utils.h>
 #include <sched/context.h>
 #include <time/time.h>
+#include <sync/atomic.h>
 #include <mm/exc-handlers.h>
 
-int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5) {
-    // Enable interrupts while processing system calls
-    irq_enable_local();
 
+#define DEF_SCE(_sysno, _func) \
+    [_sysno] = { (int (*)(int32_t, int32_t, int32_t, int32_t, int32_t, int32_t)) _func, TOSTRING(_func) }
+
+typedef struct {
+    int (*call)(int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5);
+    char *scname;
+} syscall_entry_t;
+
+static syscall_entry_t systable[] = {
+    DEF_SCE(SYSCALL_EXIT, syscall_exit),
+    DEF_SCE(SYSCALL_YIELD, syscall_yield),
+    DEF_SCE(SYSCALL_PUTS, syscall_puts),
+    DEF_SCE(SYSCALL_GETPID, syscall_getpid),
+    DEF_SCE(SYSCALL_TIME, syscall_time),
+    DEF_SCE(SYSCALL_SLEEP, syscall_sleep),
+    DEF_SCE(SYSCALL_MSLEEP, syscall_msleep),
+    DEF_SCE(SYSCALL_USLEEP, syscall_usleep),
+    DEF_SCE(SYSCALL_SET_PRIORITY, syscall_set_priority),
+    DEF_SCE(SYSCALL_SET_PROCESS_NAME, syscall_set_process_name),
+};
+
+
+int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5) {
     if (_laritos.process_mode) {
         process_set_current_pcb_stack_context(ctx);
     }
@@ -29,47 +52,25 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
         }
     }
 
-    verbose_async("syscall_%d(%lx, %lx, %lx, %lx, %lx, %lx)", sysno, arg0, arg1, arg2, arg3, arg4, arg5);
-
     pcb_t *pcb = process_get_current();
     assert(pcb != NULL, "process_get_current() cannot be NULL on system call");
 
-    int ret = 0;
-    switch (sysno) {
-    case SYSCALL_EXIT:
-        syscall_exit((int) arg0);
-        break;
-    case SYSCALL_YIELD:
-        ret = syscall_yield();
-        break;
-    case SYSCALL_PUTS:
-        ret = syscall_puts((const char *) arg0);
-        break;
-    case SYSCALL_GETPID:
-        ret = syscall_getpid();
-        break;
-    case SYSCALL_TIME:
-        ret = syscall_time((time_t *) arg0);
-        break;
-    case SYSCALL_SLEEP:
-        ret = syscall_sleep((uint32_t) arg0);
-        break;
-    case SYSCALL_MSLEEP:
-        ret = syscall_msleep((uint32_t) arg0);
-        break;
-    case SYSCALL_USLEEP:
-        ret = syscall_usleep((uint32_t) arg0);
-        break;
-    case SYSCALL_SET_PRIORITY:
-        ret = syscall_set_priority((uint8_t) arg0);
-        break;
-    case SYSCALL_SET_PROCESS_NAME:
-        ret = syscall_set_process_name((char *) arg0);
-        break;
-    default:
-        error_async("Unrecognized system call #%d", sysno);
+    if (sysno >= ARRAYSIZE(systable) || systable[sysno].call == NULL) {
+        error_async("Unrecognized or unsupported system call #%d", sysno);
         process_kill_and_schedule(pcb);
+        // Execution will never reach this point
     }
+
+    // Update process system calls stats
+    atomic32_inc(&pcb->stats.syscalls[sysno]);
+
+    // Enable interrupts while processing system calls
+    irq_enable_local();
+
+    verbose_async("%s(0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx)", systable[sysno].scname, arg0, arg1, arg2, arg3, arg4, arg5);
+    int ret = systable[sysno].call(arg0, arg1, arg2, arg3, arg4, arg5);
+
+    irq_disable_local();
 
     // About to finish the svc call, re-schedule if needed
     schedule_if_needed();

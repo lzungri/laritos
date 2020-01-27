@@ -7,9 +7,16 @@
 #include <component/timer.h>
 #include <time/tick.h>
 #include <dstruct/list.h>
+#include <sync/spinlock.h>
 
 struct vrtimer_comp;
 
+/**
+ * NOTE: Callback is executed holding the vrtimer lock, so make sure:
+ *    1- your code doesn't block and takes as little time/cycles as possible
+ *    2- you use the *_locked vrtimer interface, if you need to call any
+ *       vrtimer service (TODO Implement the _locked interface :p)
+ */
 typedef int (*vrtimer_cb_t)(struct vrtimer_comp *t, void *data);
 
 
@@ -34,6 +41,7 @@ typedef struct vrtimer_comp {
     struct list_head timers;
     timer_comp_t *hrtimer;
     timer_comp_t *low_power_timer;
+    spinlock_t lock;
 
     vrtimer_comp_ops_t ops;
 } vrtimer_comp_t;

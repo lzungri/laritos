@@ -2,7 +2,7 @@
 
 #include <log.h>
 
-#include <cpu.h>
+#include <cpu/cpu.h>
 #include <process/core.h>
 #include <arch/context-types.h>
 #include <arch/context.h>
@@ -13,7 +13,7 @@ static inline void context_init(struct pcb *pcb, void *retaddr, cpu_mode_t mode)
 }
 
 static inline void context_restore(pcb_t * pcb) {
-    verbose_async("Restoring context for pid=%u", pcb->pid);
+    insane_async("Restoring context for pid=%u", pcb->pid);
     arch_context_restore(pcb->mm.sp_ctx);
 }
 
@@ -23,6 +23,6 @@ static inline void context_restore(pcb_t * pcb) {
  *          false if the function is returning from the restored context
  */
 static inline void context_save_and_restore(pcb_t *spcb, pcb_t *rpcb) {
-    verbose_async("Saving context for pid=%u, restoring context for pid=%u", spcb->pid, rpcb->pid);
+    insane_async("Saving context for pid=%u, restoring context for pid=%u", spcb->pid, rpcb->pid);
     arch_context_save_and_restore(spcb, rpcb);
 }

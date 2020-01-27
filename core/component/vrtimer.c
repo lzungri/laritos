@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <stdint.h>
-#include <board.h>
+#include <board/board.h>
 #include <core.h>
 #include <component/component.h>
 #include <component/vrtimer.h>
@@ -9,10 +9,11 @@
 #include <utils/function.h>
 #include <dstruct/list.h>
 #include <mm/heap.h>
+#include <sync/spinlock.h>
 
 static int vrtimer_cb(timer_comp_t *t, void *data);
 
-static void update_expiration(vrtimer_comp_t *t) {
+static void update_expiration_locked(vrtimer_comp_t *t) {
     if (list_empty(&t->timers)) {
         t->hrtimer->ops.clear_expiration(t->hrtimer);
         t->low_power_timer->ops.clear_expiration(t->low_power_timer);
@@ -23,35 +24,36 @@ static void update_expiration(vrtimer_comp_t *t) {
 
     // Remaining ticks to expire
     int64_t deltaticks;
-    t->hrtimer->ops.get_value(t->hrtimer, &deltaticks);
-    deltaticks = vrt->abs_ticks - deltaticks;
-
-    // If already expired, execute vrtimer callback and return
-    if (deltaticks <= 0) {
-        vrtimer_cb(t->hrtimer, t);
+    if (t->hrtimer->ops.get_value(t->hrtimer, &deltaticks) < 0) {
+        error_async("Failed to read hrtimer value");
         return;
     }
+    deltaticks = vrt->abs_ticks - deltaticks;
 
-    // If the ticks-to-expire value is lower that the high-res timer frequency
-    // (i.e. we need to wake up in less than a second), then use the hrtimer.
-    // Otherwise, use the low power timer, since we don't need that much precision
-    if ((uint32_t) deltaticks <= t->hrtimer->curfreq) {
+    // If already expired, trigger the timer on the next tick
+    if (deltaticks <= 0) {
+        t->low_power_timer->ops.clear_expiration(t->low_power_timer);
+        t->hrtimer->ops.set_expiration_ticks(t->hrtimer, 1,
+                TIMER_EXP_RELATIVE, vrtimer_cb, t, false);
+    } else if ((uint32_t) deltaticks <= t->hrtimer->curfreq) {
+        // If the ticks-to-expire value is lower that the high-res timer frequency
+        // (i.e. we need to wake up in less than a second), then use the hrtimer.
+        // Otherwise, use the low power timer, since we don't need that much precision
         t->low_power_timer->ops.clear_expiration(t->low_power_timer);
         t->hrtimer->ops.set_expiration_ticks(t->hrtimer, vrt->abs_ticks,
                 TIMER_EXP_ABSOLUTE, vrtimer_cb, t, false);
     } else {
         t->hrtimer->ops.clear_expiration(t->hrtimer);
-
-        // Normalized ticks for the low power timer
-        abstick_t norm_ticks = (deltaticks / t->hrtimer->curfreq) * t->low_power_timer->curfreq;
-        t->low_power_timer->ops.set_expiration_ticks(t->hrtimer, norm_ticks,
+        // Round up and normalize ticks for the low power timer
+        abstick_t norm_ticks = ((deltaticks + t->hrtimer->curfreq / 2) / t->hrtimer->curfreq) * t->low_power_timer->curfreq;
+        t->low_power_timer->ops.set_expiration_ticks(t->low_power_timer, norm_ticks,
                 TIMER_EXP_RELATIVE, vrtimer_cb, t, false);
     }
 }
 
 // TODO: We should use a rbtree here instead
-static void add_vrtimer_sorted(vrtimer_comp_t *t, vrtimer_t *vrt) {
-    verbose_async("Adding vrtimer id=0x%p abs_ticks=%lu, ticks=%lu, periodic=%u", vrt, (uint32_t) vrt->abs_ticks, vrt->ticks, vrt->periodic);
+static void add_vrtimer_sorted_locked(vrtimer_comp_t *t, vrtimer_t *vrt) {
+    insane_async("Adding vrtimer id=0x%p abs_ticks=%lu, ticks=%lu, periodic=%u", vrt, (uint32_t) vrt->abs_ticks, vrt->ticks, vrt->periodic);
 
     vrtimer_t *pos;
     list_for_each_entry(pos, &t->timers, list) {
@@ -64,17 +66,23 @@ static void add_vrtimer_sorted(vrtimer_comp_t *t, vrtimer_t *vrt) {
     list_add_tail(&vrt->list, &t->timers);
 }
 
-static int vrtimer_cb(timer_comp_t *t, void *data) {
+static int vrtimer_cb(timer_comp_t *tcomp, void *data) {
     vrtimer_comp_t *vrt = (vrtimer_comp_t *) data;
     vrtimer_t *pos;
     vrtimer_t *tmp;
 
     abstick_t curticks;
-    t->ops.get_value(t, &curticks);
+    if (vrt->hrtimer->ops.get_value(vrt->hrtimer, &curticks) < 0) {
+        error_async("Failed to read hrtimer value");
+        return -1;
+    }
+
+    irqctx_t ctx;
+    spinlock_acquire(&vrt->lock, &ctx);
 
     list_for_each_entry_safe(pos, tmp, &vrt->timers, list) {
         if (curticks >= pos->abs_ticks) {
-            verbose_async("vrtimer id=0x%p abs_ticks=%lu expired", pos, (uint32_t) pos->abs_ticks);
+            insane_async("vrtimer id=0x%p abs_ticks=%lu expired", pos, (uint32_t) pos->abs_ticks);
 
             // Execute timer callback
             if (pos->cb(vrt, pos->data) < 0) {
@@ -84,7 +92,7 @@ static int vrtimer_cb(timer_comp_t *t, void *data) {
             list_del_init(&pos->list);
             if (pos->periodic) {
                 pos->abs_ticks = curticks + pos->ticks;
-                add_vrtimer_sorted(vrt, pos);
+                add_vrtimer_sorted_locked(vrt, pos);
             } else {
                 free(pos);
             }
@@ -93,7 +101,9 @@ static int vrtimer_cb(timer_comp_t *t, void *data) {
         }
     }
 
-    update_expiration(vrt);
+    update_expiration_locked(vrt);
+
+    spinlock_release(&vrt->lock, &ctx);
 
     return 0;
 }
@@ -101,11 +111,14 @@ static int vrtimer_cb(timer_comp_t *t, void *data) {
 static int add_vrtimer(vrtimer_comp_t *t, tick_t ticks, vrtimer_cb_t cb, void *data, bool periodic) {
     vrtimer_t *vrt = calloc(1, sizeof(vrtimer_t));
     if (vrt == NULL) {
-        error("Couldn't allocate memory for vrtimer_t");
+        error_async("Couldn't allocate memory for vrtimer_t");
         return -1;
     }
 
-    t->hrtimer->ops.get_value(t->hrtimer, &vrt->abs_ticks);
+    if (t->hrtimer->ops.get_value(t->hrtimer, &vrt->abs_ticks) < 0) {
+        error_async("Failed to read hrtimer value");
+        return -1;
+    }
     vrt->abs_ticks += ticks;
     vrt->ticks = ticks;
     vrt->periodic = periodic;
@@ -113,16 +126,23 @@ static int add_vrtimer(vrtimer_comp_t *t, tick_t ticks, vrtimer_cb_t cb, void *d
     vrt->data = data;
     INIT_LIST_HEAD(&vrt->list);
 
-    add_vrtimer_sorted(t, vrt);
+    irqctx_t ctx;
+    spinlock_acquire(&t->lock, &ctx);
 
+    add_vrtimer_sorted_locked(t, vrt);
     // If the recently added timer is the soonest to be expired, then update
     // the timer expiration
-    update_expiration(t);
+    update_expiration_locked(t);
+
+    spinlock_release(&t->lock, &ctx);
 
     return 0;
 }
 
 static int remove_vrtimer(vrtimer_comp_t *t, vrtimer_cb_t cb, void *data, bool periodic) {
+    irqctx_t ctx;
+    spinlock_acquire(&t->lock, &ctx);
+
     vrtimer_t *pos;
     vrtimer_t *tmp;
     list_for_each_entry_safe(pos, tmp, &t->timers, list) {
@@ -133,11 +153,16 @@ static int remove_vrtimer(vrtimer_comp_t *t, vrtimer_cb_t cb, void *data, bool p
             break;
         }
     }
+
+    spinlock_release(&t->lock, &ctx);
     return 0;
 }
 
 int vrtimer_init(vrtimer_comp_t *t) {
     INIT_LIST_HEAD(&t->timers);
+    spinlock_init(&t->lock);
+    info("High-res timer frequency: %lu HZ", t->hrtimer->curfreq);
+    info("Low power timer frequency: %lu HZ", t->low_power_timer->curfreq);
     return 0;
 }
 

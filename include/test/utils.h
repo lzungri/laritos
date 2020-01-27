@@ -18,9 +18,9 @@ static inline bool is_process_in(struct list_head *pcb, struct list_head *list) 
 }
 
 static inline vrtimer_comp_t *get_vrtimer(void) {
-    return (vrtimer_comp_t *) component_first_of_type(COMP_TYPE_VRTIMER);
+    return component_get_default(COMP_TYPE_VRTIMER, vrtimer_comp_t);
 }
 
 static inline ticker_comp_t *get_ticker(void) {
-    return (ticker_comp_t *) component_first_of_type(COMP_TYPE_TICKER);
+    return component_get_default(COMP_TYPE_TICKER, ticker_comp_t);
 }

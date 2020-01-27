@@ -3,7 +3,7 @@
 #include <core.h>
 #include <component/component.h>
 #include <component/intc.h>
-#include <irq.h>
+#include <irq/core.h>
 #include <generated/autoconf.h>
 #include <syscall/syscall.h>
 #include <utils/utils.h>
@@ -50,7 +50,7 @@ void _undef_handler(int32_t pc, spctx_t *ctx) {
     debug_message_delimiter();
     error_async("Instruction 0x%08lx at 0x%08lx not recognized", *((uint32_t *) pc), pc);
     // cpsr is backed up in spsr during an exception
-    arch_dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
+    arch_debug_dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
 
     uint32_t *ptr = (uint32_t *) max(pc - 4 * 8, 0);
     error_async("Instructions around pc=0x%p:", (void *) pc);
@@ -68,7 +68,7 @@ void _prefetch_handler(int32_t pc, const ifsr_reg_t ifsr, spctx_t *ctx) {
     char *fs = fault_status_msg[ifsr.b.fs_h << 4 | ifsr.b.fs_l];
     error_async("Instruction prefetch exception: %s", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
-    arch_dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
+    arch_debug_dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
 
     exc_prefetch_handler(pc, ctx);
 }
@@ -86,7 +86,7 @@ void _abort_handler(int32_t pc, const dfsr_reg_t dfsr, spctx_t *ctx) {
     char *fs = fault_status_msg[dfsr.b.fs_h << 4 | dfsr.b.fs_l];
     error_async("Data abort exception. Invalid %s access: %s", dfsr.b.wnr ? "write" : "read", fs != NULL ? fs : "Unknown");
     // cpsr is backed up in spsr during an exception
-    arch_dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
+    arch_debug_dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
 
     exc_abort_handler(pc, ctx);
 }

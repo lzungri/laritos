@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <stdbool.h>
-#include <board.h>
+#include <board/board.h>
 #include <core.h>
 #include <component/ticker.h>
 #include <component/timer.h>
@@ -16,12 +16,12 @@
 
 static int ticker_cb(vrtimer_comp_t *t, void *data) {
     // Increment global tick
-    tick_inc_system_ticks();
+    tick_inc_os_ticks();
 
     ticker_comp_t *ticker = (ticker_comp_t *) data;
     ticker_cb_info_t *ti;
     list_for_each_entry(ti, &ticker->cbs, list) {
-        verbose_async("Executing ticker callback 0x%p(data=0x%p)", ti->cb, ti->data);
+        insane_async("Executing ticker callback 0x%p(data=0x%p)", ti->cb, ti->data);
         if (ti->cb(ticker, ti->data) < 0) {
             error_async("Failed to execute callback 0x%p(data=0x%p)", ti->cb, ti->data);
         }
@@ -47,12 +47,13 @@ static int ticker_resume(ticker_comp_t *t) {
 }
 
 int ticker_init(ticker_comp_t *t) {
+    info("OS ticker frequency: %lu HZ", t->ticks_per_sec);
     // Reset global ticks
-    tick_reset_system_ticks();
+    tick_reset_os_ticks();
 
     INIT_LIST_HEAD(&t->cbs);
 
-    return ticker_resume(t);
+    return 0;
 }
 
 int ticker_deinit(ticker_comp_t *t) {

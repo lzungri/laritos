@@ -4,3 +4,5 @@ obj-y += rtc/
 obj-y += cpu/
 obj-y += ticker/
 obj-y += vrtimer/
+obj-y += timer/
+obj-y += logger/

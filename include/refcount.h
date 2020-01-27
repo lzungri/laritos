@@ -21,18 +21,18 @@ static inline uint32_t ref_get(refcount_t *ref) {
 }
 
 static inline uint32_t ref_inc(refcount_t *ref) {
-    verbose_async("ref=0x%p inc", ref);
+    insane_async("ref=0x%p inc", ref);
     int32_t v = atomic32_inc(&ref->value);
     assert(v > 0, "Invalid value for reference counter at 0x%p, value=%ld", ref, v);
     return v;
 }
 
 static inline uint32_t ref_dec(refcount_t *ref) {
-    verbose_async("ref=0x%p dec", ref);
+    insane_async("ref=0x%p dec", ref);
     int32_t v = atomic32_dec(&ref->value);
     assert(v >= 0, "Reference counter at 0x%p cannot be negative, value=%ld", ref, v);
     if (v == 0 && ref->free != NULL) {
-        verbose_async("refcount = 0, freeing objected referenced by ref=0x%p", ref);
+        insane_async("refcount = 0, freeing objected referenced by ref=0x%p", ref);
         ref->free(ref);
     }
     return v;

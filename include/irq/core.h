@@ -4,27 +4,7 @@
 #include <utils/utils.h>
 #include <arch/irq.h>
 #include <arch/context-types.h>
-
-
-typedef enum {
-    IRQ_TRIGGER_EDGE_LOW_HIGH = 1,
-    IRQ_TRIGGER_EDGE_HIGH_LOW = 2,
-    IRQ_TRIGGER_LEVEL_HIGH = 4,
-    IRQ_TRIGGER_LEVEL_LOW = 8,
-} irq_trigger_mode_t;
-
-typedef enum {
-    IRQ_RET_ERROR = -1,
-    IRQ_RET_HANDLED,
-    IRQ_RET_HANDLED_KEEP_PROCESSING,
-    IRQ_RET_NOT_HANDLED,
-
-    IRQ_RET_LEN,
-} irqret_t;
-
-typedef uint16_t irq_t;
-
-typedef irqret_t (*irq_handler_t)(irq_t irq, void *data);
+#include "types.h"
 
 /**
  * Main function to dispatch and process irqs
@@ -43,6 +23,18 @@ static inline const char *irq_get_irqret_str(irqret_t ret) {
     };
     ret += 1;
     return ret < ARRAYSIZE(str) && ret >= 0 && str[ret] != NULL ? str[ret] : "???";
+}
+
+static inline bool irq_is_enabled(void) {
+    return arch_irq_is_enabled();
+}
+
+static inline bool irq_is_enabled_in_ctx(irqctx_t *ctx) {
+    return arch_irq_is_enabled_in_ctx(ctx);
+}
+
+static inline int irq_save_context(irqctx_t *ctx) {
+    return arch_irq_save_context(ctx);
 }
 
 static inline int irq_disable_local(void) {
