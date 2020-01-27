@@ -12,6 +12,7 @@
 #include <process/core.h>
 #include <board/board-types.h>
 #include <board/board.h>
+#include <utils/random.h>
 #include <utils/debug.h>
 #include <sched/core.h>
 #include <generated/autoconf.h>
@@ -117,6 +118,9 @@ int init_main(void *data) {
     if (time_set_timezone(TZ_PST, false) < 0) {
         error("Couldn't set default timezone");
     }
+
+    // Seed random generator from current time
+    random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
 
     spawn_system_processes();
 
