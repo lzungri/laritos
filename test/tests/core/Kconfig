@@ -11,6 +11,7 @@ config TEST_CORE_ALL
     select TEST_CORE_PROCESS_ALL
     select TEST_CORE_SYNC_ALL
     select TEST_CORE_IRQ_ALL
+    select TEST_CORE_UTILS_ALL
 
 source "test/tests/core/libc/Kconfig"
 source "test/tests/core/mm/Kconfig"
@@ -20,5 +21,6 @@ source "test/tests/core/time/Kconfig"
 source "test/tests/core/process/Kconfig"
 source "test/tests/core/sync/Kconfig"
 source "test/tests/core/irq/Kconfig"
+source "test/tests/core/utils/Kconfig"
 
 endmenu
