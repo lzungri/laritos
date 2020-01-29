@@ -1,0 +1,12 @@
+menu "File system"
+
+config TEST_CORE_FS_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_FS_VFSCORE
+
+config TEST_CORE_FS_VFSCORE
+    bool "vfs-core.c"
+    default n
+
+endmenu

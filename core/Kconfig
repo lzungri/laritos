@@ -10,7 +10,7 @@ source "core/sched/Kconfig"
 source "core/irq/Kconfig"
 source "core/sync/Kconfig"
 source "core/board/Kconfig"
-source "core/vfs/Kconfig"
+source "core/fs/Kconfig"
 
 menu "Symmetric multiprocessing"
 

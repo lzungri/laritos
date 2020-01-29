@@ -2,6 +2,12 @@
 
 #include <stdint.h>
 
+
+typedef enum {
+    FS_MOUNT_READ = 1,
+    FS_MOUNT_WRITE = 2,
+} fs_mount_flags_t;
+
 typedef struct {
 
 } fs_mount_t;
