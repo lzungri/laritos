@@ -4,9 +4,14 @@ config TEST_CORE_FS_ALL
     bool "Select all"
     default n
     select TEST_CORE_FS_VFSCORE
+    select TEST_CORE_FS_PSEUDOFS
 
 config TEST_CORE_FS_VFSCORE
     bool "vfs-core.c"
+    default n
+
+config TEST_CORE_FS_PSEUDOFS
+    bool "pseudofs.c"
     default n
 
 endmenu

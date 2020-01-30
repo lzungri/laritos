@@ -80,9 +80,10 @@ T(vfs_unmount_fs_fails_on_non_mounted_fs) {
 TEND
 
 T(vfs_mount_adds_a_new_fs_under_mount_point) {
-    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/sys", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
-    tassert(is_fs_mounted("/sys"));
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(is_fs_mounted("/test"));
 
-    vfs_unmount_fs("/sys");
-    tassert(!is_fs_mounted("/sys"));
+    vfs_unmount_fs("/test");
+    tassert(!is_fs_mounted("/test"));
 TEND
