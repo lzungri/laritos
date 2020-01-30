@@ -15,6 +15,7 @@
 #include <utils/random.h>
 #include <utils/debug.h>
 #include <sched/core.h>
+#include <fs/vfs-core.h>
 #include <generated/autoconf.h>
 #include <generated/utsrelease.h>
 
@@ -121,6 +122,9 @@ int init_main(void *data) {
 
     // Seed random generator from current time
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
+
+    // Initialize virtual file system
+    assert(vfs_init() >= 0, "Failed to initialize VFS");
 
     spawn_system_processes();
 
