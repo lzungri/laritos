@@ -16,6 +16,7 @@
 #include <utils/debug.h>
 #include <sched/core.h>
 #include <fs/vfs-core.h>
+#include <module/core.h>
 #include <generated/autoconf.h>
 #include <generated/utsrelease.h>
 
@@ -95,6 +96,8 @@ int init_main(void *data) {
     log_always("-- laritOS " UTS_RELEASE " --");
     info("Initializing kernel");
     info("Heap of %u bytes initialized at 0x%p", CONFIG_MEM_HEAP_SIZE, __heap_start);
+
+    assert(module_load_static_modules() >= 0, "Failed to load static modules");
 
     assert(board_parse_and_initialize(&_laritos.bi) >= 0, "Couldn't initialize board");
 
