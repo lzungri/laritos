@@ -42,6 +42,7 @@ typedef enum {
 typedef struct fs_mount {
     char mount_point[CONFIG_FS_MAX_FILENAME_LEN];
     fs_mount_flags_t flags;
+    struct list_head list;
 
     fs_superblock_t *sb;
 } fs_mount_t;

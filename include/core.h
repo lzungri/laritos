@@ -78,6 +78,7 @@ typedef struct {
 
 typedef struct {
     struct list_head fstypes;
+    struct list_head mounts;
 
 } laritos_fs_t;
 

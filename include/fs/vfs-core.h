@@ -1,11 +1,14 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <fs/vfs-types.h>
 
 int vfs_init_global_context(void);
 int vfs_register_fs_type(fs_type_t *fst);
 int vfs_unregister_fs_type(fs_type_t *fst);
+bool vfs_is_fs_mounted(char *mount_point);
+bool vfs_is_fs_type_supported(char *fstype);
 fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *params);
 int vfs_unmount_fs(char *mount_point);
 
