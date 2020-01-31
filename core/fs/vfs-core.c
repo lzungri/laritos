@@ -1,16 +1,25 @@
 #define DEBUG
 #include <log.h>
 
+#include <core.h>
 #include <fs/vfs-types.h>
 #include <fs/vfs-core.h>
 
+
+int vfs_init_global_context() {
+    INIT_LIST_HEAD(&_laritos.fs.fstypes);
+    return 0;
+}
+
 int vfs_register_fs_type(fs_type_t *fst) {
     debug("Registering FS type '%s'", fst->id);
+    list_add_tail(&fst->list, &_laritos.fs.fstypes);
     return 0;
 }
 
 int vfs_unregister_fs_type(fs_type_t *fst) {
     debug("Un-registering FS type '%s'", fst->id);
+    list_del_init(&fst->list);
     return -1;
 }
 

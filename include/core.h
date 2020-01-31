@@ -76,6 +76,11 @@ typedef struct {
     atomic32_t nirqs[CONFIG_INT_MAX_IRQS];
 } laritos_stats_t;
 
+typedef struct {
+    struct list_head fstypes;
+
+} laritos_fs_t;
+
 /**
  * laritOS Global context
  */
@@ -120,6 +125,7 @@ typedef struct {
     laritos_process_t proc;
     laritos_sched_t sched;
     laritos_stats_t stats;
+    laritos_fs_t fs;
 
     int32_t rndseed;
 

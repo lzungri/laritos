@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <dstruct/list.h>
 
 typedef struct {
 
@@ -37,7 +38,7 @@ typedef struct {
 
 typedef struct fs_type{
     char *id;
+    struct list_head list;
 
     fs_mount_t *(*mount)(struct fs_type *type, char *mount_point, uint16_t flags, void *params);
-
 } fs_type_t;
