@@ -3,7 +3,7 @@
 #include <component/stream.h>
 #include <irq/types.h>
 #include <board/board-types.h>
-#include <driver/driver.h>
+#include <driver/core.h>
 #include <driver/pl011.h>
 #include <utils/utils.h>
 #include <mm/heap.h>
@@ -134,4 +134,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(pl011, process);
+DRIVER_MODULE(pl011, process);

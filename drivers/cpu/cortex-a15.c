@@ -3,7 +3,7 @@
 #include <core.h>
 #include <cpu/cpu.h>
 #include <board/board.h>
-#include <driver/driver.h>
+#include <driver/core.h>
 #include <mm/heap.h>
 #include <component/intc.h>
 #include <component/cpu.h>
@@ -58,4 +58,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(cortex_a15, process);
+DRIVER_MODULE(cortex_a15, process);

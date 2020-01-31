@@ -62,4 +62,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(preempt_rr, process);
+DRIVER_MODULE(preempt_rr, process);

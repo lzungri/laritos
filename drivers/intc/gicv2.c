@@ -6,7 +6,7 @@
 #include <cpu/cpu.h>
 #include <board/board-types.h>
 #include <board/board.h>
-#include <driver/driver.h>
+#include <driver/core.h>
 #include <driver/gicv2.h>
 #include <utils/math.h>
 #include <mm/heap.h>
@@ -184,4 +184,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(gicv2, process);
+DRIVER_MODULE(gicv2, process);

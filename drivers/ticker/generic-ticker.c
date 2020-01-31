@@ -3,7 +3,7 @@
 #include <component/ticker.h>
 #include <component/timer.h>
 #include <component/component.h>
-#include <driver/driver.h>
+#include <driver/core.h>
 #include <mm/heap.h>
 
 static int init(component_t *c) {
@@ -40,4 +40,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(generic_ticker, process);
+DRIVER_MODULE(generic_ticker, process);

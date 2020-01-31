@@ -3,7 +3,7 @@
 #include <board/board-types.h>
 #include <board/board.h>
 #include <time/time.h>
-#include <driver/driver.h>
+#include <driver/core.h>
 #include <driver/pl031.h>
 #include <utils/utils.h>
 #include <utils/math.h>
@@ -186,4 +186,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(pl031, process);
+DRIVER_MODULE(pl031, process);

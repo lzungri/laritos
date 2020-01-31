@@ -6,7 +6,7 @@
 #include <board/board-types.h>
 #include <board/board.h>
 #include <time/time.h>
-#include <driver/driver.h>
+#include <driver/core.h>
 #include <driver/armv7-generic-timer.h>
 #include <arch/generic-timer.h>
 #include <utils/utils.h>
@@ -157,4 +157,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(armv7_generic_timer, process);
+DRIVER_MODULE(armv7_generic_timer, process);

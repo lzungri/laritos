@@ -48,4 +48,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(generic_logger, process);
+DRIVER_MODULE(generic_logger, process);
