@@ -2,15 +2,13 @@
 
 #include <fs/vfs-types.h>
 #include <fs/vfs-core.h>
+#include <module/core.h>
 
-fs_type_t pseudofs = {
-   .id = "pseudofs",
-   .mount = NULL,
-};
-
-int pseudofs_init(void) {
-    return vfs_register_fs_type(&pseudofs);
+static fs_mount_t *mount(fs_type_t *type, char *mount_point, uint16_t flags, void *params) {
+    return NULL;
 }
+
+FS_TYPE_MODULE(pseudofs, mount);
 
 
 

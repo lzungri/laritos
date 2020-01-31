@@ -126,9 +126,6 @@ int init_main(void *data) {
     // Seed random generator from current time
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
 
-    // Initialize virtual file system
-    assert(vfs_init() >= 0, "Failed to initialize VFS");
-
     spawn_system_processes();
 
     start_os_tickers();
