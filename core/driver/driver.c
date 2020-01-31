@@ -3,17 +3,41 @@
 #include <stdint.h>
 #include <string.h>
 #include <core.h>
+#include <dstruct/list.h>
 #include <board/board-types.h>
 #include <board/board.h>
-#include <driver/driver.h>
+#include <driver/core.h>
 
-static int search_drivermgr_and_process(board_info_t *bi, board_comp_t *comp);
 
-static int search_drivermgr_and_process_by_comp_id(board_info_t *bi, char *cid) {
+int driver_init_global_context() {
+    INIT_LIST_HEAD(&_laritos.drivers);
+    return 0;
+}
+
+int driver_deinit_global_context() {
+    // Nothing
+    return 0;
+}
+
+int driver_register(driver_t *d, module_t *owner) {
+    debug("Registering driver '%s'", d->id);
+    list_add_tail(&d->list, &_laritos.drivers);
+    return 0;
+}
+
+int driver_unregister(driver_t *d, module_t *owner) {
+    debug("Un-registering driver '%s'", d->id);
+    list_del_init(&d->list);
+    return 0;
+}
+
+static int search_driver_and_process(board_info_t *bi, board_comp_t *comp);
+
+static int search_driver_and_process_by_comp_id(board_info_t *bi, char *cid) {
     int i;
     for (i = 0; i < bi->len; i++) {
         if (strncmp(bi->components[i].id, cid, CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES) == 0) {
-            return search_drivermgr_and_process(bi, &bi->components[i]);
+            return search_driver_and_process(bi, &bi->components[i]);
         }
     }
     return -1;
@@ -35,7 +59,7 @@ static int process_dependencies(board_info_t *bi, board_comp_t *comp) {
         int i;
         for (i = 0; i < ndeps; i++) {
             verbose("'%s' depends on '%s'", comp->id, deps[i]);
-            if (search_drivermgr_and_process_by_comp_id(bi, deps[i]) < 0) {
+            if (search_driver_and_process_by_comp_id(bi, deps[i]) < 0) {
                 error("Error while processing component dependency '%s'", deps[i]);
                 return -1;
             }
@@ -45,19 +69,17 @@ static int process_dependencies(board_info_t *bi, board_comp_t *comp) {
     return 0;
 }
 
-static int search_drivermgr_and_process(board_info_t *bi, board_comp_t *comp) {
+static int search_driver_and_process(board_info_t *bi, board_comp_t *comp) {
     if (comp->processed) {
         debug("Component '%s' already processed, skipping", comp->id);
         return 0;
     }
 
-    debug("Searching driver manager '%s' for component '%s'", comp->driver, comp->id);
+    debug("Searching driver '%s' for component '%s'", comp->driver, comp->id);
 
-    driver_mgr_t **dptr;
-    for (dptr = __driver_mgrs_start; *dptr; dptr++) {
-        driver_mgr_t *d = *dptr;
-
-        if (strncmp(comp->driver, d->name, CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES) == 0) {
+    driver_t *d;
+    list_for_each_entry(d, &_laritos.drivers, list) {
+        if (strncmp(comp->driver, d->id, CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES) == 0) {
             if (process_dependencies(bi, comp) < 0) {
                 error("Failed to process dependencies for component '%s'", comp->id);
                 return -1;
@@ -65,17 +87,15 @@ static int search_drivermgr_and_process(board_info_t *bi, board_comp_t *comp) {
 
             verbose("Processing driver '%s' for component '%s'", comp->driver, comp->id);
             if (d->process(comp) < 0) {
-                error("Couldn't process driver '%s' for component '%s'", d->name, comp->id);
+                error("Couldn't process driver '%s' for component '%s'", d->id, comp->id);
                 return -1;
             }
             comp->processed = true;
-            debug("Driver '%s' processed", d->name);
-
             return 0;
         }
     }
 
-    error("Couldn't find driver manager '%s' for component '%s'", comp->driver, comp->id);
+    error("Couldn't find driver '%s' for component '%s'", comp->driver, comp->id);
     return -1;
 }
 
@@ -85,7 +105,7 @@ int driver_process_board_components(board_info_t *bi) {
     uint8_t nerrors = 0;
     int i;
     for (i = 0; i < bi->len; i++) {
-        if (search_drivermgr_and_process(bi, &bi->components[i]) < 0) {
+        if (search_driver_and_process(bi, &bi->components[i]) < 0) {
             error("Could not process component '%s'", bi->components[i].id);
             nerrors++;
         }
