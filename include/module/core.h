@@ -4,7 +4,6 @@
 #include <generated/autoconf.h>
 
 int module_init_global_context(void);
-int module_deinit_global_context(void);
 int module_load_static_modules(void);
 
 #define MODULE(_id, _init, _deinit) \

@@ -6,6 +6,7 @@
 #include <component/component.h>
 #include <process/core.h>
 #include <module/core.h>
+#include <fs/vfs-core.h>
 #include <sched/core.h>
 #include <sync/atomic.h>
 #include <utils/utils.h>
@@ -14,19 +15,23 @@ laritos_t _laritos;
 
 static int initialize_global_context(void) {
     if (component_init_global_context() < 0) {
-        goto error_comp;
+        while(1);
     }
 
     if (process_init_global_context() < 0) {
-        goto error_pcb;
+        while(1);
     }
 
     if (module_init_global_context() < 0) {
-        goto error_modules;
+        while(1);
     }
 
     if (driver_init_global_context() < 0) {
-        goto error_driver;
+        while(1);
+    }
+
+    if (vfs_init_global_context() < 0) {
+        while(1);
     }
 
     int i;
@@ -36,17 +41,6 @@ static int initialize_global_context(void) {
     atomic32_init(&_laritos.stats.ctx_switches, 0);
 
     return 0;
-
-//error_xxx:
-//    driver_deinit_global_context();
-error_driver:
-    module_deinit_global_context();
-error_modules:
-    process_deinit_global_context();
-error_pcb:
-    component_deinit_global_context();
-error_comp:
-    return -1;
 }
 
 void kernel_entry(void)  {

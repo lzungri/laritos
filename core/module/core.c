@@ -12,11 +12,6 @@ int module_init_global_context() {
     return 0;
 }
 
-int module_deinit_global_context() {
-    // Nothing
-    return 0;
-}
-
 int module_load_static_modules(void) {
     // Null-terminated array of pointers to modules
     extern module_t *__modules_start[];

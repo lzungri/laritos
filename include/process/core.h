@@ -92,7 +92,6 @@ typedef int (*kproc_main_t)(void *data);
 
 
 int process_init_global_context(void);
-int process_deinit_global_context(void);
 void process_assign_pid(pcb_t *pcb);
 pcb_t *process_alloc(void);
 int process_free(pcb_t *pcb);

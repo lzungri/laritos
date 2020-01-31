@@ -14,11 +14,6 @@ int driver_init_global_context() {
     return 0;
 }
 
-int driver_deinit_global_context() {
-    // Nothing
-    return 0;
-}
-
 int driver_register(driver_t *d, module_t *owner) {
     debug("Registering driver '%s'", d->id);
     list_add_tail(&d->list, &_laritos.drivers);

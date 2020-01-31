@@ -31,11 +31,6 @@ int process_init_global_context(void) {
     return _laritos.proc.pcb_slab != NULL ? 0 : -1;
 }
 
-int process_deinit_global_context(void) {
-    slab_destroy(_laritos.proc.pcb_slab);
-    return 0;
-}
-
 void process_assign_pid(pcb_t *pcb) {
     pcb->pid = (uint16_t) slab_get_slab_position(_laritos.proc.pcb_slab, pcb);
 }

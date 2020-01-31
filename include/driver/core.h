@@ -6,7 +6,6 @@
 #include <driver/types.h>
 
 int driver_init_global_context(void);
-int driver_deinit_global_context(void);
 int driver_register(driver_t *d, module_t *owner);
 int driver_unregister(driver_t *d, module_t *owner);
 
