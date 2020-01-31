@@ -5,6 +5,7 @@
 #include <mm/heap.h>
 #include <component/component.h>
 #include <process/core.h>
+#include <module/core.h>
 #include <sched/core.h>
 #include <sync/atomic.h>
 #include <utils/utils.h>
@@ -20,6 +21,14 @@ static int initialize_global_context(void) {
         goto error_pcb;
     }
 
+    if (module_init_global_context() < 0) {
+        goto error_modules;
+    }
+
+    if (driver_init_global_context() < 0) {
+        goto error_driver;
+    }
+
     int i;
     for (i = 0; i < ARRAYSIZE(_laritos.stats.nirqs); i++) {
         atomic32_init(&_laritos.stats.nirqs[i], 0);
@@ -29,7 +38,11 @@ static int initialize_global_context(void) {
     return 0;
 
 //error_xxx:
-//    process_deinit_global_context();
+//    driver_deinit_global_context();
+error_driver:
+    module_deinit_global_context();
+error_modules:
+    process_deinit_global_context();
 error_pcb:
     component_deinit_global_context();
 error_comp:
