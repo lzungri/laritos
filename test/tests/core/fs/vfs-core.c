@@ -14,7 +14,7 @@ static bool is_fs_mounted(char *mount_point) {
     return false;
 }
 
-fs_mount_t *empty_mount(fs_type_t *type, char *mount_point, uint16_t flags, void *params) {
+static fs_mount_t *empty_mount(fs_type_t *fstype, char *mount_point, uint16_t flags, void *params) {
     return NULL;
 }
 
@@ -75,13 +75,46 @@ T(vfs_mount_fails_on_unsupported_fs_type) {
     tassert(vfs_mount_fs("unsopported", "xxx", 0, NULL) == NULL);
 TEND
 
+T(vfs_mount_fails_on_mount_error) {
+    fs_type_t fst = {
+        .id = "testfs",
+        .mount = empty_mount,
+    };
+    tassert(vfs_register_fs_type(&fst));
+    tassert(is_fstype_registered(&fst));
+
+    tassert(vfs_mount_fs("testfs", "xxx", 0, NULL) == NULL);
+
+    vfs_unregister_fs_type(&fst);
+    tassert(!is_fstype_registered(&fst));
+TEND
+
 T(vfs_unmount_fs_fails_on_non_mounted_fs) {
     tassert(vfs_unmount_fs("unmounted") < 0);
 TEND
 
+fs_mount_t dummy_mnt = {
+    .sb = &(fs_superblock_t) {
+    }
+};
+
+static fs_mount_t *dummy_mount(fs_type_t *fstype, char *mount_point, uint16_t flags, void *params) {
+    return &dummy_mnt;
+}
+
 T(vfs_mount_adds_a_new_fs_under_mount_point) {
-    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
-    tassert(fsm != NULL);
+    fs_type_t fst = {
+        .id = "testfs",
+        .mount = dummy_mount,
+    };
+    tassert(vfs_register_fs_type(&fst));
+    tassert(is_fstype_registered(&fst));
+
+    fs_mount_t *fsm = vfs_mount_fs("testfs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm == &dummy_mnt);
+    tassert(fsm->flags == (FS_MOUNT_READ | FS_MOUNT_WRITE));
+    tassert(strncmp(fsm->mount_point, "/test", sizeof(fsm->mount_point)) == 0);
+    tassert(fsm->sb->fstype == &fst);
     tassert(is_fs_mounted("/test"));
 
     vfs_unmount_fs("/test");
