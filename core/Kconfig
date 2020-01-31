@@ -11,6 +11,7 @@ source "core/irq/Kconfig"
 source "core/sync/Kconfig"
 source "core/board/Kconfig"
 source "core/fs/Kconfig"
+source "core/module/Kconfig"
 
 menu "Symmetric multiprocessing"
 

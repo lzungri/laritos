@@ -4,6 +4,7 @@ obj-y += log/
 obj-y += driver/
 obj-y += libc/
 obj-y += component/
+obj-y += module/
 obj-y += dstruct/
 obj-y += syscall/
 obj-y += time/
