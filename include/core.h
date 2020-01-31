@@ -5,7 +5,7 @@
 #include <cpu/cpu-local.h>
 #include <component/component.h>
 #include <component/cpu.h>
-#include <driver/driver.h>
+#include <driver/core.h>
 #include <time/time.h>
 #include <dstruct/list.h>
 #include <mm/slab.h>
@@ -99,6 +99,16 @@ typedef struct {
      * List of components grouped by type (for performance reasons)
      */
     struct list_head comps[COMP_TYPE_LEN];
+
+    /**
+     * List of loaded modules
+     */
+    struct list_head modules;
+
+    /**
+     * List of supported drivers
+     */
+    struct list_head drivers;
 
     /**
      * CPU shortcuts, will be initialized by cpu_init()
