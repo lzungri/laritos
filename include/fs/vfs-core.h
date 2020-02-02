@@ -14,7 +14,7 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *
 int vfs_unmount_fs(char *mount_point);
 
 
-#define FS_TYPE_MODULE(_id, _mount) \
+#define FILESYSTEM_MODULE(_id, _mount) \
     static fs_type_t _fstype_ ## _id = { \
         .id = #_id, \
         .list = LIST_HEAD_INIT(_fstype_ ## _id.list), \

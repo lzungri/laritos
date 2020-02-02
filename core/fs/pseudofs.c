@@ -71,7 +71,7 @@ error_sb:
     return NULL;
 }
 
-FS_TYPE_MODULE(pseudofs, mount);
+FILESYSTEM_MODULE(pseudofs, mount);
 
 
 
