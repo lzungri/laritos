@@ -32,6 +32,22 @@ typedef struct inode {
 } fs_inode_t;
 
 
+struct dentry;
+typedef struct {
+
+} fs_dentry_ops_t;
+
+typedef struct dentry {
+    fs_inode_t *inode;
+    char name[CONFIG_FS_MAX_FILENAME_LEN];
+    struct dentry *parent;
+    struct list_head children;
+    struct list_head siblings;
+
+    fs_dentry_ops_t ops;
+} fs_dentry_t;
+
+
 struct fs_superblock;
 typedef struct {
     fs_inode_t *(*alloc_inode)(struct fs_superblock *sb);
@@ -56,7 +72,7 @@ typedef struct {
 } fs_mount_ops_t;
 
 typedef struct fs_mount {
-    char mount_point[CONFIG_FS_MAX_FILENAME_LEN];
+    fs_dentry_t root;
     fs_mount_flags_t flags;
     struct list_head list;
     fs_superblock_t *sb;

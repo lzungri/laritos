@@ -14,7 +14,8 @@
 #include <sync/atomic.h>
 #include <arch/core.h>
 #include <generated/autoconf.h>
-#include "irq/types.h"
+#include <irq/types.h>
+#include <fs/vfs-types.h>
 
 struct pcb;
 typedef struct {
@@ -79,7 +80,7 @@ typedef struct {
 typedef struct {
     struct list_head fstypes;
     struct list_head mounts;
-
+    fs_dentry_t root;
 } laritos_fs_t;
 
 /**

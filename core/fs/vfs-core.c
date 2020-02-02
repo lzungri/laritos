@@ -12,6 +12,10 @@
 int vfs_init_global_context() {
     INIT_LIST_HEAD(&_laritos.fs.fstypes);
     INIT_LIST_HEAD(&_laritos.fs.mounts);
+
+    INIT_LIST_HEAD(&_laritos.fs.root.children);
+    INIT_LIST_HEAD(&_laritos.fs.root.siblings);
+    strncpy(_laritos.fs.root.name, "/", sizeof(_laritos.fs.root.name));
     return 0;
 }
 
@@ -68,7 +72,7 @@ bool vfs_is_fs_type_supported(char *fstype) {
 static inline fs_mount_t *get_fsmount(char *mount_point) {
     fs_mount_t *fsm;
     list_for_each_entry(fsm, &_laritos.fs.mounts, list) {
-        if (strncmp(fsm->mount_point, mount_point, sizeof(fsm->mount_point)) == 0) {
+        if (strncmp(fsm->root.name, mount_point, sizeof(fsm->root.name)) == 0) {
             return fsm;
         }
     }
@@ -80,7 +84,7 @@ bool vfs_is_fs_mounted(char *mount_point) {
 }
 
 void vfs_initialize_mount_struct(fs_mount_t *mount, fs_type_t *fstype, char *mount_point, uint16_t flags, void *params) {
-    strncpy(mount->mount_point, mount_point, sizeof(mount->mount_point));
+    strncpy(mount->root.name, mount_point, sizeof(mount->root.name));
     mount->flags = flags;
     mount->sb->fstype = fstype;
     INIT_LIST_HEAD(&mount->list);

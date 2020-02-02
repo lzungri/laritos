@@ -32,7 +32,7 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
     inode->parent.ops.lookup = lookup;
     inode->parent.ops.mkdir = mkdir;
     inode->parent.ops.rmdir = rmdir;
-    return inode;
+    return (fs_inode_t *) inode;
 }
 
 static void free_inode(fs_inode_t *inode) {
