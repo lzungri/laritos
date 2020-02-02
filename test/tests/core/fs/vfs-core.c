@@ -93,6 +93,7 @@ fs_mount_t dummy_mnt = {
 };
 
 static fs_mount_t *dummy_mount(fs_type_t *fstype, char *mount_point, uint16_t flags, void *params) {
+    vfs_initialize_mount_struct(&dummy_mnt, fstype, mount_point, flags, params);
     return &dummy_mnt;
 }
 
@@ -123,6 +124,7 @@ fs_mount_t nosb_mnt = {
 };
 
 static fs_mount_t *nosb_mount(fs_type_t *fstype, char *mount_point, uint16_t flags, void *params) {
+    vfs_initialize_mount_struct(&nosb_mnt, fstype, mount_point, flags, params);
     return &nosb_mnt;
 }
 
