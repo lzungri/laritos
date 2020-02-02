@@ -79,6 +79,13 @@ bool vfs_is_fs_mounted(char *mount_point) {
     return get_fsmount(mount_point) != NULL;
 }
 
+void vfs_initialize_mount_struct(fs_mount_t *mount, fs_type_t *fstype, char *mount_point, uint16_t flags, void *params) {
+    strncpy(mount->mount_point, mount_point, sizeof(mount->mount_point));
+    mount->flags = flags;
+    mount->sb->fstype = fstype;
+    INIT_LIST_HEAD(&mount->list);
+}
+
 fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *params) {
     info("Mounting filesystem '%s' at %s with flags=0x%0x", fstype, mount_point, flags);
 
@@ -104,10 +111,6 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *
         return NULL;
     }
 
-    strncpy(mount->mount_point, mount_point, sizeof(mount->mount_point));
-    mount->flags = flags;
-    mount->sb->fstype = fst;
-
     list_add_tail(&mount->list, &_laritos.fs.mounts);
 
     return mount;
@@ -121,8 +124,13 @@ int vfs_unmount_fs(char *mount_point) {
     }
 
     info("Unmounting filesystem %s", mount_point);
+
     list_del_init(&fsm->list);
-    return -1;
+    if (fsm->ops.unmount(fsm) < 0) {
+        error("Error while unmounting filesystem at %s", mount_point);
+        return -1;
+    }
+    return 0;
 }
 
 
