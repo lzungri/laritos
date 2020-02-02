@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <test/test.h>
-#include <fs/vfs-core.h>
-#include <fs/vfs-types.h>
+#include <fs/vfs/core.h>
+#include <fs/vfs/types.h>
 
 static fs_mount_t *empty_mount(fs_type_t *fstype, char *mount_point, uint16_t flags, void *params) {
     return NULL;

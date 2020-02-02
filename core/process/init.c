@@ -15,7 +15,7 @@
 #include <utils/random.h>
 #include <utils/debug.h>
 #include <sched/core.h>
-#include <fs/vfs-core.h>
+#include <fs/vfs/core.h>
 #include <module/core.h>
 #include <generated/autoconf.h>
 #include <generated/utsrelease.h>

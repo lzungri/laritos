@@ -1,3 +1,4 @@
+
 #define DEBUG
 #include <log.h>
 
@@ -5,8 +6,8 @@
 #include <core.h>
 #include <string.h>
 #include <dstruct/list.h>
-#include <fs/vfs-types.h>
-#include <fs/vfs-core.h>
+#include <fs/vfs/types.h>
+#include <fs/vfs/core.h>
 
 
 int vfs_init_global_context() {
@@ -139,6 +140,6 @@ int vfs_unmount_fs(char *mount_point) {
 
 
 
-#ifdef CONFIG_TEST_CORE_FS_VFSCORE
+#ifdef CONFIG_TEST_CORE_FS_VFS_CORE
 #include __FILE__
 #endif

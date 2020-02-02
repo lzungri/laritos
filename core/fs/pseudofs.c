@@ -1,7 +1,7 @@
 #include <log.h>
 
-#include <fs/vfs-types.h>
-#include <fs/vfs-core.h>
+#include <fs/vfs/types.h>
+#include <fs/vfs/core.h>
 #include <module/core.h>
 #include <mm/heap.h>
 

@@ -6,7 +6,7 @@
 #include <component/component.h>
 #include <process/core.h>
 #include <module/core.h>
-#include <fs/vfs-core.h>
+#include <fs/vfs/core.h>
 #include <sched/core.h>
 #include <sync/atomic.h>
 #include <utils/utils.h>

@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <fs/vfs-types.h>
+#include <fs/vfs/types.h>
 
 int vfs_init_global_context(void);
 int vfs_register_fs_type(fs_type_t *fst);

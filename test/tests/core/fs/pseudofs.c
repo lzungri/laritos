@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <test/test.h>
-#include <fs/vfs-core.h>
-#include <fs/vfs-types.h>
+#include <fs/vfs/core.h>
+#include <fs/vfs/types.h>
 
 T(pseudofs_fstype_is_supported_by_default) {
     fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
