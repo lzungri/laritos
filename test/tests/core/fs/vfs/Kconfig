@@ -9,4 +9,8 @@ config TEST_CORE_FS_VFS_CORE
     bool "core.c"
     default n
 
+config TEST_CORE_FS_VFS_MOUNT
+    bool "mount.c"
+    default n
+
 endmenu

@@ -5,6 +5,7 @@
 #include <fs/vfs/types.h>
 
 int vfs_init_global_context(void);
+fs_type_t *vfs_get_fstype(char *fstype);
 int vfs_register_fs_type(fs_type_t *fst);
 int vfs_unregister_fs_type(fs_type_t *fst);
 bool vfs_is_fs_mounted(char *mount_point);
