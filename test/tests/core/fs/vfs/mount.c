@@ -34,7 +34,7 @@ T(vfs_unmount_fs_fails_on_non_mounted_fs) {
     tassert(vfs_unmount_fs("unmounted") < 0);
 TEND
 
-fs_mount_t dummy_mnt = {
+static fs_mount_t dummy_mnt = {
     .sb = &(fs_superblock_t) {
     }
 };
