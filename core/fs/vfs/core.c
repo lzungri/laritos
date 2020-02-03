@@ -13,10 +13,7 @@ int vfs_init_global_context() {
     INIT_LIST_HEAD(&_laritos.fs.fstypes);
     INIT_LIST_HEAD(&_laritos.fs.mounts);
 
-    INIT_LIST_HEAD(&_laritos.fs.root.children);
-    INIT_LIST_HEAD(&_laritos.fs.root.siblings);
-    strncpy(_laritos.fs.root.name, "/", sizeof(_laritos.fs.root.name));
-    return 0;
+    return vfs_dentry_init_root();
 }
 
 fs_type_t *vfs_get_fstype(char *fstype) {
