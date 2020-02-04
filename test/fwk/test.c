@@ -16,7 +16,6 @@ int test_main(void *testdescs) {
     test_ctx_t ctx = { 0 };
     test_descriptor_t **tdptr;
 
-    uint32_t heap_avail = heap_get_available();
 
     time_t suite_start;
     time_t test_start;
@@ -42,6 +41,8 @@ int test_main(void *testdescs) {
             info("%s:", fpath);
         }
 
+        uint32_t heap_avail = heap_get_available();
+
         time_get_ns_rtc_time(&test_start);
 
         testres_t tret = td->func();
@@ -49,6 +50,10 @@ int test_main(void *testdescs) {
         time_get_ns_rtc_time(&end);
         time_sub(&end, &test_start, &duration);
         time_to_hms(&duration, &hours, &mins, &secs);
+
+        if (heap_avail > heap_get_available()) {
+            warn("Test may be leaking %lu bytes of heap", heap_avail - heap_get_available());
+        }
 
         switch(tret) {
         case TEST_ERROR:
@@ -87,10 +92,5 @@ int test_main(void *testdescs) {
     info("  Total:    %3u", ctx.failed + ctx.error + ctx.passed);
     info("  Duration: %02u:%02u:%02u.%03u", hours, mins, secs, (uint16_t) NS_TO_MS(duration.ns));
     info("--------------------------------------------------");
-
-    if (heap_avail > heap_get_available()) {
-        warn("Tests may be leaking %lu bytes of heap", heap_avail - heap_get_available());
-        heap_dump_info();
-    }
     return 0;
 }

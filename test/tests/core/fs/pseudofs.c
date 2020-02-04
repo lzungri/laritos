@@ -28,10 +28,6 @@ T(pseudofs_) {
     tassert(fsm != NULL);
     tassert(vfs_dentry_exist("/test"));
 
-
-//    fs_inode_t inode = fsm->sb->ops.alloc_inode(fsm->sb);
-
-
     vfs_unmount_fs("/test");
     tassert(!vfs_dentry_exist("/test"));
 TEND

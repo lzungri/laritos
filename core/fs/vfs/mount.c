@@ -35,7 +35,7 @@ static inline fs_mount_t *get_fsmount(char *mount_point) {
 }
 
 fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *params) {
-    info("Mounting filesystem '%s' at %s with flags=0x%0x", fstype, mount_point, flags);
+    info("Mounting %s filesystem at %s with flags=0x%0x", fstype, mount_point, flags);
 
     fs_type_t *fst = vfs_get_fstype(fstype);
     if (fst == NULL) {
