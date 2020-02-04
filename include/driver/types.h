@@ -6,7 +6,7 @@
 
 typedef struct {
     char *id;
-    struct list_head list;
+    list_head_t list;
 
     int (*process)(board_comp_t *comp);
 } driver_t;

@@ -5,7 +5,7 @@
 
 typedef struct module {
     char *id;
-    struct list_head list;
+    list_head_t list;
 
     int (*init)(struct module *m);
     int (*deinit)(struct module *m);

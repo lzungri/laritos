@@ -32,14 +32,14 @@ typedef struct {
     irq_handler_t h;
     void *data;
 
-    struct list_head list;
+    list_head_t list;
 } irq_handler_info_t;
 
 typedef struct intc{
     component_t parent;
     intc_ops_t ops;
 
-    struct list_head handlers[CONFIG_INT_MAX_IRQS];
+    list_head_t handlers[CONFIG_INT_MAX_IRQS];
 } intc_t;
 
 

@@ -46,14 +46,14 @@ typedef struct {
     /**
      * Node used to link a process to the _laritos.proc.pcbs list
      */
-    struct list_head pcb_node;
+    list_head_t pcb_node;
 
     /**
      * Node used to link a process to a particular scheduling list. So far,
      * it could be a per-cpu READY list or a blocked list (if the blocking
      * event has any).
      */
-    struct list_head sched_node;
+    list_head_t sched_node;
 } pcb_sched_t;
 
 typedef struct {
@@ -77,8 +77,8 @@ typedef struct pcb {
 
     struct pcb *parent;
     condition_t parent_waiting_cond;
-    struct list_head children;
-    struct list_head siblings;
+    list_head_t children;
+    list_head_t siblings;
 
     refcount_t refcnt;
 } pcb_t;

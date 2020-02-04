@@ -57,7 +57,7 @@ typedef struct component {
     /**
      * List of components
      */
-    struct list_head list;
+    list_head_t list;
 
     component_ops_t ops;
 } component_t;

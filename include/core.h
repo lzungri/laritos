@@ -27,7 +27,7 @@ typedef struct {
     /**
      * List of processes in the system
      */
-    struct list_head pcbs;
+    list_head_t pcbs;
 
     /**
      * Spinlock used to synchronize the _laritos.proc.pcbs list
@@ -59,7 +59,7 @@ typedef struct {
     /**
      * List of READY processes per cpu
      */
-    DEF_CPU_LOCAL(struct list_head, ready_pcbs);
+    DEF_CPU_LOCAL(list_head_t, ready_pcbs);
 
     /**
      * Indicates whether or not the OS should schedule the next 'ready' process
@@ -78,8 +78,8 @@ typedef struct {
 } laritos_stats_t;
 
 typedef struct {
-    struct list_head fstypes;
-    struct list_head mounts;
+    list_head_t fstypes;
+    list_head_t mounts;
     fs_dentry_t root;
 } laritos_fs_t;
 
@@ -105,17 +105,17 @@ typedef struct {
     /**
      * List of components grouped by type (for performance reasons)
      */
-    struct list_head comps[COMP_TYPE_LEN];
+    list_head_t comps[COMP_TYPE_LEN];
 
     /**
      * List of loaded modules
      */
-    struct list_head modules;
+    list_head_t modules;
 
     /**
      * List of supported drivers
      */
-    struct list_head drivers;
+    list_head_t drivers;
 
     /**
      * CPU shortcuts, will be initialized by cpu_init()

@@ -14,7 +14,7 @@ typedef enum {
 struct fs_mount;
 typedef struct fs_type {
     char *id;
-    struct list_head list;
+    list_head_t list;
 
     int (*mount)(struct fs_type *fstype, struct fs_mount *mount);
 } fs_type_t;
@@ -41,8 +41,8 @@ typedef struct dentry {
     fs_inode_t *inode;
     char name[CONFIG_FS_MAX_FILENAME_LEN];
     struct dentry *parent;
-    struct list_head children;
-    struct list_head siblings;
+    list_head_t children;
+    list_head_t siblings;
 
     fs_dentry_ops_t ops;
 } fs_dentry_t;
@@ -74,7 +74,7 @@ typedef struct {
 typedef struct fs_mount {
     fs_dentry_t root;
     fs_mount_flags_t flags;
-    struct list_head list;
+    list_head_t list;
     fs_superblock_t *sb;
 
     fs_mount_ops_t ops;

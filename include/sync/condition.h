@@ -7,7 +7,7 @@
 #include <dstruct/list.h>
 
 typedef struct {
-    struct list_head blocked;
+    list_head_t blocked;
 } condition_t;
 
 int condition_init(condition_t *cond);

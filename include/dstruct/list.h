@@ -21,9 +21,9 @@
 #include <utils/utils.h>
 
 // import from include/linux/types.h
-struct list_head {
+typedef struct list_head {
     struct list_head *next, *prev;
-};
+} list_head_t;
 
 struct hlist_head {
     struct hlist_node *first;

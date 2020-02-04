@@ -22,7 +22,7 @@ int process_init_global_context(void) {
     spinlock_init(&_laritos.proc.pcbs_lock);
     spinlock_init(&_laritos.proc.pcbs_data_lock);
 
-    struct list_head *l;
+    list_head_t *l;
     CPU_LOCAL_FOR_EACH_CPU_VAR(_laritos.sched.ready_pcbs, l) {
         INIT_LIST_HEAD(l);
     }
