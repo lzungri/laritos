@@ -1,0 +1,33 @@
+#pragma once
+
+#include <stdint.h>
+#include <string.h>
+#include <printf.h>
+#include <process/core.h>
+#include <utils/math.h>
+
+static inline bool file_is_absolute(char *path) {
+    return path != NULL && path[0] == '/';
+}
+
+static inline char *file_get_basename(char *path) {
+    char *b = strrchr(path, '/');
+    return b == NULL ? path : b + 1;
+}
+
+static inline int file_get_abs_dirname(char *path, char *buf, size_t len) {
+    if (path == NULL) {
+        return -1;
+    }
+
+    if (file_is_absolute(path)) {
+        strncpy(buf, path, len);
+    } else {
+        snprintf(buf, len, "%s/%s", process_get_current()->cwd, path);
+    }
+
+    char *basename = strrchr(buf, '/') + 1;
+    *basename = '\0';
+
+    return 0;
+}
