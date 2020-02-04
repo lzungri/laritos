@@ -1,6 +1,6 @@
 #include <log.h>
 
-#include <board/board.h>
+#include <board/core.h>
 #include <process/core.h>
 #include <driver/core.h>
 #include <sched/core.h>

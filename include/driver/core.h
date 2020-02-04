@@ -1,6 +1,6 @@
 #pragma once
 
-#include <board/board-types.h>
+#include <board/types.h>
 #include <module/types.h>
 #include <module/core.h>
 #include <driver/types.h>

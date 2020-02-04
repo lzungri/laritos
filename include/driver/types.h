@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <dstruct/list.h>
-#include <board/board-types.h>
+#include <board/types.h>
 
 typedef struct {
     char *id;

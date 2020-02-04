@@ -4,8 +4,8 @@
 #include <string.h>
 #include <core.h>
 #include <dstruct/list.h>
-#include <board/board-types.h>
-#include <board/board.h>
+#include <board/types.h>
+#include <board/core.h>
 #include <driver/core.h>
 
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include <board/board-types.h>
+#include <board/types.h>
 #include <dstruct/list.h>
 
 #define COMPONENT_MAX_ID_LEN CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES

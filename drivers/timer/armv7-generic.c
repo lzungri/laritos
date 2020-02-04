@@ -3,8 +3,8 @@
 
 #include <stdbool.h>
 #include <irq/types.h>
-#include <board/board-types.h>
-#include <board/board.h>
+#include <board/types.h>
+#include <board/core.h>
 #include <time/core.h>
 #include <driver/core.h>
 #include <driver/armv7-generic-timer.h>

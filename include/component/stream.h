@@ -1,7 +1,7 @@
 #pragma once
 
-#include <board/board.h>
-#include <board/board-types.h>
+#include <board/core.h>
+#include <board/types.h>
 #include <component/component.h>
 #include <stdbool.h>
 

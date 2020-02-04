@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 #include <core.h>
-#include <board/board.h>
+#include <board/core.h>
 #include <process/core.h>
 #include <sched/core.h>
 #include <component/ticker.h>

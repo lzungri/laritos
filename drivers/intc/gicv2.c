@@ -4,8 +4,8 @@
 #include <component/intc.h>
 #include <irq/types.h>
 #include <cpu/cpu.h>
-#include <board/board-types.h>
-#include <board/board.h>
+#include <board/types.h>
+#include <board/core.h>
 #include <driver/core.h>
 #include <driver/gicv2.h>
 #include <utils/math.h>

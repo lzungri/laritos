@@ -2,7 +2,7 @@
 
 #include <core.h>
 #include <cpu/cpu.h>
-#include <board/board.h>
+#include <board/core.h>
 #include <driver/core.h>
 #include <mm/heap.h>
 #include <component/intc.h>

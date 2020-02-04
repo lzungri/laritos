@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <board/board-types.h>
+#include <board/types.h>
 #include <dstruct/list.h>
 #include <component/component.h>
 #include <component/vrtimer.h>
