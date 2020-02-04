@@ -1,2 +1,2 @@
-obj-y += time.o
+obj-y += core.o
 obj-y += timeconv.o

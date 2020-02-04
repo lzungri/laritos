@@ -1,1 +1,1 @@
-obj-y += driver.o
+obj-y += core.o
