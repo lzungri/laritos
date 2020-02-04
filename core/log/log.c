@@ -10,7 +10,7 @@
 #include <driver/core.h>
 #include <dstruct/circbuf.h>
 #include <utils/utils.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <time/timeconv.h>
 #include <mm/heap.h>
 #include <dstruct/list.h>

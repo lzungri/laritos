@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <cpu/cpu.h>
 #include <test/test.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <utils/latency.h>
 
 T(latency_latencynoirq_disable_irqs_as_expected) {

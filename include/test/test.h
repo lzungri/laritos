@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <utils/utils.h>
-#include <time/time.h>
+#include <time/core.h>
 
 typedef struct {
     uint16_t failed;

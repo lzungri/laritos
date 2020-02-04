@@ -8,7 +8,7 @@
 #include <component/component.h>
 #include <component/ticker.h>
 #include <component/vrtimer.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <time/tick.h>
 #include <utils/math.h>
 

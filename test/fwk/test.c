@@ -2,7 +2,7 @@
 
 #include <string.h>
 #include <mm/heap.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <test/test.h>
 #include <sync/spinlock.h>
 

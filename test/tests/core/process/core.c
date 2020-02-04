@@ -6,7 +6,7 @@
 #include <dstruct/list.h>
 #include <test/test.h>
 #include <process/core.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <component/vrtimer.h>
 #include <irq/types.h>
 #include <sync/spinlock.h>

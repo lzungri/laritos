@@ -6,7 +6,7 @@
 #include <component/component.h>
 #include <component/cpu.h>
 #include <driver/core.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <dstruct/list.h>
 #include <mm/slab.h>
 #include <time/tick.h>

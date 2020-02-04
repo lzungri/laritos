@@ -5,7 +5,7 @@
 #include <cpu/cpu-local.h>
 #include <limits.h>
 #include <test/test.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <utils/latency.h>
 
 T(cpu_cycle_count_enable_disable_works_as_expected) {

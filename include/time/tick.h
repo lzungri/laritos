@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <component/component.h>
 
 /**

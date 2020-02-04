@@ -4,7 +4,7 @@
 #include <core.h>
 #include <limits.h>
 #include <refcount.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <time/tick.h>
 #include <time/timeconv.h>
 #include <component/timer.h>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <syscall/syscall-no.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <stdint.h>
 #include <generated/autoconf.h>
 

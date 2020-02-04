@@ -8,7 +8,7 @@
 #include <utils/assert.h>
 #include <utils/utils.h>
 #include <sched/context.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <sync/atomic.h>
 #include <mm/exc-handlers.h>
 
