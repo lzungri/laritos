@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <core.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <board/core.h>
 #include <driver/core.h>
 #include <mm/heap.h>

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <limits.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <irq/core.h>
 #include <irq/types.h>
 #include <mm/heap.h>

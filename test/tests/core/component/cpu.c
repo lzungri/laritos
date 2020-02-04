@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <stdint.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <cpu/cpu-local.h>
 #include <limits.h>
 #include <test/test.h>

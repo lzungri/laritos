@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <printf.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <arch/context-types.h>
 #include <printf.h>
 

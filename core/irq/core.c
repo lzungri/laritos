@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <irq/types.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <core.h>
 #include <component/component.h>
 #include <component/intc.h>

@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <stdint.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <test/test.h>
 #include <time/core.h>
 #include <utils/latency.h>

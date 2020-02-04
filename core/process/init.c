@@ -2,7 +2,7 @@
 
 #include <mm/heap.h>
 #include <process/core.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <utils/assert.h>
 #include <loader/loader.h>
 #include <sync/spinlock.h>

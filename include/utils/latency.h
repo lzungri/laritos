@@ -3,7 +3,7 @@
 #include <log.h>
 #include <stdint.h>
 #include <limits.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <time/core.h>
 #include <irq/core.h>
 #include <time/tick.h>

@@ -2,7 +2,7 @@
 
 #include <log.h>
 
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <string.h>
 #include <process/core.h>
 #include <arch/debug.h>

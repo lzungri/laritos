@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <stdbool.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <process/core.h>
 #include <sched/core.h>
 #include <syscall/syscall.h>

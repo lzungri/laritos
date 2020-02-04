@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include <dstruct/list.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <cpu/cpu-local.h>
 #include <core.h>
 #include <refcount.h>

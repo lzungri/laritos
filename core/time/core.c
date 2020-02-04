@@ -1,6 +1,6 @@
 #include <log.h>
 
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <core.h>
 #include <limits.h>
 #include <refcount.h>
