@@ -16,7 +16,7 @@ typedef struct fs_type {
     char *id;
     struct list_head list;
 
-    struct fs_mount *(*mount)(struct fs_type *fstype, char *mount_point, uint16_t flags, void *params);
+    int (*mount)(struct fs_type *fstype, struct fs_mount *mount);
 } fs_type_t;
 
 struct inode;

@@ -17,12 +17,15 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *
 int vfs_unmount_fs(char *mount_point);
 
 int vfs_dentry_init_root(void);
+void vfs_dentry_init(fs_dentry_t *d, char *name, fs_inode_t *inode, fs_dentry_t *parent);
 fs_dentry_t *vfs_dentry_alloc(char *name, fs_inode_t *inode, fs_dentry_t *parent);
 void vfs_dentry_free(fs_dentry_t *d);
 void vfs_dentry_add_child(fs_dentry_t *parent, fs_dentry_t *child);
 void vfs_dentry_remove_as_child(fs_dentry_t *child);
 fs_dentry_t *vfs_dentry_lookup_from(fs_dentry_t *parent, char *relpath);
 fs_dentry_t *vfs_dentry_lookup(char *path);
+fs_dentry_t *vfs_dentry_lookup_parent(char *path);
+bool vfs_dentry_exist(char *path);
 
 
 #define FILESYSTEM_MODULE(_id, _mount) \

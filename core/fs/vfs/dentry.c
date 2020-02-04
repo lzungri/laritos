@@ -8,6 +8,8 @@
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
 #include <mm/heap.h>
+#include <utils/file.h>
+#include <process/core.h>
 #include <generated/autoconf.h>
 
 
@@ -28,11 +30,7 @@ void vfs_dentry_remove_as_child(fs_dentry_t *child) {
     list_del_init(&child->siblings);
 }
 
-fs_dentry_t *vfs_dentry_alloc(char *name, fs_inode_t *inode, fs_dentry_t *parent) {
-    fs_dentry_t *d = calloc(1, sizeof(fs_dentry_t));
-    if (d == NULL) {
-        return NULL;
-    }
+void vfs_dentry_init(fs_dentry_t *d, char *name, fs_inode_t *inode, fs_dentry_t *parent) {
     INIT_LIST_HEAD(&d->children);
     INIT_LIST_HEAD(&d->siblings);
     strncpy(d->name, name, sizeof(d->name));
@@ -41,6 +39,14 @@ fs_dentry_t *vfs_dentry_alloc(char *name, fs_inode_t *inode, fs_dentry_t *parent
     if (parent != NULL) {
         vfs_dentry_add_child(parent, d);
     }
+}
+
+fs_dentry_t *vfs_dentry_alloc(char *name, fs_inode_t *inode, fs_dentry_t *parent) {
+    fs_dentry_t *d = calloc(1, sizeof(fs_dentry_t));
+    if (d == NULL) {
+        return NULL;
+    }
+    vfs_dentry_init(d, name, inode, parent);
     return d;
 }
 
@@ -49,6 +55,10 @@ void vfs_dentry_free(fs_dentry_t *d) {
 }
 
 static inline fs_dentry_t *find_children(fs_dentry_t *parent, char *relpath) {
+    if (parent == NULL) {
+        return NULL;
+    }
+
     size_t namelen = strlen(relpath);
     char *nextpath = strchr(relpath, '/');
     if (nextpath != NULL) {
@@ -99,10 +109,19 @@ fs_dentry_t *vfs_dentry_lookup(char *path) {
         return vfs_dentry_lookup_from(&_laritos.fs.root, path);
     }
 
-    // TODO Use cwd dentry instead
-    return vfs_dentry_lookup_from(&_laritos.fs.root, path);
+    fs_dentry_t *cwd = vfs_dentry_lookup(process_get_current()->cwd);
+    return vfs_dentry_lookup_from(cwd, path);
 }
 
+fs_dentry_t *vfs_dentry_lookup_parent(char *path) {
+    char abs_parent[CONFIG_FS_MAX_FILENAME_LEN];
+    file_get_abs_dirname(path, abs_parent, sizeof(abs_parent));
+    return vfs_dentry_lookup(abs_parent);
+}
+
+bool vfs_dentry_exist(char *path) {
+    return vfs_dentry_lookup(path) != NULL;
+}
 
 
 #ifdef CONFIG_TEST_CORE_FS_VFS_DENTRY
