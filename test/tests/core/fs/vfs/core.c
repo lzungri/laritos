@@ -6,8 +6,8 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 
-static fs_mount_t *empty_mount(fs_type_t *fstype, char *mount_point, uint16_t flags, void *params) {
-    return NULL;
+static int empty_mount(fs_type_t *fstype, fs_mount_t *fsm) {
+    return 0;
 }
 
 T(vfs_register_fs_type_adds_a_new_fstype_to_the_supported_systems) {

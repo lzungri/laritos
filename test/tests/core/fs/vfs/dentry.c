@@ -13,14 +13,12 @@ T(vfs_creates_a_slash_root_dentry) {
 TEND
 
 
-static fs_mount_t dummy_mnt = {
-    .sb = &(fs_superblock_t) {
-    }
-};
+static fs_superblock_t dummy_sb = { 0 };
 
-static fs_mount_t *dummy_mount(fs_type_t *fstype, char *mount_point, uint16_t flags, void *params) {
-    vfs_initialize_mount_struct(&dummy_mnt, fstype, mount_point, flags, params);
-    return &dummy_mnt;
+static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm) {
+    dummy_sb.fstype = fstype;
+    fsm->sb = &dummy_sb;
+    return 0;
 }
 
 T(vfs_mount_creates_a_new_dentry_for_the_mounting_point) {
@@ -32,18 +30,14 @@ T(vfs_mount_creates_a_new_dentry_for_the_mounting_point) {
     tassert(vfs_is_fs_type_supported(fst.id));
 
     fs_mount_t *fsm = vfs_mount_fs("dummymnt", "/dummymnt", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
-    tassert(fsm == &dummy_mnt);
+    tassert(fsm != NULL);
     tassert(fsm->flags == (FS_MOUNT_READ | FS_MOUNT_WRITE));
-    tassert(strncmp(fsm->root.name, "/dummymnt", sizeof(fsm->root.name)) == 0);
+    tassert(strncmp(fsm->root.name, "dummymnt", sizeof(fsm->root.name)) == 0);
     tassert(fsm->sb->fstype == &fst);
-    tassert(vfs_is_fs_mounted("/dummymnt"));
+    tassert(vfs_dentry_exist("/dummymnt"));
 
-    tassert(vfs_dentry_lookup("/dummymnt") != NULL);
-
-    vfs_unmount_fs("/dummymnt");
-    tassert(!vfs_is_fs_mounted("/dummymnt"));
-
-    tassert(vfs_dentry_lookup("/dummymnt") == NULL);
+    tassert(vfs_unmount_fs("/dummymnt") >= 0);
+    tassert(!vfs_dentry_exist("/dummymnt"));
 
     vfs_unregister_fs_type(&fst);
     tassert(!vfs_is_fs_type_supported(fst.id));
