@@ -53,7 +53,7 @@ T(vfs_mount_adds_a_new_fs_under_mount_point) {
     fs_mount_t *fsm = vfs_mount_fs("dummymnt", "/dummymnt", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
     tassert(fsm != NULL);
     tassert(fsm->flags == (FS_MOUNT_READ | FS_MOUNT_WRITE));
-    tassert(strncmp(fsm->root.name, "/dummymnt", sizeof(fsm->root.name)) == 0);
+    tassert(strncmp(fsm->root.name, "dummymnt", sizeof(fsm->root.name)) == 0);
     tassert(fsm->sb->fstype == &fst);
     tassert(vfs_dentry_exist("/dummymnt"));
 
