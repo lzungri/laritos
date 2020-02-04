@@ -39,36 +39,27 @@ static void free_inode(fs_inode_t *inode) {
     free(inode);
 }
 
-static int unmount(struct fs_mount *fsm) {
+static int unmount(fs_mount_t *fsm) {
     free(fsm->sb);
-    free(fsm);
     return 0;
 }
 
-static fs_mount_t *mount(fs_type_t *fstype, char *mount_point, uint16_t flags, void *params) {
-    fs_mount_t *m = calloc(1, sizeof(fs_mount_t));
-    if (m == NULL) {
-        error("No memory available for fs_mount_t structure");
-        return NULL;
-    }
-
+int mount(fs_type_t *fstype, fs_mount_t *m) {
     m->sb = calloc(1, sizeof(fs_superblock_t));
     if (m->sb == NULL) {
         error("No memory available for fs_superblock_t structure");
         goto error_sb;
     }
+    m->sb->fstype = fstype;
     m->sb->ops.alloc_inode = alloc_inode;
     m->sb->ops.free_inode = free_inode;
 
-    vfs_initialize_mount_struct(m, fstype, mount_point, flags, params);
     m->ops.unmount = unmount;
 
-    return m;
+    return 0;
 
 error_sb:
-    free(m);
-
-    return NULL;
+    return -1;
 }
 
 FILESYSTEM_MODULE(pseudofs, mount);

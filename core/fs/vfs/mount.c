@@ -4,29 +4,34 @@
 #include <stdbool.h>
 #include <core.h>
 #include <string.h>
+#include <utils/file.h>
 #include <dstruct/list.h>
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
+#include <mm/heap.h>
+
+static inline bool is_valid_mount_struct(fs_mount_t *fsm) {
+    if (fsm->sb == NULL) {
+        error("No superblock was instantiated");
+        return false;
+    }
+    return true;
+}
 
 static inline fs_mount_t *get_fsmount(char *mount_point) {
+    fs_dentry_t *mount_de = vfs_dentry_lookup(mount_point);
+    if (mount_de == NULL) {
+        error("'%s' is not a valid directory", mount_point);
+        return NULL;
+    }
+
     fs_mount_t *fsm;
     list_for_each_entry(fsm, &_laritos.fs.mounts, list) {
-        if (strncmp(fsm->root.name, mount_point, sizeof(fsm->root.name)) == 0) {
+        if (mount_de == &fsm->root) {
             return fsm;
         }
     }
     return NULL;
-}
-
-bool vfs_is_fs_mounted(char *mount_point) {
-    return get_fsmount(mount_point) != NULL;
-}
-
-void vfs_initialize_mount_struct(fs_mount_t *mount, fs_type_t *fstype, char *mount_point, uint16_t flags, void *params) {
-    strncpy(mount->root.name, mount_point, sizeof(mount->root.name));
-    mount->flags = flags;
-    mount->sb->fstype = fstype;
-    INIT_LIST_HEAD(&mount->list);
 }
 
 fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *params) {
@@ -38,25 +43,49 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *
         return NULL;
     }
 
-    if (vfs_is_fs_mounted(mount_point)) {
-        error("Mount point '%s' already in use", mount_point);
+    if (vfs_dentry_exist(mount_point)) {
+        error("Cannot mount at '%s', already in use", mount_point);
         return NULL;
     }
 
-    fs_mount_t *mount = fst->mount(fst, mount_point, flags, params);
-    if (mount == NULL) {
+    fs_dentry_t *parent = vfs_dentry_lookup_parent(mount_point);
+    if (parent == NULL) {
+        error("Not all directories from '%s' exist", mount_point);
+        return NULL;
+    }
+
+    fs_mount_t *fsm = calloc(1, sizeof(fs_mount_t));
+    if (fsm == NULL) {
+        error("No memory available for fs_mount_t structure");
+        return NULL;
+    }
+    fsm->flags = flags;
+    INIT_LIST_HEAD(&fsm->list);
+    vfs_dentry_init(&fsm->root, file_get_basename(mount_point), NULL, NULL);
+
+    if (fst->mount(fst, fsm) < 0) {
         error("Could not mount file system '%s' at %s", fst->id, mount_point);
-        return NULL;
+        goto error_mount;
     }
 
-    if (mount->sb == NULL) {
-        error("No superblock was instantiated");
-        return NULL;
+    if (!is_valid_mount_struct(fsm)) {
+        error("Mount structure is not valid or is missing essential components");
+        goto error_validation;
     }
 
-    list_add_tail(&mount->list, &_laritos.fs.mounts);
+    list_add_tail(&fsm->list, &_laritos.fs.mounts);
+    vfs_dentry_add_child(parent, &fsm->root);
 
-    return mount;
+    return fsm;
+
+error_validation:
+    if (fsm->ops.unmount != NULL) {
+        fsm->ops.unmount(fsm);
+    }
+error_mount:
+    free(fsm);
+
+    return NULL;
 }
 
 int vfs_unmount_fs(char *mount_point) {
@@ -68,11 +97,13 @@ int vfs_unmount_fs(char *mount_point) {
 
     info("Unmounting filesystem %s", mount_point);
 
+    vfs_dentry_remove_as_child(&fsm->root);
     list_del_init(&fsm->list);
-    if (fsm->ops.unmount(fsm) < 0) {
+    if (fsm->ops.unmount != NULL && fsm->ops.unmount(fsm) < 0) {
         error("Error while unmounting filesystem at %s", mount_point);
         return -1;
     }
+    free(fsm);
     return 0;
 }
 
