@@ -58,6 +58,7 @@ static inline fs_dentry_t *find_children(fs_dentry_t *parent, char *relpath) {
     if (parent == NULL) {
         return NULL;
     }
+    verbose_async("find_children('%s', '%s')", parent->name, relpath);
 
     size_t namelen = strlen(relpath);
     char *nextpath = strchr(relpath, '/');
