@@ -68,6 +68,7 @@ typedef struct pcb {
     bool kernel;
 
     char cmd[CONFIG_PROCESS_MAX_CMD_LEN];
+    char cwd[CONFIG_FS_MAX_FILENAME_LEN];
     pcb_mm_t mm;
     pcb_sched_t sched;
     pcb_stats_t stats;

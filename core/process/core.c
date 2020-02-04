@@ -68,6 +68,7 @@ pcb_t *process_alloc(void) {
         pcb->sched.status = PROC_STATUS_NOT_INIT;
         process_set_name(pcb, "?");
         process_assign_pid(pcb);
+        pcb->cmd[0] = '/';
     }
     return pcb;
 }
