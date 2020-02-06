@@ -9,6 +9,7 @@
 static fs_superblock_t dummy_sb = {
     .ops = {
         .alloc_inode = vfs_inode_def_alloc,
+        .free_inode = vfs_inode_def_free,
     },
 };
 

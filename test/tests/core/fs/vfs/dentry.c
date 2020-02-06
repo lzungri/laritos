@@ -11,6 +11,7 @@
 static fs_superblock_t dummy_sb = {
     .ops = {
         .alloc_inode = vfs_inode_def_alloc,
+        .free_inode = vfs_inode_def_free,
     },
 };
 
@@ -65,6 +66,7 @@ T(vfs_dentry_initializes_parent_and_child_properly) {
     tassert(!list_empty(&d1->children));
 
     vfs_dentry_remove_as_child(d2);
+    vfs_dentry_remove_as_child(d1);
 
     vfs_dentry_free(d2);
     vfs_dentry_free(d1);

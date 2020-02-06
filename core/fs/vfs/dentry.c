@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 #include <log.h>
 
 #include <stdbool.h>
