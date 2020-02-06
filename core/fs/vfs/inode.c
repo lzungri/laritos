@@ -7,12 +7,12 @@
 #include <mm/heap.h>
 
 fs_dentry_t *vfs_create_dir(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode) {
-    verbose("Creating dir %s/%s", parent->name, dirname);
     if (parent == NULL || parent->inode == NULL ||
             parent->inode->ops.mkdir == NULL || !vfs_dentry_is_dir(parent)) {
-        error("mkdir not supported");
+        error("mkdir not supported or parent is null or not a dir");
         return NULL;
     }
+    verbose("Creating dir %s/%s", parent->name, dirname);
 
     if (vfs_dentry_lookup_from(parent, dirname) != NULL) {
         error("Directory %s already exists", dirname);
