@@ -5,6 +5,7 @@
 #include <time/core.h>
 #include <test/test.h>
 #include <sync/spinlock.h>
+#include <process/core.h>
 
 #define MAX_FILEPATH_LEN 255
 
