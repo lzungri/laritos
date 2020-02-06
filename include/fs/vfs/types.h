@@ -6,12 +6,17 @@
 
 
 typedef enum {
-    FS_ACCESS_MODE_READ = 1,
+    FS_ACCESS_MODE_EXEC = 1,
     FS_ACCESS_MODE_WRITE = 2,
-    FS_ACCESS_MODE_EXEC = 4,
+    FS_ACCESS_MODE_READ = 4,
+    FS_ACCESS_MODE_DIR = 8,
 } fs_access_mode_t;
 
+struct fs_superblock;
 struct fs_mount;
+struct inode;
+struct dentry;
+
 typedef struct fs_type {
     char *id;
     list_head_t list;
@@ -19,14 +24,16 @@ typedef struct fs_type {
     int (*mount)(struct fs_type *fstype, struct fs_mount *mount);
 } fs_type_t;
 
-struct inode;
 typedef struct {
     struct inode *(*lookup)(struct inode *parent, char *name);
-    int (*mkdir)(struct inode *parent, char *name, fs_access_mode_t mode);
-    int (*rmdir)(struct inode *parent, char *name);
+    int (*mkdir)(struct inode *parent, struct dentry *dentry, fs_access_mode_t mode);
+    int (*rmdir)(struct inode *parent, struct dentry *dentry);
 } fs_inode_ops_t;
 
+
 typedef struct inode {
+    fs_access_mode_t mode;
+    struct fs_superblock *sb;
 
     fs_inode_ops_t ops;
 } fs_inode_t;
@@ -72,7 +79,7 @@ typedef struct {
 } fs_mount_ops_t;
 
 typedef struct fs_mount {
-    fs_dentry_t root;
+    fs_dentry_t *root;
     fs_mount_flags_t flags;
     list_head_t list;
     fs_superblock_t *sb;
