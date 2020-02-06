@@ -33,23 +33,59 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
     return (fs_inode_t *) inode;
 }
 
-static int mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
-    fs_inode_t *inode = alloc_inode(parent->sb);
+static int alloc_inode_and_fill_dentry(fs_dentry_t *d, fs_superblock_t *sb, fs_access_mode_t mode) {
+    fs_inode_t *inode = alloc_inode(sb);
     if (inode == NULL) {
         error("No memory for fs_inode_t");
         return -1;
     }
-
-    inode->mode = mode | FS_ACCESS_MODE_DIR;
-    dentry->inode = inode;
+    inode->mode = mode;
+    d->inode = inode;
     return 0;
+}
+
+static int mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+    return alloc_inode_and_fill_dentry(dentry, parent->sb, mode | FS_ACCESS_MODE_DIR);
 }
 
 static void free_inode(fs_inode_t *inode) {
     free(inode);
 }
 
-fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname, fs_access_mode_t mode, fs_file_ops_t *fops) {
+fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname,
+                fs_access_mode_t mode, fs_file_ops_t *fops) {
+    if (parent == NULL || parent->inode == NULL || !vfs_dentry_is_dir(parent)) {
+        error("Parent is null or not a dir");
+        return NULL;
+    }
+    verbose("Creating file %s/%s", parent->name, dirname);
+
+    if (vfs_dentry_lookup_from(parent, fname) != NULL) {
+        error("File %s already exists", fname);
+        return NULL;
+    }
+
+    fs_dentry_t *d = vfs_dentry_alloc(fname, NULL, parent);
+    if (d == NULL) {
+        error("Couldn't allocate dentry");
+        return NULL;
+    }
+
+    if (alloc_inode_and_fill_dentry(d, parent->inode->sb, mode) < 0) {
+        error("Couldn't allocate inode for '%s' file", fname);
+        goto error_inode;
+    }
+
+    if (fops != NULL) {
+        d->inode->fops.open = fops->open;
+        d->inode->fops.read = fops->read;
+        d->inode->fops.write = fops->write;
+    }
+
+    return d;
+
+error_inode:
+    vfs_dentry_free(d);
     return NULL;
 }
 

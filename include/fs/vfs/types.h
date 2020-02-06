@@ -51,6 +51,7 @@ typedef struct fs_inode {
     struct fs_superblock *sb;
 
     fs_inode_ops_t ops;
+    fs_file_ops_t fops;
 } fs_inode_t;
 
 

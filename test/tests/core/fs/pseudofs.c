@@ -142,7 +142,7 @@ T(pseudofs_cannot_create_dir_if_parent_is_not_a_dir) {
 
     fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE, &dummy_fop);
     tassert(f1 != NULL);
-    tassert(!vfs_dentry_exist("/test/f1"));
+    tassert(vfs_dentry_exist("/test/f1"));
 
     fs_dentry_t *dir1 = vfs_create_dir(f1, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(dir1 == NULL);
@@ -170,6 +170,31 @@ T(pseudofs_file_creation_instantiates_dentry_and_inode) {
     tassert(vfs_unmount_fs("/test") >= 0);
     tassert(!vfs_dentry_exist("/test"));
     tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_file_creation_set_the_right_file_operations) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(f1->inode != NULL);
+    tassert(f1->inode->fops.open == dummy_fop.open);
+    tassert(f1->inode->fops.read == dummy_fop.read);
+    tassert(f1->inode->fops.write == dummy_fop.write);
+
+    fs_dentry_t *f2 = pseudofs_create_file(fsm->root, "f2", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE, NULL);
+    tassert(f2 != NULL);
+    tassert(f2->inode != NULL);
+    tassert(f2->inode->fops.open == NULL);
+    tassert(f2->inode->fops.read == NULL);
+    tassert(f2->inode->fops.write == NULL);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+    tassert(!vfs_dentry_exist("/test/f2"));
 TEND
 
 T(pseudofs_file_cannot_create_duplicate_files) {
