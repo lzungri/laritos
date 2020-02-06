@@ -23,9 +23,11 @@ int vfs_dentry_init_root() {
 void vfs_dentry_add_child(fs_dentry_t *parent, fs_dentry_t *child) {
     list_add_tail(&child->siblings, &parent->children);
     child->parent = parent;
+    verbose("New child of '%s': '%s'", parent->name, child->name);
 }
 
 void vfs_dentry_remove_as_child(fs_dentry_t *child) {
+    verbose("Del child of '%s': '%s'", child->parent ? child->parent->name : "null", child->name);
     child->parent = NULL;
     list_del_init(&child->siblings);
 }
@@ -51,6 +53,8 @@ fs_dentry_t *vfs_dentry_alloc(char *name, fs_inode_t *inode, fs_dentry_t *parent
 }
 
 void vfs_dentry_free(fs_dentry_t *d) {
+    verbose("Freeing '%s'", d->name);
+    vfs_dentry_remove_as_child(d);
     free(d);
 }
 
@@ -120,8 +124,28 @@ fs_dentry_t *vfs_dentry_lookup_parent(char *path) {
     return vfs_dentry_lookup(abs_parent);
 }
 
+void vfs_dentry_free_tree(fs_dentry_t *root) {
+    fs_dentry_t *d;
+    fs_dentry_t *temp;
+    list_for_each_entry_safe(d, temp, &root->children, siblings) {
+        vfs_dentry_free_tree(d);
+    }
+    if (root->inode != NULL && root->inode->sb->ops.free_inode != NULL) {
+        root->inode->sb->ops.free_inode(root->inode);
+    }
+    vfs_dentry_free(root);
+}
+
 bool vfs_dentry_exist(char *path) {
     return vfs_dentry_lookup(path) != NULL;
+}
+
+bool vfs_dentry_is_dir(char *path) {
+    fs_dentry_t *d = vfs_dentry_lookup(path);
+    if (d == NULL || d->inode == NULL) {
+        return false;
+    }
+    return d == NULL ? false : (d->inode->mode & FS_ACCESS_MODE_DIR);
 }
 
 

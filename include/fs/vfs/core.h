@@ -25,7 +25,14 @@ void vfs_dentry_remove_as_child(fs_dentry_t *child);
 fs_dentry_t *vfs_dentry_lookup_from(fs_dentry_t *parent, char *relpath);
 fs_dentry_t *vfs_dentry_lookup(char *path);
 fs_dentry_t *vfs_dentry_lookup_parent(char *path);
+void vfs_dentry_free_tree(fs_dentry_t *root);
 bool vfs_dentry_exist(char *path);
+bool vfs_dentry_is_dir(char *path);
+
+fs_dentry_t *vfs_create_dir(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode);
+int vfs_remove_dir(fs_dentry_t *parent, char *dirname);
+
+fs_inode_t *vfs_inode_def_alloc(fs_superblock_t *sb);
 
 
 #define FILESYSTEM_MODULE(_id, _mount) \
