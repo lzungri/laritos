@@ -5,6 +5,7 @@
 #include <printf.h>
 #include <process/core.h>
 #include <utils/math.h>
+#include <fs/vfs/core.h>
 
 static inline bool file_is_absolute(char *path) {
     return path != NULL && path[0] == '/';
@@ -30,4 +31,8 @@ static inline int file_get_abs_dirname(char *path, char *buf, size_t len) {
     *basename = '\0';
 
     return 0;
+}
+
+static inline bool file_is_dir(char *path) {
+    return vfs_dentry_is_dir(vfs_dentry_lookup(path));
 }

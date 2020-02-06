@@ -140,12 +140,11 @@ bool vfs_dentry_exist(char *path) {
     return vfs_dentry_lookup(path) != NULL;
 }
 
-bool vfs_dentry_is_dir(char *path) {
-    fs_dentry_t *d = vfs_dentry_lookup(path);
+bool vfs_dentry_is_dir(fs_dentry_t *d) {
     if (d == NULL || d->inode == NULL) {
         return false;
     }
-    return d == NULL ? false : (d->inode->mode & FS_ACCESS_MODE_DIR);
+    return d->inode->mode & FS_ACCESS_MODE_DIR;
 }
 
 

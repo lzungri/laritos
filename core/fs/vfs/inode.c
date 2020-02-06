@@ -8,7 +8,8 @@
 
 fs_dentry_t *vfs_create_dir(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode) {
     verbose("Creating dir %s/%s", parent->name, dirname);
-    if (parent->inode->ops.mkdir == NULL) {
+    if (parent == NULL || parent->inode == NULL ||
+            parent->inode->ops.mkdir == NULL || !vfs_dentry_is_dir(parent)) {
         error("mkdir not supported");
         return NULL;
     }
