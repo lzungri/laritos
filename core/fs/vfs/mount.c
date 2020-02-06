@@ -15,6 +15,11 @@ static inline bool is_valid_mount_struct(fs_mount_t *fsm) {
         error("No superblock was instantiated");
         return false;
     }
+
+    if (fsm->sb->ops.alloc_inode == NULL) {
+        error("No alloc_inode() function declared in superblock");
+        return false;
+    }
     return true;
 }
 
@@ -27,7 +32,7 @@ static inline fs_mount_t *get_fsmount(char *mount_point) {
 
     fs_mount_t *fsm;
     list_for_each_entry(fsm, &_laritos.fs.mounts, list) {
-        if (mount_de == &fsm->root) {
+        if (mount_de == fsm->root) {
             return fsm;
         }
     }
@@ -61,7 +66,6 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *
     }
     fsm->flags = flags;
     INIT_LIST_HEAD(&fsm->list);
-    vfs_dentry_init(&fsm->root, file_get_basename(mount_point), NULL, NULL);
 
     if (fst->mount(fst, fsm) < 0) {
         error("Could not mount file system '%s' at %s", fst->id, mount_point);
@@ -73,11 +77,28 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *
         goto error_validation;
     }
 
+    fsm->root = vfs_dentry_alloc(file_get_basename(mount_point), NULL, NULL);
+    if (fsm->root == NULL) {
+        error("No memory for %s root entry", mount_point);
+        goto error_dentry;
+    }
+
+    fsm->root->inode = fsm->sb->ops.alloc_inode(fsm->sb);
+    if (fsm->root->inode == NULL) {
+        error("Couldn't allocate root inode for '%s'", mount_point);
+        goto error_inode;
+    }
+    fsm->root->inode->mode = FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_READ |
+                            FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC;
+
     list_add_tail(&fsm->list, &_laritos.fs.mounts);
-    vfs_dentry_add_child(parent, &fsm->root);
+    vfs_dentry_add_child(parent, fsm->root);
 
     return fsm;
 
+error_inode:
+    vfs_dentry_free_tree(fsm->root);
+error_dentry:
 error_validation:
     if (fsm->ops.unmount != NULL) {
         fsm->ops.unmount(fsm);
@@ -97,8 +118,8 @@ int vfs_unmount_fs(char *mount_point) {
 
     info("Unmounting filesystem %s", mount_point);
 
-    vfs_dentry_remove_as_child(&fsm->root);
     list_del_init(&fsm->list);
+    vfs_dentry_free_tree(fsm->root);
     if (fsm->ops.unmount != NULL && fsm->ops.unmount(fsm) < 0) {
         error("Error while unmounting filesystem at %s", mount_point);
         return -1;
