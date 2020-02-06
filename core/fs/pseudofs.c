@@ -49,6 +49,10 @@ static void free_inode(fs_inode_t *inode) {
     free(inode);
 }
 
+fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname, fs_access_mode_t mode, fs_file_ops_t *fops) {
+    return NULL;
+}
+
 static int unmount(fs_mount_t *fsm) {
     free(fsm->sb);
     return 0;

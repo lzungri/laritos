@@ -53,6 +53,10 @@ int vfs_remove_dir(fs_dentry_t *parent, char *dirname) {
     return 0;
 }
 
+int vfs_remove_file(fs_dentry_t *parent, char *dirname) {
+    return -1;
+}
+
 fs_inode_t *vfs_inode_def_lookup(fs_inode_t *parent, char *name) {
     return NULL;
 }

@@ -32,6 +32,8 @@ bool vfs_dentry_is_dir(char *path);
 fs_dentry_t *vfs_create_dir(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode);
 int vfs_remove_dir(fs_dentry_t *parent, char *dirname);
 
+int vfs_remove_file(fs_dentry_t *parent, char *dirname);
+
 fs_inode_t *vfs_inode_def_alloc(fs_superblock_t *sb);
 
 
