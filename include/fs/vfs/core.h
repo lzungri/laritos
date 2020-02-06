@@ -29,11 +29,12 @@ void vfs_dentry_free_tree(fs_dentry_t *root);
 bool vfs_dentry_exist(char *path);
 bool vfs_dentry_is_dir(fs_dentry_t *d);
 
-fs_dentry_t *vfs_create_dir(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode);
-int vfs_remove_dir(fs_dentry_t *parent, char *dirname);
+fs_dentry_t *vfs_dir_create(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode);
+int vfs_dir_remove(fs_dentry_t *parent, char *dirname);
 
-fs_dentry_t *vfs_create_file(fs_dentry_t *parent, char *fname, fs_access_mode_t mode);
-int vfs_remove_file(fs_dentry_t *parent, char *fname);
+fs_dentry_t *vfs_file_create(fs_dentry_t *parent, char *fname, fs_access_mode_t mode);
+int vfs_file_remove(fs_dentry_t *parent, char *fname);
+fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode);
 
 fs_inode_t *vfs_inode_def_alloc(fs_superblock_t *sb);
 void vfs_inode_def_free(fs_inode_t *inode);

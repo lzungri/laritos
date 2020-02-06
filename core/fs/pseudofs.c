@@ -51,7 +51,7 @@ static void free_inode(fs_inode_t *inode) {
 
 fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname,
                 fs_access_mode_t mode, fs_file_ops_t *fops) {
-    fs_dentry_t *f = vfs_create_file(parent, fname, mode);
+    fs_dentry_t *f = vfs_file_create(parent, fname, mode);
     if (f == NULL) {
         error("Couldn't allocate inode for '%s' file", fname);
         return NULL;

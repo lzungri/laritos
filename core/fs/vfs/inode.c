@@ -6,7 +6,7 @@
 #include <module/core.h>
 #include <mm/heap.h>
 
-fs_dentry_t *vfs_create_dir(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode) {
+fs_dentry_t *vfs_dir_create(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode) {
     if (parent == NULL || parent->inode == NULL ||
             parent->inode->ops.mkdir == NULL || !vfs_dentry_is_dir(parent)) {
         error("mkdir not supported or parent is null or not a dir");
@@ -32,7 +32,7 @@ fs_dentry_t *vfs_create_dir(fs_dentry_t *parent, char *dirname, fs_access_mode_t
     return d;
 }
 
-int vfs_remove_dir(fs_dentry_t *parent, char *dirname) {
+int vfs_dir_remove(fs_dentry_t *parent, char *dirname) {
     verbose("Removing dir %s/%s", parent->name, dirname);
     if (parent->inode->ops.rmdir == NULL) {
         error("rmdir not supported");
@@ -54,7 +54,7 @@ int vfs_remove_dir(fs_dentry_t *parent, char *dirname) {
     return 0;
 }
 
-fs_dentry_t *vfs_create_file(fs_dentry_t *parent, char *fname, fs_access_mode_t mode) {
+fs_dentry_t *vfs_file_create(fs_dentry_t *parent, char *fname, fs_access_mode_t mode) {
     if (parent == NULL || parent->inode == NULL || !vfs_dentry_is_dir(parent)) {
         error("Parent is null or not a dir");
         return NULL;
@@ -86,7 +86,7 @@ error_inode:
     return NULL;
 }
 
-int vfs_remove_file(fs_dentry_t *parent, char *fname) {
+int vfs_file_remove(fs_dentry_t *parent, char *fname) {
     verbose("Removing file %s/%s", parent->name, fname);
     if (parent == NULL || parent->inode == NULL) {
         error("Parent is null or doesn't have an inode associated");
