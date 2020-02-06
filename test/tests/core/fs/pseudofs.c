@@ -48,11 +48,11 @@ T(pseudofs_dir_creation_instantiates_inode_and_dentry) {
     tassert(fsm != NULL);
     tassert(vfs_dentry_exist("/test"));
 
-    fs_dentry_t *dir1 = vfs_create_dir(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    fs_dentry_t *dir1 = vfs_dir_create(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(dir1 != NULL);
     tassert(file_is_dir("/test/dir1"));
 
-    fs_dentry_t *dir2 = vfs_create_dir(dir1, "dir2", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    fs_dentry_t *dir2 = vfs_dir_create(dir1, "dir2", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(dir2 != NULL);
     tassert(file_is_dir("/test/dir1/dir2"));
 
@@ -67,7 +67,7 @@ T(pseudofs_cannot_remove_non_existent_dir) {
     tassert(fsm != NULL);
     tassert(vfs_dentry_exist("/test"));
 
-    tassert(vfs_remove_dir(fsm->root, "hola") < 0);
+    tassert(vfs_dir_remove(fsm->root, "hola") < 0);
 
     tassert(vfs_unmount_fs("/test") >= 0);
     tassert(!vfs_dentry_exist("/test"));
@@ -78,15 +78,15 @@ T(pseudofs_dir_removal_deletes_inodes_and_dentries) {
     tassert(fsm != NULL);
     tassert(vfs_dentry_exist("/test"));
 
-    fs_dentry_t *dir1 = vfs_create_dir(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    fs_dentry_t *dir1 = vfs_dir_create(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(dir1 != NULL);
     tassert(file_is_dir("/test/dir1"));
 
-    fs_dentry_t *dir2 = vfs_create_dir(dir1, "dir2", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    fs_dentry_t *dir2 = vfs_dir_create(dir1, "dir2", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(dir2 != NULL);
     tassert(file_is_dir("/test/dir1/dir2"));
 
-    tassert(vfs_remove_dir(fsm->root, "dir1") >= 0);
+    tassert(vfs_dir_remove(fsm->root, "dir1") >= 0);
     tassert(!vfs_dentry_exist("/test/dir1/dir2"));
     tassert(!vfs_dentry_exist("/test/dir1"));
 
@@ -101,15 +101,15 @@ T(pseudofs_dir_removal_deletes_inodes_and_dentries2) {
     tassert(fsm != NULL);
     tassert(vfs_dentry_exist("/test"));
 
-    fs_dentry_t *dir1 = vfs_create_dir(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    fs_dentry_t *dir1 = vfs_dir_create(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(dir1 != NULL);
     tassert(file_is_dir("/test/dir1"));
 
-    fs_dentry_t *dir2 = vfs_create_dir(dir1, "dir2", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    fs_dentry_t *dir2 = vfs_dir_create(dir1, "dir2", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(dir2 != NULL);
     tassert(file_is_dir("/test/dir1/dir2"));
 
-    tassert(vfs_remove_dir(dir1, "dir2") >= 0);
+    tassert(vfs_dir_remove(dir1, "dir2") >= 0);
     tassert(!vfs_dentry_exist("/test/dir1/dir2"));
     tassert(vfs_dentry_exist("/test/dir1"));
 
@@ -124,11 +124,11 @@ T(pseudofs_cannot_create_dir_if_file_or_dir_already_existing) {
     tassert(fsm != NULL);
     tassert(vfs_dentry_exist("/test"));
 
-    fs_dentry_t *dir1 = vfs_create_dir(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    fs_dentry_t *dir1 = vfs_dir_create(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(dir1 != NULL);
     tassert(file_is_dir("/test/dir1"));
 
-    tassert(vfs_create_dir(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE) == NULL);
+    tassert(vfs_dir_create(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE) == NULL);
 
     tassert(vfs_unmount_fs("/test") >= 0);
     tassert(!vfs_dentry_exist("/test"));
@@ -144,7 +144,7 @@ T(pseudofs_cannot_create_dir_if_parent_is_not_a_dir) {
     tassert(f1 != NULL);
     tassert(vfs_dentry_exist("/test/f1"));
 
-    fs_dentry_t *dir1 = vfs_create_dir(f1, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    fs_dentry_t *dir1 = vfs_dir_create(f1, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(dir1 == NULL);
     tassert(!vfs_dentry_exist("/test/f1/dir1"));
 
@@ -227,7 +227,7 @@ T(pseudofs_file_removal_deletes_inode_and_dentry) {
     tassert(vfs_dentry_exist("/test/f1"));
     tassert(!file_is_dir("/test/f1"));
 
-    tassert(vfs_remove_file(fsm->root, "f1") >= 0);
+    tassert(vfs_file_remove(fsm->root, "f1") >= 0);
     tassert(!vfs_dentry_exist("/test/f1"));
 
     tassert(vfs_unmount_fs("/test") >= 0);
@@ -260,9 +260,30 @@ T(pseudofs_file_cannot_remove_non_existent_file) {
     tassert(vfs_dentry_exist("/test"));
 
     tassert(!vfs_dentry_exist("/test/f1"));
-    tassert(vfs_remove_file(fsm->root, "f1") < 0);
+    tassert(vfs_file_remove(fsm->root, "f1") < 0);
     tassert(!vfs_dentry_exist("/test/f1"));
 
     tassert(vfs_unmount_fs("/test") >= 0);
     tassert(!vfs_dentry_exist("/test"));
+TEND
+
+T(pseudofs_cannot_open_file_with_null_open_fops) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_file_ops_t null_open_fops = {
+        .open = NULL,
+    };
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE, &null_open_fops);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/f1"));
+
+    fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_READ);
+    tassert(f == NULL);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
 TEND
