@@ -5,34 +5,44 @@
 #include <module/core.h>
 #include <mm/heap.h>
 
-typedef struct {
-    fs_inode_t parent;
-
-} pseudofs_inode_t;
+static int mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode);
 
 static fs_inode_t *lookup(fs_inode_t *parent, char *name) {
+    // TODO Check parent is a dir
+
+
     return NULL;
 }
 
-static int mkdir(fs_inode_t *parent, char *name, fs_access_mode_t mode) {
-    return -1;
+static int rmdir(fs_inode_t *parent, fs_dentry_t *dentry) {
+    free(dentry->inode);
+    dentry->inode = NULL;
+    return 0;
 }
-
-static int rmdir(fs_inode_t *parent, char *name) {
-    return -1;
-}
-
 
 static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
-    pseudofs_inode_t *inode = calloc(1, sizeof(pseudofs_inode_t));
+    fs_inode_t *inode = calloc(1, sizeof(fs_inode_t));
     if (inode == NULL) {
         error("No memory available for pseudofs_inode_t structure");
         return NULL;
     }
-    inode->parent.ops.lookup = lookup;
-    inode->parent.ops.mkdir = mkdir;
-    inode->parent.ops.rmdir = rmdir;
+    inode->sb = sb;
+    inode->ops.lookup = lookup;
+    inode->ops.mkdir = mkdir;
+    inode->ops.rmdir = rmdir;
     return (fs_inode_t *) inode;
+}
+
+static int mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+    fs_inode_t *inode = alloc_inode(parent->sb);
+    if (inode == NULL) {
+        error("No memory for fs_inode_t");
+        return -1;
+    }
+
+    inode->mode = mode | FS_ACCESS_MODE_DIR;
+    dentry->inode = inode;
+    return 0;
 }
 
 static void free_inode(fs_inode_t *inode) {
