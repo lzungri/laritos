@@ -54,8 +54,57 @@ int vfs_remove_dir(fs_dentry_t *parent, char *dirname) {
     return 0;
 }
 
-int vfs_remove_file(fs_dentry_t *parent, char *dirname) {
-    return -1;
+fs_dentry_t *vfs_create_file(fs_dentry_t *parent, char *fname, fs_access_mode_t mode) {
+    if (parent == NULL || parent->inode == NULL || !vfs_dentry_is_dir(parent)) {
+        error("Parent is null or not a dir");
+        return NULL;
+    }
+    verbose("Creating file %s/%s", parent->name, fname);
+
+    if (vfs_dentry_lookup_from(parent, fname) != NULL) {
+        error("File %s already exists", fname);
+        return NULL;
+    }
+
+    fs_dentry_t *d = vfs_dentry_alloc(fname, NULL, parent);
+    if (d == NULL) {
+        error("Couldn't allocate dentry");
+        return NULL;
+    }
+
+    if (parent->inode->sb == NULL || parent->inode->sb->ops.alloc_inode == NULL ||
+            (d->inode = parent->inode->sb->ops.alloc_inode(parent->inode->sb)) == NULL) {
+        error("Couldn't allocate inode for '%s' file", fname);
+        goto error_inode;
+    }
+    d->inode->mode = mode;
+
+    return d;
+
+error_inode:
+    vfs_dentry_free(d);
+    return NULL;
+}
+
+int vfs_remove_file(fs_dentry_t *parent, char *fname) {
+    verbose("Removing file %s/%s", parent->name, fname);
+    if (parent == NULL || parent->inode == NULL) {
+        error("Parent is null or doesn't have an inode associated");
+        return -1;
+    }
+
+    fs_dentry_t *d = vfs_dentry_lookup_from(parent, fname);
+    if (d == NULL) {
+        error("File %s doesn't exist", fname);
+        return -1;
+    }
+
+    if (parent->inode->sb->ops.free_inode != NULL) {
+        parent->inode->sb->ops.free_inode(d->inode);
+    }
+    vfs_dentry_free(d);
+
+    return 0;
 }
 
 fs_inode_t *vfs_inode_def_lookup(fs_inode_t *parent, char *name) {
@@ -81,4 +130,8 @@ fs_inode_t *vfs_inode_def_alloc(fs_superblock_t *sb) {
     inode->ops.mkdir = vfs_inode_def_mkdir;
     inode->ops.rmdir = vfs_inode_def_rmdir;
     return inode;
+}
+
+void vfs_inode_def_free(fs_inode_t *inode) {
+    free(inode);
 }
