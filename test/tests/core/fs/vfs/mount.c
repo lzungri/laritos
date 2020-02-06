@@ -6,6 +6,18 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 
+static fs_superblock_t dummy_sb = {
+    .ops = {
+        .alloc_inode = vfs_inode_def_alloc,
+    },
+};
+
+static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm) {
+    dummy_sb.fstype = fstype;
+    fsm->sb = &dummy_sb;
+    return 0;
+}
+
 int mount_error(fs_type_t *fstype, fs_mount_t *fsm) {
     return -1;
 }
@@ -34,14 +46,6 @@ T(vfs_unmount_fs_fails_on_non_mounted_fs) {
     tassert(vfs_unmount_fs("unmounted") < 0);
 TEND
 
-static fs_superblock_t dummy_sb = { 0 };
-
-static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm) {
-    dummy_sb.fstype = fstype;
-    fsm->sb = &dummy_sb;
-    return 0;
-}
-
 T(vfs_mount_adds_a_new_fs_under_mount_point) {
     fs_type_t fst = {
         .id = "dummymnt",
@@ -53,7 +57,7 @@ T(vfs_mount_adds_a_new_fs_under_mount_point) {
     fs_mount_t *fsm = vfs_mount_fs("dummymnt", "/dummymnt", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
     tassert(fsm != NULL);
     tassert(fsm->flags == (FS_MOUNT_READ | FS_MOUNT_WRITE));
-    tassert(strncmp(fsm->root.name, "dummymnt", sizeof(fsm->root.name)) == 0);
+    tassert(strncmp(fsm->root->name, "dummymnt", sizeof(fsm->root->name)) == 0);
     tassert(fsm->sb->fstype == &fst);
     tassert(vfs_dentry_exist("/dummymnt"));
 

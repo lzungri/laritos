@@ -8,18 +8,21 @@
 #include <fs/vfs/types.h>
 
 
-T(vfs_creates_a_slash_root_dentry) {
-    tassert(vfs_dentry_lookup("/") == &_laritos.fs.root);
-TEND
-
-
-static fs_superblock_t dummy_sb = { 0 };
+static fs_superblock_t dummy_sb = {
+    .ops = {
+        .alloc_inode = vfs_inode_def_alloc,
+    },
+};
 
 static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm) {
     dummy_sb.fstype = fstype;
     fsm->sb = &dummy_sb;
     return 0;
 }
+
+T(vfs_creates_a_slash_root_dentry) {
+    tassert(vfs_dentry_lookup("/") == &_laritos.fs.root);
+TEND
 
 T(vfs_mount_creates_a_new_dentry_for_the_mounting_point) {
     fs_type_t fst = {
@@ -32,7 +35,7 @@ T(vfs_mount_creates_a_new_dentry_for_the_mounting_point) {
     fs_mount_t *fsm = vfs_mount_fs("dummymnt", "/dummymnt", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
     tassert(fsm != NULL);
     tassert(fsm->flags == (FS_MOUNT_READ | FS_MOUNT_WRITE));
-    tassert(strncmp(fsm->root.name, "dummymnt", sizeof(fsm->root.name)) == 0);
+    tassert(strncmp(fsm->root->name, "dummymnt", sizeof(fsm->root->name)) == 0);
     tassert(fsm->sb->fstype == &fst);
     tassert(vfs_dentry_exist("/dummymnt"));
 
