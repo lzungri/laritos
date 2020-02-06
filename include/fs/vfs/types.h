@@ -14,8 +14,23 @@ typedef enum {
 
 struct fs_superblock;
 struct fs_mount;
-struct inode;
-struct dentry;
+struct fs_inode;
+struct fs_dentry;
+struct fs_file;
+
+
+typedef struct {
+    int (*open)(struct fs_inode *inode, struct fs_file *f);
+    int (*read)(struct fs_file *f, void *buf, size_t blen, uint32_t offset);
+    int (*write)(struct fs_file *f, void *buf, size_t blen, uint32_t offset);
+} fs_file_ops_t;
+
+typedef struct fs_file {
+    struct fs_dentry *dentry;
+
+    fs_file_ops_t ops;
+} fs_file_t;
+
 
 typedef struct fs_type {
     char *id;
@@ -24,14 +39,14 @@ typedef struct fs_type {
     int (*mount)(struct fs_type *fstype, struct fs_mount *mount);
 } fs_type_t;
 
+
 typedef struct {
-    struct inode *(*lookup)(struct inode *parent, char *name);
-    int (*mkdir)(struct inode *parent, struct dentry *dentry, fs_access_mode_t mode);
-    int (*rmdir)(struct inode *parent, struct dentry *dentry);
+    struct fs_inode *(*lookup)(struct fs_inode *parent, char *name);
+    int (*mkdir)(struct fs_inode *parent, struct fs_dentry *dentry, fs_access_mode_t mode);
+    int (*rmdir)(struct fs_inode *parent, struct fs_dentry *dentry);
 } fs_inode_ops_t;
 
-
-typedef struct inode {
+typedef struct fs_inode {
     fs_access_mode_t mode;
     struct fs_superblock *sb;
 
@@ -39,15 +54,14 @@ typedef struct inode {
 } fs_inode_t;
 
 
-struct dentry;
 typedef struct {
 
 } fs_dentry_ops_t;
 
-typedef struct dentry {
+typedef struct fs_dentry {
     fs_inode_t *inode;
     char name[CONFIG_FS_MAX_FILENAME_LEN];
-    struct dentry *parent;
+    struct fs_dentry *parent;
     list_head_t children;
     list_head_t siblings;
 
