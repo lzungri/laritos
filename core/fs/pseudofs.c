@@ -71,7 +71,7 @@ static int unmount(fs_mount_t *fsm) {
     return 0;
 }
 
-int mount(fs_type_t *fstype, fs_mount_t *m) {
+static int mount(fs_type_t *fstype, fs_mount_t *m) {
     m->sb = calloc(1, sizeof(fs_superblock_t));
     if (m->sb == NULL) {
         error("No memory available for fs_superblock_t structure");
