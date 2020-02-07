@@ -15,9 +15,11 @@ static fs_inode_t *lookup(fs_inode_t *parent, char *name) {
     return NULL;
 }
 
+static int mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+    return 0;
+}
+
 static int rmdir(fs_inode_t *parent, fs_dentry_t *dentry) {
-    free(dentry->inode);
-    dentry->inode = NULL;
     return 0;
 }
 
@@ -36,10 +38,6 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
 
 static void free_inode(fs_inode_t *inode) {
     free(inode);
-}
-
-static int mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
-    return 0;
 }
 
 fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname,

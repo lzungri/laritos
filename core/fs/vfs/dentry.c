@@ -132,6 +132,7 @@ void vfs_dentry_free_tree(fs_dentry_t *root) {
     }
     if (root->inode != NULL && root->inode->sb->ops.free_inode != NULL) {
         root->inode->sb->ops.free_inode(root->inode);
+        root->inode = NULL;
     }
     vfs_dentry_free(root);
 }
