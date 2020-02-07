@@ -25,6 +25,7 @@ typedef struct {
     int (*close)(struct fs_inode *inode, struct fs_file *f);
     int (*read)(struct fs_file *f, void *buf, size_t blen, uint32_t offset);
     int (*write)(struct fs_file *f, void *buf, size_t blen, uint32_t offset);
+//    int (*iterate)(struct fs_file *f, char **);
 } fs_file_ops_t;
 
 typedef struct fs_file {
@@ -44,6 +45,8 @@ typedef struct fs_type {
 
 typedef struct {
     struct fs_inode *(*lookup)(struct fs_inode *parent, char *name);
+    int (*mkregfile)(struct fs_inode *parent, struct fs_dentry *dentry, fs_access_mode_t mode);
+    int (*rmregfile)(struct fs_inode *parent, struct fs_dentry *dentry);
     int (*mkdir)(struct fs_inode *parent, struct fs_dentry *dentry, fs_access_mode_t mode);
     int (*rmdir)(struct fs_inode *parent, struct fs_dentry *dentry);
 } fs_inode_ops_t;

@@ -23,6 +23,14 @@ static int rmdir(fs_inode_t *parent, fs_dentry_t *dentry) {
     return 0;
 }
 
+static int mkregfile(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+    return 0;
+}
+
+static int rmregfile(fs_inode_t *parent, fs_dentry_t *dentry) {
+    return 0;
+}
+
 static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
     fs_inode_t *inode = calloc(1, sizeof(fs_inode_t));
     if (inode == NULL) {
@@ -33,6 +41,8 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
     inode->ops.lookup = lookup;
     inode->ops.mkdir = mkdir;
     inode->ops.rmdir = rmdir;
+    inode->ops.mkregfile = mkregfile;
+    inode->ops.rmregfile = rmregfile;
     return (fs_inode_t *) inode;
 }
 

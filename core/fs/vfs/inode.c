@@ -6,20 +6,21 @@
 #include <module/core.h>
 #include <mm/heap.h>
 
-fs_dentry_t *vfs_dir_create(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode) {
+static fs_dentry_t *_do_create(fs_dentry_t *parent, char *name, fs_access_mode_t mode,
+        int (*createfunc)(fs_inode_t *, fs_dentry_t *, fs_access_mode_t)) {
     if (parent == NULL || parent->inode == NULL ||
-            parent->inode->ops.mkdir == NULL || !vfs_dentry_is_dir(parent)) {
-        error("mkdir not supported or parent is null or not a dir");
+            createfunc == NULL || !vfs_dentry_is_dir(parent)) {
+        error("Operation not supported or parent is null or not a dir");
         return NULL;
     }
-    verbose("Creating dir %s/%s", parent->name, dirname);
+    verbose("Creating %s/%s", parent->name, name);
 
-    if (vfs_dentry_lookup_from(parent, dirname) != NULL) {
-        error("Directory %s already exists", dirname);
+    if (vfs_dentry_lookup_from(parent, name) != NULL) {
+        error("File %s already exists", name);
         return NULL;
     }
 
-    fs_dentry_t *d = vfs_dentry_alloc(dirname, NULL, parent);
+    fs_dentry_t *d = vfs_dentry_alloc(name, NULL, parent);
     if (d == NULL) {
         error("Couldn't allocate dentry");
         return NULL;
@@ -27,13 +28,13 @@ fs_dentry_t *vfs_dir_create(fs_dentry_t *parent, char *dirname, fs_access_mode_t
 
     if (parent->inode->sb == NULL || parent->inode->sb->ops.alloc_inode == NULL ||
             (d->inode = parent->inode->sb->ops.alloc_inode(parent->inode->sb)) == NULL) {
-        error("Couldn't allocate inode for '%s' directory", dirname);
+        error("Couldn't allocate inode for '%s'", name);
         goto error_inode;
     }
-    d->inode->mode = mode | FS_ACCESS_MODE_DIR;
+    d->inode->mode = mode;
 
-    if (parent->inode->ops.mkdir(parent->inode, d, mode) < 0) {
-        error("Could not create dir %s", dirname);
+    if (createfunc(parent->inode, d, mode) < 0) {
+        error("Could not create '%s'", name);
         return NULL;
     }
     return d;
@@ -43,21 +44,22 @@ error_inode:
     return NULL;
 }
 
-int vfs_dir_remove(fs_dentry_t *parent, char *dirname) {
-    verbose("Removing dir %s/%s", parent->name, dirname);
-    if (parent->inode->ops.rmdir == NULL) {
-        error("rmdir not supported");
+static int _do_remove(fs_dentry_t *parent, char *name,
+        int (*removefunc)(fs_inode_t *, fs_dentry_t *)) {
+    verbose("Removing %s/%s", parent->name, name);
+    if (removefunc == NULL) {
+        error("Operation not supported");
         return -1;
     }
 
-    fs_dentry_t *d = vfs_dentry_lookup_from(parent, dirname);
+    fs_dentry_t *d = vfs_dentry_lookup_from(parent, name);
     if (d == NULL) {
-        error("Directory %s doesn't exist", dirname);
+        error("'%s' doesn't exist", name);
         return -1;
     }
 
-    if (parent->inode->ops.rmdir(parent->inode, d) < 0) {
-        error("Couldn't remove directory %s", dirname);
+    if (removefunc(parent->inode, d) < 0) {
+        error("Couldn't remove '%s'", name);
         return -1;
     }
 
@@ -65,57 +67,28 @@ int vfs_dir_remove(fs_dentry_t *parent, char *dirname) {
     return 0;
 }
 
+fs_dentry_t *vfs_dir_create(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode) {
+    if (parent == NULL || parent->inode == NULL) {
+        error("mkdir not supported or parent is null");
+        return NULL;
+    }
+    return _do_create(parent, dirname, mode | FS_ACCESS_MODE_DIR, parent->inode->ops.mkdir);
+}
+
+int vfs_dir_remove(fs_dentry_t *parent, char *dirname) {
+    return _do_remove(parent, dirname, parent->inode->ops.rmdir);
+}
+
 fs_dentry_t *vfs_file_create(fs_dentry_t *parent, char *fname, fs_access_mode_t mode) {
-    if (parent == NULL || parent->inode == NULL || !vfs_dentry_is_dir(parent)) {
-        error("Parent is null or not a dir");
+    if (parent == NULL || parent->inode == NULL) {
+        error("Create file not supported or parent is null");
         return NULL;
     }
-    verbose("Creating file %s/%s", parent->name, fname);
-
-    if (vfs_dentry_lookup_from(parent, fname) != NULL) {
-        error("File %s already exists", fname);
-        return NULL;
-    }
-
-    fs_dentry_t *d = vfs_dentry_alloc(fname, NULL, parent);
-    if (d == NULL) {
-        error("Couldn't allocate dentry");
-        return NULL;
-    }
-
-    if (parent->inode->sb == NULL || parent->inode->sb->ops.alloc_inode == NULL ||
-            (d->inode = parent->inode->sb->ops.alloc_inode(parent->inode->sb)) == NULL) {
-        error("Couldn't allocate inode for '%s' file", fname);
-        goto error_inode;
-    }
-    d->inode->mode = mode;
-
-    return d;
-
-error_inode:
-    vfs_dentry_free(d);
-    return NULL;
+    return _do_create(parent, fname, mode, parent->inode->ops.mkregfile);
 }
 
 int vfs_file_remove(fs_dentry_t *parent, char *fname) {
-    verbose("Removing file %s/%s", parent->name, fname);
-    if (parent == NULL || parent->inode == NULL) {
-        error("Parent is null or doesn't have an inode associated");
-        return -1;
-    }
-
-    fs_dentry_t *d = vfs_dentry_lookup_from(parent, fname);
-    if (d == NULL) {
-        error("File %s doesn't exist", fname);
-        return -1;
-    }
-
-    if (parent->inode->sb->ops.free_inode != NULL) {
-        parent->inode->sb->ops.free_inode(d->inode);
-    }
-    vfs_dentry_free(d);
-
-    return 0;
+    return _do_remove(parent, fname, parent->inode->ops.rmregfile);
 }
 
 fs_inode_t *vfs_inode_def_lookup(fs_inode_t *parent, char *name) {
