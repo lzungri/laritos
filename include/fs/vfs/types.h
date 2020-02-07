@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <dstruct/list.h>
 #include <generated/autoconf.h>
@@ -27,8 +28,8 @@ typedef struct {
 
 typedef struct fs_file {
     struct fs_dentry *dentry;
-
-    fs_file_ops_t ops;
+    fs_access_mode_t mode;
+    bool opened;
 } fs_file_t;
 
 

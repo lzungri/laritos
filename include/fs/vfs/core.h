@@ -35,6 +35,9 @@ int vfs_dir_remove(fs_dentry_t *parent, char *dirname);
 fs_dentry_t *vfs_file_create(fs_dentry_t *parent, char *fname, fs_access_mode_t mode);
 int vfs_file_remove(fs_dentry_t *parent, char *fname);
 fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode);
+void vfs_file_close(fs_file_t *f);
+int vfs_file_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset);
+int vfs_file_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset);
 
 fs_inode_t *vfs_inode_def_alloc(fs_superblock_t *sb);
 void vfs_inode_def_free(fs_inode_t *inode);
