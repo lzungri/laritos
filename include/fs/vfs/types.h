@@ -22,6 +22,7 @@ struct fs_file;
 
 typedef struct {
     int (*open)(struct fs_inode *inode, struct fs_file *f);
+    int (*close)(struct fs_inode *inode, struct fs_file *f);
     int (*read)(struct fs_file *f, void *buf, size_t blen, uint32_t offset);
     int (*write)(struct fs_file *f, void *buf, size_t blen, uint32_t offset);
 } fs_file_ops_t;
