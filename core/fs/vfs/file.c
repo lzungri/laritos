@@ -8,12 +8,14 @@
 #include <process/core.h>
 
 static fs_file_t *vfs_file_alloc(fs_dentry_t *dentry) {
-    fs_file_t *f = slab_alloc(process_get_current()->fs.fds_slab);
+    slab_t *slab = process_get_current()->fs.fds_slab;
+    fs_file_t *f = slab_alloc(slab);
     if (f == NULL) {
         error("No memory for fs_file_t struct");
         return NULL;
     }
     f->dentry = dentry;
+    verbose("new fd=%lu for file='%s'", slab_get_slab_position(slab, f), dentry->name);
     return f;
 }
 
@@ -23,7 +25,7 @@ static void vfs_file_free(fs_file_t *f) {
 }
 
 fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
-    verbose("Opening %s using mode=0x%x", path, mode);
+    verbose("Opening '%s' using mode=0x%x", path, mode);
     fs_dentry_t *d = vfs_dentry_lookup(path);
     if (d == NULL) {
         error("%s doesn't exist", path);
@@ -31,7 +33,7 @@ fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
     }
 
     if ((d->inode->mode & mode) != mode) {
-        error("Not enough permissions to open %s", path);
+        error("Not enough permissions to open '%s'", path);
         return NULL;
     }
 
@@ -48,7 +50,7 @@ fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
     f->mode = mode;
 
     if (d->inode->fops.open(d->inode, f) < 0) {
-        error("Couldn't not open file %s", path);
+        error("Couldn't not open file '%s'", path);
         goto error_open;
     }
     f->opened = true;
@@ -60,14 +62,22 @@ error_open:
     return NULL;
 }
 
-void vfs_file_close(fs_file_t *f) {
-    verbose("Closing %s", f->dentry->name);
+int vfs_file_close(fs_file_t *f) {
+    verbose("Closing '%s'", f->dentry->name);
+
+    if (f->dentry->inode->fops.close != NULL &&
+            f->dentry->inode->fops.close(f->dentry->inode, f) < 0) {
+        error("Error closing '%s'", f->dentry->name);
+        return -1;
+    }
     f->opened = false;
 
+    vfs_file_free(f);
+    return 0;
 }
 
 int vfs_file_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    verbose("Reading %d bytes from %s", blen, f->dentry->name);
+    verbose("Reading %d bytes from '%s'", blen, f->dentry->name);
 
     if (!f->opened) {
         error("Cannot read a closed file");
@@ -84,12 +94,11 @@ int vfs_file_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
         return -1;
     }
 
-
-    return 0;
+    return f->dentry->inode->fops.read(f, buf, blen, offset);
 }
 
 int vfs_file_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    verbose("Writing %d bytes from %s", blen, f->dentry->name);
+    verbose("Writing %d bytes to '%s'", blen, f->dentry->name);
 
     if (!f->opened) {
         error("Cannot write a closed file");
@@ -106,6 +115,5 @@ int vfs_file_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
         return -1;
     }
 
-
-    return 0;
+    return f->dentry->inode->fops.write(f, buf, blen, offset);
 }
