@@ -95,6 +95,9 @@ T(time_killing_a_proc_while_sleeping_doesnt_free_its_pcb_due_to_refcount) {
     process_kill(sleep_proc);
 
     process_wait_for(sleep_proc, NULL);
+
+    // Wait for sleep_proc timer anyway
+    sleep(5);
 TEND
 
 T(time_add_handles_overflows_correctly) {
