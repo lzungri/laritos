@@ -34,26 +34,19 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
     return (fs_inode_t *) inode;
 }
 
-static int mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
-    fs_inode_t *inode = alloc_inode(parent->sb);
-    if (inode == NULL) {
-        error("No memory for fs_inode_t");
-        return -1;
-    }
-    inode->mode = mode | FS_ACCESS_MODE_DIR;
-    dentry->inode = inode;
-    return 0;
-}
-
 static void free_inode(fs_inode_t *inode) {
     free(inode);
+}
+
+static int mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+    return 0;
 }
 
 fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname,
                 fs_access_mode_t mode, fs_file_ops_t *fops) {
     fs_dentry_t *f = vfs_file_create(parent, fname, mode);
     if (f == NULL) {
-        error("Couldn't allocate inode for '%s' file", fname);
+        error("Couldn't create '%s' file", fname);
         return NULL;
     }
 

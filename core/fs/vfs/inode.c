@@ -25,11 +25,22 @@ fs_dentry_t *vfs_dir_create(fs_dentry_t *parent, char *dirname, fs_access_mode_t
         return NULL;
     }
 
+    if (parent->inode->sb == NULL || parent->inode->sb->ops.alloc_inode == NULL ||
+            (d->inode = parent->inode->sb->ops.alloc_inode(parent->inode->sb)) == NULL) {
+        error("Couldn't allocate inode for '%s' directory", dirname);
+        goto error_inode;
+    }
+    d->inode->mode = mode | FS_ACCESS_MODE_DIR;
+
     if (parent->inode->ops.mkdir(parent->inode, d, mode) < 0) {
         error("Could not create dir %s", dirname);
         return NULL;
     }
     return d;
+
+error_inode:
+    vfs_dentry_free(d);
+    return NULL;
 }
 
 int vfs_dir_remove(fs_dentry_t *parent, char *dirname) {
