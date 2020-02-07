@@ -12,6 +12,10 @@ static int file_dummy_open(fs_inode_t *inode, fs_file_t *f) {
     return 0;
 }
 
+static int file_dummy_close(fs_inode_t *inode, fs_file_t *f) {
+    return 0;
+}
+
 static int file_dummy_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     return 0;
 }
@@ -22,6 +26,7 @@ static int file_dummy_write(fs_file_t *f, void *buf, size_t blen, uint32_t offse
 
 static fs_file_ops_t dummy_fop = {
     .open = file_dummy_open,
+    .close = file_dummy_close,
     .read = file_dummy_read,
     .write = file_dummy_write,
 };
@@ -350,6 +355,7 @@ T(pseudofs_cannot_read_file_if_it_is_already_closed) {
     tassert(vfs_file_read(f, buf, sizeof(buf), 0) >= 0);
 
     vfs_file_close(f);
+    tassert(!f->opened);
 
     tassert(vfs_file_read(f, buf, sizeof(buf), 0) < 0);
 
@@ -441,6 +447,7 @@ T(pseudofs_cannot_write_file_if_it_is_already_closed) {
     tassert(vfs_file_write(f, buf, sizeof(buf), 0) >= 0);
 
     vfs_file_close(f);
+    tassert(!f->opened);
 
     tassert(vfs_file_write(f, buf, sizeof(buf), 0) < 0);
 

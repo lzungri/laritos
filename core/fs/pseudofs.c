@@ -59,6 +59,7 @@ fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname,
 
     if (fops != NULL) {
         f->inode->fops.open = fops->open;
+        f->inode->fops.close = fops->close;
         f->inode->fops.read = fops->read;
         f->inode->fops.write = fops->write;
     }
