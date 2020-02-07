@@ -68,7 +68,6 @@ void vfs_file_close(fs_file_t *f) {
 
 int vfs_file_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     verbose("Reading %d bytes from %s", blen, f->dentry->name);
-    // TODO Check file mode, vs READ operation
 
     if (!f->opened) {
         error("Cannot read a closed file");
@@ -91,7 +90,6 @@ int vfs_file_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
 
 int vfs_file_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     verbose("Writing %d bytes from %s", blen, f->dentry->name);
-    // TODO Check file mode, vs WRITE operation
 
     if (!f->opened) {
         error("Cannot write a closed file");
