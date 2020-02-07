@@ -7,12 +7,6 @@
 #include <utils/utils.h>
 #include <time/core.h>
 
-typedef struct {
-    uint16_t failed;
-    uint16_t error;
-    uint16_t passed;
-} test_ctx_t;
-
 typedef enum {
     TEST_ERROR = -2,
     TEST_FAIL,

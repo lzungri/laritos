@@ -9,6 +9,13 @@
 
 #define MAX_FILEPATH_LEN 255
 
+typedef struct {
+    uint16_t failed;
+    uint16_t error;
+    uint16_t passed;
+    uint16_t potential_leaks;
+} test_ctx_t;
+
 int test_main(void *testdescs) {
     test_descriptor_t **tests = testdescs;
 
@@ -54,6 +61,7 @@ int test_main(void *testdescs) {
 
         if (heap_avail > heap_get_available()) {
             warn("Test may be leaking %lu bytes of heap", heap_avail - heap_get_available());
+            ctx.potential_leaks++;
         }
 
         switch(tret) {
@@ -92,6 +100,7 @@ int test_main(void *testdescs) {
     info("  Passed:   %3u", ctx.passed);
     info("  Total:    %3u", ctx.failed + ctx.error + ctx.passed);
     info("  Duration: %02u:%02u:%02u.%03u", hours, mins, secs, (uint16_t) NS_TO_MS(duration.ns));
+    info("  Leaks:    %3u", ctx.potential_leaks);
     info("--------------------------------------------------");
     return 0;
 }
