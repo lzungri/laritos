@@ -9,15 +9,15 @@
 #include <utils/file.h>
 
 static int file_dummy_open(fs_inode_t *inode, fs_file_t *f) {
-    return -1;
+    return 0;
 }
 
 static int file_dummy_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    return -1;
+    return 0;
 }
 
 static int file_dummy_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    return -1;
+    return 0;
 }
 
 static fs_file_ops_t dummy_fop = {
@@ -282,6 +282,214 @@ T(pseudofs_cannot_open_file_with_null_open_fops) {
 
     fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_READ);
     tassert(f == NULL);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_cannot_open_file_for_writing_if_it_doesnt_have_write_perms) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_READ, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/f1"));
+
+    fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(f == NULL);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_cannot_open_file_for_reading_if_it_doesnt_have_read_perms) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_WRITE, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/f1"));
+
+    fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_READ);
+    tassert(f == NULL);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_cannot_open_non_existent_file) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_file_t *f = vfs_file_open("/test/hola", FS_ACCESS_MODE_READ);
+    tassert(f == NULL);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_cannot_read_file_if_it_is_already_closed) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/f1"));
+
+    fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char buf[10];
+    tassert(vfs_file_read(f, buf, sizeof(buf), 0) >= 0);
+
+    vfs_file_close(f);
+
+    tassert(vfs_file_read(f, buf, sizeof(buf), 0) < 0);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_cannot_read_file_with_null_read_fops) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_file_ops_t null_fops = {
+        .open = file_dummy_open,
+        .read = NULL,
+    };
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE, &null_fops);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/f1"));
+
+    fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char buf[10];
+    tassert(vfs_file_read(f, buf, sizeof(buf), 0) < 0);
+
+    vfs_file_close(f);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_cannot_read_file_with_no_read_perms) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_WRITE, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/f1"));
+
+    fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_WRITE);
+    tassert(f != NULL);
+    char buf[10];
+    tassert(vfs_file_read(f, buf, sizeof(buf), 0) < 0);
+
+    vfs_file_close(f);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_cannot_read_file_if_it_was_opened_for_writing_only) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/f1"));
+
+    fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_WRITE);
+    tassert(f != NULL);
+    char buf[10];
+    tassert(vfs_file_read(f, buf, sizeof(buf), 0) < 0);
+
+    vfs_file_close(f);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_cannot_write_file_if_it_is_already_closed) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/f1"));
+
+    fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_WRITE);
+    tassert(f != NULL);
+    char buf[10] = { 0 };
+    tassert(vfs_file_write(f, buf, sizeof(buf), 0) >= 0);
+
+    vfs_file_close(f);
+
+    tassert(vfs_file_write(f, buf, sizeof(buf), 0) < 0);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_cannot_write_file_with_no_write_perms) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_READ, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/f1"));
+
+    fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char buf[10] = { 0 };
+    tassert(vfs_file_write(f, buf, sizeof(buf), 0) < 0);
+
+    vfs_file_close(f);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_cannot_write_file_with_null_write_fops) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_file_ops_t null_fops = {
+        .open = file_dummy_open,
+        .write = NULL,
+    };
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE, &null_fops);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/f1"));
+
+    fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_WRITE);
+    tassert(f != NULL);
+    char buf[10] = { 0 };
+    tassert(vfs_file_write(f, buf, sizeof(buf), 0) < 0);
+
+    vfs_file_close(f);
 
     tassert(vfs_unmount_fs("/test") >= 0);
     tassert(!vfs_dentry_exist("/test"));
