@@ -12,6 +12,10 @@ config PROCESS_MAX_CONCURRENT_PROCS
     int "Max number of concurrent processes allowed in the system"
     default 64
 
+config PROCESS_MAX_OPEN_FILES
+    int "Max number of open files"
+    default 16
+
 config PROCESS_INIT_STACK_SIZE
     int "Init process stack size"
     default 8196

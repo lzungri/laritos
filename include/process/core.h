@@ -57,6 +57,10 @@ typedef struct {
 } pcb_sched_t;
 
 typedef struct {
+    slab_t *fds_slab;
+} pcb_fs_t;
+
+typedef struct {
     abstick_t last_status_change;
     tick_t ticks_spent[PROC_STATUS_LEN];
     atomic32_t syscalls[SYSCALL_LEN];
@@ -71,6 +75,7 @@ typedef struct pcb {
     char cwd[CONFIG_FS_MAX_FILENAME_LEN];
     pcb_mm_t mm;
     pcb_sched_t sched;
+    pcb_fs_t fs;
     pcb_stats_t stats;
 
     int exit_status;

@@ -14,6 +14,7 @@
 #include <sync/spinlock.h>
 #include <sync/condition.h>
 #include <sync/atomic.h>
+#include <fs/vfs/types.h>
 #include <utils/utils.h>
 #include <generated/autoconf.h>
 
@@ -53,24 +54,38 @@ static void free_process_slab(refcount_t *ref) {
 
 pcb_t *process_alloc(void) {
     pcb_t *pcb = slab_alloc(_laritos.proc.pcb_slab);
-    if (pcb != NULL) {
-        memset(pcb, 0, sizeof(pcb_t));
-        INIT_LIST_HEAD(&pcb->sched.pcb_node);
-        INIT_LIST_HEAD(&pcb->sched.sched_node);
-        INIT_LIST_HEAD(&pcb->children);
-        INIT_LIST_HEAD(&pcb->siblings);
-        condition_init(&pcb->parent_waiting_cond);
-        ref_init(&pcb->refcnt, free_process_slab);
-        int i;
-        for (i = 0; i < ARRAYSIZE(pcb->stats.syscalls); i++) {
-            atomic32_init(&pcb->stats.syscalls[i], 0);
-        }
-        pcb->sched.status = PROC_STATUS_NOT_INIT;
-        process_set_name(pcb, "?");
-        process_assign_pid(pcb);
-        pcb->cwd[0] = '/';
+    if (pcb == NULL) {
+        error_async("Couldn't allocate memory for process");
+        return NULL;
     }
+
+    memset(pcb, 0, sizeof(pcb_t));
+    INIT_LIST_HEAD(&pcb->sched.pcb_node);
+    INIT_LIST_HEAD(&pcb->sched.sched_node);
+    INIT_LIST_HEAD(&pcb->children);
+    INIT_LIST_HEAD(&pcb->siblings);
+    condition_init(&pcb->parent_waiting_cond);
+    ref_init(&pcb->refcnt, free_process_slab);
+    int i;
+    for (i = 0; i < ARRAYSIZE(pcb->stats.syscalls); i++) {
+        atomic32_init(&pcb->stats.syscalls[i], 0);
+    }
+    pcb->sched.status = PROC_STATUS_NOT_INIT;
+    process_set_name(pcb, "?");
+    process_assign_pid(pcb);
+    pcb->cwd[0] = '/';
+
+    pcb->fs.fds_slab = slab_create(CONFIG_PROCESS_MAX_OPEN_FILES, sizeof(fs_file_t));
+    if (pcb->fs.fds_slab == NULL) {
+        error_async("Couldn't allocate memory for process fd slab");
+        goto error_fds;
+    }
+
     return pcb;
+
+error_fds:
+    slab_free(_laritos.proc.pcb_slab, pcb);
+    return NULL;
 }
 
 int process_register_locked(pcb_t *pcb) {
