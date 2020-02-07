@@ -77,8 +77,6 @@ int vfs_file_close(fs_file_t *f) {
 }
 
 int vfs_file_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    verbose("Reading %d bytes from '%s'", blen, f->dentry->name);
-
     if (!f->opened) {
         error("Cannot read a closed file");
         return -1;
@@ -94,12 +92,12 @@ int vfs_file_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
         return -1;
     }
 
-    return f->dentry->inode->fops.read(f, buf, blen, offset);
+    int ret = f->dentry->inode->fops.read(f, buf, blen, offset);
+    verbose("Reading %d bytes from '%s', ret=%d", blen, f->dentry->name, ret);
+    return ret;
 }
 
 int vfs_file_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    verbose("Writing %d bytes to '%s'", blen, f->dentry->name);
-
     if (!f->opened) {
         error("Cannot write a closed file");
         return -1;
@@ -115,5 +113,7 @@ int vfs_file_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
         return -1;
     }
 
-    return f->dentry->inode->fops.write(f, buf, blen, offset);
+    int ret = f->dentry->inode->fops.write(f, buf, blen, offset);
+    verbose("Writing %d bytes to '%s', ret=%d", blen, f->dentry->name, ret);
+    return ret;
 }

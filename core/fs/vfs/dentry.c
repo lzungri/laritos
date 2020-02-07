@@ -148,6 +148,7 @@ bool vfs_dentry_is_dir(fs_dentry_t *d) {
 }
 
 
+
 #ifdef CONFIG_TEST_CORE_FS_VFS_DENTRY
 #include __FILE__
 #endif
