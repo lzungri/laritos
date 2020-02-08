@@ -590,3 +590,109 @@ T(pseudofs_write_file_writes_the_expected_data) {
     tassert(!vfs_dentry_exist("/test"));
     tassert(!vfs_dentry_exist("/test/f1"));
 TEND
+
+T(pseudofs_listdir_only_works_on_directories) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(fsm->root, "f1", FS_ACCESS_MODE_READ, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/f1"));
+
+    fs_file_t *f = vfs_file_open("/test/f1", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+
+    fs_listdir_t dirs[5] = { 0 };
+    tassert(vfs_dir_listdir(f, 0, dirs, ARRAYSIZE(dirs)) < 0);
+
+    vfs_file_close(f);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/f1"));
+TEND
+
+T(pseudofs_listdir_returns_0_if_no_children) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_dentry_t *dir1 = vfs_dir_create(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_EXEC);
+    tassert(dir1 != NULL);
+    tassert(file_is_dir("/test/dir1"));
+
+    fs_file_t *d = vfs_file_open("/test/dir1", FS_ACCESS_MODE_READ);
+    tassert(d != NULL);
+
+    fs_listdir_t dirs[5] = { 0 };
+    tassert(vfs_dir_listdir(d, 0, dirs, ARRAYSIZE(dirs)) == 0);
+
+    vfs_file_close(d);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/dir1"));
+TEND
+
+T(pseudofs_listdir_returns_the_list_of_dirs_and_files) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(vfs_dentry_exist("/test"));
+
+    fs_dentry_t *dir1 = vfs_dir_create(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_EXEC);
+    tassert(dir1 != NULL);
+    tassert(file_is_dir("/test/dir1"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(dir1, "f1", FS_ACCESS_MODE_WRITE, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(vfs_dentry_exist("/test/dir1/f1"));
+
+    fs_dentry_t *f2 = pseudofs_create_file(dir1, "f2", FS_ACCESS_MODE_WRITE, &dummy_fop);
+    tassert(f2 != NULL);
+    tassert(vfs_dentry_exist("/test/dir1/f2"));
+
+    fs_dentry_t *dir2 = vfs_dir_create(dir1, "dir2", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_EXEC);
+    tassert(dir2 != NULL);
+    tassert(file_is_dir("/test/dir1/dir2"));
+
+
+    fs_file_t *d = vfs_file_open("/test/dir1", FS_ACCESS_MODE_READ);
+    tassert(d != NULL);
+
+    fs_listdir_t dirs[5] = { 0 };
+    tassert(vfs_dir_listdir(d, 0, dirs, ARRAYSIZE(dirs)) == 3);
+    tassert(strncmp(dirs[0].name, "f1", sizeof(dirs[0].name)) == 0);
+    tassert(!dirs[0].isdir);
+    tassert(strncmp(dirs[1].name, "f2", sizeof(dirs[1].name)) == 0);
+    tassert(!dirs[1].isdir);
+    tassert(strncmp(dirs[2].name, "dir2", sizeof(dirs[2].name)) == 0);
+    tassert(dirs[2].isdir);
+
+    tassert(vfs_dir_listdir(d, 1, dirs, ARRAYSIZE(dirs)) == 2);
+    tassert(strncmp(dirs[0].name, "f2", sizeof(dirs[1].name)) == 0);
+    tassert(!dirs[0].isdir);
+    tassert(strncmp(dirs[1].name, "dir2", sizeof(dirs[2].name)) == 0);
+    tassert(dirs[1].isdir);
+
+    tassert(vfs_dir_listdir(d, 2, dirs, ARRAYSIZE(dirs)) == 1);
+    tassert(strncmp(dirs[0].name, "dir2", sizeof(dirs[2].name)) == 0);
+    tassert(dirs[0].isdir);
+
+    tassert(vfs_dir_listdir(d, 0, dirs, 1) == 1);
+    tassert(strncmp(dirs[0].name, "f1", sizeof(dirs[2].name)) == 0);
+    tassert(!dirs[0].isdir);
+
+    tassert(vfs_dir_listdir(d, 3, dirs, ARRAYSIZE(dirs)) == 0);
+    tassert(vfs_dir_listdir(d, 100, dirs, ARRAYSIZE(dirs)) == 0);
+
+    vfs_file_close(d);
+
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!vfs_dentry_exist("/test"));
+    tassert(!vfs_dentry_exist("/test/dir1"));
+    tassert(!vfs_dentry_exist("/test/dir1/f1"));
+    tassert(!vfs_dentry_exist("/test/dir1/f2"));
+    tassert(!vfs_dentry_exist("/test/dir1/dir2"));
+TEND
