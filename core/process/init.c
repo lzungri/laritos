@@ -24,26 +24,32 @@
 #include <test/test.h>
 #endif
 
-static void spawn_system_processes(void) {
+static int spawn_system_processes(void) {
     info("Spawning idle process");
     int idle_main(void *data);
-    pcb_t *idle = process_spawn_kernel_process("idle", idle_main, NULL,
-                        CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST);
-    assert(idle != NULL, "Could not create idle process");
+    if(process_spawn_kernel_process("idle", idle_main, NULL,
+            CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST) == NULL) {
+        error("Could not create idle process");
+        return -1;
+    }
 
     // TODO Remove this process, this is just for debugging
     info("Spawning shell process");
     int shell_main(void *data);
-    pcb_t *shell = process_spawn_kernel_process("shell", shell_main, NULL,
-                        8196, CONFIG_SCHED_PRIORITY_MAX_USER - 10);
-    assert(shell != NULL, "Could not create shell process");
+    if (process_spawn_kernel_process("shell", shell_main, NULL,
+            8196, CONFIG_SCHED_PRIORITY_MAX_USER - 10) == NULL) {
+        error("Could not create shell process");
+        return -1;
+    };
 
 #ifdef CONFIG_TEST_ENABLED
     log_always("***** Running in test mode *****");
     info("Spawning test process");
-    pcb_t *test = process_spawn_kernel_process("test", test_main, __tests_start,
-                        CONFIG_PROCESS_TEST_STACK_SIZE, CONFIG_SCHED_PRIORITY_MAX_USER - 2);
-    assert(test != NULL, "Could not create TEST process");
+    if (process_spawn_kernel_process("test", test_main, __tests_start,
+            CONFIG_PROCESS_TEST_STACK_SIZE, CONFIG_SCHED_PRIORITY_MAX_USER - 2) == NULL) {
+        error("Could not create TEST process");
+        return -1;
+    };
 #else
     // Launch a few processes for testing
     // TODO: This code will disappear once we implement a shell and file system
@@ -54,16 +60,21 @@ static void spawn_system_processes(void) {
         }
     }
 #endif
+    return 0;
 }
 
-static void start_os_tickers(void) {
+static int start_os_tickers(void) {
     // Start OS tickers
     component_t *comp;
     for_each_component_type(comp, COMP_TYPE_TICKER) {
         ticker_comp_t *ticker = (ticker_comp_t *) comp;
         info("Starting ticker '%s'", comp->id);
-        assert(ticker->ops.resume(ticker) >= 0, "Could not start ticker %s", comp->id);
+        if (ticker->ops.resume(ticker) < 0) {
+            error("Could not start ticker %s", comp->id);
+            return -1;
+        }
     }
+    return 0;
 }
 
 static void init_loop(void) {
@@ -126,9 +137,9 @@ int init_main(void *data) {
     // Seed random generator from current time
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
 
-    spawn_system_processes();
+    assert(spawn_system_processes() >= 0, "Failed to create system processes");
 
-    start_os_tickers();
+    assert(start_os_tickers() >= 0, "Failed to start OS tickers");
 
     init_loop();
     return 0;
