@@ -67,6 +67,7 @@ T(semaphore_acquire_blocks_current_thread_if_sem_not_available) {
     sem_acquire(&sem);
     debug("Semaphore acquired");
     tassert(sem.count == 0);
+    process_wait_for(p1, NULL);
 TEND
 
 static sem_t sems_012[4];
