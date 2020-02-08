@@ -7,13 +7,21 @@
 #include <dstruct/list.h>
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
+#include <mm/heap.h>
 
 
 int vfs_init_global_context() {
     INIT_LIST_HEAD(&_laritos.fs.fstypes);
     INIT_LIST_HEAD(&_laritos.fs.mounts);
 
-    return vfs_dentry_init_root();
+    fs_inode_t *iroot = calloc(1, sizeof(fs_inode_t));
+    if (iroot == NULL) {
+        error("No memory available for root inode");
+        return -1;
+    }
+    iroot->mode = FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_EXEC | FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE;
+    vfs_dentry_init(&_laritos.fs.root, "/", iroot, NULL);
+    return 0;
 }
 
 fs_type_t *vfs_get_fstype(char *fstype) {

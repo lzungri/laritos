@@ -13,13 +13,6 @@
 #include <generated/autoconf.h>
 
 
-int vfs_dentry_init_root() {
-    INIT_LIST_HEAD(&_laritos.fs.root.children);
-    INIT_LIST_HEAD(&_laritos.fs.root.siblings);
-    strncpy(_laritos.fs.root.name, "/", sizeof(_laritos.fs.root.name));
-    return 0;
-}
-
 void vfs_dentry_add_child(fs_dentry_t *parent, fs_dentry_t *child) {
     list_add_tail(&child->siblings, &parent->children);
     child->parent = parent;
