@@ -1,6 +1,8 @@
 #define DEBUG
 #include <log.h>
 
+#include <string.h>
+#include <dstruct/list.h>
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
 #include <module/core.h>
@@ -31,18 +33,51 @@ static int rmregfile(fs_inode_t *parent, fs_dentry_t *dentry) {
     return 0;
 }
 
+static int def_open(fs_inode_t *inode, fs_file_t *f) {
+    return 0;
+}
+
+static int def_close(fs_inode_t *inode, fs_file_t *f) {
+    return 0;
+}
+
+static int listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, uint32_t listlen) {
+    int i = 0;
+    fs_dentry_t *d;
+    list_for_each_entry(d, &f->dentry->children, siblings) {
+        if (i >= offset) {
+            if (i - offset >= listlen) {
+                break;
+            }
+
+            fs_listdir_t *dir = &dirlist[i - offset];
+            strncpy(dir->name, d->name, sizeof(dir->name));
+            dir->isdir = d->inode->mode & FS_ACCESS_MODE_DIR;
+        }
+
+        i++;
+    }
+    return i < offset ? 0 : i - offset;
+}
+
 static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
     fs_inode_t *inode = calloc(1, sizeof(fs_inode_t));
     if (inode == NULL) {
         error("No memory available for pseudofs_inode_t structure");
         return NULL;
     }
+
     inode->sb = sb;
+
     inode->ops.lookup = lookup;
     inode->ops.mkdir = mkdir;
     inode->ops.rmdir = rmdir;
     inode->ops.mkregfile = mkregfile;
     inode->ops.rmregfile = rmregfile;
+
+    inode->fops.open = def_open;
+    inode->fops.close = def_close;
+    inode->fops.listdir = listdir;
     return (fs_inode_t *) inode;
 }
 
@@ -58,12 +93,18 @@ fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname,
         return NULL;
     }
 
-    if (fops != NULL) {
+    if (fops == NULL) {
+        f->inode->fops.open = NULL;
+        f->inode->fops.close = NULL;
+        f->inode->fops.read = NULL;
+        f->inode->fops.write = NULL;
+    } else {
         f->inode->fops.open = fops->open;
         f->inode->fops.close = fops->close;
         f->inode->fops.read = fops->read;
         f->inode->fops.write = fops->write;
     }
+    f->inode->fops.listdir = NULL;
 
     return f;
 }
