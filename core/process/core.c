@@ -130,6 +130,9 @@ int process_release_zombie_resources_locked(pcb_t *pcb) {
     free(pcb->mm.imgaddr);
     pcb->mm.imgaddr = NULL;
 
+    slab_destroy(pcb->fs.fds_slab);
+    pcb->fs.fds_slab = NULL;
+
     return 0;
 }
 
