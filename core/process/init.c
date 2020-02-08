@@ -24,6 +24,17 @@
 #include <test/test.h>
 #endif
 
+static int mount_sysfs(void) {
+    info("Mounting sysfs filesystem");
+    fs_mount_t *sysfs = vfs_mount_fs("pseudofs", "/sys", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    if (sysfs == NULL) {
+        error("Error mounting sysfs");
+        return -1;
+    }
+    _laritos.fs.sysfs_root = sysfs->root;
+    return 0;
+}
+
 static int spawn_system_processes(void) {
     info("Spawning idle process");
     int idle_main(void *data);
@@ -136,6 +147,8 @@ int init_main(void *data) {
 
     // Seed random generator from current time
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
+
+    assert(mount_sysfs() >= 0, "Couldn't mount sysfs file system");
 
     assert(spawn_system_processes() >= 0, "Failed to create system processes");
 

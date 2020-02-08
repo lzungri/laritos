@@ -81,6 +81,7 @@ typedef struct {
     list_head_t fstypes;
     list_head_t mounts;
     fs_dentry_t root;
+    fs_dentry_t *sysfs_root;
 } laritos_fs_t;
 
 /**
