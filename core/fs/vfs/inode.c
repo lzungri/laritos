@@ -104,15 +104,23 @@ int vfs_file_remove(fs_dentry_t *parent, char *fname) {
     return _do_remove(parent, fname, parent->inode->ops.rmregfile);
 }
 
-fs_inode_t *vfs_inode_def_lookup(fs_inode_t *parent, char *name) {
+static fs_inode_t *vfs_inode_def_lookup(fs_inode_t *parent, char *name) {
     return NULL;
 }
 
-int vfs_inode_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+static int vfs_inode_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
     return -1;
 }
 
-int vfs_inode_def_rmdir(fs_inode_t *parent, fs_dentry_t *dentry) {
+static int vfs_inode_def_rmdir(fs_inode_t *parent, fs_dentry_t *dentry) {
+    return -1;
+}
+
+static int vfs_inode_def_mkregfile(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+    return -1;
+}
+
+static int vfs_inode_def_rmregfile(fs_inode_t *parent, fs_dentry_t *dentry) {
     return -1;
 }
 
@@ -126,6 +134,8 @@ fs_inode_t *vfs_inode_def_alloc(fs_superblock_t *sb) {
     inode->ops.lookup = vfs_inode_def_lookup;
     inode->ops.mkdir = vfs_inode_def_mkdir;
     inode->ops.rmdir = vfs_inode_def_rmdir;
+    inode->ops.mkregfile = vfs_inode_def_mkregfile;
+    inode->ops.rmregfile = vfs_inode_def_rmregfile;
     return inode;
 }
 
