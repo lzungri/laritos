@@ -374,6 +374,7 @@ NM		= $(CROSS_COMPILE)nm
 STRIP		= $(CROSS_COMPILE)strip
 OBJCOPY		= $(CROSS_COMPILE)objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
+SIZE		= $(CROSS_COMPILE)size
 PAHOLE		= pahole
 LEX		= flex
 YACC		= bison
@@ -845,6 +846,9 @@ quiet_cmd_img_laritos ?= IMAGE   $@
 
 laritos.img: laritos.bin FORCE
 	$(call if_changed,img_laritos)
+	$(Q)echo ''
+	$(Q)$(SIZE) laritos.elf
+	$(Q)echo ''
 
 laritos: laritos.img
 
@@ -1005,7 +1009,7 @@ help:
 	@echo  '  kernelrelease	  - Output the release version string (use with make -s)'
 	@echo  '  kernelversion	  - Output the version stored in Makefile (use with make -s)'
 	@echo  '  image_name	  - Output the image name (use with make -s)'
-	 echo  ''
+	@echo  ''
 	@echo  'Static analysers:'
 	@echo  '  includecheck    - Check for duplicate included header files'
 	@echo  '  coccicheck      - Check with Coccinelle'
