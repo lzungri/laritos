@@ -19,13 +19,17 @@ struct fs_inode;
 struct fs_dentry;
 struct fs_file;
 
+typedef struct {
+    char name[CONFIG_FS_MAX_FILENAME_LEN];
+    bool isdir;
+} fs_listdir_t;
 
 typedef struct {
     int (*open)(struct fs_inode *inode, struct fs_file *f);
     int (*close)(struct fs_inode *inode, struct fs_file *f);
     int (*read)(struct fs_file *f, void *buf, size_t blen, uint32_t offset);
     int (*write)(struct fs_file *f, void *buf, size_t blen, uint32_t offset);
-//    int (*iterate)(struct fs_file *f, char **);
+    int (*listdir)(struct fs_file *f, uint32_t offset, fs_listdir_t *dirlist, uint32_t listlen);
 } fs_file_ops_t;
 
 typedef struct fs_file {

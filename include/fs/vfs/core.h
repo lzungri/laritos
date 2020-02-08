@@ -31,6 +31,7 @@ bool vfs_dentry_is_dir(fs_dentry_t *d);
 
 fs_dentry_t *vfs_dir_create(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode);
 int vfs_dir_remove(fs_dentry_t *parent, char *dirname);
+int vfs_dir_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, uint32_t listlen);
 
 fs_dentry_t *vfs_file_create(fs_dentry_t *parent, char *fname, fs_access_mode_t mode);
 int vfs_file_remove(fs_dentry_t *parent, char *fname);

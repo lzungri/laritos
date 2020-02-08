@@ -79,6 +79,19 @@ int vfs_dir_remove(fs_dentry_t *parent, char *dirname) {
     return _do_remove(parent, dirname, parent->inode->ops.rmdir);
 }
 
+int vfs_dir_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, uint32_t listlen) {
+    fs_access_mode_t expected_mode = FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_EXEC | FS_ACCESS_MODE_READ;
+    if ((f->dentry->inode->mode & expected_mode) != expected_mode ||
+            f->dentry->inode->fops.listdir == NULL) {
+        error("listdir() operation not permitted");
+        return -1;
+    }
+
+    verbose("Listing dir of '%s'", f->dentry->name);
+
+    return f->dentry->inode->fops.listdir(f, offset, dirlist, listlen);
+}
+
 fs_dentry_t *vfs_file_create(fs_dentry_t *parent, char *fname, fs_access_mode_t mode) {
     if (parent == NULL || parent->inode == NULL) {
         error("Create file not supported or parent is null");
