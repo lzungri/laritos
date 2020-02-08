@@ -9,14 +9,11 @@ int vfs_init_global_context(void);
 fs_type_t *vfs_get_fstype(char *fstype);
 int vfs_register_fs_type(fs_type_t *fst);
 int vfs_unregister_fs_type(fs_type_t *fst);
-
-bool vfs_is_fs_mounted(char *mount_point);
 bool vfs_is_fs_type_supported(char *fstype);
-void vfs_initialize_mount_struct(fs_mount_t *mount, fs_type_t *fstype, char *mount_point, uint16_t flags, void *params);
+
 fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *params);
 int vfs_unmount_fs(char *mount_point);
 
-int vfs_dentry_init_root(void);
 void vfs_dentry_init(fs_dentry_t *d, char *name, fs_inode_t *inode, fs_dentry_t *parent);
 fs_dentry_t *vfs_dentry_alloc(char *name, fs_inode_t *inode, fs_dentry_t *parent);
 void vfs_dentry_free(fs_dentry_t *d);
