@@ -23,6 +23,10 @@ int mount_error(fs_type_t *fstype, fs_mount_t *fsm) {
     return -1;
 }
 
+T(vfs_mount_make_sure_sysfs_filesystem_is_mounted) {
+    tassert(file_is_dir("/sys"));
+TEND
+
 T(vfs_mount_fails_on_unsupported_fs_type) {
     tassert(vfs_mount_fs("unsopported", "/xxx", 0, NULL) == NULL);
     tassert(!vfs_dentry_exist("/xxx"));
