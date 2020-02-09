@@ -38,10 +38,10 @@ T(vfs_mount_creates_a_new_dentry_for_the_mounting_point) {
     tassert(fsm->flags == (FS_MOUNT_READ | FS_MOUNT_WRITE));
     tassert(strncmp(fsm->root->name, "dummymnt", sizeof(fsm->root->name)) == 0);
     tassert(fsm->sb->fstype == &fst);
-    tassert(vfs_dentry_exist("/dummymnt"));
+    tassert(file_exist("/dummymnt"));
 
     tassert(vfs_unmount_fs("/dummymnt") >= 0);
-    tassert(!vfs_dentry_exist("/dummymnt"));
+    tassert(!file_exist("/dummymnt"));
 
     vfs_unregister_fs_type(&fst);
     tassert(!vfs_is_fs_type_supported(fst.id));

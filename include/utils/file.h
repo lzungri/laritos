@@ -32,6 +32,9 @@ static inline int file_get_abs_dirname(char *path, char *buf, size_t len) {
 
     return 0;
 }
+static inline bool file_exist(char *path) {
+    return vfs_dentry_lookup(path) != NULL;
+}
 
 static inline bool file_is_dir(char *path) {
     return vfs_dentry_is_dir(vfs_dentry_lookup(path));

@@ -29,7 +29,7 @@ TEND
 
 T(vfs_mount_fails_on_unsupported_fs_type) {
     tassert(vfs_mount_fs("unsopported", "/xxx", 0, NULL) == NULL);
-    tassert(!vfs_dentry_exist("/xxx"));
+    tassert(!file_exist("/xxx"));
 TEND
 
 T(vfs_mount_fails_on_mount_error) {
@@ -41,7 +41,7 @@ T(vfs_mount_fails_on_mount_error) {
     tassert(vfs_is_fs_type_supported(fst.id));
 
     tassert(vfs_mount_fs("testfs", "/xxx", 0, NULL) == NULL);
-    tassert(!vfs_dentry_exist("/xxx"));
+    tassert(!file_exist("/xxx"));
 
     vfs_unregister_fs_type(&fst);
     tassert(!vfs_is_fs_type_supported(fst.id));
@@ -64,10 +64,10 @@ T(vfs_mount_adds_a_new_fs_under_mount_point) {
     tassert(fsm->flags == (FS_MOUNT_READ | FS_MOUNT_WRITE));
     tassert(strncmp(fsm->root->name, "dummymnt", sizeof(fsm->root->name)) == 0);
     tassert(fsm->sb->fstype == &fst);
-    tassert(vfs_dentry_exist("/dummymnt"));
+    tassert(file_exist("/dummymnt"));
 
     vfs_unmount_fs("/dummymnt");
-    tassert(!vfs_dentry_exist("/dummymnt"));
+    tassert(!file_exist("/dummymnt"));
 
     vfs_unregister_fs_type(&fst);
     tassert(!vfs_is_fs_type_supported(fst.id));
@@ -87,7 +87,7 @@ T(vfs_mount_fails_when_no_superblock_is_instantiated) {
     tassert(vfs_is_fs_type_supported(fst.id));
 
     tassert(vfs_mount_fs("testnosb", "/testnosb", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL) == NULL);
-    tassert(!vfs_dentry_exist("/testnosb"));
+    tassert(!file_exist("/testnosb"));
 
     vfs_unregister_fs_type(&fst);
     tassert(!vfs_is_fs_type_supported(fst.id));
@@ -103,12 +103,12 @@ T(vfs_mount_fails_if_mount_point_is_already_used) {
 
     fs_mount_t *fsm = vfs_mount_fs("mnt_used", "/mnt_used", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
     tassert(fsm != NULL);
-    tassert(vfs_dentry_exist("/mnt_used"));
+    tassert(file_exist("/mnt_used"));
     tassert(vfs_mount_fs("mnt_used", "/mnt_used", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL) == NULL);
-    tassert(vfs_dentry_exist("/mnt_used"));
+    tassert(file_exist("/mnt_used"));
 
     vfs_unmount_fs("/mnt_used");
-    tassert(!vfs_dentry_exist("/mnt_used"));
+    tassert(!file_exist("/mnt_used"));
 
     vfs_unregister_fs_type(&fst);
     tassert(!vfs_is_fs_type_supported(fst.id));

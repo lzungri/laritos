@@ -48,7 +48,7 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *
         return NULL;
     }
 
-    if (vfs_dentry_exist(mount_point)) {
+    if (file_exist(mount_point)) {
         error("Cannot mount at '%s', already in use", mount_point);
         return NULL;
     }
