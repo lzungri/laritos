@@ -153,7 +153,7 @@ fs_dentry_t *pseudofs_create_bin_file(fs_dentry_t *parent, char *fname,
     }
     d->inode->file_data0 = value;
     d->inode->file_data1 = (void *) size;
-    return 0;
+    return d;
 }
 
 static int unmount(fs_mount_t *fsm) {
