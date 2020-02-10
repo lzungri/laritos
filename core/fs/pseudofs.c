@@ -1,6 +1,7 @@
 #define DEBUG
 #include <log.h>
 
+#include <stdint.h>
 #include <string.h>
 #include <dstruct/list.h>
 #include <fs/vfs/types.h>
@@ -8,6 +9,7 @@
 #include <module/core.h>
 #include <mm/heap.h>
 #include <utils/math.h>
+#include <fs/pseudofs.h>
 
 fs_inode_t *pseudofs_def_lookup(fs_inode_t *parent, char *name) {
     return NULL;

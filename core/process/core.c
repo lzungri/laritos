@@ -16,6 +16,7 @@
 #include <sync/condition.h>
 #include <sync/atomic.h>
 #include <fs/vfs/types.h>
+#include <fs/vfs/core.h>
 #include <utils/utils.h>
 #include <generated/autoconf.h>
 
