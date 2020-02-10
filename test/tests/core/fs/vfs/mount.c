@@ -27,6 +27,10 @@ T(vfs_mount_make_sure_sysfs_filesystem_is_mounted) {
     tassert(file_is_dir("/sys"));
 TEND
 
+T(vfs_mount_make_sure_procfs_filesystem_is_mounted) {
+    tassert(file_is_dir("/sys/proc"));
+TEND
+
 T(vfs_mount_fails_on_unsupported_fs_type) {
     tassert(vfs_mount_fs("unsopported", "/xxx", 0, NULL) == NULL);
     tassert(!file_exist("/xxx"));

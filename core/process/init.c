@@ -32,6 +32,14 @@ static int mount_sysfs(void) {
         return -1;
     }
     _laritos.fs.sysfs_root = sysfs->root;
+
+    _laritos.fs.proc_root = vfs_dir_create(_laritos.fs.sysfs_root, "proc",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (_laritos.fs.proc_root == NULL) {
+        error("Error creating proc sysfs directory");
+        return -1;
+    }
+
     return 0;
 }
 
