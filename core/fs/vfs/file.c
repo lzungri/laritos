@@ -11,7 +11,7 @@ static fs_file_t *vfs_file_alloc(fs_dentry_t *dentry) {
     slab_t *slab = process_get_current()->fs.fds_slab;
     fs_file_t *f = slab_alloc(slab);
     if (f == NULL) {
-        error("No memory for fs_file_t struct");
+        error("Max number of file descriptors reached");
         return NULL;
     }
     f->dentry = dentry;
