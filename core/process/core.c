@@ -9,6 +9,7 @@
 #include <mm/spprot.h>
 #include <process/status.h>
 #include <process/core.h>
+#include <process/sysfs.h>
 #include <sched/core.h>
 #include <sched/context.h>
 #include <sync/spinlock.h>
@@ -109,6 +110,11 @@ int process_register_locked(pcb_t *pcb) {
     spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
 
     sched_move_to_ready_locked(pcb);
+
+    if (process_sysfs_create(pcb) < 0) {
+        error("Error creating sysfs entries for pid=%u", pcb->pid);
+    }
+
     return 0;
 }
 
@@ -119,6 +125,10 @@ int process_release_zombie_resources_locked(pcb_t *pcb) {
     }
 
     debug_async("Releasing zombie resources for pid=%u, exit status=%d", pcb->pid, pcb->exit_status);
+
+    if (process_sysfs_remove(pcb) < 0) {
+        error("Error removing sysfs entries for pid=%u", pcb->pid);
+    }
 
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
