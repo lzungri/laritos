@@ -36,6 +36,9 @@ typedef struct fs_file {
     struct fs_dentry *dentry;
     fs_access_mode_t mode;
     bool opened;
+
+    void *data0;
+    void *data1;
 } fs_file_t;
 
 
@@ -58,6 +61,8 @@ typedef struct {
 typedef struct fs_inode {
     fs_access_mode_t mode;
     struct fs_superblock *sb;
+    void *file_data0;
+    void *file_data1;
 
     fs_inode_ops_t ops;
     fs_file_ops_t fops;
