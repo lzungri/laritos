@@ -482,6 +482,47 @@ T(pseudofs_read_file_reads_the_expected_data) {
     tassert(!file_exist("/test/f1"));
 TEND
 
+T(pseudofs_read_bin_file_reads_the_expected_data) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(file_exist("/test"));
+
+    char bin[5] = { 0, 1, 2 };
+
+    tassert(pseudofs_create_bin_file(fsm->root, "bin", FS_ACCESS_MODE_READ,
+            bin, sizeof(bin)) != NULL);
+
+    tassert(file_exist("/test/bin"));
+
+    fs_file_t *f = vfs_file_open("/test/bin", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+
+    char buf[64];
+    tassert(vfs_file_read(f, buf, sizeof(buf), 0) == 5);
+    tassert(buf[0] == 0);
+    tassert(buf[1] == 1);
+    tassert(buf[2] == 2);
+    tassert(buf[3] == 0);
+    tassert(buf[4] == 0);
+
+    tassert(vfs_file_read(f, buf, sizeof(buf), 2) == 3);
+    tassert(buf[0] == 2);
+    tassert(buf[1] == 0);
+    tassert(buf[2] == 0);
+
+    tassert(vfs_file_read(f, buf, sizeof(buf), 5) == 0);
+    tassert(vfs_file_read(f, buf, sizeof(buf), 7) == 0);
+    tassert(vfs_file_read(f, buf, sizeof(buf), 100) == 0);
+
+    vfs_file_close(f);
+
+    tassert(vfs_file_open("/test/bin", FS_ACCESS_MODE_WRITE) == NULL);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!file_exist("/test"));
+    tassert(!file_exist("/test/bin"));
+TEND
+
 T(pseudofs_cannot_write_file_if_it_is_already_closed) {
     fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
     tassert(fsm != NULL);
@@ -589,6 +630,49 @@ T(pseudofs_write_file_writes_the_expected_data) {
     tassert(vfs_unmount_fs("/test") >= 0);
     tassert(!file_exist("/test"));
     tassert(!file_exist("/test/f1"));
+TEND
+
+T(pseudofs_write_bin_file_reads_the_expected_data) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(file_exist("/test"));
+
+    char bin[5] = { 0 };
+
+    tassert(pseudofs_create_bin_file(fsm->root, "bin", FS_ACCESS_MODE_WRITE,
+            bin, sizeof(bin)) != NULL);
+
+    tassert(file_exist("/test/bin"));
+
+    fs_file_t *f = vfs_file_open("/test/bin", FS_ACCESS_MODE_WRITE);
+    tassert(f != NULL);
+
+    char buf[64] = { 0, 1, 2, 3, 4};
+    tassert(vfs_file_write(f, buf, sizeof(buf), 0) == 5);
+    tassert(bin[0] == 0);
+    tassert(bin[1] == 1);
+    tassert(bin[2] == 2);
+    tassert(bin[3] == 3);
+    tassert(bin[4] == 4);
+
+    tassert(vfs_file_write(f, buf, sizeof(buf), 2) == 3);
+    tassert(bin[0] == 0);
+    tassert(bin[1] == 1);
+    tassert(bin[2] == 0);
+    tassert(bin[3] == 1);
+    tassert(bin[4] == 2);
+
+    tassert(vfs_file_write(f, buf, sizeof(buf), 5) == 0);
+    tassert(vfs_file_write(f, buf, sizeof(buf), 7) == 0);
+    tassert(vfs_file_write(f, buf, sizeof(buf), 100) == 0);
+
+    vfs_file_close(f);
+
+    tassert(vfs_file_open("/test/bin", FS_ACCESS_MODE_READ) == NULL);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!file_exist("/test"));
+    tassert(!file_exist("/test/bin"));
 TEND
 
 T(pseudofs_listdir_only_works_on_directories) {
