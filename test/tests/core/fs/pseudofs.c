@@ -523,6 +523,40 @@ T(pseudofs_read_bin_file_reads_the_expected_data) {
     tassert(!file_exist("/test/bin"));
 TEND
 
+T(pseudofs_read_uint32_file_reads_the_expected_data) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(file_exist("/test"));
+
+    uint32_t value = 0xaabbccdd;
+
+    tassert(pseudofs_create_uint32_t_file(fsm->root, "u32", FS_ACCESS_MODE_READ, &value) != NULL);
+
+    tassert(file_exist("/test/u32"));
+
+    fs_file_t *f = vfs_file_open("/test/u32", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+
+    uint32_t rvalue = 0;
+    tassert(vfs_file_read(f, &rvalue, sizeof(rvalue), 0) == 4);
+    tassert(rvalue == 0xaabbccdd);
+
+    rvalue = 0;
+    tassert(vfs_file_read(f, &rvalue, sizeof(rvalue), 2) == 2);
+    tassert(rvalue == 0x0000aabb);
+
+    tassert(vfs_file_read(f, &rvalue, sizeof(rvalue), 4) == 0);
+    tassert(vfs_file_read(f, &rvalue, sizeof(rvalue), 100) == 0);
+
+    vfs_file_close(f);
+
+    tassert(vfs_file_open("/test/u32", FS_ACCESS_MODE_WRITE) == NULL);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!file_exist("/test"));
+    tassert(!file_exist("/test/u32"));
+TEND
+
 T(pseudofs_cannot_write_file_if_it_is_already_closed) {
     fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
     tassert(fsm != NULL);
@@ -673,6 +707,39 @@ T(pseudofs_write_bin_file_reads_the_expected_data) {
     tassert(vfs_unmount_fs("/test") >= 0);
     tassert(!file_exist("/test"));
     tassert(!file_exist("/test/bin"));
+TEND
+
+T(pseudofs_write_uint32_file_writes_the_expected_data) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(file_exist("/test"));
+
+    uint32_t value = 0;
+
+    tassert(pseudofs_create_uint32_t_file(fsm->root, "u32", FS_ACCESS_MODE_WRITE, &value) != NULL);
+
+    tassert(file_exist("/test/u32"));
+
+    fs_file_t *f = vfs_file_open("/test/u32", FS_ACCESS_MODE_WRITE);
+    tassert(f != NULL);
+
+    uint32_t wvalue = 0xaabbccdd;
+    tassert(vfs_file_write(f, &wvalue, sizeof(wvalue), 0) == 4);
+    tassert(value == 0xaabbccdd);
+
+    tassert(vfs_file_write(f, &wvalue, sizeof(wvalue), 2) == 2);
+    tassert(value == 0xccddccdd);
+
+    tassert(vfs_file_write(f, &wvalue, sizeof(wvalue), 4) == 0);
+    tassert(vfs_file_write(f, &wvalue, sizeof(wvalue), 100) == 0);
+
+    vfs_file_close(f);
+
+    tassert(vfs_file_open("/test/u32", FS_ACCESS_MODE_READ) == NULL);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!file_exist("/test"));
+    tassert(!file_exist("/test/u32"));
 TEND
 
 T(pseudofs_listdir_only_works_on_directories) {
