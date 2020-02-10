@@ -7,37 +7,35 @@
 #include <fs/vfs/core.h>
 #include <module/core.h>
 #include <mm/heap.h>
+#include <utils/math.h>
 
-static int mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode);
-
-static fs_inode_t *lookup(fs_inode_t *parent, char *name) {
-    // TODO Check parent is a dir
-
-
+fs_inode_t *pseudofs_def_lookup(fs_inode_t *parent, char *name) {
     return NULL;
 }
 
-static int mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+int pseudofs_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
     return 0;
 }
 
-static int rmdir(fs_inode_t *parent, fs_dentry_t *dentry) {
+int pseudofs_def_rmdir(fs_inode_t *parent, fs_dentry_t *dentry) {
     return 0;
 }
 
-static int mkregfile(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+int pseudofs_def_mkregfile(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
     return 0;
 }
 
-static int rmregfile(fs_inode_t *parent, fs_dentry_t *dentry) {
+int pseudofs_def_rmregfile(fs_inode_t *parent, fs_dentry_t *dentry) {
     return 0;
 }
 
-static int def_open(fs_inode_t *inode, fs_file_t *f) {
+int pseudofs_def_open(fs_inode_t *inode, fs_file_t *f) {
+    f->data0 = inode->file_data0;
+    f->data1 = inode->file_data1;
     return 0;
 }
 
-static int def_close(fs_inode_t *inode, fs_file_t *f) {
+int pseudofs_def_close(fs_inode_t *inode, fs_file_t *f) {
     return 0;
 }
 
@@ -69,14 +67,14 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
 
     inode->sb = sb;
 
-    inode->ops.lookup = lookup;
-    inode->ops.mkdir = mkdir;
-    inode->ops.rmdir = rmdir;
-    inode->ops.mkregfile = mkregfile;
-    inode->ops.rmregfile = rmregfile;
+    inode->ops.lookup = pseudofs_def_lookup;
+    inode->ops.mkdir = pseudofs_def_mkdir;
+    inode->ops.rmdir = pseudofs_def_rmdir;
+    inode->ops.mkregfile = pseudofs_def_mkregfile;
+    inode->ops.rmregfile = pseudofs_def_rmregfile;
 
-    inode->fops.open = def_open;
-    inode->fops.close = def_close;
+    inode->fops.open = pseudofs_def_open;
+    inode->fops.close = pseudofs_def_close;
     inode->fops.listdir = listdir;
     return (fs_inode_t *) inode;
 }
@@ -107,6 +105,55 @@ fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname,
     f->inode->fops.listdir = NULL;
 
     return f;
+}
+
+static int read_bin(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    size_t data_size = (size_t) f->data1;
+    if (f->data0 == NULL) {
+        return 0;
+    }
+    if (offset >= data_size) {
+        return 0;
+    }
+    size_t len = min(data_size - offset, blen);
+    memcpy(buf, (char *) f->data0 + offset, len);
+    return len;
+}
+
+static int write_bin(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    size_t data_size = (size_t) f->data1;
+    if (f->data0 == NULL) {
+        return 0;
+    }
+    if (offset >= data_size) {
+        return 0;
+    }
+    size_t len = min(data_size - offset, blen);
+    memcpy((char *) f->data0 + offset, buf, len);
+    return len;
+}
+
+fs_dentry_t *pseudofs_create_bin_file(fs_dentry_t *parent, char *fname,
+                fs_access_mode_t mode, void *value, size_t size) {
+    fs_file_ops_t fops = {
+        .open = pseudofs_def_open,
+        .close = pseudofs_def_close,
+    };
+    if (mode & FS_ACCESS_MODE_READ) {
+        fops.read = read_bin;
+    }
+    if (mode & FS_ACCESS_MODE_WRITE) {
+        fops.write = write_bin;
+    }
+
+    fs_dentry_t *d = pseudofs_create_file(parent, fname, mode, &fops);
+    if (d == NULL) {
+        error("Couldn't create file");
+        return NULL;
+    }
+    d->inode->file_data0 = value;
+    d->inode->file_data1 = (void *) size;
+    return 0;
 }
 
 static int unmount(fs_mount_t *fsm) {
