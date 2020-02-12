@@ -16,6 +16,8 @@
 #include <time/tick.h>
 #include <sync/atomic.h>
 #include <sync/condition.h>
+#include <sync/spinlock.h>
+#include <irq/core.h>
 #include <syscall/syscall-no.h>
 #include <generated/autoconf.h>
 
@@ -143,7 +145,10 @@ static inline void process_set_current_pcb_stack_context(spctx_t *spctx) {
 }
 
 static inline void process_set_name(pcb_t *pcb, char *name) {
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
     strncpy(pcb->name, name, sizeof(pcb->name));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 }
 
 /**
