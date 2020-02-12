@@ -11,7 +11,7 @@ int vfs_register_fs_type(fs_type_t *fst);
 int vfs_unregister_fs_type(fs_type_t *fst);
 bool vfs_is_fs_type_supported(char *fstype);
 
-fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *params);
+fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags, void *params);
 int vfs_unmount_fs(char *mount_point);
 
 void vfs_dentry_init(fs_dentry_t *d, char *name, fs_inode_t *inode, fs_dentry_t *parent);

@@ -39,7 +39,7 @@ static inline fs_mount_t *get_fsmount(char *mount_point) {
     return NULL;
 }
 
-fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *params) {
+fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags, void *params) {
     info("Mounting %s filesystem at %s with flags=0x%0x", fstype, mount_point, flags);
 
     fs_type_t *fst = vfs_get_fstype(fstype);
@@ -88,8 +88,13 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, uint16_t flags, void *
         error("Couldn't allocate root inode for '%s'", mount_point);
         goto error_inode;
     }
-    fsm->root->inode->mode = FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_READ |
-                            FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC;
+    fsm->root->inode->mode = FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_EXEC;
+    if (flags & FS_MOUNT_READ) {
+        fsm->root->inode->mode |= FS_ACCESS_MODE_READ;
+    }
+    if (flags & FS_MOUNT_WRITE) {
+        fsm->root->inode->mode |= FS_ACCESS_MODE_WRITE;
+    }
 
     list_add_tail(&fsm->list, &_laritos.fs.mounts);
     vfs_dentry_add_child(parent, fsm->root);
