@@ -602,6 +602,32 @@ T(pseudofs_cannot_write_file_with_no_write_perms) {
     tassert(!file_exist("/test/f1"));
 TEND
 
+T(pseudofs_cannot_write_file_if_mounted_fs_is_ro) {
+    // Hack alert: Will change the mode later (no support for mounting a real disk-based fs yet)
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(file_exist("/test"));
+
+    fs_dentry_t *dir1 = vfs_dir_create(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    tassert(dir1 != NULL);
+    tassert(file_is_dir("/test/dir1"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(dir1, "f1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(file_exist("/test/dir1/f1"));
+
+    // Hack
+    fsm->flags = FS_MOUNT_READ;
+
+    tassert(vfs_file_open("/test/dir1/f1", FS_ACCESS_MODE_WRITE) == NULL);
+    tassert(vfs_file_remove(dir1, "f1") < 0);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!file_exist("/test"));
+    tassert(!file_exist("/test/dir1"));
+    tassert(!file_exist("/test/dir1/f1"));
+TEND
+
 T(pseudofs_cannot_write_file_with_null_write_fops) {
     fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
     tassert(fsm != NULL);
