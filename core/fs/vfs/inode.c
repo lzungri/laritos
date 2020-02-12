@@ -19,6 +19,11 @@ static fs_dentry_t *_do_create(fs_dentry_t *parent, char *name, fs_access_mode_t
         return NULL;
     }
 
+    if (!(parent->inode->sb->mount->flags & FS_MOUNT_WRITE)) {
+        error("Permission denied, mounted filesystem is read-only");
+        return NULL;
+    }
+
     verbose("Creating %s/%s", parent->name, name);
 
     if (vfs_dentry_lookup_from(parent, name) != NULL) {
@@ -60,6 +65,11 @@ static int _do_remove(fs_dentry_t *parent, char *name,
 
     if ((parent->inode->mode & FS_ACCESS_MODE_WRITE) == 0) {
         error("Permission denied");
+        return -1;
+    }
+
+    if (!(parent->inode->sb->mount->flags & FS_MOUNT_WRITE)) {
+        error("Permission denied, mounted filesystem is read-only");
         return -1;
     }
 

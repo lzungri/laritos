@@ -37,6 +37,11 @@ fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
         return NULL;
     }
 
+    if ((d->inode->mode & FS_ACCESS_MODE_WRITE) && !(d->inode->sb->mount->flags & FS_MOUNT_WRITE)) {
+        error("Permission denied, mounted filesystem is read-only");
+        return NULL;
+    }
+
     if (d->inode->fops.open == NULL) {
         error("open('%s') operation not permitted", path);
         return NULL;

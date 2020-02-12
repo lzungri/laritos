@@ -92,6 +92,7 @@ typedef struct {
 
 typedef struct fs_superblock {
     fs_type_t *fstype;
+    struct fs_mount *mount;
 
     fs_superblock_ops_t ops;
 } fs_superblock_t;

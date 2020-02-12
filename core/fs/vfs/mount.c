@@ -78,6 +78,8 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags
         goto error_validation;
     }
 
+    fsm->sb->mount = fsm;
+
     fsm->root = vfs_dentry_alloc(file_get_basename(mount_point), NULL, NULL);
     if (fsm->root == NULL) {
         error("No memory for %s root entry", mount_point);
