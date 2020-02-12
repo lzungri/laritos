@@ -54,7 +54,8 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags
     }
 
     fs_dentry_t *parent = vfs_dentry_lookup_parent(mount_point);
-    if (parent == NULL) {
+    // Root filesystem has no parent
+    if (parent == NULL && strncmp(mount_point, "/", 2) != 0) {
         error("Not all directories from '%s' exist", mount_point);
         return NULL;
     }
@@ -97,7 +98,10 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags
     }
 
     list_add_tail(&fsm->list, &_laritos.fs.mounts);
-    vfs_dentry_add_child(parent, fsm->root);
+
+    if (parent != NULL) {
+        vfs_dentry_add_child(parent, fsm->root);
+    }
 
     return fsm;
 
