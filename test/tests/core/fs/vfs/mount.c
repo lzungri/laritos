@@ -23,12 +23,19 @@ int mount_error(fs_type_t *fstype, fs_mount_t *fsm) {
     return -1;
 }
 
+T(vfs_mount_make_sure_root_filesystem_is_mounted) {
+    tassert(file_is_dir("/"));
+    tassert(vfs_dentry_lookup("/") == _laritos.fs.root);
+TEND
+
 T(vfs_mount_make_sure_sysfs_filesystem_is_mounted) {
     tassert(file_is_dir("/sys"));
+    tassert(vfs_dentry_lookup("/sys") == _laritos.fs.sysfs_root);
 TEND
 
 T(vfs_mount_make_sure_procfs_filesystem_is_mounted) {
     tassert(file_is_dir("/sys/proc"));
+    tassert(vfs_dentry_lookup("/sys/proc") == _laritos.fs.proc_root);
 TEND
 
 T(vfs_mount_fails_on_unsupported_fs_type) {

@@ -22,7 +22,7 @@ static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm) {
 }
 
 T(vfs_creates_a_slash_root_dentry) {
-    tassert(vfs_dentry_lookup("/") == &_laritos.fs.root);
+    tassert(vfs_dentry_lookup("/") == _laritos.fs.root);
 TEND
 
 T(vfs_mount_creates_a_new_dentry_for_the_mounting_point) {
