@@ -120,6 +120,10 @@ uint32_t slab_get_avail_elems(slab_t *slab) {
     return ((bs_slab_t *) slab)->avail_elems;
 }
 
+uint32_t slab_get_total_elems(slab_t *slab) {
+    return ((bs_slab_t *) slab)->total_elems;
+}
+
 uint32_t slab_get_slab_position(slab_t *slab, void *ptr) {
     bs_slab_t *s = (bs_slab_t *) slab;
     return ((char *) ptr - s->data) / s->elem_size;
