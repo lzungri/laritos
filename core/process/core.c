@@ -227,13 +227,20 @@ int process_set_priority(pcb_t *pcb, uint8_t priority) {
     return 0;
 }
 
+void process_exit(int exit_status) {
+    pcb_t *pcb = process_get_current();
+    pcb->exit_status = exit_status;
+
+    debug_async("Exiting process pid=%u, exitcode=%d", pcb->pid, pcb->exit_status);
+
+    vfs_file_close_all_for_cur_process();
+    process_kill_and_schedule(pcb);
+}
+
 static void kernel_main_wrapper(kproc_main_t main, void *data) {
     verbose_async("Starting kernel_main_wrapper(main=0x%p, data=0x%p)", main, data);
-    pcb_t *pcb = process_get_current();
-    pcb->exit_status = main(data);
-    debug_async("Exiting kernel process pid=%u, exitcode=%d", pcb->pid, pcb->exit_status);
-    process_kill_and_schedule(pcb);
-
+    int status = main(data);
+    process_exit(status);
     // Execution will never reach this point
 }
 

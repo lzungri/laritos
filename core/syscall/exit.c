@@ -4,8 +4,6 @@
 #include <syscall/syscall.h>
 
 void syscall_exit(int status) {
-    pcb_t *pcb = process_get_current();
-    pcb->exit_status = status;
-    info_async("Exiting process pid=%u, exitcode=%d", pcb->pid, pcb->exit_status);
-    process_kill_and_schedule(pcb);
+    process_exit(status);
+    // Execution will never reach this point
 }

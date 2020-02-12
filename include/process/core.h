@@ -110,6 +110,7 @@ void process_kill_and_schedule(pcb_t *pcb);
 int process_set_priority(pcb_t *pcb, uint8_t priority);
 spctx_t *process_get_current_pcb_stack_context(void);
 pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, uint32_t stacksize, uint8_t priority);
+void process_exit(int exit_status);
 int process_wait_for(pcb_t *pcb, int *status);
 int process_wait_pid(uint16_t pid, int *status);
 
