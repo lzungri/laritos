@@ -13,6 +13,12 @@ static fs_dentry_t *_do_create(fs_dentry_t *parent, char *name, fs_access_mode_t
         error("Operation not supported or parent is null or not a dir");
         return NULL;
     }
+
+    if ((parent->inode->mode & FS_ACCESS_MODE_WRITE) == 0) {
+        error("Permission denied");
+        return NULL;
+    }
+
     verbose("Creating %s/%s", parent->name, name);
 
     if (vfs_dentry_lookup_from(parent, name) != NULL) {
@@ -49,6 +55,11 @@ static int _do_remove(fs_dentry_t *parent, char *name,
     verbose("Removing %s/%s", parent->name, name);
     if (removefunc == NULL) {
         error("Operation not supported");
+        return -1;
+    }
+
+    if ((parent->inode->mode & FS_ACCESS_MODE_WRITE) == 0) {
+        error("Permission denied");
         return -1;
     }
 
