@@ -101,10 +101,22 @@ int process_init_global_context(void);
 void process_assign_pid(pcb_t *pcb);
 pcb_t *process_alloc(void);
 int process_free(pcb_t *pcb);
+/**
+ * NOTE: Must be called with irqs disabled
+ */
 int process_register_locked(pcb_t *pcb);
+/**
+ * NOTE: Must be called with irqs disabled
+ */
 int process_release_zombie_resources_locked(pcb_t *pcb);
+/**
+ * NOTE: Must be called with irqs disabled
+ */
 void process_unregister_zombie_children_locked(pcb_t *pcb);
 void process_kill(pcb_t *pcb);
+/**
+ * NOTE: Must be called with irqs disabled
+ */
 void process_kill_locked(pcb_t *pcb);
 void process_kill_and_schedule(pcb_t *pcb);
 int process_set_priority(pcb_t *pcb, uint8_t priority);
@@ -134,17 +146,32 @@ static inline void process_set_name(pcb_t *pcb, char *name) {
     strncpy(pcb->name, name, sizeof(pcb->name));
 }
 
+/**
+ * NOTE: Must be called with pcbs_lock held
+ */
 #define for_each_process_locked(_p) \
     list_for_each_entry(_p, &_laritos.proc.pcbs, sched.pcb_node)
 
+/**
+ * NOTE: Must be called with pcbs_data_lock held
+ */
 #define for_each_child_process_locked(_parent, _child) \
     list_for_each_entry(_child, &_parent->children, siblings)
 
+/**
+ * NOTE: Must be called with pcbs_data_lock held
+ */
 #define for_each_child_process_safe_locked(_parent, _child, _temp) \
     list_for_each_entry_safe(_child, _temp, &_parent->children, siblings)
 
+/**
+ * NOTE: Must be called with irqs disabled
+ */
 #define for_each_ready_process_locked(_p) \
     list_for_each_entry(_p, CPU_LOCAL_GET_PTR_LOCKED(_laritos.sched.ready_pcbs), sched.sched_node)
 
+/**
+ * NOTE: Must be called with irqs disabled
+ */
 #define for_each_ready_process_safe_locked(_p, _n) \
     list_for_each_entry_safe(_p, _n, CPU_LOCAL_GET_PTR_LOCKED(_laritos.sched.ready_pcbs), sched.sched_node)

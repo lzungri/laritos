@@ -54,6 +54,9 @@ static inline void _sched_add_ready_proc_sorted(pcb_t *pcb) {
     list_add_tail(&pcb->sched.sched_node, CPU_LOCAL_GET_PTR_LOCKED(_laritos.sched.ready_pcbs));
 }
 
+/**
+ * NOTE: Must be called with irqs disabled
+ */
 static inline void sched_move_to_ready_locked(pcb_t *pcb) {
     if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
         error_async("Cannot move a ZOMBIE process to READY");
@@ -75,6 +78,8 @@ static inline void sched_move_to_ready_locked(pcb_t *pcb) {
 /**
  * @param blocked_list: List associated with the event the process is waiting for (may be
  *        NULL is the event doesn't keep any list)
+ *
+ * NOTE: Must be called with irqs disabled
  */
 static inline void sched_move_to_blocked_locked(pcb_t *pcb, list_head_t *blocked_list) {
     if (pcb->sched.status == PROC_STATUS_ZOMBIE || pcb->sched.status == PROC_STATUS_NOT_INIT) {
@@ -92,6 +97,9 @@ static inline void sched_move_to_blocked_locked(pcb_t *pcb, list_head_t *blocked
     pcb->sched.status = PROC_STATUS_BLOCKED;
 }
 
+/**
+ * NOTE: Must be called with irqs disabled
+ */
 static inline void sched_move_to_running_locked(pcb_t *pcb) {
     if (pcb->sched.status != PROC_STATUS_READY) {
         error_async("Cannot move a non READY process to RUNNING");
@@ -106,6 +114,9 @@ static inline void sched_move_to_running_locked(pcb_t *pcb) {
     process_set_current(pcb);
 }
 
+/**
+ * NOTE: Must be called with irqs disabled
+ */
 static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
     insane_async("PID %u: %s -> ZOMBIE ", pcb->pid, pcb_get_status_str(pcb->sched.status));
 

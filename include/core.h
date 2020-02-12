@@ -36,7 +36,10 @@ typedef struct {
 
     /**
      * Spinlock used to protect any pcb_t data structure that may be changed by
-     * two or more processors at the same time
+     * two or more processors at the same time.
+     *
+     * Ideally, for performance reasons, there should be one lock per pcb_t, but this greatly
+     * simplifies the code and reduces synchronization complexity.
      */
     spinlock_t pcbs_data_lock;
 
