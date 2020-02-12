@@ -101,10 +101,10 @@ fs_dentry_t *vfs_dentry_lookup(char *path) {
 
     if (path[0] == '/') {
         if (path[1] == '\0') {
-            return &_laritos.fs.root;
+            return _laritos.fs.root;
         }
         path++;
-        return vfs_dentry_lookup_from(&_laritos.fs.root, path);
+        return vfs_dentry_lookup_from(_laritos.fs.root, path);
     }
 
     fs_dentry_t *cwd = vfs_dentry_lookup(process_get_current()->cwd);

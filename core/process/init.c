@@ -25,22 +25,37 @@
 #endif
 
 static int mount_sysfs(void) {
-    info("Mounting sysfs filesystem");
-    fs_mount_t *sysfs = vfs_mount_fs("pseudofs", "/sys", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
-    if (sysfs == NULL) {
-        error("Error mounting sysfs");
-        return -1;
+    info("Mounting root filesystem");
+    fs_mount_t *mnt = vfs_mount_fs("pseudofs", "/", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    if (mnt == NULL) {
+        error("Error mounting root filesystem");
+        goto error_root;
     }
-    _laritos.fs.sysfs_root = sysfs->root;
+    _laritos.fs.root = mnt->root;
+
+    info("Mounting sysfs filesystem");
+    mnt = vfs_mount_fs("pseudofs", "/sys", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    if (mnt == NULL) {
+        error("Error mounting sysfs");
+        goto error_sysfs;
+    }
+    _laritos.fs.sysfs_root = mnt->root;
 
     _laritos.fs.proc_root = vfs_dir_create(_laritos.fs.sysfs_root, "proc",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.proc_root == NULL) {
         error("Error creating proc sysfs directory");
-        return -1;
+        goto error_proc;
     }
 
     return 0;
+
+error_proc:
+    vfs_unmount_fs("/sys");
+error_sysfs:
+    vfs_unmount_fs("/");
+error_root:
+    return -1;
 }
 
 static int spawn_system_processes(void) {
