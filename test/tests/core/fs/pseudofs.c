@@ -979,3 +979,43 @@ T(pseudofs_listdir_fails_on_non_readable_dir) {
     tassert(!file_exist("/test"));
     tassert(!file_exist("/test/dir1"));
 TEND
+
+static int openfiles(void *data) {
+    vfs_file_open("/test/dir1/f1", FS_ACCESS_MODE_READ);
+    vfs_file_open("/test/dir1/f1", FS_ACCESS_MODE_READ);
+    vfs_file_open("/test/dir1/f1", FS_ACCESS_MODE_READ);
+    vfs_file_open("/test/dir1/f1", FS_ACCESS_MODE_READ);
+    vfs_file_open("/test/dir1/f1", FS_ACCESS_MODE_READ);
+    sleep(1);
+    return 0;
+}
+
+T(pseudofs_unclosed_files_are_closed_on_process_death) {
+    fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    tassert(fsm != NULL);
+    tassert(file_exist("/test"));
+
+    fs_dentry_t *dir1 = vfs_dir_create(fsm->root, "dir1", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    tassert(dir1 != NULL);
+    tassert(file_is_dir("/test/dir1"));
+
+    fs_dentry_t *f1 = pseudofs_create_file(dir1, "f1", FS_ACCESS_MODE_READ, &dummy_fop);
+    tassert(f1 != NULL);
+    tassert(file_exist("/test/dir1/f1"));
+
+    pcb_t *p = process_spawn_kernel_process("files1", openfiles, NULL,
+                        8196,  process_get_current()->sched.priority - 1);
+    tassert(p != NULL);
+
+    pcb_t *p2 = process_spawn_kernel_process("files2", openfiles, NULL,
+                        8196,  process_get_current()->sched.priority - 1);
+    tassert(p2 != NULL);
+
+    process_wait_for(p, NULL);
+    process_wait_for(p2, NULL);
+
+    tassert(vfs_unmount_fs("/test") >= 0);
+    tassert(!file_exist("/test"));
+    tassert(!file_exist("/test/dir1"));
+    tassert(!file_exist("/test/dir1/f1"));
+TEND
