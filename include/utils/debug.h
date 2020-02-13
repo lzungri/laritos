@@ -22,6 +22,7 @@ static inline void debug_message_delimiter(void) {
 
 static inline void debug_dump_kernel_stats(void) {
     log_always("Kernel stats:");
+    log_always("  OS ticks | %lu", (uint32_t) tick_get_os_ticks());
     log_always("  switches | %lu", atomic32_get(&_laritos.stats.ctx_switches));
 
     int i;
@@ -132,7 +133,7 @@ static inline void debug_dump_processes_stats(void) {
 
         // Scheduling stats
         // Update with the latest stats
-        sched_update_stats(proc);
+        sched_update_stats_locked(proc);
         log_always("      sched | ready=%lu running=%lu blocked=%lu zombie=%lu", proc->stats.ticks_spent[PROC_STATUS_READY], proc->stats.ticks_spent[PROC_STATUS_RUNNING],
                     proc->stats.ticks_spent[PROC_STATUS_BLOCKED], proc->stats.ticks_spent[PROC_STATUS_ZOMBIE]);
 
