@@ -82,11 +82,8 @@ int test_main(void *testdescs) {
             break;
         }
 
-        irqctx_t ctx;
-        irq_disable_local_and_save_ctx(&ctx);
         // Release each zombie child that may have been spawn during the test
-        process_unregister_zombie_children_locked(process_get_current());
-        irq_local_restore_ctx(&ctx);
+        process_unregister_zombie_children(process_get_current());
     }
 
     time_get_ns_rtc_time(&end);
