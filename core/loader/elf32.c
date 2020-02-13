@@ -191,16 +191,10 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
 
     process_set_priority(pcb, CONFIG_SCHED_PRIORITY_MAX_USER);
 
-    irqctx_t ctx;
-    irq_disable_local_and_save_ctx(&ctx);
-
-    if (process_register_locked(pcb) < 0) {
+    if (process_register(pcb) < 0) {
         error_async("Could not register process at 0x%p", pcb);
-        irq_local_restore_ctx(&ctx);
         goto error_register;
     }
-
-    irq_local_restore_ctx(&ctx);
 
     return pcb;
 

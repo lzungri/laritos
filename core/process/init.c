@@ -117,20 +117,20 @@ static void init_loop(void) {
     // Loop forever
     while (1) {
         irqctx_t ctx;
-        irq_disable_local_and_save_ctx(&ctx);
+        spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+
         // Block and wait for events (e.g. new zombie process)
         sched_move_to_blocked_locked(init, NULL);
-        irq_local_restore_ctx(&ctx);
+
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+
 
         // Switch to another process
         schedule();
-
         // Someone woke me up, process event/s
 
         // Release zombie children
-        irq_disable_local_and_save_ctx(&ctx);
-        process_unregister_zombie_children_locked(init);
-        irq_local_restore_ctx(&ctx);
+        process_unregister_zombie_children(init);
     }
 }
 

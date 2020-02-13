@@ -27,10 +27,20 @@ static inline void schedule_if_needed(void) {
     irq_local_restore_ctx(&ctx);
 }
 
-static inline void sched_update_stats(pcb_t *pcb) {
+/**
+ * Must be called with _laritos.proc.pcbs_data_lock held
+ */
+static inline void sched_update_stats_locked(pcb_t *pcb) {
     tick_t delta = tick_get_os_ticks() - pcb->stats.last_status_change;
     pcb->stats.ticks_spent[pcb->sched.status] += delta;
     pcb->stats.last_status_change = tick_get_os_ticks();
+}
+
+static inline void sched_update_stats(pcb_t *pcb) {
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    sched_update_stats_locked(pcb);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 }
 
 /**
@@ -38,6 +48,8 @@ static inline void sched_update_stats(pcb_t *pcb) {
  * (i.e. highest priority process are first in the list).
  * If two or more processes share the same priority, the new pcb will be added next to the
  * last process with that priority.
+ *
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held
  *
  * @param pcb: Process to add
  * @return void
@@ -55,7 +67,7 @@ static inline void _sched_add_ready_proc_sorted(pcb_t *pcb) {
 }
 
 /**
- * NOTE: Must be called with irqs disabled
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held
  */
 static inline void sched_move_to_ready_locked(pcb_t *pcb) {
     if (pcb->sched.status == PROC_STATUS_ZOMBIE) {
@@ -64,7 +76,7 @@ static inline void sched_move_to_ready_locked(pcb_t *pcb) {
     }
     insane_async("PID %u: %s -> READY", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
-    sched_update_stats(pcb);
+    sched_update_stats_locked(pcb);
 
     _sched_add_ready_proc_sorted(pcb);
     pcb->sched.status = PROC_STATUS_READY;
@@ -79,7 +91,7 @@ static inline void sched_move_to_ready_locked(pcb_t *pcb) {
  * @param blocked_list: List associated with the event the process is waiting for (may be
  *        NULL is the event doesn't keep any list)
  *
- * NOTE: Must be called with irqs disabled
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held
  */
 static inline void sched_move_to_blocked_locked(pcb_t *pcb, list_head_t *blocked_list) {
     if (pcb->sched.status == PROC_STATUS_ZOMBIE || pcb->sched.status == PROC_STATUS_NOT_INIT) {
@@ -88,7 +100,7 @@ static inline void sched_move_to_blocked_locked(pcb_t *pcb, list_head_t *blocked
     }
     insane_async("PID %u: %s -> BLOCKED", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
-    sched_update_stats(pcb);
+    sched_update_stats_locked(pcb);
 
     list_del_init(&pcb->sched.sched_node);
     if (blocked_list != NULL) {
@@ -98,7 +110,7 @@ static inline void sched_move_to_blocked_locked(pcb_t *pcb, list_head_t *blocked
 }
 
 /**
- * NOTE: Must be called with irqs disabled
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held
  */
 static inline void sched_move_to_running_locked(pcb_t *pcb) {
     if (pcb->sched.status != PROC_STATUS_READY) {
@@ -107,7 +119,7 @@ static inline void sched_move_to_running_locked(pcb_t *pcb) {
     }
     insane_async("PID %u: %s -> RUNNING", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
-    sched_update_stats(pcb);
+    sched_update_stats_locked(pcb);
 
     list_del_init(&pcb->sched.sched_node);
     pcb->sched.status = PROC_STATUS_RUNNING;
@@ -115,17 +127,12 @@ static inline void sched_move_to_running_locked(pcb_t *pcb) {
 }
 
 /**
- * NOTE: Must be called with irqs disabled
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held
  */
 static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
     insane_async("PID %u: %s -> ZOMBIE ", pcb->pid, pcb_get_status_str(pcb->sched.status));
 
-    sched_update_stats(pcb);
-
-    // We are going to access other processes that may be running in other cpus,
-    // use a spinlock to protect this critical section
-    irqctx_t ctx;
-    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    sched_update_stats_locked(pcb);
 
     pcb_t *child;
     pcb_t *temp;
@@ -150,6 +157,4 @@ static inline void sched_move_to_zombie_locked(pcb_t *pcb) {
         // New zombie process child of init, wake up init so that it releases its resources
         sched_move_to_ready_locked(_laritos.proc.init);
     }
-
-    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 }

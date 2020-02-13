@@ -17,8 +17,17 @@
 #include <sync/spinlock.h>
 #include <sync/atomic.h>
 
+/**
+ * NOTE: Must be called with irqs disabled
+ */
 static void sched_switch_to_locked(pcb_t *from, pcb_t *to) {
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+
     sched_move_to_running_locked(to);
+
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+
 
     context_save_and_restore(from, to);
 
@@ -34,16 +43,24 @@ static void sched_switch_to_locked(pcb_t *from, pcb_t *to) {
 #endif
 }
 
+/**
+ * NOTE: Must be called with irqs disabled
+ */
 static void context_switch_locked(pcb_t *cur, pcb_t *to) {
     insane_async("Context switch pid=%u -> pid=%u", cur->pid, to->pid);
 
     // Update context switch stats
     atomic32_inc(&_laritos.stats.ctx_switches);
 
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+
     // Check whether the process is actually running (i.e. not a zombie)
     if (cur->sched.status == PROC_STATUS_RUNNING) {
         sched_move_to_ready_locked(cur);
     }
+
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
     sched_switch_to_locked(cur, to);
 }
@@ -58,8 +75,8 @@ void schedule(void) {
 
     while (pcb != NULL && pcb != curpcb && !process_is_valid_context(pcb, pcb->mm.sp_ctx)) {
         exc_dump_process_info(pcb);
-        error("Cannot switch to pid=%u, invalid context. Killing process...", pcb->pid);
-        process_kill_locked(pcb);
+        error_async("Cannot switch to pid=%u, invalid context. Killing process...", pcb->pid);
+        process_kill(pcb);
         pcb = c->sched->ops.pick_ready_locked(c->sched, c, curpcb);;
     }
 
@@ -84,10 +101,10 @@ void schedule(void) {
 
 void sched_execute_first_system_proc(pcb_t *pcb) {
     irqctx_t ctx;
-    irq_disable_local_and_save_ctx(&ctx);
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
     // Execute the first process
     sched_move_to_running_locked(pcb);
-    irq_local_restore_ctx(&ctx);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
     context_restore(pcb);
     // Execution will never reach this point

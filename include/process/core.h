@@ -47,6 +47,8 @@ typedef struct {
 
     /**
      * Node used to link a process to the _laritos.proc.pcbs list
+     *
+     * Protected by _laritos.proc.pcbs_lock
      */
     list_head_t pcb_node;
 
@@ -103,21 +105,15 @@ int process_init_global_context(void);
 void process_assign_pid(pcb_t *pcb);
 pcb_t *process_alloc(void);
 int process_free(pcb_t *pcb);
+int process_register(pcb_t *pcb);
 /**
- * NOTE: Must be called with irqs disabled
- */
-int process_register_locked(pcb_t *pcb);
-/**
- * NOTE: Must be called with irqs disabled
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held
  */
 int process_release_zombie_resources_locked(pcb_t *pcb);
-/**
- * NOTE: Must be called with irqs disabled
- */
-void process_unregister_zombie_children_locked(pcb_t *pcb);
+void process_unregister_zombie_children(pcb_t *pcb);
 void process_kill(pcb_t *pcb);
 /**
- * NOTE: Must be called with irqs disabled
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held
  */
 void process_kill_locked(pcb_t *pcb);
 void process_kill_and_schedule(pcb_t *pcb);

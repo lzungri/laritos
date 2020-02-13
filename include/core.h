@@ -31,6 +31,10 @@ typedef struct {
 
     /**
      * Spinlock used to synchronize the _laritos.proc.pcbs list
+     *
+     * Lock ordering (if both locks are needed):
+     *      pcbs_lock
+     *          pcbs_data_lock
      */
     spinlock_t pcbs_lock;
 
@@ -40,6 +44,10 @@ typedef struct {
      *
      * Ideally, for performance reasons, there should be one lock per pcb_t, but this greatly
      * simplifies the code and reduces synchronization complexity.
+     *
+     * Lock ordering (if both locks are needed):
+     *      pcbs_lock
+     *          pcbs_data_lock
      */
     spinlock_t pcbs_data_lock;
 
