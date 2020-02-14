@@ -146,16 +146,23 @@ T(semaphore_blocked_proc_with_the_highest_priority_acquires_semaphore_after_it_i
 
     sem_release(&sem);
     sleep(1);
+    irqctx_t pcbd_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(p2->sched.status == PROC_STATUS_ZOMBIE);
     tassert(p1->sched.status != PROC_STATUS_ZOMBIE);
     tassert(p0->sched.status != PROC_STATUS_ZOMBIE);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 
     sem_release(&sem);
     sleep(1);
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(p1->sched.status == PROC_STATUS_ZOMBIE);
     tassert(p0->sched.status != PROC_STATUS_ZOMBIE);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 
     sem_release(&sem);
     sleep(1);
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(p0->sched.status == PROC_STATUS_ZOMBIE);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 TEND

@@ -104,6 +104,10 @@ typedef int (*kproc_main_t)(void *data);
 int process_init_global_context(void);
 void process_assign_pid(pcb_t *pcb);
 pcb_t *process_alloc(void);
+/**
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held or the process to be freed
+ * must not have been already registered via process_register().
+ */
 int process_free(pcb_t *pcb);
 int process_register(pcb_t *pcb);
 /**

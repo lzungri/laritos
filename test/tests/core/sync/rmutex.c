@@ -175,10 +175,15 @@ T(rmutex_blocked_proc_with_the_highest_priority_acquires_mutex_after_it_is_relea
     tassert(m.owner == p2);
 
     rmutex_acquire(&m);
+
+    irqctx_t pcbd_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     // Mutex can only be acquired by the test process if all the other procs
     // already took and released the mutex,
     tassert(p2->sched.status == PROC_STATUS_ZOMBIE);
     tassert(p1->sched.status == PROC_STATUS_ZOMBIE);
     tassert(p0->sched.status == PROC_STATUS_ZOMBIE);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
+
     rmutex_release(&m);
 TEND
