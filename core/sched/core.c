@@ -18,16 +18,12 @@
 #include <sync/atomic.h>
 
 /**
- * NOTE: Must be called with irqs disabled
+ * NOTE: Must be called with irqs disabled and pcbs_data_lock held
  */
-static void sched_switch_to_locked(pcb_t *from, pcb_t *to) {
-    irqctx_t ctx;
-    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-
+static inline void sched_switch_to_locked(pcb_t *from, pcb_t *to, irqctx_t *pcbdatalock_ctx) {
     sched_move_to_running_locked(to);
 
-    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
-
+    spinlock_release(&_laritos.proc.pcbs_data_lock, pcbdatalock_ctx);
 
     context_save_and_restore(from, to);
 
@@ -44,25 +40,20 @@ static void sched_switch_to_locked(pcb_t *from, pcb_t *to) {
 }
 
 /**
- * NOTE: Must be called with irqs disabled
+ * NOTE: Must be called with irqs disabled and pcbs_data_lock held
  */
-static void context_switch_locked(pcb_t *cur, pcb_t *to) {
+static inline void context_switch_locked(pcb_t *cur, pcb_t *to, irqctx_t *pcbdatalock_ctx) {
     insane_async("Context switch pid=%u -> pid=%u", cur->pid, to->pid);
 
     // Update context switch stats
     atomic32_inc(&_laritos.stats.ctx_switches);
-
-    irqctx_t ctx;
-    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
 
     // Check whether the process is actually running (i.e. not a zombie)
     if (cur->sched.status == PROC_STATUS_RUNNING) {
         sched_move_to_ready_locked(cur);
     }
 
-    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
-
-    sched_switch_to_locked(cur, to);
+    sched_switch_to_locked(cur, to, pcbdatalock_ctx);
 }
 
 void schedule(void) {
@@ -71,12 +62,17 @@ void schedule(void) {
 
     cpu_t *c = cpu();
     pcb_t *curpcb = process_get_current();
-    pcb_t *pcb = c->sched->ops.pick_ready_locked(c->sched, c, curpcb);;
 
-    while (pcb != NULL && pcb != curpcb && !process_is_valid_context(pcb, pcb->mm.sp_ctx)) {
-        exc_dump_process_info(pcb);
+    // This lock is going to be released right before performing the actual context switch in
+    // sched_switch_to_locked()
+    irqctx_t pcbdatalock_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbdatalock_ctx);
+
+    pcb_t *pcb = c->sched->ops.pick_ready_locked(c->sched, c, curpcb);;
+    while (pcb != NULL && pcb != curpcb && !process_is_valid_context_locked(pcb, pcb->mm.sp_ctx)) {
+        exc_dump_process_info_locked(pcb);
         error_async("Cannot switch to pid=%u, invalid context. Killing process...", pcb->pid);
-        process_kill(pcb);
+        process_kill_locked(pcb);
         pcb = c->sched->ops.pick_ready_locked(c->sched, c, curpcb);;
     }
 
@@ -84,22 +80,20 @@ void schedule(void) {
     //      - there is no other pcb ready,
     //      - or there is another pcb ready but with lower priority (i.e. higher number),
     // then continue execution of the current process
-    irqctx_t pcbdata_ctx;
-    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbdata_ctx);
 
     if (curpcb->sched.status == PROC_STATUS_RUNNING) {
         if (pcb == NULL || (curpcb->sched.priority < pcb->sched.priority)) {
-            spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdata_ctx);
+            spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdatalock_ctx);
             irq_local_restore_ctx(&ctx);
             return;
         }
     }
 
-    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdata_ctx);
-
     assert(pcb != NULL, "No process ready for execution, where is the idle process?");
     if (curpcb != pcb) {
-        context_switch_locked(curpcb, pcb);
+        context_switch_locked(curpcb, pcb, &pcbdatalock_ctx);
+    } else {
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdatalock_ctx);
     }
 
     irq_local_restore_ctx(&ctx);

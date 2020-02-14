@@ -165,9 +165,12 @@ T(rmutex_blocked_proc_with_the_highest_priority_acquires_mutex_after_it_is_relea
     tassert(p2 != NULL);
     schedule();
 
+    irqctx_t pcbd_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(is_process_in(&p0->sched.sched_node, &m.cond.blocked));
     tassert(is_process_in(&p1->sched.sched_node, &m.cond.blocked));
     tassert(is_process_in(&p2->sched.sched_node, &m.cond.blocked));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 
     rmutex_release(&m);
     schedule();
@@ -176,7 +179,6 @@ T(rmutex_blocked_proc_with_the_highest_priority_acquires_mutex_after_it_is_relea
 
     rmutex_acquire(&m);
 
-    irqctx_t pcbd_ctx;
     spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     // Mutex can only be acquired by the test process if all the other procs
     // already took and released the mutex,
