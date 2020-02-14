@@ -230,7 +230,10 @@ int process_set_priority(pcb_t *pcb, uint8_t priority) {
 
 void process_exit(int exit_status) {
     pcb_t *pcb = process_get_current();
+    irqctx_t pcbdatalock_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbdatalock_ctx);
     pcb->exit_status = exit_status;
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdatalock_ctx);
 
     debug_async("Exiting process pid=%u, exitcode=%d", pcb->pid, pcb->exit_status);
 

@@ -37,7 +37,10 @@ T(process_kernel_process_exit_status_matches_kfunc_t_return_value) {
     process_wait_for(p1, &status);
 
     tassert(status == 12345);
+    irqctx_t pcbdatalock_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbdatalock_ctx);
     tassert(p1->exit_status == 12345);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdatalock_ctx);
 TEND
 
 static int irqproc(void *data) {
@@ -247,9 +250,7 @@ T(process_blocked_state_stats_are_accurate) {
 
         irqctx_t ctx;
         spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-
         uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_BLOCKED]);
-
         spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
         // 30% tolerance for lower limit
@@ -300,9 +301,7 @@ T(process_running_state_stats_are_accurate) {
 
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-
     uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_RUNNING]);
-
     spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
     // 30% tolerance for lower limit
