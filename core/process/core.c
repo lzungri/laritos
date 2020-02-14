@@ -149,6 +149,9 @@ int process_release_zombie_resources_locked(pcb_t *pcb) {
     return 0;
 }
 
+/**
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held
+ */
 static inline void handle_dead_child_locked(pcb_t *pcb, int *status) {
     if (status != NULL) {
         *status = pcb->exit_status;
