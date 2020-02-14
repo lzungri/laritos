@@ -54,7 +54,7 @@ static inline void sched_update_stats(pcb_t *pcb) {
  * @param pcb: Process to add
  * @return void
  */
-static inline void _sched_add_ready_proc_sorted(pcb_t *pcb) {
+static inline void _sched_add_ready_proc_sorted_locked(pcb_t *pcb) {
     list_del_init(&pcb->sched.sched_node);
     pcb_t *proc;
     for_each_ready_process_locked(proc) {
@@ -78,7 +78,7 @@ static inline void sched_move_to_ready_locked(pcb_t *pcb) {
 
     sched_update_stats_locked(pcb);
 
-    _sched_add_ready_proc_sorted(pcb);
+    _sched_add_ready_proc_sorted_locked(pcb);
     pcb->sched.status = PROC_STATUS_READY;
 
     // Re-schedule in case there is a new higher priority process

@@ -84,12 +84,18 @@ void schedule(void) {
     //      - there is no other pcb ready,
     //      - or there is another pcb ready but with lower priority (i.e. higher number),
     // then continue execution of the current process
+    irqctx_t pcbdata_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbdata_ctx);
+
     if (curpcb->sched.status == PROC_STATUS_RUNNING) {
         if (pcb == NULL || (curpcb->sched.priority < pcb->sched.priority)) {
+            spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdata_ctx);
             irq_local_restore_ctx(&ctx);
             return;
         }
     }
+
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdata_ctx);
 
     assert(pcb != NULL, "No process ready for execution, where is the idle process?");
     if (curpcb != pcb) {
