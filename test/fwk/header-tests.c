@@ -17,6 +17,10 @@
 #include <core/sync/atomic.c>
 #endif
 
+#ifdef CONFIG_TEST_CORE_SYNC_SPINLOCK
+#include <core/sync/spinlock.c>
+#endif
+
 #ifdef CONFIG_TEST_CORE_COMPONENT_CPU
 #include <core/component/cpu.c>
 #endif
