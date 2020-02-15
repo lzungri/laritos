@@ -7,15 +7,15 @@
  * 32-bit spinlock type for ARM.
  * Must be 4-byte aligned to ensure read/write atomicity.
  */
-typedef uint32_t spinlock_t __attribute__ ((aligned (4)));
+typedef uint32_t arch_spinlock_t __attribute__ ((aligned (4)));
 
 
-static inline int arch_spinlock_set(spinlock_t *lock, unsigned int value) {
+static inline int arch_spinlock_set(arch_spinlock_t *lock, unsigned int value) {
     *lock = value;
     return 0;
 }
 
-static inline int arch_spinlock_acquire(spinlock_t *lock) {
+static inline int arch_spinlock_acquire(arch_spinlock_t *lock) {
     while (!atomic_cmpxchg((int *) lock, 0, 1));
     /**
      * From ARM ARM:
@@ -30,13 +30,13 @@ static inline int arch_spinlock_acquire(spinlock_t *lock) {
     return 0;
 }
 
-static inline int arch_spinlock_trylock(spinlock_t *lock, irqctx_t *ctx) {
+static inline int arch_spinlock_trylock(arch_spinlock_t *lock) {
     int ret = atomic_cmpxchg((int *) lock, 0, 1);
     dmb();
     return ret;
 }
 
-static inline int arch_spinlock_release(spinlock_t *lock) {
+static inline int arch_spinlock_release(arch_spinlock_t *lock) {
     /**
      * From ARM ARM:
      *      * Portable software for releasing a spin-lock must include a DMB
@@ -46,6 +46,6 @@ static inline int arch_spinlock_release(spinlock_t *lock) {
     return arch_spinlock_set(lock, 0);
 }
 
-static inline bool arch_spinlock_is_locked(spinlock_t *lock) {
+static inline bool arch_spinlock_is_locked(arch_spinlock_t *lock) {
     return *lock == 1;
 }
