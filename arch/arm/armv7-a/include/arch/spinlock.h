@@ -30,6 +30,12 @@ static inline int arch_spinlock_acquire(spinlock_t *lock) {
     return 0;
 }
 
+static inline int arch_spinlock_trylock(spinlock_t *lock, irqctx_t *ctx) {
+    int ret = atomic_cmpxchg((int *) lock, 0, 1);
+    dmb();
+    return ret;
+}
+
 static inline int arch_spinlock_release(spinlock_t *lock) {
     /**
      * From ARM ARM:
@@ -38,4 +44,8 @@ static inline int arch_spinlock_release(spinlock_t *lock) {
      */
     dmb();
     return arch_spinlock_set(lock, 0);
+}
+
+static inline bool arch_spinlock_is_taken(spinlock_t *lock) {
+    return *lock == 1;
 }

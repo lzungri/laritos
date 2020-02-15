@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <irq/core.h>
 #include <sync/cmpxchg.h>
@@ -38,9 +39,17 @@ static inline int spinlock_acquire(spinlock_t *lock, irqctx_t *ctx) {
     return 0;
 }
 
+static inline int spinlock_trylock(spinlock_t *lock, irqctx_t *ctx) {
+    return arch_spinlock_trylock(lock, ctx);
+}
+
 static inline int spinlock_release(spinlock_t *lock, irqctx_t *ctx) {
 #ifdef CONFIG_SMP
     arch_spinlock_release(lock);
 #endif
     return irq_local_restore_ctx(ctx);
+}
+
+static inline bool spinlock_is_taken(spinlock_t *lock) {
+    return arch_spinlock_is_taken(lock);
 }
