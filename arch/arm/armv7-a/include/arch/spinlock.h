@@ -46,6 +46,6 @@ static inline int arch_spinlock_release(spinlock_t *lock) {
     return arch_spinlock_set(lock, 0);
 }
 
-static inline bool arch_spinlock_is_taken(spinlock_t *lock) {
+static inline bool arch_spinlock_is_locked(spinlock_t *lock) {
     return *lock == 1;
 }

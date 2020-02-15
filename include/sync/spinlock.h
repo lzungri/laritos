@@ -50,6 +50,6 @@ static inline int spinlock_release(spinlock_t *lock, irqctx_t *ctx) {
     return irq_local_restore_ctx(ctx);
 }
 
-static inline bool spinlock_is_taken(spinlock_t *lock) {
-    return arch_spinlock_is_taken(lock);
+static inline bool spinlock_is_locked(spinlock_t *lock) {
+    return arch_spinlock_is_locked(lock);
 }
