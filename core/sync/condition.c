@@ -54,25 +54,27 @@ static inline void wakeup_pcb_locked(pcb_t *pcb, condition_t *cond) {
         return;
     }
     verbose_async("Waking up pid=%u waiting for condition=0x%p", pcb->pid, cond);
+    list_del_init(&pcb->sched.sched_node);
+    sched_move_to_ready_locked(pcb);
+}
 
+pcb_t *condition_notify_locked(condition_t *cond) {
     irqctx_t pcbdata_ctx;
     bool pcbs_lock_acquired = grab_pcbsdatalock_if_not_held(&pcbdata_ctx);
 
-    list_del_init(&pcb->sched.sched_node);
-    sched_move_to_ready_locked(pcb);
+    pcb_t *pcb = list_first_entry_or_null(&cond->blocked, pcb_t, sched.sched_node);
+    wakeup_pcb_locked(pcb, cond);
 
     if (pcbs_lock_acquired) {
         spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdata_ctx);
     }
-}
-
-pcb_t *condition_notify_locked(condition_t *cond) {
-    pcb_t *pcb = list_first_entry_or_null(&cond->blocked, pcb_t, sched.sched_node);
-    wakeup_pcb_locked(pcb, cond);
     return pcb;
 }
 
 bool condition_notify_all_locked(condition_t *cond) {
+    irqctx_t pcbdata_ctx;
+    bool pcbs_lock_acquired = grab_pcbsdatalock_if_not_held(&pcbdata_ctx);
+
     pcb_t *pcb;
     pcb_t *tmp;
     bool proc_awakened = false;
@@ -80,5 +82,10 @@ bool condition_notify_all_locked(condition_t *cond) {
         wakeup_pcb_locked(pcb, cond);
         proc_awakened = true;
     }
+
+    if (pcbs_lock_acquired) {
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdata_ctx);
+    }
+
     return proc_awakened;
 }
