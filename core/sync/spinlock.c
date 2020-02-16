@@ -33,7 +33,7 @@ int spinlock_acquire(spinlock_t *lock, irqctx_t *ctx) {
         return -1;
     }
 #endif
-    // TODO Improve this
+    // TODO Optimize this
     if (_laritos.process_mode) {
         lock->owner = process_get_current();
     }
@@ -42,13 +42,17 @@ int spinlock_acquire(spinlock_t *lock, irqctx_t *ctx) {
 
 int spinlock_trylock(spinlock_t *lock, irqctx_t *ctx) {
 #ifdef CONFIG_SMP
+    if (irq_disable_local_and_save_ctx(ctx) < 0) {
+        return -1;
+    }
     if (arch_spinlock_trylock(&lock->lock)) {
-        // TODO Improve this
+        // TODO Optimize this
         if (_laritos.process_mode) {
             lock->owner = process_get_current();
         }
         return true;
     }
+    irq_local_restore_ctx(ctx);
     return false;
 #endif
     return spinlock_acquire(lock, ctx);
@@ -64,7 +68,7 @@ int spinlock_release(spinlock_t *lock, irqctx_t *ctx) {
 
 bool spinlock_is_locked(spinlock_t *lock) {
 #ifdef CONFIG_SMP
-    // This is faster than checking the owner
+    // This is faster than checking for the owner
     return arch_spinlock_is_locked(&lock->lock);
 #endif
     return spinlock_owned_by_me(lock);
