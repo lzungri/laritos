@@ -50,7 +50,22 @@ T(spinlock_trylock_grabs_the_lock_and_returns_true_if_not_taken) {
     tassert(!spinlock_is_locked(&s));
 TEND
 
-T(spinlock_trylock_doesnt_change_lock_status_and_returns_false_if_taken) {
+T(spinlock_trylock_disables_irqs_when_it_grabs_the_lock) {
+    irqctx_t ctx;
+    spinlock_t s;
+    spinlock_init(&s);
+    tassert(!spinlock_is_locked(&s));
+
+    tassert(spinlock_trylock(&s, &ctx));
+    tassert(spinlock_owned_by_me(&s));
+    tassert(spinlock_is_locked(&s));
+    tassert(!irq_is_enabled());
+    spinlock_release(&s, &ctx);
+    tassert(!spinlock_is_locked(&s));
+    tassert(irq_is_enabled());
+TEND
+
+T(spinlock_trylock_doesnt_change_lock_status_and_returns_false_if_already_taken) {
     irqctx_t ctx;
     spinlock_t s;
     spinlock_init(&s);
