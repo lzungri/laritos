@@ -30,7 +30,7 @@ static inline int arch_spinlock_acquire(arch_spinlock_t *lock) {
     return 0;
 }
 
-static inline int arch_spinlock_trylock(arch_spinlock_t *lock) {
+static inline bool arch_spinlock_trylock(arch_spinlock_t *lock) {
     int ret = atomic_cmpxchg((int *) lock, 0, 1);
     dmb();
     return ret;

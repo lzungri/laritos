@@ -28,7 +28,7 @@ typedef struct {
 
 int spinlock_init(spinlock_t *lock);
 int spinlock_acquire(spinlock_t *lock, irqctx_t *ctx);
-int spinlock_trylock(spinlock_t *lock, irqctx_t *ctx);
+bool spinlock_trylock(spinlock_t *lock, irqctx_t *ctx);
 int spinlock_release(spinlock_t *lock, irqctx_t *ctx);
 bool spinlock_is_locked(spinlock_t *lock);
 bool spinlock_owned_by_me(spinlock_t *lock);

@@ -14,7 +14,7 @@ int condition_init(condition_t *cond) {
 }
 
 /**
- * HACK Alert: A condition can be used in different scenarios, some of them may or may not
+ * HACK ALERT: A condition can be used in different scenarios, some of them may or may not
  * have the _laritos.proc.pcbs_data_lock lock held. In order to prevent deadlocks by
  * re-acquiring the same lock, we use the following hack to only grab the spinlock if it
  * wasn't already owned by the process.

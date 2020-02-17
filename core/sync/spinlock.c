@@ -38,7 +38,7 @@ int spinlock_acquire(spinlock_t *lock, irqctx_t *ctx) {
     return 0;
 }
 
-int spinlock_trylock(spinlock_t *lock, irqctx_t *ctx) {
+bool spinlock_trylock(spinlock_t *lock, irqctx_t *ctx) {
 #ifdef CONFIG_SMP
     if (irq_disable_local_and_save_ctx(ctx) < 0) {
         return -1;
@@ -51,7 +51,7 @@ int spinlock_trylock(spinlock_t *lock, irqctx_t *ctx) {
     irq_local_restore_ctx(ctx);
     return false;
 #endif
-    return spinlock_acquire(lock, ctx);
+    return spinlock_acquire(lock, ctx) >= 0;
 }
 
 int spinlock_release(spinlock_t *lock, irqctx_t *ctx) {
