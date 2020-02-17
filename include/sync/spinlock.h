@@ -14,6 +14,8 @@
  *    prevent local context switches.
  */
 
+#define SPINLOCK_KERNEL_OWNER ((void *) -1)
+
 struct pcb;
 
 typedef struct {

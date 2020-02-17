@@ -34,9 +34,7 @@ int spinlock_acquire(spinlock_t *lock, irqctx_t *ctx) {
     }
 #endif
     // TODO Optimize this
-    if (_laritos.process_mode) {
-        lock->owner = process_get_current();
-    }
+    lock->owner = _laritos.process_mode ? process_get_current() : SPINLOCK_KERNEL_OWNER;
     return 0;
 }
 
@@ -47,9 +45,7 @@ int spinlock_trylock(spinlock_t *lock, irqctx_t *ctx) {
     }
     if (arch_spinlock_trylock(&lock->lock)) {
         // TODO Optimize this
-        if (_laritos.process_mode) {
-            lock->owner = process_get_current();
-        }
+        lock->owner = _laritos.process_mode ? process_get_current() : SPINLOCK_KERNEL_OWNER;
         return true;
     }
     irq_local_restore_ctx(ctx);
@@ -75,7 +71,11 @@ bool spinlock_is_locked(spinlock_t *lock) {
 }
 
 bool spinlock_owned_by_me(spinlock_t *lock) {
-    return lock->owner == process_get_current();
+    // TODO Optimize this
+    if (_laritos.process_mode) {
+        return lock->owner == process_get_current();
+    }
+    return lock->owner == SPINLOCK_KERNEL_OWNER;
 }
 
 
