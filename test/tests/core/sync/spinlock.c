@@ -8,6 +8,7 @@
 #include <test/utils.h>
 #include <utils/utils.h>
 #include <process/core.h>
+#include <generated/autoconf.h>
 
 T(spinlock_acquire_grabs_the_lock_and_release_restores_it) {
     spinlock_t s;
@@ -65,6 +66,7 @@ T(spinlock_trylock_disables_irqs_when_it_grabs_the_lock) {
     tassert(irq_is_enabled());
 TEND
 
+#ifdef CONFIG_SMP
 T(spinlock_trylock_doesnt_change_lock_status_and_returns_false_if_already_taken) {
     irqctx_t ctx;
     spinlock_t s;
@@ -79,6 +81,7 @@ T(spinlock_trylock_doesnt_change_lock_status_and_returns_false_if_already_taken)
     spinlock_release(&s, &ctx);
     tassert(!spinlock_is_locked(&s));
 TEND
+#endif
 
 static int spinowner(void *data) {
     irqctx_t ctx;
