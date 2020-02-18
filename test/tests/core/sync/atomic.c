@@ -7,6 +7,7 @@
 #include <sync/atomic.h>
 #include <test/utils.h>
 #include <utils/utils.h>
+#include <process/core.h>
 
 T(atomic32_init_initializes_variable_accordingly) {
     atomic32_t at;

@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <core.h>
 #include <board/core.h>
-#include <process/core.h>
+#include <process/types.h>
 #include <sched/core.h>
 #include <component/ticker.h>
 #include <component/sched.h>

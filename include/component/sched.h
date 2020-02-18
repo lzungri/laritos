@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <process/core.h>
+#include <process/types.h>
 #include <component/cpu.h>
 #include <component/component.h>
 #include <component/ticker.h>

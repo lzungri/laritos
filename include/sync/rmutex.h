@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <sync/spinlock.h>
 #include <sync/condition.h>
-#include <process/core.h>
+#include <process/types.h>
 
 typedef struct {
     uint16_t lock_count;

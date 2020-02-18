@@ -1,6 +1,6 @@
 #pragma once
 
-#include <process/core.h>
+#include <process/types.h>
 #include <sched/context.h>
 
 /**

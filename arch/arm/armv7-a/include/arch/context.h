@@ -4,7 +4,7 @@
 
 #include <cpu/core.h>
 #include <string.h>
-#include <process/core.h>
+#include <process/types.h>
 #include <arch/debug.h>
 #include <arch/context-types.h>
 

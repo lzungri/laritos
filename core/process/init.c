@@ -9,7 +9,6 @@
 #include <component/component.h>
 #include <component/ticker.h>
 #include <loader/loader.h>
-#include <process/core.h>
 #include <board/types.h>
 #include <board/core.h>
 #include <utils/random.h>

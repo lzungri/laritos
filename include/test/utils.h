@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include <process/core.h>
+#include <process/types.h>
 #include <dstruct/list.h>
 #include <component/component.h>
 #include <component/vrtimer.h>

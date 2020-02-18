@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <board/core.h>
-#include <process/core.h>
+#include <process/types.h>
 #include <driver/core.h>
 #include <sched/core.h>
 #include <component/sched.h>

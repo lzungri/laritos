@@ -4,7 +4,7 @@
 #include <loader/loader.h>
 #include <loader/elf.h>
 #include <loader/loader-elf.h>
-#include <process/core.h>
+#include <process/types.h>
 #include <sync/spinlock.h>
 
 

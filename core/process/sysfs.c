@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <printf.h>
-#include <process/core.h>
+#include <process/types.h>
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
