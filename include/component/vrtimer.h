@@ -27,7 +27,7 @@ typedef struct {
     vrtimer_cb_t cb;
     void *data;
 
-    struct list_head list;
+    list_head_t list;
 } vrtimer_t;
 
 typedef struct {
@@ -38,7 +38,7 @@ typedef struct {
 typedef struct vrtimer_comp {
     component_t parent;
 
-    struct list_head timers;
+    list_head_t timers;
     timer_comp_t *hrtimer;
     timer_comp_t *low_power_timer;
     spinlock_t lock;

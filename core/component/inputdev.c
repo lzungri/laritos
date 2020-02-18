@@ -1,9 +1,9 @@
 #include <log.h>
-#include <board/board-types.h>
-#include <board/board.h>
+#include <board/types.h>
+#include <board/core.h>
 #include <mm/heap.h>
 #include <component/inputdev.h>
-#include <driver/driver.h>
+#include <driver/core.h>
 
 
 static int process(board_comp_t *comp) {
@@ -36,4 +36,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(inputdev, process);
+DRIVER_MODULE(inputdev, process);

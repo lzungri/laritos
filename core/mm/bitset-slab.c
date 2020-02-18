@@ -18,10 +18,6 @@ typedef struct {
 } bs_slab_t;
 
 
-static inline bool is_slab_avail(bs_slab_t *s, uint8_t idx) {
-    return bitset_array_lm_bit(s->bitset, s->bs_elems, idx) == 0;
-}
-
 slab_t *slab_create(uint32_t numelems, size_t elemsize) {
     if (numelems == 0 || numelems == BITSET_ARRAY_IDX_NOT_FOUND || elemsize == 0) {
         return NULL;
@@ -98,7 +94,7 @@ void slab_free(slab_t *slab, void *ptr) {
     spinlock_acquire(&s->lock, &ctx);
 
     // Check if it belongs to a real block and if it is actually being used
-    if (bsidx < s->total_elems && !is_slab_avail(s, bsidx)) {
+    if (bsidx < s->total_elems && slab_is_taken(s, bsidx)) {
         bitset_array_lm_clear(s->bitset, s->bs_elems, bsidx);
         s->avail_elems++;
     }
@@ -120,6 +116,10 @@ uint32_t slab_get_avail_elems(slab_t *slab) {
     return ((bs_slab_t *) slab)->avail_elems;
 }
 
+uint32_t slab_get_total_elems(slab_t *slab) {
+    return ((bs_slab_t *) slab)->total_elems;
+}
+
 uint32_t slab_get_slab_position(slab_t *slab, void *ptr) {
     bs_slab_t *s = (bs_slab_t *) slab;
     return ((char *) ptr - s->data) / s->elem_size;
@@ -130,6 +130,10 @@ void *slab_get_ptr_from_position(slab_t *slab, uint32_t pos) {
     return (void *) (s->data + pos * s->elem_size);
 }
 
+bool slab_is_taken(slab_t *slab, uint32_t idx) {
+    bs_slab_t *s = (bs_slab_t *) slab;
+    return bitset_array_lm_bit(s->bitset, s->bs_elems, idx) != 0;
+}
 
 
 #ifdef CONFIG_TEST_CORE_MM_BITSET_SLAB

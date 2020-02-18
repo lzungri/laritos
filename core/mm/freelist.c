@@ -9,7 +9,7 @@
 #include <sync/spinlock.h>
 
 typedef struct {
-    struct list_head list;
+    list_head_t list;
     uint32_t size;
     char data[];
 } fl_node_t;
@@ -132,7 +132,7 @@ void _free(void *ptr) {
     fl_node_t *node = container_of(ptr, fl_node_t, data);
     insane_async("Freeing ptr=0x%p, block [0x%p, size=%lu]", ptr, node, node->size);
 
-    struct list_head *pos;
+    list_head_t *pos;
     list_for_each(pos, &freelist) {
         if (pos > &node->list) {
             __list_add(&node->list, pos->prev, pos);

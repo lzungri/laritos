@@ -33,9 +33,9 @@ SECTIONS
         *(.rodata*)
 
         . = ALIGN(4);
-        __driver_mgrs_start = ABSOLUTE(.);
-        KEEP(*(.driver_mgrs))
-        /* Mark the end of the drivers array with a NULL pointer */
+        __modules_start = ABSOLUTE(.);
+        KEEP(*(.modules))
+        /* Mark the end of the modules array with a NULL pointer */
         LONG(0);
 
         . = ALIGN(4);

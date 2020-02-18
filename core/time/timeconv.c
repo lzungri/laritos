@@ -28,7 +28,7 @@
  *   Moved from glibc-2.6 to kernel by Zhaolei<zhaolei@cn.fujitsu.com>
  */
 
-#include <time/time.h>
+#include <time/core.h>
 
 /*
  * Nonzero if YEAR is a leap year (every 4 years,

@@ -1,7 +1,7 @@
 #include <log.h>
 
-#include <board/board.h>
-#include <board/board-types.h>
+#include <board/core.h>
+#include <board/types.h>
 #include <component/component.h>
 #include <string.h>
 #include <core.h>
@@ -14,11 +14,6 @@ int component_init_global_context() {
     for (i = 0; i < ARRAYSIZE(_laritos.comps); i++) {
         INIT_LIST_HEAD(&_laritos.comps[i]);
     }
-    return 0;
-}
-
-int component_deinit_global_context() {
-    // Nothing
     return 0;
 }
 

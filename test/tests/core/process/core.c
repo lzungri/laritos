@@ -6,7 +6,7 @@
 #include <dstruct/list.h>
 #include <test/test.h>
 #include <process/core.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <component/vrtimer.h>
 #include <irq/types.h>
 #include <sync/spinlock.h>
@@ -24,23 +24,39 @@ static bool is_process_active(pcb_t *pcb) {
 
 static int kproc0(void *data) {
     sleep(3);
-    bool *finish = (bool *) data;
-    *finish = true;
     return 12345;
 }
 
 T(process_kernel_process_exit_status_matches_kfunc_t_return_value) {
-    bool finish1 = false;
-    pcb_t *p1 = process_spawn_kernel_process("high prio 1", kproc0, &finish1,
+    pcb_t *p1 = process_spawn_kernel_process("high prio 1", kproc0, NULL,
                         8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
     tassert(p1 != NULL);
     tassert(is_process_active(p1));
 
-    while (!finish1);
+    int status;
+    process_wait_for(p1, &status);
 
-    tassert(p1->sched.status == PROC_STATUS_ZOMBIE);
+    tassert(status == 12345);
+    irqctx_t pcbdatalock_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbdatalock_ctx);
     tassert(p1->exit_status == 12345);
-    debug("Kernel thread finished");
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdatalock_ctx);
+TEND
+
+static int irqproc(void *data) {
+    sleep(3);
+    return irq_is_enabled();
+}
+
+T(process_irqs_are_enabled_when_executing_kernel_code) {
+    pcb_t *p1 = process_spawn_kernel_process("irq", irqproc, NULL,
+                        8196, CONFIG_SCHED_PRIORITY_MAX_KERNEL);
+    tassert(p1 != NULL);
+    tassert(irq_is_enabled());
+
+    int irq_enabled;
+    process_wait_for(p1, &irq_enabled);
+    tassert(irq_enabled);
 TEND
 
 
@@ -116,17 +132,13 @@ T(process_round_robin_on_high_priority_kernel_threads) {
 TEND
 
 static int test_child(void *data) {
-    bool *terminate = (bool *) data;
-    while (!*terminate) {
-        sleep(1);
-    }
+    sleep(1);
     return 0;
 }
 
 T(process_new_kernel_process_is_child_of_test_process) {
-    bool terminate = false;
-    pcb_t *child = process_spawn_kernel_process("testchild", test_child, &terminate,
-                        8196, process_get_current()->sched.priority);
+    pcb_t *child = process_spawn_kernel_process("testchild", test_child, NULL,
+                        8196, process_get_current()->sched.priority - 1);
     tassert(child != NULL);
     tassert(is_process_active(child));
     tassert(child->parent == process_get_current());
@@ -136,51 +148,38 @@ T(process_new_kernel_process_is_child_of_test_process) {
     tassert(is_process_in(&child->siblings, &process_get_current()->children));
     spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
-    terminate = true;
-    while (child->sched.status != PROC_STATUS_ZOMBIE);
+    process_wait_for(child, NULL);
 TEND
 
 static int test_child1(void *data) {
-    bool *terminate = (bool *) data;
-    while (!*terminate) {
-        sleep(1);
-    }
+    sleep(1);
     return 0;
 }
 
 static int test_parent1(void *data) {
-    bool terminate_child = false;
-    pcb_t *child = process_spawn_kernel_process("test_child", test_child1, &terminate_child,
+    pcb_t *child = process_spawn_kernel_process("test_child", test_child1, NULL,
                         8196, process_get_current()->sched.priority);
-    tassert(child != NULL);
-    tassert(is_process_active(child));
-    tassert(child->parent == process_get_current());
+    bool *success = (bool *) data;
+    *success = child->parent == process_get_current();
 
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-    tassert(is_process_in(&child->siblings, &process_get_current()->children));
+    *success = *success && is_process_in(&child->siblings, &process_get_current()->children);
     spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
-    bool *terminate = (bool *) data;
-    while (!*terminate) {
-        sleep(1);
-    }
-
-    terminate_child = true;
-    while (child->sched.status != PROC_STATUS_ZOMBIE);
-
+    process_wait_for(child, NULL);
     return 0;
 }
 
 T(process_kernel_proc_spawning_new_proc_becomes_its_parent) {
-    bool terminate = false;
-    pcb_t *parent = process_spawn_kernel_process("test_parent", test_parent1, &terminate,
+    bool success = false;
+    pcb_t *parent = process_spawn_kernel_process("test_parent", test_parent1, &success,
                         8196, process_get_current()->sched.priority);
     tassert(parent != NULL);
     tassert(is_process_active(parent));
 
-    terminate = true;
-    while (parent->sched.status != PROC_STATUS_ZOMBIE);
+    process_wait_for(parent, NULL);
+    tassert(success);
 TEND
 
 static int test_child2(void *data) {
@@ -203,13 +202,10 @@ T(process_orphan_proc_grandparent_becomes_new_parent) {
     pcb_t *parent = process_spawn_kernel_process("test_parent", test_parent2, &terminate_child,
                         8196, process_get_current()->sched.priority);
     tassert(parent != NULL);
-    tassert(is_process_active(parent));
 
-    while (parent->sched.status != PROC_STATUS_ZOMBIE) {
-        sleep(1);
-    }
+    int child_pid;
+    process_wait_for(parent, &child_pid);
 
-    uint16_t child_pid = parent->exit_status;
     pcb_t *pcb = NULL;
 
     irqctx_t ctx;
@@ -233,7 +229,7 @@ T(process_orphan_proc_grandparent_becomes_new_parent) {
     spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbs_data_ctx);
 
     terminate_child = true;
-    while (pcb->sched.status != PROC_STATUS_ZOMBIE);
+    process_wait_for(pcb, NULL);
 TEND
 
 static int blocked(void *data) {
@@ -252,7 +248,11 @@ T(process_blocked_state_stats_are_accurate) {
 
         process_wait_for(p, NULL);
 
+        irqctx_t ctx;
+        spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
         uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_BLOCKED]);
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+
         // 30% tolerance for lower limit
         tassert(secs >= (i * 70) / 100);
         tassert(secs <=  i);
@@ -274,7 +274,11 @@ T(process_ready_state_stats_are_accurate) {
     TEST_BUSY_WAIT(5);
     process_kill(p);
 
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
     uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_READY]);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+
     // 30% tolerance for lower limit
     tassert(secs >= (5 * 70) / 100);
     tassert(secs <=  5);
@@ -295,7 +299,11 @@ T(process_running_state_stats_are_accurate) {
     sleep(5);
     process_kill(p);
 
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
     uint8_t secs = OSTICK_TO_SEC(p->stats.ticks_spent[PROC_STATUS_RUNNING]);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+
     // 30% tolerance for lower limit
     tassert(secs >= (5 * 70) / 100);
     tassert(secs <=  5);

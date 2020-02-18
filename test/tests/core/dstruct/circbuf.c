@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <sched/core.h>
 #include <test/test.h>
 #include <test/utils.h>
 #include <dstruct/circbuf.h>
@@ -38,17 +39,18 @@ T(circbuf_reader_blocks_when_no_data_is_available) {
                         8196, process_get_current()->sched.priority - 1);
     tassert(p1 != NULL);
 
-    sleep(3);
+    schedule();
 
+    irqctx_t pcbd_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(p1->sched.status == PROC_STATUS_BLOCKED);
     tassert(is_process_in(&p1->sched.sched_node, &cb.data_avail_cond.blocked));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 
     char buf2[] = "abc";
     circbuf_write(&cb, buf2, sizeof(buf2), true);
 
-    while (p1->sched.status != PROC_STATUS_ZOMBIE) {
-        sleep(1);
-    }
+    process_wait_for(p1, NULL);
 TEND
 
 static int writer(void *data) {
@@ -73,19 +75,28 @@ T(circbuf_writer_blocks_when_there_is_not_enough_space_available) {
 
     sleep(2);
 
+    irqctx_t pcbd_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(p1->sched.status == PROC_STATUS_BLOCKED);
     tassert(is_process_in(&p1->sched.sched_node, &cb.space_avail_cond.blocked));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 
 
     circbuf_read(&cb, buf2, 1, true);
     sleep(1);
+
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(p1->sched.status == PROC_STATUS_BLOCKED);
     tassert(is_process_in(&p1->sched.sched_node, &cb.space_avail_cond.blocked));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 
     circbuf_read(&cb, buf2, 1, true);
     sleep(1);
+
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(p1->sched.status == PROC_STATUS_BLOCKED);
     tassert(is_process_in(&p1->sched.sched_node, &cb.space_avail_cond.blocked));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 
     // After this, there will be enough space for the writer to store the data
     circbuf_read(&cb, buf2, 1, true);

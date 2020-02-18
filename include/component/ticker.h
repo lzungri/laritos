@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <board/board-types.h>
+#include <board/types.h>
 #include <dstruct/list.h>
 #include <component/component.h>
 #include <component/vrtimer.h>
@@ -14,7 +14,7 @@ typedef int (*ticker_cb_t)(struct ticker_comp *t, void *data);
 typedef struct {
     ticker_cb_t cb;
     void *data;
-    struct list_head list;
+    list_head_t list;
 } ticker_cb_info_t;
 
 typedef struct {
@@ -29,7 +29,7 @@ typedef struct ticker_comp {
 
     uint32_t ticks_per_sec;
     vrtimer_comp_t *vrtimer;
-    struct list_head cbs;
+    list_head_t cbs;
 
     ticker_comp_ops_t ops;
 } ticker_comp_t;

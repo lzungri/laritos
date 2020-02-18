@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <stdint.h>
-#include <board/board.h>
+#include <board/core.h>
 #include <core.h>
 #include <component/component.h>
 #include <component/vrtimer.h>

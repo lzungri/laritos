@@ -1,7 +1,7 @@
 #include <log.h>
 
-#include <board/board-types.h>
-#include <cpu/cpu.h>
+#include <board/types.h>
+#include <cpu/core.h>
 #include <dstruct/list.h>
 #include <component/component.h>
 #include <component/intc.h>

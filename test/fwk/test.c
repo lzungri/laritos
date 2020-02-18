@@ -2,11 +2,19 @@
 
 #include <string.h>
 #include <mm/heap.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <test/test.h>
 #include <sync/spinlock.h>
+#include <process/core.h>
 
 #define MAX_FILEPATH_LEN 255
+
+typedef struct {
+    uint16_t failed;
+    uint16_t error;
+    uint16_t passed;
+    uint16_t potential_leaks;
+} test_ctx_t;
 
 int test_main(void *testdescs) {
     test_descriptor_t **tests = testdescs;
@@ -16,7 +24,6 @@ int test_main(void *testdescs) {
     test_ctx_t ctx = { 0 };
     test_descriptor_t **tdptr;
 
-    uint32_t heap_avail = heap_get_available();
 
     time_t suite_start;
     time_t test_start;
@@ -42,6 +49,8 @@ int test_main(void *testdescs) {
             info("%s:", fpath);
         }
 
+        uint32_t heap_avail = heap_get_available();
+
         time_get_ns_rtc_time(&test_start);
 
         testres_t tret = td->func();
@@ -49,6 +58,11 @@ int test_main(void *testdescs) {
         time_get_ns_rtc_time(&end);
         time_sub(&end, &test_start, &duration);
         time_to_hms(&duration, &hours, &mins, &secs);
+
+        if (heap_avail > heap_get_available()) {
+            warn("Test may be leaking %lu bytes of heap", heap_avail - heap_get_available());
+            ctx.potential_leaks++;
+        }
 
         switch(tret) {
         case TEST_ERROR:
@@ -68,11 +82,8 @@ int test_main(void *testdescs) {
             break;
         }
 
-        irqctx_t ctx;
-        irq_disable_local_and_save_ctx(&ctx);
         // Release each zombie child that may have been spawn during the test
-        process_unregister_zombie_children_locked(process_get_current());
-        irq_local_restore_ctx(&ctx);
+        process_unregister_zombie_children(process_get_current());
     }
 
     time_get_ns_rtc_time(&end);
@@ -86,11 +97,7 @@ int test_main(void *testdescs) {
     info("  Passed:   %3u", ctx.passed);
     info("  Total:    %3u", ctx.failed + ctx.error + ctx.passed);
     info("  Duration: %02u:%02u:%02u.%03u", hours, mins, secs, (uint16_t) NS_TO_MS(duration.ns));
+    info("  Leaks:    %3u", ctx.potential_leaks);
     info("--------------------------------------------------");
-
-    if (heap_avail > heap_get_available()) {
-        warn("Tests may be leaking %lu bytes of heap", heap_avail - heap_get_available());
-        heap_dump_info();
-    }
     return 0;
 }

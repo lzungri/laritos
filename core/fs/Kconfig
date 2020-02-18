@@ -1,0 +1,7 @@
+menu "File system"
+
+config FS_MAX_FILENAME_LEN
+    int "Maximum file name length"
+    default 255
+
+endmenu

@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <strtoxl.h>
 #include <irq/types.h>
-#include <board/board-types.h>
-#include <board/board.h>
+#include <board/types.h>
+#include <board/core.h>
 #include <component/component.h>
 
 int board_init(board_info_t *bi) {

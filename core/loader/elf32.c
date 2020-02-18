@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <limits.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <irq/core.h>
 #include <irq/types.h>
 #include <mm/heap.h>
@@ -97,7 +97,8 @@ static inline int populate_addr_and_size(char *section, void **addr, secsize_t *
     return 0;
 }
 
-pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
+static pcb_t *load(void *executable) {
+    Elf32_Ehdr *elf = executable;
     debug_async("Loading ELF32 from 0x%p", elf);
 
     if (!arch_elf32_is_supported(elf)) {
@@ -191,16 +192,10 @@ pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
 
     process_set_priority(pcb, CONFIG_SCHED_PRIORITY_MAX_USER);
 
-    irqctx_t ctx;
-    irq_disable_local_and_save_ctx(&ctx);
-
-    if (process_register_locked(pcb) < 0) {
+    if (process_register(pcb) < 0) {
         error_async("Could not register process at 0x%p", pcb);
-        irq_local_restore_ctx(&ctx);
         goto error_register;
     }
-
-    irq_local_restore_ctx(&ctx);
 
     return pcb;
 
@@ -222,3 +217,12 @@ error_reloc_offset:
 error_pcb:
     return NULL;
 }
+
+static bool can_handle(void *executable) {
+    if (memcmp(executable, ELFMAG, sizeof(ELFMAG) - 1) != 0) {
+        return false;
+    }
+    return ((char *) executable)[EI_CLASS] == ELFCLASS32;
+}
+
+LOADER_MODULE(elf32, can_handle, load);

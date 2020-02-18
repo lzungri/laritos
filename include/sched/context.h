@@ -2,8 +2,8 @@
 
 #include <log.h>
 
-#include <cpu/cpu.h>
-#include <process/core.h>
+#include <cpu/core.h>
+#include <process/types.h>
 #include <arch/context-types.h>
 #include <arch/context.h>
 

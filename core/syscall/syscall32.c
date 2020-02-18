@@ -1,14 +1,14 @@
 #include <log.h>
 
 #include <stdbool.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <process/core.h>
 #include <sched/core.h>
 #include <syscall/syscall.h>
 #include <utils/assert.h>
 #include <utils/utils.h>
 #include <sched/context.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <sync/atomic.h>
 #include <mm/exc-handlers.h>
 

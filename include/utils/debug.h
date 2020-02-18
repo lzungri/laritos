@@ -11,6 +11,10 @@
 #include <sched/context.h>
 #include <sched/core.h>
 #include <sync/atomic.h>
+#include <sync/spinlock.h>
+#include <irq/core.h>
+#include <time/tick.h>
+#include <component/vrtimer.h>
 #include <utils/math.h>
 #include <syscall/syscall-no.h>
 
@@ -20,6 +24,7 @@ static inline void debug_message_delimiter(void) {
 
 static inline void debug_dump_kernel_stats(void) {
     log_always("Kernel stats:");
+    log_always("  OS ticks | %lu", (uint32_t) tick_get_os_ticks());
     log_always("  switches | %lu", atomic32_get(&_laritos.stats.ctx_switches));
 
     int i;
@@ -47,6 +52,9 @@ static inline void debug_dump_processes(void) {
     spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
 
     for_each_process_locked(proc) {
+        irqctx_t ctx;
+        spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+
         if (proc->sched.status == PROC_STATUS_RUNNING) {
             log_always("%-7.7s %2u  %2u    %s   %7s    %3u   %-12.12s   0x%p           -",
                     proc->name, proc->pid, proc->parent != NULL ? proc->parent->pid : 0, proc->kernel ? "K" : "U",
@@ -59,6 +67,8 @@ static inline void debug_dump_processes(void) {
                     arch_debug_get_psr_str_from_ctx(proc->mm.sp_ctx, buf, sizeof(buf)),
                     arch_context_get_retaddr(proc->mm.sp_ctx), proc->mm.sp_ctx);
         }
+
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
     }
 
     spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
@@ -105,7 +115,17 @@ static inline void debug_dump_processes_stats(void) {
 
     log_always("Processes stats:");
     for_each_process_locked(proc) {
+        irqctx_t ctx;
+        spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+
         log_always("  %s (pid=%u)", proc->name, proc->pid);
+
+        time_t t;
+        time_get_monotonic_time(&t);
+        time_sub(&t, &proc->sched.start_time, &t);
+        uint16_t hours, mins, secs;
+        time_to_hms(&t, &hours, &mins, &secs);
+        log_always("      start | %02u:%02u:%02u", hours, mins, secs);
 
         // Number of syscalls stats
         int i;
@@ -122,9 +142,12 @@ static inline void debug_dump_processes_stats(void) {
 
         // Scheduling stats
         // Update with the latest stats
-        sched_update_stats(proc);
+        sched_update_stats_locked(proc);
         log_always("      sched | ready=%lu running=%lu blocked=%lu zombie=%lu", proc->stats.ticks_spent[PROC_STATUS_READY], proc->stats.ticks_spent[PROC_STATUS_RUNNING],
                     proc->stats.ticks_spent[PROC_STATUS_BLOCKED], proc->stats.ticks_spent[PROC_STATUS_ZOMBIE]);
+
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+
         log_always("  -----");
     }
 

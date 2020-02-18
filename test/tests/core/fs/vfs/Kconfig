@@ -1,0 +1,22 @@
+menu "VFS"
+
+config TEST_CORE_FS_VFS_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_FS_VFS_CORE
+    select TEST_CORE_FS_VFS_MOUNT
+    select TEST_CORE_FS_VFS_DENTRY
+
+config TEST_CORE_FS_VFS_CORE
+    bool "core.c"
+    default n
+
+config TEST_CORE_FS_VFS_MOUNT
+    bool "mount.c"
+    default n
+
+config TEST_CORE_FS_VFS_DENTRY
+    bool "dentry.c"
+    default n
+
+endmenu

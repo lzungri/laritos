@@ -1,7 +1,8 @@
 #include <log.h>
 
-#include <board/board.h>
-#include <process/core.h>
+#include <board/core.h>
+#include <process/types.h>
+#include <driver/core.h>
 #include <sched/core.h>
 #include <component/sched.h>
 #include <mm/heap.h>
@@ -39,4 +40,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(coop_fifo, process);
+DRIVER_MODULE(coop_fifo, process);

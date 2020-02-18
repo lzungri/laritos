@@ -2,8 +2,8 @@
 
 #include <stdbool.h>
 #include <core.h>
-#include <board/board.h>
-#include <process/core.h>
+#include <board/core.h>
+#include <process/types.h>
 #include <sched/core.h>
 #include <component/ticker.h>
 #include <component/sched.h>
@@ -62,4 +62,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(preempt_rr, process);
+DRIVER_MODULE(preempt_rr, process);

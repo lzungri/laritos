@@ -9,6 +9,7 @@
 #include <mm/heap.h>
 #include <time/system-tick.h>
 #include <utils/debug.h>
+#include <fs/vfs/core.h>
 
 int shell_main(void *data) {
     pcb_t *proc = process_get_current();
@@ -117,6 +118,21 @@ int shell_main(void *data) {
                     free(p);
                     free(p3);
                     heap_dump_info();
+                    break;
+                case 'f':;
+                    fs_file_t *f = vfs_file_open("/sys/proc/2/start_time", FS_ACCESS_MODE_READ);
+                    if (f == NULL) {
+                        error("Couldn't open /sys/proc/2/start_time");
+                    } else {
+                        char buf[64];
+                        int nbytes = vfs_file_read(f, buf, sizeof(buf), 0);
+                        if (nbytes <= 0) {
+                            error("Error reading /sys/proc/2/start_time");
+                        } else {
+                            info("/sys/proc/2/start_time: %s", buf);
+                        }
+                        vfs_file_close(f);
+                    }
                     break;
                 }
             }

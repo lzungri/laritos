@@ -4,7 +4,7 @@
 #include <process/core.h>
 #include <syscall/syscall.h>
 #include <sched/core.h>
-#include <time/time.h>
+#include <time/core.h>
 
 int syscall_sleep(uint32_t secs) {
     info_async("Putting process with pid=%u to sleep for %lu seconds", process_get_current()->pid, secs);

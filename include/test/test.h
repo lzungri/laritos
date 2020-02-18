@@ -5,13 +5,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <utils/utils.h>
-#include <time/time.h>
-
-typedef struct {
-    uint16_t failed;
-    uint16_t error;
-    uint16_t passed;
-} test_ctx_t;
+#include <time/core.h>
 
 typedef enum {
     TEST_ERROR = -2,

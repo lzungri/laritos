@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include <board/board-types.h>
+#include <board/types.h>
 #include <dstruct/list.h>
 
 #define COMPONENT_MAX_ID_LEN CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES
@@ -57,7 +57,7 @@ typedef struct component {
     /**
      * List of components
      */
-    struct list_head list;
+    list_head_t list;
 
     component_ops_t ops;
 } component_t;
@@ -76,7 +76,6 @@ typedef struct component {
         list_for_each_entry(_c, &_laritos.comps[__i], list)
 
 int component_init_global_context(void);
-int component_deinit_global_context(void);
 void *component_alloc(size_t size);
 int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c));

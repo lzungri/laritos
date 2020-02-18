@@ -5,12 +5,12 @@
 #include <string.h>
 
 #include <core.h>
-#include <board/board-types.h>
-#include <board/board.h>
-#include <driver/driver.h>
+#include <board/types.h>
+#include <board/core.h>
+#include <driver/core.h>
 #include <dstruct/circbuf.h>
 #include <utils/utils.h>
-#include <time/time.h>
+#include <time/core.h>
 #include <time/timeconv.h>
 #include <mm/heap.h>
 #include <dstruct/list.h>

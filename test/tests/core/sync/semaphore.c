@@ -67,6 +67,7 @@ T(semaphore_acquire_blocks_current_thread_if_sem_not_available) {
     sem_acquire(&sem);
     debug("Semaphore acquired");
     tassert(sem.count == 0);
+    process_wait_for(p1, NULL);
 TEND
 
 static sem_t sems_012[4];
@@ -102,9 +103,12 @@ T(semaphore_012_sequence) {
 
     schedule();
 
+    irqctx_t pcbd_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(is_process_in(&p0->sched.sched_node, &sems_012[0].cond.blocked));
     tassert(is_process_in(&p1->sched.sched_node, &sems_012[1].cond.blocked));
     tassert(is_process_in(&p2->sched.sched_node, &sems_012[2].cond.blocked));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 
     sem_release(&sems_012[0]);
     sem_acquire(&sems_012[3]);
@@ -139,22 +143,31 @@ T(semaphore_blocked_proc_with_the_highest_priority_acquires_semaphore_after_it_i
     tassert(p2 != NULL);
     schedule();
 
+    irqctx_t pcbd_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(is_process_in(&p0->sched.sched_node, &sem.cond.blocked));
     tassert(is_process_in(&p1->sched.sched_node, &sem.cond.blocked));
     tassert(is_process_in(&p2->sched.sched_node, &sem.cond.blocked));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 
     sem_release(&sem);
     sleep(1);
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(p2->sched.status == PROC_STATUS_ZOMBIE);
     tassert(p1->sched.status != PROC_STATUS_ZOMBIE);
     tassert(p0->sched.status != PROC_STATUS_ZOMBIE);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 
     sem_release(&sem);
     sleep(1);
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(p1->sched.status == PROC_STATUS_ZOMBIE);
     tassert(p0->sched.status != PROC_STATUS_ZOMBIE);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 
     sem_release(&sem);
     sleep(1);
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
     tassert(p0->sched.status == PROC_STATUS_ZOMBIE);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbd_ctx);
 TEND

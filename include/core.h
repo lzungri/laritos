@@ -1,12 +1,12 @@
 #pragma once
 
 #include <stdbool.h>
-#include <board/board-types.h>
+#include <board/types.h>
 #include <cpu/cpu-local.h>
 #include <component/component.h>
 #include <component/cpu.h>
-#include <driver/driver.h>
-#include <time/time.h>
+#include <driver/core.h>
+#include <time/core.h>
 #include <dstruct/list.h>
 #include <mm/slab.h>
 #include <time/tick.h>
@@ -14,7 +14,8 @@
 #include <sync/atomic.h>
 #include <arch/core.h>
 #include <generated/autoconf.h>
-#include "irq/types.h"
+#include <irq/types.h>
+#include <fs/vfs/types.h>
 
 struct pcb;
 typedef struct {
@@ -26,16 +27,27 @@ typedef struct {
     /**
      * List of processes in the system
      */
-    struct list_head pcbs;
+    list_head_t pcbs;
 
     /**
      * Spinlock used to synchronize the _laritos.proc.pcbs list
+     *
+     * Lock ordering (if both locks are needed):
+     *      pcbs_lock
+     *          pcbs_data_lock
      */
     spinlock_t pcbs_lock;
 
     /**
      * Spinlock used to protect any pcb_t data structure that may be changed by
-     * two or more processors at the same time
+     * two or more processors at the same time.
+     *
+     * Ideally, for performance reasons, there should be one lock per pcb_t, but this greatly
+     * simplifies the code and reduces synchronization complexity.
+     *
+     * Lock ordering (if both locks are needed):
+     *      pcbs_lock
+     *          pcbs_data_lock
      */
     spinlock_t pcbs_data_lock;
 
@@ -58,7 +70,7 @@ typedef struct {
     /**
      * List of READY processes per cpu
      */
-    DEF_CPU_LOCAL(struct list_head, ready_pcbs);
+    DEF_CPU_LOCAL(list_head_t, ready_pcbs);
 
     /**
      * Indicates whether or not the OS should schedule the next 'ready' process
@@ -75,6 +87,14 @@ typedef struct {
     atomic32_t ctx_switches;
     atomic32_t nirqs[CONFIG_INT_MAX_IRQS];
 } laritos_stats_t;
+
+typedef struct {
+    list_head_t fstypes;
+    list_head_t mounts;
+    fs_dentry_t *root;
+    fs_dentry_t *sysfs_root;
+    fs_dentry_t *proc_root;
+} laritos_fs_t;
 
 /**
  * laritOS Global context
@@ -98,7 +118,22 @@ typedef struct {
     /**
      * List of components grouped by type (for performance reasons)
      */
-    struct list_head comps[COMP_TYPE_LEN];
+    list_head_t comps[COMP_TYPE_LEN];
+
+    /**
+     * List of loaded modules
+     */
+    list_head_t modules;
+
+    /**
+     * List of supported drivers
+     */
+    list_head_t drivers;
+
+    /**
+     * List of supported loader formats (e.g. elf32, a.out, etc)
+     */
+    list_head_t loaders;
 
     /**
      * CPU shortcuts, will be initialized by cpu_init()
@@ -110,6 +145,7 @@ typedef struct {
     laritos_process_t proc;
     laritos_sched_t sched;
     laritos_stats_t stats;
+    laritos_fs_t fs;
 
     int32_t rndseed;
 

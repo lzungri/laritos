@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <dstruct/list.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <cpu/cpu-local.h>
 #include <core.h>
 #include <mm/slab.h>
@@ -9,11 +9,15 @@
 #include <mm/spprot.h>
 #include <process/status.h>
 #include <process/core.h>
+#include <process/sysfs.h>
 #include <sched/core.h>
 #include <sched/context.h>
 #include <sync/spinlock.h>
 #include <sync/condition.h>
 #include <sync/atomic.h>
+#include <fs/vfs/types.h>
+#include <fs/vfs/core.h>
+#include <time/core.h>
 #include <utils/utils.h>
 #include <generated/autoconf.h>
 
@@ -22,18 +26,13 @@ int process_init_global_context(void) {
     spinlock_init(&_laritos.proc.pcbs_lock);
     spinlock_init(&_laritos.proc.pcbs_data_lock);
 
-    struct list_head *l;
+    list_head_t *l;
     CPU_LOCAL_FOR_EACH_CPU_VAR(_laritos.sched.ready_pcbs, l) {
         INIT_LIST_HEAD(l);
     }
 
     _laritos.proc.pcb_slab = slab_create(CONFIG_PROCESS_MAX_CONCURRENT_PROCS, sizeof(pcb_t));
     return _laritos.proc.pcb_slab != NULL ? 0 : -1;
-}
-
-int process_deinit_global_context(void) {
-    slab_destroy(_laritos.proc.pcb_slab);
-    return 0;
 }
 
 void process_assign_pid(pcb_t *pcb) {
@@ -51,53 +50,83 @@ int process_free(pcb_t *pcb) {
     return 0;
 }
 
-static void free_process_slab(refcount_t *ref) {
+/**
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held. To do so, make
+ * sure you protect ref_dec(&pcb->refcnt) with the lock
+ */
+static void free_process_slab_locked(refcount_t *ref) {
     pcb_t *pcb = container_of(ref, pcb_t, refcnt);
     process_free(pcb);
 }
 
 pcb_t *process_alloc(void) {
     pcb_t *pcb = slab_alloc(_laritos.proc.pcb_slab);
-    if (pcb != NULL) {
-        memset(pcb, 0, sizeof(pcb_t));
-        INIT_LIST_HEAD(&pcb->sched.pcb_node);
-        INIT_LIST_HEAD(&pcb->sched.sched_node);
-        INIT_LIST_HEAD(&pcb->children);
-        INIT_LIST_HEAD(&pcb->siblings);
-        condition_init(&pcb->parent_waiting_cond);
-        ref_init(&pcb->refcnt, free_process_slab);
-        int i;
-        for (i = 0; i < ARRAYSIZE(pcb->stats.syscalls); i++) {
-            atomic32_init(&pcb->stats.syscalls[i], 0);
-        }
-        pcb->sched.status = PROC_STATUS_NOT_INIT;
-        process_set_name(pcb, "?");
-        process_assign_pid(pcb);
+    if (pcb == NULL) {
+        error_async("Couldn't allocate memory for process");
+        return NULL;
     }
+
+    memset(pcb, 0, sizeof(pcb_t));
+    INIT_LIST_HEAD(&pcb->sched.pcb_node);
+    INIT_LIST_HEAD(&pcb->sched.sched_node);
+    INIT_LIST_HEAD(&pcb->children);
+    INIT_LIST_HEAD(&pcb->siblings);
+    condition_init(&pcb->parent_waiting_cond);
+    ref_init(&pcb->refcnt, free_process_slab_locked);
+    int i;
+    for (i = 0; i < ARRAYSIZE(pcb->stats.syscalls); i++) {
+        atomic32_init(&pcb->stats.syscalls[i], 0);
+    }
+    pcb->sched.status = PROC_STATUS_NOT_INIT;
+    process_set_name(pcb, "?");
+    process_assign_pid(pcb);
+    pcb->cwd[0] = '/';
+
+    pcb->fs.fds_slab = slab_create(CONFIG_PROCESS_MAX_OPEN_FILES, sizeof(fs_file_t));
+    if (pcb->fs.fds_slab == NULL) {
+        error_async("Couldn't allocate memory for process fd slab");
+        goto error_fds;
+    }
+
     return pcb;
+
+error_fds:
+    slab_free(_laritos.proc.pcb_slab, pcb);
+    return NULL;
 }
 
-int process_register_locked(pcb_t *pcb) {
+int process_register(pcb_t *pcb) {
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
+    irqctx_t datactx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &datactx);
+
     debug_async("Registering process with pid=%u, priority=%u", pcb->pid, pcb->sched.priority);
 
-    irqctx_t ctx;
     if (_laritos.process_mode) {
         pcb_t *parent = process_get_current();
         pcb->parent = parent;
 
-        spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
         list_add_tail(&pcb->siblings, &parent->children);
-        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
-
         // Parent pcb is now referencing its child, increase ref counter
         ref_inc(&pcb->refcnt);
     }
 
-    spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
+    if (_laritos.components_loaded) {
+        time_get_monotonic_time(&pcb->sched.start_time);
+    }
+
     list_add_tail(&pcb->sched.pcb_node, &_laritos.proc.pcbs);
-    spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
 
     sched_move_to_ready_locked(pcb);
+
+    if (process_sysfs_create(pcb) < 0) {
+        error("Error creating sysfs entries for pid=%u", pcb->pid);
+    }
+
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &datactx);
+    spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
+
     return 0;
 }
 
@@ -109,19 +138,25 @@ int process_release_zombie_resources_locked(pcb_t *pcb) {
 
     debug_async("Releasing zombie resources for pid=%u, exit status=%d", pcb->pid, pcb->exit_status);
 
-    irqctx_t ctx;
-    spinlock_acquire(&_laritos.proc.pcbs_lock, &ctx);
-    list_del(&pcb->sched.pcb_node);
-    spinlock_release(&_laritos.proc.pcbs_lock, &ctx);
+    if (process_sysfs_remove(pcb) < 0) {
+        error("Error removing sysfs entries for pid=%u", pcb->pid);
+    }
 
+    list_del(&pcb->sched.pcb_node);
     list_del(&pcb->sched.sched_node);
 
     free(pcb->mm.imgaddr);
     pcb->mm.imgaddr = NULL;
 
+    slab_destroy(pcb->fs.fds_slab);
+    pcb->fs.fds_slab = NULL;
+
     return 0;
 }
 
+/**
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held
+ */
 static inline void handle_dead_child_locked(pcb_t *pcb, int *status) {
     if (status != NULL) {
         *status = pcb->exit_status;
@@ -132,7 +167,7 @@ static inline void handle_dead_child_locked(pcb_t *pcb, int *status) {
     ref_dec(&pcb->refcnt);
 }
 
-void process_unregister_zombie_children_locked(pcb_t *pcb) {
+void process_unregister_zombie_children(pcb_t *pcb) {
     pcb_t *child;
     pcb_t *temp;
 
@@ -163,10 +198,9 @@ void process_kill_locked(pcb_t *pcb) {
 
 void process_kill(pcb_t *pcb) {
     irqctx_t ctx;
-
-    irq_disable_local_and_save_ctx(&ctx);
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
     process_kill_locked(pcb);
-    irq_local_restore_ctx(&ctx);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 }
 
 void process_kill_and_schedule(pcb_t *pcb) {
@@ -176,11 +210,11 @@ void process_kill_and_schedule(pcb_t *pcb) {
 
 int process_set_priority(pcb_t *pcb, uint8_t priority) {
     irqctx_t ctx;
-    irq_disable_local_and_save_ctx(&ctx);
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
 
     if (!pcb->kernel && priority < CONFIG_SCHED_PRIORITY_MAX_USER) {
         error_async("Invalid priority for a user process, max priority = %u", CONFIG_SCHED_PRIORITY_MAX_USER);
-        irq_local_restore_ctx(&ctx);
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
         return -1;
     }
 
@@ -197,18 +231,28 @@ int process_set_priority(pcb_t *pcb, uint8_t priority) {
         _laritos.sched.need_sched = true;
     }
 
-    irq_local_restore_ctx(&ctx);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
     return 0;
 }
 
+void process_exit(int exit_status) {
+    pcb_t *pcb = process_get_current();
+    irqctx_t pcbdatalock_ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &pcbdatalock_ctx);
+    pcb->exit_status = exit_status;
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &pcbdatalock_ctx);
+
+    debug_async("Exiting process pid=%u, exitcode=%d", pcb->pid, pcb->exit_status);
+
+    vfs_file_close_all_for_cur_process();
+    process_kill_and_schedule(pcb);
+}
+
 static void kernel_main_wrapper(kproc_main_t main, void *data) {
     verbose_async("Starting kernel_main_wrapper(main=0x%p, data=0x%p)", main, data);
-    pcb_t *pcb = process_get_current();
-    pcb->exit_status = main(data);
-    debug_async("Exiting kernel process pid=%u, exitcode=%d", pcb->pid, pcb->exit_status);
-    process_kill_and_schedule(pcb);
-
+    int status = main(data);
+    process_exit(status);
     // Execution will never reach this point
 }
 
@@ -258,16 +302,10 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
 
     process_set_priority(pcb, priority);
 
-    irqctx_t ctx;
-    irq_disable_local_and_save_ctx(&ctx);
-
-    if (process_register_locked(pcb) < 0) {
+    if (process_register(pcb) < 0) {
         error_async("Could not register process loaded at 0x%p", pcb);
-        irq_local_restore_ctx(&ctx);
         goto error_pcbreg;
     }
-
-    irq_local_restore_ctx(&ctx);
 
     return pcb;
 

@@ -1,7 +1,7 @@
 #include <log.h>
 
 #include <stdint.h>
-#include <cpu/cpu.h>
+#include <cpu/core.h>
 #include <test/test.h>
 #include <utils/random.h>
 #include <utils/math.h>

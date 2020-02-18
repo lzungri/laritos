@@ -1,8 +1,7 @@
 #pragma once
 
-#include <stdint.h>
+#include <stdbool.h>
 #include <irq/core.h>
-#include <sync/cmpxchg.h>
 #include <arch/spinlock.h>
 #include <generated/autoconf.h>
 
@@ -15,32 +14,21 @@
  *    prevent local context switches.
  */
 
-static inline int spinlock_init(spinlock_t *lock) {
-#ifdef CONFIG_SMP
-    arch_spinlock_set(lock, 0);
-#endif
-    return 0;
-}
+#define SPINLOCK_KERNEL_OWNER ((void *) -1)
 
-static inline int spinlock_acquire(spinlock_t *lock, irqctx_t *ctx) {
-    // Only disable irq locally. If the irq is handled by another processor,
-    // it doesn't block the cur processor holding the lock, thus it can
-    // eventually release it
-    if (irq_disable_local_and_save_ctx(ctx) < 0) {
-        return -1;
-    }
-#ifdef CONFIG_SMP
-    if (arch_spinlock_acquire(lock) < 0) {
-        irq_local_restore_ctx(ctx);
-        return -1;
-    }
-#endif
-    return 0;
-}
+struct pcb;
 
-static inline int spinlock_release(spinlock_t *lock, irqctx_t *ctx) {
+typedef struct {
 #ifdef CONFIG_SMP
-    arch_spinlock_release(lock);
+    arch_spinlock_t lock;
 #endif
-    return irq_local_restore_ctx(ctx);
-}
+    struct pcb *owner;
+} spinlock_t;
+
+
+int spinlock_init(spinlock_t *lock);
+int spinlock_acquire(spinlock_t *lock, irqctx_t *ctx);
+bool spinlock_trylock(spinlock_t *lock, irqctx_t *ctx);
+int spinlock_release(spinlock_t *lock, irqctx_t *ctx);
+bool spinlock_is_locked(spinlock_t *lock);
+bool spinlock_owned_by_me(spinlock_t *lock);

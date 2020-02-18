@@ -130,14 +130,14 @@ T(bitsetslab_large_num_of_allocs) {
         tassert(v[i] != NULL);
         tassert((char *) v[i] == slab->data + i * sizeof(uint32_t));
         tassert(slab_get_avail_elems(slab) == slab->total_elems - i - 1);
-        tassert(is_slab_avail(slab, i) == false);
+        tassert(slab_is_taken(slab, i));
     }
     tassert(slab_get_avail_elems(slab) == 0);
 
     for (i = slab->total_elems - 1; i >= 0; i--) {
         slab_free(slab, v[i]);
         tassert(slab_get_avail_elems(slab) == slab->total_elems - i);
-        tassert(is_slab_avail(slab, i) == true);
+        tassert(!slab_is_taken(slab, i));
     }
     tassert(slab_get_avail_elems(slab) == slab->total_elems);
 

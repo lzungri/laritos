@@ -4,6 +4,7 @@
 #include <component/component.h>
 #include <component/logger.h>
 #include <component/stream.h>
+#include <driver/core.h>
 #include <mm/heap.h>
 
 static int log_write(logger_comp_t *l, const void *buf, size_t n, bool blocking) {
@@ -48,4 +49,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(generic_logger, process);
+DRIVER_MODULE(generic_logger, process);

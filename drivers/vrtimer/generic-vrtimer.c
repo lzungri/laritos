@@ -39,4 +39,4 @@ fail:
     return -1;
 }
 
-DEF_DRIVER_MANAGER(generic_vrtimer, process);
+DRIVER_MODULE(generic_vrtimer, process);
