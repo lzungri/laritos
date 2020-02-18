@@ -17,6 +17,7 @@
 #include <sync/atomic.h>
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
+#include <time/core.h>
 #include <utils/utils.h>
 #include <generated/autoconf.h>
 
@@ -109,6 +110,10 @@ int process_register(pcb_t *pcb) {
         list_add_tail(&pcb->siblings, &parent->children);
         // Parent pcb is now referencing its child, increase ref counter
         ref_inc(&pcb->refcnt);
+    }
+
+    if (_laritos.components_loaded) {
+        time_get_monotonic_time(&pcb->sched.start_time);
     }
 
     list_add_tail(&pcb->sched.pcb_node, &_laritos.proc.pcbs);

@@ -46,6 +46,11 @@ typedef struct {
     uint8_t priority;
 
     /**
+     * Monotonic start time in nano seconds
+     */
+    time_t start_time;
+
+    /**
      * Node used to link a process to the _laritos.proc.pcbs list
      *
      * Protected by _laritos.proc.pcbs_lock
