@@ -1,0 +1,12 @@
+menu "Pseudofs"
+
+config TEST_CORE_FS_PSEUDOFS_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_FS_PSEUDOFS_CORE
+
+config TEST_CORE_FS_PSEUDOFS_CORE
+    bool "core.c"
+    default n
+
+endmenu

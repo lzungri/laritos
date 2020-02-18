@@ -4,12 +4,9 @@ config TEST_CORE_FS_ALL
     bool "Select all"
     default n
     select TEST_CORE_FS_VFS_ALL
-    select TEST_CORE_FS_PSEUDOFS
+    select TEST_CORE_FS_PSEUDOFS_ALL
 
 source "test/tests/core/fs/vfs/Kconfig"
-
-config TEST_CORE_FS_PSEUDOFS
-    bool "pseudofs.c"
-    default n
+source "test/tests/core/fs/pseudofs/Kconfig"
 
 endmenu

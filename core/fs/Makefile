@@ -1,2 +1,2 @@
-obj-y += pseudofs.o
 obj-y += vfs/
+obj-y += pseudofs/
