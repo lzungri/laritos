@@ -8,13 +8,15 @@
 #include <process/core.h>
 
 static fs_file_t *vfs_file_alloc(fs_dentry_t *dentry) {
-    slab_t *slab = process_get_current()->fs.fds_slab;
+    pcb_t *pcb = process_get_current();
+    slab_t *slab = pcb->fs.fds_slab;
     fs_file_t *f = slab_alloc(slab);
     if (f == NULL) {
         error("Max number of file descriptors reached");
         return NULL;
     }
     f->dentry = dentry;
+    f->pcb = pcb;
     verbose("new fd=%lu for file='%s'", slab_get_slab_position(slab, f), dentry->name);
     return f;
 }

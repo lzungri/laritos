@@ -32,7 +32,9 @@ typedef struct {
     int (*listdir)(struct fs_file *f, uint32_t offset, fs_listdir_t *dirlist, uint32_t listlen);
 } fs_file_ops_t;
 
+struct pcb;
 typedef struct fs_file {
+    struct pcb *pcb;
     struct fs_dentry *dentry;
     fs_access_mode_t mode;
     bool opened;
