@@ -4,9 +4,14 @@ config TEST_CORE_FS_PSEUDOFS_ALL
     bool "Select all"
     default n
     select TEST_CORE_FS_PSEUDOFS_CORE
+    select TEST_CORE_FS_PSEUDOFS_FILE
 
 config TEST_CORE_FS_PSEUDOFS_CORE
     bool "core.c"
+    default n
+
+config TEST_CORE_FS_PSEUDOFS_FILE
+    bool "file.c"
     default n
 
 endmenu
