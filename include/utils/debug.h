@@ -13,6 +13,8 @@
 #include <sync/atomic.h>
 #include <sync/spinlock.h>
 #include <irq/core.h>
+#include <time/tick.h>
+#include <component/vrtimer.h>
 #include <utils/math.h>
 #include <syscall/syscall-no.h>
 
@@ -117,6 +119,13 @@ static inline void debug_dump_processes_stats(void) {
         spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
 
         log_always("  %s (pid=%u)", proc->name, proc->pid);
+
+        time_t t;
+        time_get_monotonic_time(&t);
+        time_sub(&t, &proc->sched.start_time, &t);
+        uint16_t hours, mins, secs;
+        time_to_hms(&t, &hours, &mins, &secs);
+        log_always("      start | %02u:%02u:%02u", hours, mins, secs);
 
         // Number of syscalls stats
         int i;
