@@ -24,7 +24,7 @@ static fs_dentry_t *_do_create(fs_dentry_t *parent, char *name, fs_access_mode_t
         return NULL;
     }
 
-    verbose("Creating %s/%s", parent->name, name);
+    verbose("Creating %s/%s with mode=0x%0x", parent->name, name, mode);
 
     if (vfs_dentry_lookup_from(parent, name) != NULL) {
         error("File %s already exists", name);

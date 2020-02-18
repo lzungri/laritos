@@ -13,6 +13,8 @@ int pseudofs_def_open(fs_inode_t *inode, fs_file_t *f);
 int pseudofs_def_close(fs_inode_t *inode, fs_file_t *f);
 
 fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname, fs_access_mode_t mode, fs_file_ops_t *fops);
+fs_dentry_t *pseudofs_create_custom_ro_file(fs_dentry_t *parent, char *fname, int (*read)(fs_file_t *, void *, size_t, uint32_t));
+fs_dentry_t *pseudofs_create_custom_wo_file(fs_dentry_t *parent, char *fname, int (*write)(fs_file_t *, void *, size_t, uint32_t));
 
 /**
  * WARNING: Not thread-safe. No synchronization mechanism will be used to protect
@@ -22,10 +24,16 @@ fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname, fs_access_mo
  */
 fs_dentry_t *pseudofs_create_bin_file(fs_dentry_t *parent, char *fname, fs_access_mode_t mode, void *value, size_t size);
 
+int pseudofs_write_to_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset);
+int pseudofs_read_from_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset);
+
 #define DECL_PSEUDOFS_FILE_FUNC(_type) \
     static inline fs_dentry_t *pseudofs_create_ ## _type ##_file(fs_dentry_t *parent, char *fname, fs_access_mode_t mode, void *value) { \
         return pseudofs_create_bin_file(parent, fname, mode, value, sizeof(_type)); \
     }
+
+// Just an alias to bin pseudo file
+#define pseudofs_create_str_file pseudofs_create_bin_file
 
 DECL_PSEUDOFS_FILE_FUNC(bool)
 DECL_PSEUDOFS_FILE_FUNC(uint8_t)

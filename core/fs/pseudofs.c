@@ -109,30 +109,66 @@ fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname,
     return f;
 }
 
-static int read_bin(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    size_t data_size = (size_t) f->data1;
-    if (f->data0 == NULL) {
+fs_dentry_t *pseudofs_create_custom_ro_file(fs_dentry_t *parent, char *fname,
+        int (*read)(fs_file_t *, void *, size_t, uint32_t)) {
+    fs_file_ops_t fops = {
+        .open = pseudofs_def_open,
+        .close = pseudofs_def_close,
+        .read = read,
+    };
+    fs_dentry_t *d = pseudofs_create_file(parent, fname, FS_ACCESS_MODE_READ, &fops);
+    if (d == NULL) {
+        error("Failed to create read-only '%s' sysfs file", fname);
+        return NULL;
+    }
+    return d;
+}
+
+fs_dentry_t *pseudofs_create_custom_wo_file(fs_dentry_t *parent, char *fname,
+        int (*write)(fs_file_t *, void *, size_t, uint32_t)) {
+    fs_file_ops_t fops = {
+        .open = pseudofs_def_open,
+        .close = pseudofs_def_close,
+        .write = write,
+    };
+    fs_dentry_t *d = pseudofs_create_file(parent, fname, FS_ACCESS_MODE_WRITE, &fops);
+    if (d == NULL) {
+        error("Failed to create write-only '%s' sysfs file", fname);
+        return NULL;
+    }
+    return d;
+}
+
+int pseudofs_write_to_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset) {
+    if (from == NULL) {
         return 0;
     }
-    if (offset >= data_size) {
+    if (offset >= fromlen) {
         return 0;
     }
-    size_t len = min(data_size - offset, blen);
-    memcpy(buf, (char *) f->data0 + offset, len);
+    size_t len = min(fromlen - offset, tolen);
+    memcpy(to, (char *) from + offset, len);
     return len;
 }
 
-static int write_bin(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    size_t data_size = (size_t) f->data1;
-    if (f->data0 == NULL) {
+int pseudofs_read_from_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset) {
+    if (to == NULL) {
         return 0;
     }
-    if (offset >= data_size) {
+    if (offset >= tolen) {
         return 0;
     }
-    size_t len = min(data_size - offset, blen);
-    memcpy((char *) f->data0 + offset, buf, len);
+    size_t len = min(tolen - offset, fromlen);
+    memcpy((char *) to + offset, from, len);
     return len;
+}
+
+static int read_bin(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    return pseudofs_write_to_buf(buf, blen, f->data0, (size_t) f->data1, offset);
+}
+
+static int write_bin(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    return pseudofs_read_from_buf(f->data0, (size_t) f->data1, buf, blen, offset);
 }
 
 fs_dentry_t *pseudofs_create_bin_file(fs_dentry_t *parent, char *fname,
