@@ -131,6 +131,11 @@ typedef struct {
     list_head_t drivers;
 
     /**
+     * List of supported loader formats (e.g. elf32, a.out, etc)
+     */
+    list_head_t loaders;
+
+    /**
      * CPU shortcuts, will be initialized by cpu_init()
      */
     DEF_CPU_LOCAL(cpu_t *, cpu);

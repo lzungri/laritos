@@ -6,6 +6,7 @@
 #include <component/component.h>
 #include <process/core.h>
 #include <module/core.h>
+#include <loader/loader.h>
 #include <fs/vfs/core.h>
 #include <sched/core.h>
 #include <sync/atomic.h>
@@ -19,6 +20,10 @@ static int initialize_global_context(void) {
     }
 
     if (process_init_global_context() < 0) {
+        while(1);
+    }
+
+    if (loader_init_global_context() < 0) {
         while(1);
     }
 
