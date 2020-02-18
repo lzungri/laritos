@@ -97,7 +97,8 @@ static inline int populate_addr_and_size(char *section, void **addr, secsize_t *
     return 0;
 }
 
-pcb_t *loader_elf32_load_from_memory(Elf32_Ehdr *elf) {
+static pcb_t *load(void *executable) {
+    Elf32_Ehdr *elf = executable;
     debug_async("Loading ELF32 from 0x%p", elf);
 
     if (!arch_elf32_is_supported(elf)) {
@@ -216,3 +217,12 @@ error_reloc_offset:
 error_pcb:
     return NULL;
 }
+
+static bool can_handle(void *executable) {
+    if (memcmp(executable, ELFMAG, sizeof(ELFMAG) - 1) != 0) {
+        return false;
+    }
+    return ((char *) executable)[EI_CLASS] == ELFCLASS32;
+}
+
+LOADER_MODULE(elf32, can_handle, load);
