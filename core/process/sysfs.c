@@ -5,6 +5,20 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
+#include <time/core.h>
+
+static int start_time_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    time_t t;
+    time_get_monotonic_time(&t);
+    time_sub(&t, &f->pcb->sched.start_time, &t);
+    uint16_t hours, mins, secs;
+    time_to_hms(&t, &hours, &mins, &secs);
+
+    char start[16];
+    int strlen = snprintf(start, sizeof(start), "%02u:%02u:%02u", hours, mins, secs);
+
+    return pseudofs_write_to_buf(buf, blen, start, strlen + 1, offset);
+}
 
 int process_sysfs_create(pcb_t *pcb) {
     char buf[CONFIG_FS_MAX_FILENAME_LEN];
@@ -16,7 +30,7 @@ int process_sysfs_create(pcb_t *pcb) {
         return -1;
     }
 
-    if (pseudofs_create_bin_file(dir, "name", FS_ACCESS_MODE_READ,
+    if (pseudofs_create_str_file(dir, "name", FS_ACCESS_MODE_READ,
             pcb->name, sizeof(pcb->name)) == NULL) {
         error("Failed to create 'name' sysfs file for pid=%u", pcb->pid);
     }
@@ -26,11 +40,11 @@ int process_sysfs_create(pcb_t *pcb) {
     if (pseudofs_create_bool_file(dir, "kernel", FS_ACCESS_MODE_READ, &pcb->kernel) == NULL) {
         error("Failed to create 'kernel' sysfs file for pid=%u", pcb->pid);
     }
-    if (pseudofs_create_bin_file(dir, "cmd", FS_ACCESS_MODE_READ,
+    if (pseudofs_create_str_file(dir, "cmd", FS_ACCESS_MODE_READ,
             pcb->cmd, sizeof(pcb->cmd)) == NULL) {
         error("Failed to create 'cmd' sysfs file for pid=%u", pcb->pid);
     }
-    if (pseudofs_create_bin_file(dir, "cwd", FS_ACCESS_MODE_READ,
+    if (pseudofs_create_str_file(dir, "cwd", FS_ACCESS_MODE_READ,
             pcb->cwd, sizeof(pcb->cwd)) == NULL) {
         error("Failed to create 'cwd' sysfs file for pid=%u", pcb->pid);
     }
@@ -45,6 +59,10 @@ int process_sysfs_create(pcb_t *pcb) {
     if (pseudofs_create_uint32_t_file(dir, "blocked", FS_ACCESS_MODE_READ,
             &pcb->stats.ticks_spent[PROC_STATUS_BLOCKED]) == NULL) {
         error("Failed to create 'blocked' sysfs file for pid=%u", pcb->pid);
+    }
+
+    if (pseudofs_create_custom_ro_file(dir, "start_time", start_time_read) == NULL) {
+        error("Failed to create 'start_time' sysfs file for pid=%u", pcb->pid);
     }
 
     return 0;
