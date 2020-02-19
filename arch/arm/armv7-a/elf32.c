@@ -81,6 +81,12 @@ int arch_elf32_relocate_symbol(void *imgaddr, const Elf32_Rel *rel, const Elf32_
         // Update the got associated with that symbol to point to the right offset starting from imgbase
         got[gotidx] = (uint32_t) (imgbase + sym->st_value);
         break;
+    case R_ARM_ABS32:;
+        // Get the relocation address
+        uint32_t *addr = (uint32_t *) (imgbase + rel->r_offset);
+        // Add the imgbase to the offset
+        *addr += (uint32_t) imgbase;
+        break;
     default:
         error("Unknown relocation type=0x%lX at offset=0x%lX for symbol value=0x%lX", ELF32_R_TYPE(rel->r_info), rel->r_offset, sym->st_value);
         return -1;
