@@ -33,6 +33,7 @@ static syscall_entry_t systable[] = {
     DEF_SCE(SYSCALL_SET_PRIORITY, syscall_set_priority),
     DEF_SCE(SYSCALL_SET_PROCESS_NAME, syscall_set_process_name),
     DEF_SCE(SYSCALL_READLINE, syscall_readline),
+    DEF_SCE(SYSCALL_GETC, syscall_getc),
 };
 
 

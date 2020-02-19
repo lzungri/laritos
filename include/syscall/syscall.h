@@ -22,3 +22,4 @@ int syscall_usleep(uint32_t usecs);
 int syscall_set_priority(uint8_t priority);
 int syscall_set_process_name(char *name);
 int syscall_readline(char *buf, int buflen);
+int syscall_getc(void);
