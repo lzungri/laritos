@@ -45,7 +45,7 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
     if (arch_context_is_kernel(ctx)) {
         if (_laritos.process_mode) {
             error("Cannot issue a system call in a kernel process");
-            exc_handle_process_exception(process_get_current());
+            exc_handle_generic_process_error(process_get_current(), ctx);
             // Execution will never reach this point
         } else {
             fatal("ABORT: Cannot issue a system call while in kernel mode");
@@ -57,7 +57,7 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
 
     if (sysno >= ARRAYSIZE(systable) || systable[sysno].call == NULL) {
         error_async("Unrecognized or unsupported system call #%d", sysno);
-        process_kill_and_schedule(pcb);
+        exc_handle_generic_process_error(pcb, ctx);
         // Execution will never reach this point
     }
 
