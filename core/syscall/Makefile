@@ -10,3 +10,4 @@ obj-y += time.o
 obj-y += sleep.o
 obj-y += priority.o
 obj-y += procname.o
+obj-y += readline.o
