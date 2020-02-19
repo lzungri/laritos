@@ -66,6 +66,8 @@ static int spawn_system_processes(void) {
         return -1;
     }
 
+#ifdef CONFIG_TEST_ENABLED
+    log_always("***** Running in test mode *****");
     // TODO Remove this process, this is just for debugging
     info("Spawning shell process");
     int shell_main(void *data);
@@ -75,8 +77,6 @@ static int spawn_system_processes(void) {
         return -1;
     };
 
-#ifdef CONFIG_TEST_ENABLED
-    log_always("***** Running in test mode *****");
     info("Spawning test process");
     if (process_spawn_kernel_process("test", test_main, __tests_start,
             CONFIG_PROCESS_TEST_STACK_SIZE, CONFIG_SCHED_PRIORITY_MAX_USER - 2) == NULL) {
@@ -84,13 +84,9 @@ static int spawn_system_processes(void) {
         return -1;
     };
 #else
-    // Launch a few processes for testing
     // TODO: This code will disappear once we implement a shell and file system
-    int i;
-    for (i = 0; i < 5; i++) {
-        if (loader_load_executable_from_memory(0) == NULL) {
-            error("Failed to load app #%d", i);
-        }
+    if (loader_load_executable_from_memory(0) == NULL) {
+        error("Failed to load app #0");
     }
 #endif
     return 0;
