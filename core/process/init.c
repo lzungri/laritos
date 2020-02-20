@@ -68,27 +68,19 @@ static int spawn_system_processes(void) {
 
 #ifdef CONFIG_TEST_ENABLED
     log_always("***** Running in test mode *****");
-    // TODO Remove this process, this is just for debugging
-    info("Spawning shell process");
-    int shell_main(void *data);
-    if (process_spawn_kernel_process("shell", shell_main, NULL,
-            8196, CONFIG_SCHED_PRIORITY_MAX_USER - 10) == NULL) {
-        error("Could not create shell process");
-        return -1;
-    };
-
     info("Spawning test process");
     if (process_spawn_kernel_process("test", test_main, __tests_start,
             CONFIG_PROCESS_TEST_STACK_SIZE, CONFIG_SCHED_PRIORITY_MAX_USER - 2) == NULL) {
         error("Could not create TEST process");
         return -1;
     };
-#else
+#endif
+
     // TODO: This code will disappear once we implement a shell and file system
     if (loader_load_executable_from_memory(0) == NULL) {
         error("Failed to load app #0");
     }
-#endif
+
     return 0;
 }
 
