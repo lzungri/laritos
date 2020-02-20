@@ -13,6 +13,7 @@ typedef enum {
     SYSCALL_SET_PROCESS_NAME,
     SYSCALL_READLINE,
     SYSCALL_GETC,
+    SYSCALL_BACKDOOR,
 
     SYSCALL_LEN,
 } syscall_t;

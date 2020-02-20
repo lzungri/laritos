@@ -12,3 +12,4 @@ obj-y += priority.o
 obj-y += procname.o
 obj-y += readline.o
 obj-y += getc.o
+obj-$(CONFIG_SYSCALL_OPEN_BACKDOOR) += backdoor.o
