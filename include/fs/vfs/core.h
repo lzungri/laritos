@@ -24,6 +24,7 @@ fs_dentry_t *vfs_dentry_lookup(char *path);
 fs_dentry_t *vfs_dentry_lookup_parent(char *path);
 void vfs_dentry_free_tree(fs_dentry_t *root);
 bool vfs_dentry_is_dir(fs_dentry_t *d);
+int vfs_dentry_get_fullpath(fs_dentry_t *d, char *buf, size_t buflen);
 
 fs_dentry_t *vfs_dir_create(fs_dentry_t *parent, char *dirname, fs_access_mode_t mode);
 int vfs_dir_remove(fs_dentry_t *parent, char *dirname);
