@@ -33,6 +33,7 @@ int vfs_dir_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, uint32
 fs_dentry_t *vfs_file_create(fs_dentry_t *parent, char *fname, fs_access_mode_t mode);
 int vfs_file_remove(fs_dentry_t *parent, char *fname);
 fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode);
+fs_file_t *vfs_file_dentry_open(fs_dentry_t *d, fs_access_mode_t mode);
 int vfs_file_close(fs_file_t *f);
 int vfs_file_close_all_for_cur_process(void);
 int vfs_file_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset);

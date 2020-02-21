@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <fs/vfs/types.h>
@@ -27,16 +26,14 @@ static void vfs_file_free(fs_file_t *f) {
     slab_free(slab, f);
 }
 
-fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
-    verbose("Opening '%s' using mode=0x%x", path, mode);
-    fs_dentry_t *d = vfs_dentry_lookup(path);
+fs_file_t *vfs_file_dentry_open(fs_dentry_t *d, fs_access_mode_t mode) {
     if (d == NULL) {
-        error("%s doesn't exist", path);
+        error("Null dentry");
         return NULL;
     }
 
     if ((d->inode->mode & mode) != mode) {
-        error("Not enough permissions to open '%s'", path);
+        error("Not enough permissions to open '%s'", d->name);
         return NULL;
     }
 
@@ -46,7 +43,7 @@ fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
     }
 
     if (d->inode->fops.open == NULL) {
-        error("open('%s') operation not permitted", path);
+        error("open('%s') operation not permitted", d->name);
         return NULL;
     }
 
@@ -58,7 +55,7 @@ fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
     f->mode = mode;
 
     if (d->inode->fops.open(d->inode, f) < 0) {
-        error("Couldn't not open file '%s'", path);
+        error("Couldn't not open file '%s'", d->name);
         goto error_open;
     }
     f->opened = true;
@@ -68,6 +65,11 @@ fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
 error_open:
     vfs_file_free(f);
     return NULL;
+}
+
+fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
+    verbose("Opening '%s' using mode=0x%x", path, mode);
+    return vfs_file_dentry_open(vfs_dentry_lookup(path), mode);
 }
 
 int vfs_file_close(fs_file_t *f) {
