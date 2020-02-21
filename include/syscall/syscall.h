@@ -1,8 +1,9 @@
 #pragma once
 
-#include <syscall/syscall-no.h>
-#include <time/core.h>
 #include <stdint.h>
+#include <time/core.h>
+#include <fs/vfs/types.h>
+#include <syscall/syscall-no.h>
 #include <generated/autoconf.h>
 
 #ifdef CONFIG_CPU_32_BITS
@@ -26,3 +27,4 @@ int syscall_getc(void);
 int syscall_backdoor(char *command, void *arg);
 int syscall_getcwd(char *buf, int buflen);
 int syscall_chdir(char *path);
+int syscall_listdir(char *path, uint32_t offset, fs_listdir_t *dirs, int dirlen);

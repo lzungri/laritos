@@ -37,6 +37,7 @@ static syscall_entry_t systable[] = {
     DEF_SCE(SYSCALL_GETC, syscall_getc),
     DEF_SCE(SYSCALL_GETCWD, syscall_getcwd),
     DEF_SCE(SYSCALL_CHDIR, syscall_chdir),
+    DEF_SCE(SYSCALL_LISTDIR, syscall_listdir),
 #ifdef CONFIG_SYSCALL_OPEN_BACKDOOR
     DEF_SCE(SYSCALL_BACKDOOR, syscall_backdoor),
 #endif
