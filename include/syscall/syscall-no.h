@@ -17,6 +17,10 @@ typedef enum {
     SYSCALL_CHDIR,
     SYSCALL_GETCWD,
     SYSCALL_LISTDIR,
+    SYSCALL_OPEN,
+    SYSCALL_READ,
+    SYSCALL_WRITE,
+    SYSCALL_CLOSE,
 
     SYSCALL_LEN,
 } syscall_t;

@@ -28,3 +28,6 @@ int syscall_backdoor(char *command, void *arg);
 int syscall_getcwd(char *buf, int buflen);
 int syscall_chdir(char *path);
 int syscall_listdir(char *path, uint32_t offset, fs_listdir_t *dirs, int dirlen);
+fs_file_t *syscall_open(char *path, fs_access_mode_t mode);
+int syscall_read(fs_file_t *file, void *buf, int buflen);
+int syscall_close(fs_file_t *file);
