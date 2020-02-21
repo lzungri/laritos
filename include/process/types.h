@@ -14,6 +14,7 @@
 #include <sync/atomic.h>
 #include <sync/condition.h>
 #include <syscall/syscall-no.h>
+#include <fs/vfs/types.h>
 #include <generated/autoconf.h>
 
 typedef struct {
@@ -76,7 +77,7 @@ typedef struct pcb {
     bool kernel;
 
     char cmd[CONFIG_PROCESS_MAX_CMD_LEN];
-    char cwd[CONFIG_FS_MAX_FILENAME_LEN];
+    fs_dentry_t *cwd;
     pcb_mm_t mm;
     pcb_sched_t sched;
     pcb_fs_t fs;

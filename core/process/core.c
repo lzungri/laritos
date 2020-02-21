@@ -80,7 +80,7 @@ pcb_t *process_alloc(void) {
     pcb->sched.status = PROC_STATUS_NOT_INIT;
     process_set_name(pcb, "?");
     process_assign_pid(pcb);
-    pcb->cwd[0] = '/';
+    pcb->cwd = _laritos.fs.root;
 
     pcb->fs.fds_slab = slab_create(CONFIG_PROCESS_MAX_OPEN_FILES, sizeof(fs_file_t));
     if (pcb->fs.fds_slab == NULL) {
