@@ -1,4 +1,3 @@
-//#define DEBUG
 #include <log.h>
 
 #include <fs/vfs/types.h>

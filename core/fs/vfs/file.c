@@ -1,5 +1,6 @@
 #include <log.h>
 
+#include <string.h>
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
 #include <module/core.h>
@@ -14,6 +15,7 @@ static fs_file_t *vfs_file_alloc(fs_dentry_t *dentry) {
         error("Max number of file descriptors reached");
         return NULL;
     }
+    memset(f, 0, sizeof(*f));
     f->dentry = dentry;
     f->pcb = pcb;
     verbose("new fd=%lu for file='%s'", slab_get_slab_position(slab, f), dentry->name);
@@ -117,8 +119,16 @@ int vfs_file_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     }
 
     int ret = f->dentry->inode->fops.read(f, buf, blen, offset);
-    verbose("Reading %d bytes from '%s', ret=%d", blen, f->dentry->name, ret);
+    verbose("Reading %d bytes from '%s' at offset=%lu, ret=%d", blen, f->dentry->name, offset, ret);
     return ret;
+}
+
+int vfs_file_read_cur_offset(fs_file_t *f, void *buf, size_t blen) {
+    int nbytes = vfs_file_read(f, buf, blen, f->offset);
+    if (nbytes > 0) {
+        f->offset += nbytes;
+    }
+    return nbytes;
 }
 
 int vfs_file_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {

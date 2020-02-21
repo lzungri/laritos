@@ -42,6 +42,7 @@ typedef struct fs_file {
     struct fs_dentry *dentry;
     fs_access_mode_t mode;
     bool opened;
+    uint32_t offset;
 
     void *data0;
     void *data1;
