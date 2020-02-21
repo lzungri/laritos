@@ -14,6 +14,8 @@ typedef enum {
     SYSCALL_READLINE,
     SYSCALL_GETC,
     SYSCALL_BACKDOOR,
+    SYSCALL_CHDIR,
+    SYSCALL_GETCWD,
 
     SYSCALL_LEN,
 } syscall_t;

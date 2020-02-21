@@ -35,6 +35,8 @@ static syscall_entry_t systable[] = {
     DEF_SCE(SYSCALL_SET_PROCESS_NAME, syscall_set_process_name),
     DEF_SCE(SYSCALL_READLINE, syscall_readline),
     DEF_SCE(SYSCALL_GETC, syscall_getc),
+    DEF_SCE(SYSCALL_GETCWD, syscall_getcwd),
+    DEF_SCE(SYSCALL_CHDIR, syscall_chdir),
 #ifdef CONFIG_SYSCALL_OPEN_BACKDOOR
     DEF_SCE(SYSCALL_BACKDOOR, syscall_backdoor),
 #endif

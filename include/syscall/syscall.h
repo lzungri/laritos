@@ -24,3 +24,5 @@ int syscall_set_process_name(char *name);
 int syscall_readline(char *buf, int buflen);
 int syscall_getc(void);
 int syscall_backdoor(char *command, void *arg);
+int syscall_getcwd(char *buf, int buflen);
+int syscall_chdir(char *path);
