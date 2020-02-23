@@ -5,6 +5,7 @@
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
 #include <mm/sysfs.h>
+#include <sched/sysfs.h>
 #include <generated/autoconf.h>
 
 int fs_mount_essential_filesystems(void) {
@@ -31,6 +32,18 @@ int fs_mount_essential_filesystems(void) {
         goto error_proc;
     }
 
+    _laritos.fs.stats_root = vfs_dir_create(_laritos.fs.sysfs_root, "stats",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (_laritos.fs.stats_root == NULL) {
+        error("Error creating stats sysfs directory");
+        goto error_stats;
+    }
+
+    if (sched_create_sysfs() < 0) {
+        error("Error creating sched sysfs");
+        goto error_sched;
+    }
+
     if (mem_create_sysfs() < 0) {
         error("Error creating mem sysfs");
         goto error_mem;
@@ -40,6 +53,10 @@ int fs_mount_essential_filesystems(void) {
 //error_xxx:
 //    mem_remove_sysfs();
 error_mem:
+    sched_remove_sysfs();
+error_sched:
+    vfs_dir_remove(_laritos.fs.sysfs_root, "stats");
+error_stats:
     vfs_dir_remove(_laritos.fs.sysfs_root, "proc");
 error_proc:
     vfs_unmount_fs("/sys");

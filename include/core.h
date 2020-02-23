@@ -96,6 +96,8 @@ typedef struct {
     fs_dentry_t *proc_root;
     fs_dentry_t *mem_root;
     fs_dentry_t *slab_root;
+    fs_dentry_t *stats_root;
+    fs_dentry_t *sched_root;
 } laritos_fs_t;
 
 /**
