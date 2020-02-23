@@ -1,3 +1,3 @@
-obj-y += sysfs.o
+obj-y += core.o
 obj-y += vfs/
 obj-y += pseudofs/
