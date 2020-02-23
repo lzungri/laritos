@@ -5,6 +5,7 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
+#include <fs/core.h>
 #include <mm/heap.h>
 
 static int avail_mem_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
@@ -13,7 +14,7 @@ static int avail_mem_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset)
     return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
 }
 
-int mem_create_sysfs(void) {
+static int mem_create_sysfs(sysfs_mod_t *sysfs) {
     _laritos.fs.mem_root = vfs_dir_create(_laritos.fs.sysfs_root, "mem",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.mem_root == NULL) {
@@ -25,14 +26,12 @@ int mem_create_sysfs(void) {
         error("Failed to create 'heap_avail' sysfs file");
     }
 
-    heap_create_sysfs();
-    slab_create_sysfs();
-
     return 0;
 }
 
-int mem_remove_sysfs(void) {
-    slab_remove_sysfs();
-    heap_remove_sysfs();
+static int mem_remove_sysfs(sysfs_mod_t *sysfs) {
     return vfs_dir_remove(_laritos.fs.sysfs_root, "mem");
 }
+
+
+SYSFS_MODULE(mem, mem_create_sysfs, mem_remove_sysfs)

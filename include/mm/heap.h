@@ -13,8 +13,6 @@ extern char __heap_end[];
 
 int heap_initialize(void *start, uint32_t size);
 uint32_t heap_get_available(void);
-int heap_create_sysfs(void);
-int heap_remove_sysfs(void);
 void *_malloc(size_t size);
 void _free(void *ptr);
 

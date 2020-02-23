@@ -10,6 +10,7 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
+#include <fs/core.h>
 
 typedef struct {
     list_head_t list;
@@ -214,7 +215,7 @@ static int freeblocks_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset
     return pseudofs_write_to_buf(buf, blen, data, totalb, offset);
 }
 
-int heap_create_sysfs(void) {
+static int freelist_create_sysfs(sysfs_mod_t *sysfs) {
     fs_dentry_t *dir = vfs_dir_create(_laritos.fs.mem_root, "freelist",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (dir == NULL) {
@@ -233,10 +234,12 @@ int heap_create_sysfs(void) {
     return 0;
 }
 
-int heap_remove_sysfs(void) {
+static int freelist_remove_sysfs(sysfs_mod_t *sysfs) {
     return vfs_dir_remove(_laritos.fs.mem_root, "freelist");
 }
 
+
+SYSFS_MODULE(freelist, freelist_create_sysfs, freelist_remove_sysfs)
 
 
 #ifdef CONFIG_TEST_CORE_MM_FREELIST
