@@ -15,6 +15,3 @@ uint32_t slab_get_total_elems(slab_t *slab);
 uint32_t slab_get_slab_position(slab_t *slab, void *ptr);
 void *slab_get_ptr_from_position(slab_t *slab, uint32_t pos);
 bool slab_is_taken(slab_t *slab, uint32_t idx);
-
-int slab_create_sysfs(void);
-int slab_remove_sysfs(void);

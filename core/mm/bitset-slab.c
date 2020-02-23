@@ -9,6 +9,7 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
+#include <fs/core.h>
 
 
 typedef struct {
@@ -193,7 +194,7 @@ bool slab_is_taken(slab_t *slab, uint32_t idx) {
     return bitset_array_lm_bit(s->bitset, s->bs_elems, idx) != 0;
 }
 
-int slab_create_sysfs(void) {
+static int slab_create_sysfs(sysfs_mod_t *sysfs) {
     _laritos.fs.slab_root = vfs_dir_create(_laritos.fs.mem_root, "slab",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.slab_root == NULL) {
@@ -203,9 +204,13 @@ int slab_create_sysfs(void) {
     return 0;
 }
 
-int slab_remove_sysfs(void) {
+static int slab_remove_sysfs(sysfs_mod_t *sysfs) {
     return vfs_dir_remove(_laritos.fs.mem_root, "slab");
 }
+
+
+SYSFS_MODULE(bitset_slab, slab_create_sysfs, slab_remove_sysfs)
+
 
 
 #ifdef CONFIG_TEST_CORE_MM_BITSET_SLAB
