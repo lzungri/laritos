@@ -14,7 +14,10 @@ int pseudofs_def_close(fs_inode_t *inode, fs_file_t *f);
 
 fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname, fs_access_mode_t mode, fs_file_ops_t *fops);
 fs_dentry_t *pseudofs_create_custom_ro_file(fs_dentry_t *parent, char *fname, int (*read)(fs_file_t *, void *, size_t, uint32_t));
+fs_dentry_t *pseudofs_create_custom_ro_file_with_dataptr(fs_dentry_t *parent, char *fname, int (*read)(fs_file_t *, void *, size_t, uint32_t), void *data);
 fs_dentry_t *pseudofs_create_custom_wo_file(fs_dentry_t *parent, char *fname, int (*write)(fs_file_t *, void *, size_t, uint32_t));
+fs_dentry_t *pseudofs_create_custom_wo_file_with_dataptr(fs_dentry_t *parent, char *fname, int (*write)(fs_file_t *, void *, size_t, uint32_t), void *data);
+
 
 /**
  * WARNING: Not thread-safe. No synchronization mechanism will be used to protect

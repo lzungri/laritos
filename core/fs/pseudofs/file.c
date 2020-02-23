@@ -32,8 +32,8 @@ fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname,
     return f;
 }
 
-fs_dentry_t *pseudofs_create_custom_ro_file(fs_dentry_t *parent, char *fname,
-        int (*read)(fs_file_t *, void *, size_t, uint32_t)) {
+fs_dentry_t *pseudofs_create_custom_ro_file_with_dataptr(fs_dentry_t *parent, char *fname,
+        int (*read)(fs_file_t *, void *, size_t, uint32_t), void *data) {
     fs_file_ops_t fops = {
         .open = pseudofs_def_open,
         .close = pseudofs_def_close,
@@ -44,11 +44,17 @@ fs_dentry_t *pseudofs_create_custom_ro_file(fs_dentry_t *parent, char *fname,
         error("Failed to create read-only '%s' sysfs file", fname);
         return NULL;
     }
+    d->inode->file_data0 = data;
     return d;
 }
 
-fs_dentry_t *pseudofs_create_custom_wo_file(fs_dentry_t *parent, char *fname,
-        int (*write)(fs_file_t *, void *, size_t, uint32_t)) {
+fs_dentry_t *pseudofs_create_custom_ro_file(fs_dentry_t *parent, char *fname,
+        int (*read)(fs_file_t *, void *, size_t, uint32_t)) {
+    return pseudofs_create_custom_ro_file_with_dataptr(parent, fname, read, NULL);
+}
+
+fs_dentry_t *pseudofs_create_custom_wo_file_with_dataptr(fs_dentry_t *parent, char *fname,
+        int (*write)(fs_file_t *, void *, size_t, uint32_t), void *data) {
     fs_file_ops_t fops = {
         .open = pseudofs_def_open,
         .close = pseudofs_def_close,
@@ -59,7 +65,13 @@ fs_dentry_t *pseudofs_create_custom_wo_file(fs_dentry_t *parent, char *fname,
         error("Failed to create write-only '%s' sysfs file", fname);
         return NULL;
     }
+    d->inode->file_data0 = data;
     return d;
+}
+
+fs_dentry_t *pseudofs_create_custom_wo_file(fs_dentry_t *parent, char *fname,
+        int (*write)(fs_file_t *, void *, size_t, uint32_t)) {
+    return pseudofs_create_custom_wo_file_with_dataptr(parent, fname, write, NULL);
 }
 
 int pseudofs_write_to_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset) {
