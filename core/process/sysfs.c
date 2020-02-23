@@ -57,11 +57,9 @@ int process_sysfs_create(pcb_t *pcb) {
             pcb->cmd, sizeof(pcb->cmd)) == NULL) {
         error("Failed to create 'cmd' sysfs file for pid=%u", pcb->pid);
     }
-
     if (pseudofs_create_custom_ro_file(dir, "cwd", cwd_read) == NULL) {
         error("Failed to create 'cwd' sysfs file for pid=%u", pcb->pid);
     }
-
     if (pseudofs_create_uint32_t_file(dir, "running", FS_ACCESS_MODE_READ,
             &pcb->stats.ticks_spent[PROC_STATUS_RUNNING]) == NULL) {
         error("Failed to create 'running' sysfs file for pid=%u", pcb->pid);
@@ -74,7 +72,6 @@ int process_sysfs_create(pcb_t *pcb) {
             &pcb->stats.ticks_spent[PROC_STATUS_BLOCKED]) == NULL) {
         error("Failed to create 'blocked' sysfs file for pid=%u", pcb->pid);
     }
-
     if (pseudofs_create_custom_ro_file(dir, "start_time", start_time_read) == NULL) {
         error("Failed to create 'start_time' sysfs file for pid=%u", pcb->pid);
     }

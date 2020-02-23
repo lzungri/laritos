@@ -14,7 +14,7 @@
 #include <utils/random.h>
 #include <utils/debug.h>
 #include <sched/core.h>
-#include <fs/vfs/core.h>
+#include <fs/core.h>
 #include <module/core.h>
 #include <generated/autoconf.h>
 #include <generated/utsrelease.h>
@@ -22,40 +22,6 @@
 #ifdef CONFIG_TEST_ENABLED
 #include <test/test.h>
 #endif
-
-static int mount_sysfs(void) {
-    info("Mounting root filesystem");
-    fs_mount_t *mnt = vfs_mount_fs("pseudofs", "/", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
-    if (mnt == NULL) {
-        error("Error mounting root filesystem");
-        goto error_root;
-    }
-    _laritos.fs.root = mnt->root;
-
-    info("Mounting sysfs filesystem");
-    mnt = vfs_mount_fs("pseudofs", "/sys", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
-    if (mnt == NULL) {
-        error("Error mounting sysfs");
-        goto error_sysfs;
-    }
-    _laritos.fs.sysfs_root = mnt->root;
-
-    _laritos.fs.proc_root = vfs_dir_create(_laritos.fs.sysfs_root, "proc",
-            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
-    if (_laritos.fs.proc_root == NULL) {
-        error("Error creating proc sysfs directory");
-        goto error_proc;
-    }
-
-    return 0;
-
-error_proc:
-    vfs_unmount_fs("/sys");
-error_sysfs:
-    vfs_unmount_fs("/");
-error_root:
-    return -1;
-}
 
 static int spawn_system_processes(void) {
     info("Spawning idle process");
@@ -158,7 +124,7 @@ int init_main(void *data) {
     // Seed random generator from current time
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
 
-    assert(mount_sysfs() >= 0, "Couldn't mount sysfs file system");
+    assert(fs_mount_essential_filesystems() >= 0, "Couldn't mount essential filesystems");
 
     assert(spawn_system_processes() >= 0, "Failed to create system processes");
 
