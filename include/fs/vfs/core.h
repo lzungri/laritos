@@ -59,4 +59,4 @@ void vfs_inode_def_free(fs_inode_t *inode);
         return vfs_unregister_fs_type(&_fstype_ ## _id); \
     } \
     \
-    MODULE(_id, _init_ ## _id, _deinit_ ## _id)
+    MODULE(fstype_ ## _id, _init_ ## _id, _deinit_ ## _id)
