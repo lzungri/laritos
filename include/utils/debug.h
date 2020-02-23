@@ -166,9 +166,6 @@ __attribute__((always_inline)) static inline void debug_dump_cur_state(void) {
     // calling dump_all_regs()
     arch_debug_dump_all_regs();
     debug_dump_kernel_stats();
-    // TODO: Dump kernel info
-    void heap_dump_info(void);
-    heap_dump_info();
     debug_dump_processes();
     debug_dump_processes_stats();
 }

@@ -7,6 +7,9 @@
 #include <utils/utils.h>
 #include <utils/math.h>
 #include <sync/spinlock.h>
+#include <fs/vfs/core.h>
+#include <fs/vfs/types.h>
+#include <fs/pseudofs.h>
 
 typedef struct {
     list_head_t list;
@@ -165,7 +168,7 @@ uint32_t heap_get_available(void) {
     return avail;
 }
 
-void heap_dump_info(void) {
+static int status_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     irqctx_t ctx;
     spinlock_acquire(&lock, &ctx);
 
@@ -181,11 +184,57 @@ void heap_dump_info(void) {
 
     spinlock_release(&lock, &ctx);
 
-    log_always("Heap information:");
-    log_always("  Available: %lu bytes", heap_get_available());
-    log_always("  Number of free blocks: %lu", blocks);
-    log_always("  Max free block size: %lu", maxs);
-    log_always("  Min free block size: %lu", blocks > 0 ? mins : 0);
+    char data[512];
+    int strlen = snprintf(data, sizeof(data),
+            "Free blocks: %lu\n"
+            "Max size: %lu\n"
+            "Min size: %lu",
+            blocks, maxs, blocks > 0 ? mins : 0);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
+}
+
+static int freeblocks_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    irqctx_t ctx;
+    spinlock_acquire(&lock, &ctx);
+
+    char data[512];
+    uint32_t totalb = 0;
+    fl_node_t *pos = NULL;
+    list_for_each_entry(pos, &freelist, list) {
+        int strlen = snprintf(data + totalb, sizeof(data) - totalb, "0x%p (%lu) - ", pos, pos->size);
+        if (strlen < 0) {
+            spinlock_release(&lock, &ctx);
+            return -1;
+        }
+        totalb += strlen;
+    }
+
+    spinlock_release(&lock, &ctx);
+
+    return pseudofs_write_to_buf(buf, blen, data, totalb, offset);
+}
+
+int heap_create_sysfs(void) {
+    fs_dentry_t *dir = vfs_dir_create(_laritos.fs.mem_root, "freelist",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (dir == NULL) {
+        error("Error creating freelist sysfs directory");
+        return -1;
+    }
+
+    if (pseudofs_create_custom_ro_file(dir, "status", status_read) == NULL) {
+        error("Failed to create 'status' sysfs file");
+    }
+
+    if (pseudofs_create_custom_ro_file(dir, "freeblocks", freeblocks_read) == NULL) {
+        error("Failed to create 'freeblocks' sysfs file");
+    }
+
+    return 0;
+}
+
+int heap_remove_sysfs(void) {
+    return vfs_dir_remove(_laritos.fs.mem_root, "freelist");
 }
 
 
