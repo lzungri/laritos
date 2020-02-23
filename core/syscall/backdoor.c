@@ -5,6 +5,7 @@
 #include <mm/heap.h>
 #include <utils/debug.h>
 #include <utils/utils.h>
+#include <strtoxl.h>
 
 typedef struct {
     char *cmd;
@@ -89,6 +90,28 @@ static int bd_pstree(void *param) {
     return 0;
 }
 
+static int bd_malloc(void *param) {
+    if (param == NULL) {
+        error("Syntax: bd malloc <size>");
+        return -1;
+    }
+    unsigned long size = strtoul(param, NULL, 0);
+    void *ptr = malloc(size);
+    info("new malloc'ed chunk of %lu bytes at %p", size, ptr);
+    return ptr != NULL ? 0 : -1;
+}
+
+static int bd_free(void *param) {
+    if (param == NULL) {
+        error("Syntax: bd free <ptr_in_hex>");
+        return -1;
+    }
+    void * ptr = (void *) strtoul(param, NULL, 16);
+    info("Freeing ptr=0x%p", ptr);
+    free(ptr);
+    return 0;
+}
+
 static bdcmd_t commands[] = {
     { .cmd = "crash_undef", .handler = bd_crash_undef_exception },
     { .cmd = "crash_data", .handler = bd_crash_data },
@@ -100,6 +123,8 @@ static bdcmd_t commands[] = {
     { .cmd = "pstats", .handler = bd_proc_stats },
     { .cmd = "kstats", .handler = bd_kernel_stats },
     { .cmd = "pstree", .handler = bd_pstree },
+    { .cmd = "malloc", .handler = bd_malloc },
+    { .cmd = "free", .handler = bd_free },
 };
 
 static void help_message(void) {
