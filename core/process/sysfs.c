@@ -6,6 +6,7 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
+#include <fs/core.h>
 #include <time/core.h>
 #include <sync/spinlock.h>
 #include <generated/autoconf.h>
@@ -84,3 +85,20 @@ int process_sysfs_remove(pcb_t *pcb) {
     snprintf(buf, sizeof(buf), "%u", pcb->pid);
     return vfs_dir_remove(_laritos.fs.proc_root, buf);
 }
+
+
+static int process_create_sysfs_root(sysfs_mod_t *sysfs) {
+    _laritos.fs.proc_root = vfs_dir_create(_laritos.fs.sysfs_root, "proc",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (_laritos.fs.proc_root == NULL) {
+        error("Error creating proc sysfs directory");
+        return -1;
+    }
+    return 0;
+}
+
+static int process_remove_sysfs_root(sysfs_mod_t *sysfs) {
+    return vfs_dir_remove(_laritos.fs.sysfs_root, "proc");
+}
+
+SYSFS_MODULE(proc, process_create_sysfs_root, process_remove_sysfs_root)
