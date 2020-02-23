@@ -1,10 +1,14 @@
 #include <log.h>
 
 #include <stdbool.h>
+#include <core.h>
 #include <mm/heap.h>
 #include <mm/slab.h>
 #include <sync/spinlock.h>
 #include <dstruct/bitset.h>
+#include <fs/vfs/core.h>
+#include <fs/vfs/types.h>
+#include <fs/pseudofs.h>
 
 
 typedef struct {
@@ -17,6 +21,57 @@ typedef struct {
     bitset_t bitset[];
 } bs_slab_t;
 
+
+static int totalelems_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    bs_slab_t *s = f->data0;
+
+    irqctx_t ctx;
+    spinlock_acquire(&s->lock, &ctx);
+    char data[16];
+    int strlen = snprintf(data, sizeof(data), "%lu", s->total_elems);
+    spinlock_release(&s->lock, &ctx);
+
+    return pseudofs_write_to_buf(buf, blen, data, strlen, offset);
+}
+
+static int avail_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    bs_slab_t *s = f->data0;
+
+    irqctx_t ctx;
+    spinlock_acquire(&s->lock, &ctx);
+    char data[16];
+    int strlen = snprintf(data, sizeof(data), "%lu", s->avail_elems);
+    spinlock_release(&s->lock, &ctx);
+
+    return pseudofs_write_to_buf(buf, blen, data, strlen, offset);
+}
+
+static inline int sysfs_create(bs_slab_t *slab) {
+    char buf[CONFIG_FS_MAX_FILENAME_LEN];
+    snprintf(buf, sizeof(buf), "%p", slab);
+    fs_dentry_t *dir = vfs_dir_create(_laritos.fs.slab_root, buf,
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (dir == NULL) {
+        error("Error creating slab sysfs directory");
+        return -1;
+    }
+
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "totalelems", totalelems_read, slab) == NULL) {
+        error("Failed to create 'totalelems' sysfs file");
+    }
+
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "avail", avail_read, slab) == NULL) {
+        error("Failed to create 'avail' sysfs file");
+    }
+
+    return 0;
+}
+
+static inline int sysfs_remove(bs_slab_t *slab) {
+    char buf[CONFIG_FS_MAX_FILENAME_LEN];
+    snprintf(buf, sizeof(buf), "%p", slab);
+    return vfs_dir_remove(_laritos.fs.slab_root, buf);
+}
 
 slab_t *slab_create(uint32_t numelems, size_t elemsize) {
     if (numelems == 0 || numelems == BITSET_ARRAY_IDX_NOT_FOUND || elemsize == 0) {
@@ -45,6 +100,8 @@ slab_t *slab_create(uint32_t numelems, size_t elemsize) {
     slab->avail_elems = numelems;
     slab->elem_size = elemsize;
     slab->data = (char *) slab + dataoffset;
+
+    sysfs_create(slab);
 
     verbose_async("slab=0x%p new", slab);
 
@@ -108,6 +165,7 @@ void slab_destroy(slab_t *slab) {
     if (slab == NULL) {
         return;
     }
+    sysfs_remove(slab);
     free(slab);
     verbose_async("slab=0x%p destroy", slab);
 }
@@ -133,6 +191,20 @@ void *slab_get_ptr_from_position(slab_t *slab, uint32_t pos) {
 bool slab_is_taken(slab_t *slab, uint32_t idx) {
     bs_slab_t *s = (bs_slab_t *) slab;
     return bitset_array_lm_bit(s->bitset, s->bs_elems, idx) != 0;
+}
+
+int slab_create_sysfs(void) {
+    _laritos.fs.slab_root = vfs_dir_create(_laritos.fs.mem_root, "slab",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (_laritos.fs.slab_root == NULL) {
+        error("Error creating slab sysfs directory");
+        return -1;
+    }
+    return 0;
+}
+
+int slab_remove_sysfs(void) {
+    return vfs_dir_remove(_laritos.fs.mem_root, "slab");
 }
 
 

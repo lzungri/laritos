@@ -26,13 +26,13 @@ int mem_create_sysfs(void) {
     }
 
     heap_create_sysfs();
-//    slab_create_sysfs();
+    slab_create_sysfs();
 
     return 0;
 }
 
 int mem_remove_sysfs(void) {
-//    slab_remove_sysfs();
+    slab_remove_sysfs();
     heap_remove_sysfs();
     return vfs_dir_remove(_laritos.fs.sysfs_root, "mem");
 }
