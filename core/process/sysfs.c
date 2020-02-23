@@ -2,10 +2,23 @@
 
 #include <printf.h>
 #include <process/types.h>
+#include <process/core.h>
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
 #include <time/core.h>
+#include <sync/spinlock.h>
+#include <generated/autoconf.h>
+
+static int cwd_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    char cwd[256];
+    vfs_dentry_get_fullpath(process_get_current()->cwd, cwd, sizeof(cwd));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+
+    return pseudofs_write_to_buf(buf, blen, cwd, sizeof(cwd), offset);
+}
 
 static int start_time_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     time_t t;
@@ -44,10 +57,11 @@ int process_sysfs_create(pcb_t *pcb) {
             pcb->cmd, sizeof(pcb->cmd)) == NULL) {
         error("Failed to create 'cmd' sysfs file for pid=%u", pcb->pid);
     }
-    if (pseudofs_create_str_file(dir, "cwd", FS_ACCESS_MODE_READ,
-            pcb->cwd, sizeof(pcb->cwd)) == NULL) {
+
+    if (pseudofs_create_custom_ro_file(dir, "cwd", cwd_read) == NULL) {
         error("Failed to create 'cwd' sysfs file for pid=%u", pcb->pid);
     }
+
     if (pseudofs_create_uint32_t_file(dir, "running", FS_ACCESS_MODE_READ,
             &pcb->stats.ticks_spent[PROC_STATUS_RUNNING]) == NULL) {
         error("Failed to create 'running' sysfs file for pid=%u", pcb->pid);
