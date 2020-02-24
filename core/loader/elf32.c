@@ -117,6 +117,7 @@ static inline int populate_sections(pcb_t *pcb, Elf32_Ehdr *elf, uint32_t shstrt
         error_async("Couldn't find .stack section");
         return -1;
     }
+    pcb->mm.stack_top = (void *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size - 4);
     debug_async("stack:         0x%p-0x%p", pcb->mm.stack_bottom, (char *) pcb->mm.stack_bottom + pcb->mm.stack_size);
 
     return 0;

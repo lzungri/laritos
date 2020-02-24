@@ -285,7 +285,8 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
 
     pcb->mm.stack_bottom = pcb->mm.imgaddr;
     pcb->mm.stack_size = stacksize;
-    pcb->mm.sp_ctx = (spctx_t *) ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size - 8);
+    pcb->mm.stack_top = ((char *) pcb->mm.stack_bottom + pcb->mm.stack_size - 4);
+    pcb->mm.sp_ctx = (spctx_t *) ((char *) pcb->mm.stack_top - 4);
 
     // Setup the stack protector
     spprot_setup(pcb);
@@ -349,6 +350,10 @@ int process_wait_pid(uint16_t pid, int *status) {
     return process_wait_for(pcb, status);
 }
 
+uint32_t process_get_avail_stack_locked(pcb_t *pcb) {
+    char *sp = pcb->sched.status == PROC_STATUS_RUNNING ? arch_cpu_get_sp() : pcb->mm.sp_ctx;
+    return sp - (char *) pcb->mm.stack_bottom;
+}
 
 
 #ifdef CONFIG_TEST_CORE_PROCESS_CORE

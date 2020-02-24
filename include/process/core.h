@@ -41,6 +41,10 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
 void process_exit(int exit_status);
 int process_wait_for(pcb_t *pcb, int *status);
 int process_wait_pid(uint16_t pid, int *status);
+/**
+ * Note: Must be called with _laritos.proc.pcbs_data_lock held
+ */
+uint32_t process_get_avail_stack_locked(pcb_t *pcb);
 
 static inline pcb_t *process_get_current(void) {
     pcb_t *pcb = CPU_LOCAL_GET(_laritos.sched.running);

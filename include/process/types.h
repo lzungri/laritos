@@ -32,6 +32,7 @@ typedef struct {
     void *heap_start;
     secsize_t heap_size;
     void *stack_bottom;
+    void *stack_top;
     secsize_t stack_size;
 
     spctx_t *sp_ctx;
