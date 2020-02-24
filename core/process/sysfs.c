@@ -30,6 +30,16 @@ static int prio_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
 }
 
+static int ppid_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    pcb_t *pcb = f->data0;
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    char data[16];
+    int strlen = snprintf(data, sizeof(data), "%u", pcb->parent->pid);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
+}
+
 static int cwd_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     pcb_t *pcb = f->data0;
     irqctx_t ctx;
@@ -136,6 +146,9 @@ int process_sysfs_create(pcb_t *pcb) {
 
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "name", name_read, pcb) == NULL) {
         error("Failed to create 'name' sysfs file for pid=%u", pcb->pid);
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "ppid", ppid_read, pcb) == NULL) {
+        error("Failed to create 'ppid' sysfs file for pid=%u", pcb->pid);
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "prio", prio_read, pcb) == NULL) {
         error("Failed to create 'maps' sysfs file for pid=%u", pcb->pid);
