@@ -1,6 +1,7 @@
 #include <log.h>
 
 #include <printf.h>
+#include <cpu/core.h>
 #include <process/types.h>
 #include <process/core.h>
 #include <process/status.h>
@@ -8,8 +9,10 @@
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
 #include <fs/core.h>
+#include <sched/context.h>
 #include <time/core.h>
 #include <sync/spinlock.h>
+#include <arch/debug.h>
 #include <generated/autoconf.h>
 
 
@@ -38,6 +41,32 @@ static int name_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     int ret = pseudofs_write_to_buf(buf, blen, pcb->name, sizeof(pcb->name), offset);
     spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
     return ret;
+}
+
+static int pc_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    pcb_t *pcb = f->data0;
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    char data[16];
+    int strlen = snprintf(data, sizeof(data), "0x%p",
+                    pcb->sched.status == PROC_STATUS_RUNNING ?
+                            arch_cpu_get_pc() : arch_context_get_retaddr(pcb->mm.sp_ctx));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
+}
+
+static int mode_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    pcb_t *pcb = f->data0;
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    char data[64];
+    char mode[64] = { 0 };
+    int strlen = snprintf(data, sizeof(data), "%s",
+                    pcb->sched.status == PROC_STATUS_RUNNING ?
+                        arch_debug_get_psr_str(arch_cpu_get_cpsr(), mode, sizeof(mode)) :
+                        arch_debug_get_psr_str_from_ctx(pcb->mm.sp_ctx, mode, sizeof(mode)));
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
 }
 
 static int cwd_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
@@ -153,6 +182,12 @@ int process_sysfs_create(pcb_t *pcb) {
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "status", status_read, pcb) == NULL) {
         error("Failed to create 'status' sysfs file for pid=%u", pcb->pid);
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "pc", pc_read, pcb) == NULL) {
+        error("Failed to create 'pc' sysfs file for pid=%u", pcb->pid);
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "mode", mode_read, pcb) == NULL) {
+        error("Failed to create 'mode' sysfs file for pid=%u", pcb->pid);
     }
 
     return 0;
