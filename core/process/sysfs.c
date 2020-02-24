@@ -3,6 +3,7 @@
 #include <printf.h>
 #include <process/types.h>
 #include <process/core.h>
+#include <process/status.h>
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
@@ -28,6 +29,7 @@ SYSFS_DEF_READ(ppid, 16, "%u", pcb->parent->pid)
 SYSFS_DEF_READ(running, 16, "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_RUNNING])
 SYSFS_DEF_READ(ready, 16, "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_READY])
 SYSFS_DEF_READ(blocked, 16, "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_BLOCKED])
+SYSFS_DEF_READ(status, 16, "%s", pcb_get_status_str(pcb->sched.status))
 
 static int name_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     pcb_t *pcb = f->data0;
@@ -148,6 +150,9 @@ int process_sysfs_create(pcb_t *pcb) {
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "maps", maps_read, pcb) == NULL) {
         error("Failed to create 'maps' sysfs file for pid=%u", pcb->pid);
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "status", status_read, pcb) == NULL) {
+        error("Failed to create 'status' sysfs file for pid=%u", pcb->pid);
     }
 
     return 0;
