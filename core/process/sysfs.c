@@ -11,20 +11,60 @@
 #include <sync/spinlock.h>
 #include <generated/autoconf.h>
 
+static int name_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    pcb_t *pcb = f->data0;
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    int ret = pseudofs_write_to_buf(buf, blen, pcb->name, sizeof(pcb->name), offset);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+    return ret;
+}
+
 static int cwd_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    pcb_t *pcb = f->data0;
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
     char cwd[256];
-    vfs_dentry_get_fullpath(process_get_current()->cwd, cwd, sizeof(cwd));
+    vfs_dentry_get_fullpath(pcb->cwd, cwd, sizeof(cwd));
     spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
-
     return pseudofs_write_to_buf(buf, blen, cwd, sizeof(cwd), offset);
 }
 
+static int running_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    pcb_t *pcb = f->data0;
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    char data[16];
+    int strlen = snprintf(data, sizeof(data), "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_RUNNING]);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
+}
+
+static int ready_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    pcb_t *pcb = f->data0;
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    char data[16];
+    int strlen = snprintf(data, sizeof(data), "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_READY]);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
+}
+
+static int blocked_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    pcb_t *pcb = f->data0;
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    char data[16];
+    int strlen = snprintf(data, sizeof(data), "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_BLOCKED]);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
+}
+
 static int start_time_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    pcb_t *pcb = f->data0;
     time_t t;
     time_get_monotonic_time(&t);
-    time_sub(&t, &f->pcb->sched.start_time, &t);
+    time_sub(&t, &pcb->sched.start_time, &t);
     uint16_t hours, mins, secs;
     time_to_hms(&t, &hours, &mins, &secs);
 
@@ -44,12 +84,8 @@ int process_sysfs_create(pcb_t *pcb) {
         return -1;
     }
 
-    if (pseudofs_create_str_file(dir, "name", FS_ACCESS_MODE_READ,
-            pcb->name, sizeof(pcb->name)) == NULL) {
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "name", name_read, pcb) == NULL) {
         error("Failed to create 'name' sysfs file for pid=%u", pcb->pid);
-    }
-    if (pseudofs_create_uint16_t_file(dir, "pid", FS_ACCESS_MODE_READ, &pcb->pid) == NULL) {
-        error("Failed to create 'pid' sysfs file for pid=%u", pcb->pid);
     }
     if (pseudofs_create_bool_file(dir, "kernel", FS_ACCESS_MODE_READ, &pcb->kernel) == NULL) {
         error("Failed to create 'kernel' sysfs file for pid=%u", pcb->pid);
@@ -58,22 +94,19 @@ int process_sysfs_create(pcb_t *pcb) {
             pcb->cmd, sizeof(pcb->cmd)) == NULL) {
         error("Failed to create 'cmd' sysfs file for pid=%u", pcb->pid);
     }
-    if (pseudofs_create_custom_ro_file(dir, "cwd", cwd_read) == NULL) {
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "cwd", cwd_read, pcb) == NULL) {
         error("Failed to create 'cwd' sysfs file for pid=%u", pcb->pid);
     }
-    if (pseudofs_create_uint32_t_file(dir, "running", FS_ACCESS_MODE_READ,
-            &pcb->stats.ticks_spent[PROC_STATUS_RUNNING]) == NULL) {
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "running", running_read, pcb) == NULL) {
         error("Failed to create 'running' sysfs file for pid=%u", pcb->pid);
     }
-    if (pseudofs_create_uint32_t_file(dir, "ready", FS_ACCESS_MODE_READ,
-            &pcb->stats.ticks_spent[PROC_STATUS_READY]) == NULL) {
-        error("Failed to create 'ready' sysfs file for pid=%u", pcb->pid);
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "ready", ready_read, pcb) == NULL) {
+        error("Failed to create 'running' sysfs file for pid=%u", pcb->pid);
     }
-    if (pseudofs_create_uint32_t_file(dir, "blocked", FS_ACCESS_MODE_READ,
-            &pcb->stats.ticks_spent[PROC_STATUS_BLOCKED]) == NULL) {
-        error("Failed to create 'blocked' sysfs file for pid=%u", pcb->pid);
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "blocked", blocked_read, pcb) == NULL) {
+        error("Failed to create 'running' sysfs file for pid=%u", pcb->pid);
     }
-    if (pseudofs_create_custom_ro_file(dir, "start_time", start_time_read) == NULL) {
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "start_time", start_time_read, pcb) == NULL) {
         error("Failed to create 'start_time' sysfs file for pid=%u", pcb->pid);
     }
 
