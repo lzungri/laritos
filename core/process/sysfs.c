@@ -55,6 +55,17 @@ static int pc_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
 }
 
+static int availstack_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    pcb_t *pcb = f->data0;
+    irqctx_t ctx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+    uint32_t avail = process_get_avail_stack_locked(pcb);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+    char data[64];
+    int strlen = snprintf(data, sizeof(data), "%lu bytes (%lu percent)", avail, (avail * 100) / pcb->mm.stack_size);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
+}
+
 static int mode_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     pcb_t *pcb = f->data0;
     irqctx_t ctx;
@@ -188,6 +199,9 @@ int process_sysfs_create(pcb_t *pcb) {
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "mode", mode_read, pcb) == NULL) {
         error("Failed to create 'mode' sysfs file for pid=%u", pcb->pid);
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "avail_stack", availstack_read, pcb) == NULL) {
+        error("Failed to create 'avail_stack' sysfs file for pid=%u", pcb->pid);
     }
 
     return 0;
