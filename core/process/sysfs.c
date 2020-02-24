@@ -11,6 +11,24 @@
 #include <sync/spinlock.h>
 #include <generated/autoconf.h>
 
+
+#define SYSFS_DEF_READ(_name, _datalen, _fmt, _expr) \
+static int _name##_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) { \
+    pcb_t *pcb = f->data0; \
+    irqctx_t ctx; \
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx); \
+    char data[_datalen]; \
+    int strlen = snprintf(data, sizeof(data), _fmt, _expr); \
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx); \
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);\
+}
+
+SYSFS_DEF_READ(prio, 16, "%u", pcb->sched.priority)
+SYSFS_DEF_READ(ppid, 16, "%u", pcb->parent->pid)
+SYSFS_DEF_READ(running, 16, "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_RUNNING])
+SYSFS_DEF_READ(ready, 16, "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_READY])
+SYSFS_DEF_READ(blocked, 16, "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_BLOCKED])
+
 static int name_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     pcb_t *pcb = f->data0;
     irqctx_t ctx;
@@ -18,26 +36,6 @@ static int name_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     int ret = pseudofs_write_to_buf(buf, blen, pcb->name, sizeof(pcb->name), offset);
     spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
     return ret;
-}
-
-static int prio_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    pcb_t *pcb = f->data0;
-    irqctx_t ctx;
-    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-    char data[16];
-    int strlen = snprintf(data, sizeof(data), "%u", pcb->sched.priority);
-    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
-    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
-}
-
-static int ppid_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    pcb_t *pcb = f->data0;
-    irqctx_t ctx;
-    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-    char data[16];
-    int strlen = snprintf(data, sizeof(data), "%u", pcb->parent->pid);
-    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
-    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
 }
 
 static int cwd_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
@@ -48,36 +46,6 @@ static int cwd_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     vfs_dentry_get_fullpath(pcb->cwd, cwd, sizeof(cwd));
     spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
     return pseudofs_write_to_buf(buf, blen, cwd, sizeof(cwd), offset);
-}
-
-static int running_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    pcb_t *pcb = f->data0;
-    irqctx_t ctx;
-    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-    char data[16];
-    int strlen = snprintf(data, sizeof(data), "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_RUNNING]);
-    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
-    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
-}
-
-static int ready_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    pcb_t *pcb = f->data0;
-    irqctx_t ctx;
-    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-    char data[16];
-    int strlen = snprintf(data, sizeof(data), "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_READY]);
-    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
-    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
-}
-
-static int blocked_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    pcb_t *pcb = f->data0;
-    irqctx_t ctx;
-    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-    char data[16];
-    int strlen = snprintf(data, sizeof(data), "%lu", (uint32_t) pcb->stats.ticks_spent[PROC_STATUS_BLOCKED]);
-    spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
-    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
 }
 
 static int start_time_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
