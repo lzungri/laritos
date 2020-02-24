@@ -52,7 +52,7 @@ static int bd_crash_stack_prot(void *param) {
     pcb_t *proc = process_get_current();
     uint32_t *bottom = proc->mm.stack_bottom;
     *bottom = 0xCACACACA;
-    uint32_t *top = (uint32_t *) ((char *) proc->mm.stack_bottom + proc->mm.stack_size - 4);
+    uint32_t *top = (uint32_t *) proc->mm.stack_top;
     *top = 0xBABABABA;
     return 0;
 }
