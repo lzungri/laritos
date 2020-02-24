@@ -85,7 +85,6 @@ typedef struct {
 
 typedef struct {
     atomic32_t ctx_switches;
-    atomic32_t nirqs[CONFIG_INT_MAX_IRQS];
 } laritos_stats_t;
 
 typedef struct {

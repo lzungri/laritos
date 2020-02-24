@@ -44,7 +44,7 @@ static irqret_t handle_irq(intc_t *intc, irq_t irq) {
     insane_async("Handling irq %u with int controller '%s'", irq, ((component_t *) intc)->id);
 
     // Update IRQs stats
-    atomic32_inc(&_laritos.stats.nirqs[irq]);
+    atomic32_inc(&intc->irq_count[irq]);
 
     irqret_t ret = IRQ_RET_NOT_HANDLED;
 
@@ -149,6 +149,10 @@ int intc_component_init(intc_t *intc, char *id, board_comp_t *bcomp,
     int i;
     for (i = 0; i < ARRAYSIZE(intc->handlers); i++) {
         INIT_LIST_HEAD(&intc->handlers[i]);
+    }
+
+    for (i = 0; i < ARRAYSIZE(intc->irq_count); i++) {
+        atomic32_init(&intc->irq_count[i], 0);
     }
     return 0;
 }

@@ -5,6 +5,7 @@
 #include <printf.h>
 #include <core.h>
 #include <component/component.h>
+#include <component/intc.h>
 #include <arch/debug.h>
 #include <process/core.h>
 #include <process/status.h>
@@ -30,12 +31,15 @@ static inline void debug_dump_kernel_stats(void) {
     int i;
     char buf[128] = { 0 };
     int written = 0;
-    for (i = 0; i < ARRAYSIZE(_laritos.stats.nirqs); i++) {
-        written += snprintf(buf + written, sizeof(buf) - written,
-                "%d=%ld ", i, atomic32_get(&_laritos.stats.nirqs[i]));
-        if ((i + 1) % 10 == 0 || i == ARRAYSIZE(_laritos.stats.nirqs) - 1) {
-            written = 0;
-            log_always("      irqs | %s", buf);
+    intc_t *intc = component_get_default(COMP_TYPE_INTC, intc_t);
+    if (intc != NULL) {
+        for (i = 0; i < ARRAYSIZE(intc->irq_count); i++) {
+            written += snprintf(buf + written, sizeof(buf) - written,
+                    "%d=%ld ", i, atomic32_get(&intc->irq_count[i]));
+            if ((i + 1) % 10 == 0 || i == ARRAYSIZE(intc->irq_count) - 1) {
+                written = 0;
+                log_always("      irqs | %s", buf);
+            }
         }
     }
 }

@@ -39,10 +39,6 @@ static int initialize_global_context(void) {
         while(1);
     }
 
-    int i;
-    for (i = 0; i < ARRAYSIZE(_laritos.stats.nirqs); i++) {
-        atomic32_init(&_laritos.stats.nirqs[i], 0);
-    }
     atomic32_init(&_laritos.stats.ctx_switches, 0);
 
     return 0;

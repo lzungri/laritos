@@ -39,6 +39,8 @@ typedef struct intc{
     component_t parent;
     intc_ops_t ops;
 
+    atomic32_t irq_count[CONFIG_INT_MAX_IRQS];
+
     list_head_t handlers[CONFIG_INT_MAX_IRQS];
 } intc_t;
 
