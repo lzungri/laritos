@@ -74,6 +74,21 @@ static int start_time_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset
     return pseudofs_write_to_buf(buf, blen, start, strlen + 1, offset);
 }
 
+static int syscalls_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    char data[512];
+    uint32_t totalb = 0;
+    int i;
+    for (i = 0; i < SYSCALL_LEN; i++) {
+        pcb_t *pcb = f->data0;
+        int strlen = snprintf(data + totalb, sizeof(data) - totalb, "%d %ld\n", i, atomic32_get(&pcb->stats.syscalls[i]));
+        if (strlen < 0) {
+            return -1;
+        }
+        totalb += strlen;
+    }
+    return pseudofs_write_to_buf(buf, blen, data, totalb, offset);
+}
+
 int process_sysfs_create(pcb_t *pcb) {
     char buf[CONFIG_FS_MAX_FILENAME_LEN];
     snprintf(buf, sizeof(buf), "%u", pcb->pid);
@@ -108,6 +123,9 @@ int process_sysfs_create(pcb_t *pcb) {
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "start_time", start_time_read, pcb) == NULL) {
         error("Failed to create 'start_time' sysfs file for pid=%u", pcb->pid);
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "syscalls", syscalls_read, pcb) == NULL) {
+        error("Failed to create 'syscalls' sysfs file for pid=%u", pcb->pid);
     }
 
     return 0;
