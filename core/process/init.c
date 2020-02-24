@@ -2,6 +2,7 @@
 
 #include <mm/heap.h>
 #include <process/core.h>
+#include <process/sysfs.h>
 #include <cpu/core.h>
 #include <utils/assert.h>
 #include <loader/loader.h>
@@ -62,6 +63,11 @@ static int start_os_tickers(void) {
         }
     }
     return 0;
+}
+
+static int complete_init_process_setup(void) {
+    // Create sysfs nodes for the init process
+    return process_sysfs_create(_laritos.proc.init);
 }
 
 static void init_loop(void) {
@@ -125,6 +131,8 @@ int init_main(void *data) {
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
 
     assert(fs_mount_essential_filesystems() >= 0, "Couldn't mount essential filesystems");
+
+    assert(complete_init_process_setup() >= 0, "Couldn't complete setup for the init process");
 
     assert(spawn_system_processes() >= 0, "Failed to create system processes");
 
