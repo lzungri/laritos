@@ -278,10 +278,14 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
     }
     pcb->mm.imgsize = stacksize;
 
-    extern void *__text_start[];
-    extern void *__text_end[];
     pcb->mm.text_start = (void *) __text_start;
-    pcb->mm.text_size = (secsize_t) ((char *) __text_end - (char *) __text_start);
+    pcb->mm.text_size = (secsize_t) __text_size;
+    pcb->mm.data_start = (void *) __data_start;
+    pcb->mm.data_size = (secsize_t) __data_size;
+    pcb->mm.bss_start = (void *) __bss_start;
+    pcb->mm.bss_size = (secsize_t) __bss_size;
+    pcb->mm.heap_start = (void *) __heap_start;
+    pcb->mm.heap_size = (secsize_t) ((char *) __heap_end - (char *) __heap_start);
 
     pcb->mm.stack_bottom = pcb->mm.imgaddr;
     pcb->mm.stack_size = stacksize;

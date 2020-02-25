@@ -101,3 +101,14 @@ typedef struct pcb {
  * @param data: Pointer to any data you want to send to the kernel function
  */
 typedef int (*kproc_main_t)(void *data);
+
+extern void *__text_start[];
+extern secsize_t __text_size[];
+extern void *__data_start[];
+extern secsize_t __data_size[];
+extern void *__bss_start[];
+extern secsize_t __bss_size[];
+// Start address of the OS heap
+extern void *__heap_start[];
+// End address of the OS heap
+extern void *__heap_end[];
