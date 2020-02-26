@@ -196,6 +196,13 @@ static int create_root_sysfs(sysfs_mod_t *sysfs) {
         return -1;
     }
 
+    _laritos.fs.comp_type_root = vfs_dir_create(_laritos.fs.comp_root, "type",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (_laritos.fs.comp_type_root == NULL) {
+        error("Error creating component/type sysfs directory");
+        return -1;
+    }
+
     return 0;
 }
 
