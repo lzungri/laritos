@@ -93,20 +93,4 @@ int cpu_component_register(cpu_t *c) {
     return 0;
 }
 
-static int create_root_sysfs(sysfs_mod_t *sysfs) {
-    fs_dentry_t *cpu_root = vfs_dir_create(_laritos.fs.comp_type_root, "cpu",
-            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
-    if (cpu_root == NULL) {
-        error("Error creating cpu sysfs directory");
-        return -1;
-    }
-
-    return 0;
-}
-
-static int remove_root_sysfs(sysfs_mod_t *sysfs) {
-    return vfs_dir_remove(_laritos.fs.comp_type_root, "cpu");
-}
-
-
-SYSFS_MODULE(cpu, create_root_sysfs, remove_root_sysfs)
+SYSFS_COMPONENT_TYPE_MODULE(cpu)

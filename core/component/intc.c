@@ -206,20 +206,4 @@ int intc_component_register(intc_t *intc) {
     return 0;
 }
 
-static int create_root_sysfs(sysfs_mod_t *sysfs) {
-    fs_dentry_t *root = vfs_dir_create(_laritos.fs.comp_type_root, "intc",
-            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
-    if (root == NULL) {
-        error("Error creating intc sysfs directory");
-        return -1;
-    }
-
-    return 0;
-}
-
-static int remove_root_sysfs(sysfs_mod_t *sysfs) {
-    return vfs_dir_remove(_laritos.fs.comp_type_root, "intc");
-}
-
-
-SYSFS_MODULE(intc, create_root_sysfs, remove_root_sysfs)
+SYSFS_COMPONENT_TYPE_MODULE(intc)

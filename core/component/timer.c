@@ -7,6 +7,10 @@
 #include <component/timer.h>
 #include <utils/function.h>
 #include <sync/spinlock.h>
+#include <fs/vfs/core.h>
+#include <fs/vfs/types.h>
+#include <fs/pseudofs.h>
+#include <fs/core.h>
 
 int timer_init(timer_comp_t *t) {
     spinlock_init(&t->lock);
@@ -93,3 +97,5 @@ int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t 
 
     return 0;
 }
+
+SYSFS_COMPONENT_TYPE_MODULE(timer)
