@@ -24,6 +24,7 @@ static int mem_create_sysfs(sysfs_mod_t *sysfs) {
 
     if (pseudofs_create_custom_ro_file(_laritos.fs.mem_root, "heap_avail", avail_mem_read) == NULL) {
         error("Failed to create 'heap_avail' sysfs file");
+        return -1;
     }
 
     return 0;

@@ -30,10 +30,12 @@ static int sched_create_sysfs(sysfs_mod_t *sysfs) {
 
     if (pseudofs_create_custom_ro_file(_laritos.fs.sched_root, "ctxswitches", ctxswitches_read) == NULL) {
         error("Failed to create 'ctxswitches' sysfs file");
+        return -1;
     }
 
     if (pseudofs_create_custom_ro_file(_laritos.fs.sched_root, "osticks", osticks_read) == NULL) {
         error("Failed to create 'osticks' sysfs file");
+        return -1;
     }
 
     return 0;

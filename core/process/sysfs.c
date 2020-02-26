@@ -156,52 +156,68 @@ int process_sysfs_create(pcb_t *pcb) {
 
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "name", name_read, pcb) == NULL) {
         error("Failed to create 'name' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "ppid", ppid_read, pcb) == NULL) {
         error("Failed to create 'ppid' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "prio", prio_read, pcb) == NULL) {
         error("Failed to create 'maps' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_bool_file(dir, "kernel", FS_ACCESS_MODE_READ, &pcb->kernel) == NULL) {
         error("Failed to create 'kernel' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_str_file(dir, "cmd", FS_ACCESS_MODE_READ,
             pcb->cmd, sizeof(pcb->cmd)) == NULL) {
         error("Failed to create 'cmd' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "cwd", cwd_read, pcb) == NULL) {
         error("Failed to create 'cwd' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "running", running_read, pcb) == NULL) {
         error("Failed to create 'running' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "ready", ready_read, pcb) == NULL) {
         error("Failed to create 'running' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "blocked", blocked_read, pcb) == NULL) {
         error("Failed to create 'running' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "start_time", start_time_read, pcb) == NULL) {
         error("Failed to create 'start_time' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "syscalls", syscalls_read, pcb) == NULL) {
         error("Failed to create 'syscalls' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "maps", maps_read, pcb) == NULL) {
         error("Failed to create 'maps' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "status", status_read, pcb) == NULL) {
         error("Failed to create 'status' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "pc", pc_read, pcb) == NULL) {
         error("Failed to create 'pc' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "mode", mode_read, pcb) == NULL) {
         error("Failed to create 'mode' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "avail_stack", availstack_read, pcb) == NULL) {
         error("Failed to create 'avail_stack' sysfs file for pid=%u", pcb->pid);
+        return -1;
     }
 
     return 0;
