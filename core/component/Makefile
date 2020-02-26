@@ -1,6 +1,5 @@
 obj-y += component.o
 obj-y += uart.o
-obj-y += inputdev.o
 obj-y += intc.o
 obj-y += bytestream.o
 obj-y += timer.o

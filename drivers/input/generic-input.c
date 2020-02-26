@@ -36,4 +36,4 @@ fail:
     return -1;
 }
 
-DRIVER_MODULE(inputdev, process);
+DRIVER_MODULE(gen_input, process);

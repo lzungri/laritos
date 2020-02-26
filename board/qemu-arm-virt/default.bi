@@ -41,7 +41,7 @@ hrtimer0:armv7_generic_timer|maxfreq=62500000,intio=true,intc=@gic,irq=30,trigge
 uart0:pl011|baseaddr=0x09000000,blocking=true,intio=true,intc=@gic,irq=33,trigger=level_hi
 
 # Input device using the uart as input transport
-input_uart:inputdev|transport=bytestream@uart0
+input_uart:gen_input|transport=bytestream@uart0
 
 # Interrupt controller
 gic:gicv2|distaddr=0x08000000,cpuaddr=0x08010000
