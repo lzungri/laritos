@@ -202,6 +202,9 @@ static int freeblocks_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset
     uint32_t totalb = 0;
     fl_node_t *pos = NULL;
     list_for_each_entry(pos, &freelist, list) {
+        if (sizeof(data) - totalb < 32) {
+            break;
+        }
         int strlen = snprintf(data + totalb, sizeof(data) - totalb, "0x%p %lu\n", pos, pos->size);
         if (strlen < 0) {
             spinlock_release(&lock, &ctx);
