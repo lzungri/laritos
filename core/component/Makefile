@@ -6,3 +6,4 @@ obj-y += timer.o
 obj-y += vrtimer.o
 obj-y += cpu.o
 obj-y += ticker.o
+obj-y += inputdev.o

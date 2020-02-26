@@ -13,18 +13,12 @@ static int process(board_comp_t *comp) {
         return -1;
     }
 
-    if (component_init((component_t *) idev, comp->id, comp, COMP_TYPE_INPUTDEV, NULL, NULL) < 0){
+    if (inputdev_component_init(idev, comp->id, comp, NULL, NULL) < 0){
         error("Failed to initialize '%s'", comp->id);
         goto fail;
     }
 
-    if (board_get_component_attr(comp, "transport", (component_t **) &idev->transport) < 0 ||
-            idev->transport->ops.read == NULL) {
-        error("No valid transport found for inputdev '%s'", comp->id);
-        goto fail;
-    }
-
-    if (component_register((component_t *) idev) < 0) {
+    if (inputdev_component_register(idev) < 0) {
         error("Couldn't register inputdev '%s'", comp->id);
         goto fail;
     }
