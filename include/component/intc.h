@@ -60,3 +60,4 @@ static inline int intc_disable_irq_with_handler(intc_t *intc, irq_t irq, irq_han
 int intc_enable_irq_with_handler(intc_t *intc, irq_t irq, irq_trigger_mode_t tmode, irq_handler_t h, void *data);
 int intc_component_init(intc_t *intc, char *id, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c));
+int intc_component_register(intc_t *intc);
