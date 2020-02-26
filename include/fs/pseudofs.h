@@ -17,6 +17,13 @@ fs_dentry_t *pseudofs_create_custom_ro_file(fs_dentry_t *parent, char *fname, in
 fs_dentry_t *pseudofs_create_custom_ro_file_with_dataptr(fs_dentry_t *parent, char *fname, int (*read)(fs_file_t *, void *, size_t, uint32_t), void *data);
 fs_dentry_t *pseudofs_create_custom_wo_file(fs_dentry_t *parent, char *fname, int (*write)(fs_file_t *, void *, size_t, uint32_t));
 fs_dentry_t *pseudofs_create_custom_wo_file_with_dataptr(fs_dentry_t *parent, char *fname, int (*write)(fs_file_t *, void *, size_t, uint32_t), void *data);
+fs_dentry_t *pseudofs_create_custom_rw_file_with_dataptr(fs_dentry_t *parent, char *fname,
+        int (*read)(fs_file_t *, void *, size_t, uint32_t),
+        int (*write)(fs_file_t *, void *, size_t, uint32_t),
+        void *data);
+fs_dentry_t *pseudofs_create_custom_rw_file(fs_dentry_t *parent, char *fname,
+        int (*read)(fs_file_t *, void *, size_t, uint32_t),
+        int (*write)(fs_file_t *, void *, size_t, uint32_t));
 
 
 /**
