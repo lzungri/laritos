@@ -23,6 +23,13 @@ typedef enum {
     COMP_TYPE_LEN,
 } component_type_t;
 
+static inline char *component_get_type_str(component_type_t t) {
+    static char *str[COMP_TYPE_LEN] =
+        { "unknown", "cpu", "uart", "intc", "rtc", "hrtimer", "bytestream", "inputdev", "logger",
+          "ticker", "vrtimer", "sched" };
+    return t < COMP_TYPE_LEN ? str[t] : "???";
+}
+
 struct component;
 typedef struct {
     int (*init)(struct component *c);
