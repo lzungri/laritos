@@ -127,7 +127,7 @@ static int curtimer_periodic_read(fs_file_t *f, void *buf, size_t blen, uint32_t
     return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
 }
 
-static int create_timer_sysfs(timer_comp_t *t) {
+static int create_instance_sysfs(timer_comp_t *t) {
     fs_dentry_t *root = vfs_dentry_lookup_from(_laritos.fs.comp_type_root, "timer");
     fs_dentry_t *dir = vfs_dir_create(root, t->parent.id, FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (dir == NULL) {
@@ -160,7 +160,7 @@ int timer_component_register(timer_comp_t *t) {
         error("Couldn't register '%s'", t->parent.id);
         return -1;
     }
-    create_timer_sysfs(t);
+    create_instance_sysfs(t);
     return 0;
 }
 

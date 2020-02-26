@@ -154,7 +154,7 @@ static int irqcount_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) 
     return pseudofs_write_to_buf(buf, blen, data, totalb, offset);
 }
 
-static int create_intc_sysfs(intc_t *intc) {
+static int create_instance_sysfs(intc_t *intc) {
     fs_dentry_t *root = vfs_dentry_lookup_from(_laritos.fs.comp_type_root, "intc");
     fs_dentry_t *dir = vfs_dir_create(root, intc->parent.id, FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (dir == NULL) {
@@ -202,7 +202,7 @@ int intc_component_register(intc_t *intc) {
         error("Couldn't register interrupt controller '%s'", intc->parent.id);
         return -1;
     }
-    create_intc_sysfs(intc);
+    create_instance_sysfs(intc);
     return 0;
 }
 
