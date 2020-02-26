@@ -103,6 +103,10 @@ int init_main(void *data) {
 
     assert(module_load_static_modules() >= 0, "Failed to load static modules");
 
+    assert(fs_mount_essential_filesystems() >= 0, "Couldn't mount essential filesystems");
+
+    assert(complete_init_process_setup() >= 0, "Couldn't complete setup for the init process");
+
     assert(board_parse_and_initialize(&_laritos.bi) >= 0, "Couldn't initialize board");
 
 #ifdef CONFIG_LOG_LEVEL_DEBUG
@@ -129,10 +133,6 @@ int init_main(void *data) {
 
     // Seed random generator from current time
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
-
-    assert(fs_mount_essential_filesystems() >= 0, "Couldn't mount essential filesystems");
-
-    assert(complete_init_process_setup() >= 0, "Couldn't complete setup for the init process");
 
     assert(spawn_system_processes() >= 0, "Failed to create system processes");
 
