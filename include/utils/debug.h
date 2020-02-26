@@ -178,7 +178,7 @@ static inline void debug_dump_registered_comps(void) {
     component_t *c;
     log_always("Components:");
     for_each_component(c) {
-        log_always("   %s@0x%p, type: %d", c->id, c, c->type);
+        log_always("   %s@0x%p, type: %s (%d)", c->id, c, component_get_type_str(c->type), c->type);
         if (strnlen(c->product, sizeof(c->product)) > 0) {
             log_always("      product: %s", c->product);
         }
