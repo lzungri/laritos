@@ -10,10 +10,6 @@
 #include <utils/function.h>
 #include <mm/heap.h>
 #include <sync/atomic.h>
-#include <fs/vfs/core.h>
-#include <fs/vfs/types.h>
-#include <fs/pseudofs.h>
-#include <fs/core.h>
 #include <generated/autoconf.h>
 
 

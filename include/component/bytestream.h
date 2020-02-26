@@ -21,3 +21,4 @@ typedef struct bytestream {
 int bytestream_component_init(bytestream_t *bs, board_comp_t *bcomp,
         void *rxbuf, size_t rxsize, void *txbuf, size_t txsize,
         int (*transmit_data)(bytestream_t *bs));
+int bytestream_component_register(bytestream_t *bs);
