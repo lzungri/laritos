@@ -174,7 +174,7 @@ static int process(board_comp_t *comp) {
 
     component_set_info((component_t *) rtc, "PrimeCell RTC (pl031)", "ARM", "RTC AMBA compliant SoC");
 
-    if (component_register((component_t *) rtc) < 0) {
+    if (timer_component_register(t) < 0) {
         error("Couldn't register rtc '%s'", comp->id);
         goto fail;
     }

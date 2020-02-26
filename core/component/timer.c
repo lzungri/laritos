@@ -1,6 +1,7 @@
 #include <log.h>
 
 #include <stdint.h>
+#include <printf.h>
 #include <board/core.h>
 #include <irq/types.h>
 #include <component/component.h>
@@ -95,6 +96,71 @@ int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t 
     board_get_int_attr_def(bcomp, "maxfreq", (int *) &t->maxfreq, 0);
     t->curfreq = t->maxfreq;
 
+    return 0;
+}
+
+static int curfreq_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    timer_comp_t *t = f->data0;
+    char data[16];
+    int strlen = snprintf(data, sizeof(data), "%lu", t->curfreq);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
+}
+
+static int irq_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    timer_comp_t *t = f->data0;
+    char data[16];
+    int strlen = snprintf(data, sizeof(data), "%u", t->irq);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
+}
+
+static int curtimer_ticks_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    timer_comp_t *t = f->data0;
+    char data[16];
+    int strlen = snprintf(data, sizeof(data), "%lu", t->curtimer.enabled ? (uint32_t) t->curtimer.ticks : 0);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
+}
+
+static int curtimer_periodic_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    timer_comp_t *t = f->data0;
+    char data[16];
+    int strlen = snprintf(data, sizeof(data), "%d", t->curtimer.enabled ? t->curtimer.periodic : 0);
+    return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
+}
+
+static int create_timer_sysfs(timer_comp_t *t) {
+    fs_dentry_t *root = vfs_dentry_lookup_from(_laritos.fs.comp_type_root, "timer");
+    fs_dentry_t *dir = vfs_dir_create(root, t->parent.id, FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (dir == NULL) {
+        error("Error creating '%s' sysfs directory", t->parent.id);
+        return -1;
+    }
+
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "curfreq", curfreq_read, t) == NULL) {
+        error("Failed to create 'irqcount' sysfs file");
+        return -1;
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "irq", irq_read, t) == NULL) {
+        error("Failed to create 'irq' sysfs file");
+        return -1;
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "curtimer_ticks", curtimer_ticks_read, t) == NULL) {
+        error("Failed to create 'curtimer_ticks' sysfs file");
+        return -1;
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "curtimer_periodic", curtimer_periodic_read, t) == NULL) {
+        error("Failed to create 'curtimer_periodic' sysfs file");
+        return -1;
+    }
+
+    return 0;
+}
+
+int timer_component_register(timer_comp_t *t) {
+    if (component_register((component_t *) t) < 0) {
+        error("Couldn't register '%s'", t->parent.id);
+        return -1;
+    }
+    create_timer_sysfs(t);
     return 0;
 }
 
