@@ -98,6 +98,8 @@ typedef struct {
     fs_dentry_t *slab_root;
     fs_dentry_t *stats_root;
     fs_dentry_t *sched_root;
+    fs_dentry_t *comp_root;
+    fs_dentry_t *comp_info_root;
 } laritos_fs_t;
 
 /**
