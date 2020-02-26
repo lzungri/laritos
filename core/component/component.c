@@ -181,7 +181,7 @@ bool component_are_mandatory_comps_present(void) {
     return true;
 }
 
-static int create_sysfs(sysfs_mod_t *sysfs) {
+static int create_root_sysfs(sysfs_mod_t *sysfs) {
     _laritos.fs.comp_root = vfs_dir_create(_laritos.fs.sysfs_root, "component",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.comp_root == NULL) {
@@ -199,9 +199,9 @@ static int create_sysfs(sysfs_mod_t *sysfs) {
     return 0;
 }
 
-static int remove_sysfs(sysfs_mod_t *sysfs) {
+static int remove_root_sysfs(sysfs_mod_t *sysfs) {
     return vfs_dir_remove(_laritos.fs.sysfs_root, "component");
 }
 
 
-SYSFS_MODULE(component, create_sysfs, remove_sysfs)
+SYSFS_MODULE(component, create_root_sysfs, remove_root_sysfs)

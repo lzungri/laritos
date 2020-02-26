@@ -230,7 +230,7 @@ int process_sysfs_remove(pcb_t *pcb) {
 }
 
 
-static int process_create_sysfs_root(sysfs_mod_t *sysfs) {
+static int create_root_sysfs(sysfs_mod_t *sysfs) {
     _laritos.fs.proc_root = vfs_dir_create(_laritos.fs.sysfs_root, "proc",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.proc_root == NULL) {
@@ -240,8 +240,8 @@ static int process_create_sysfs_root(sysfs_mod_t *sysfs) {
     return 0;
 }
 
-static int process_remove_sysfs_root(sysfs_mod_t *sysfs) {
+static int remove_root_sysfs(sysfs_mod_t *sysfs) {
     return vfs_dir_remove(_laritos.fs.sysfs_root, "proc");
 }
 
-SYSFS_MODULE(proc, process_create_sysfs_root, process_remove_sysfs_root)
+SYSFS_MODULE(proc, create_root_sysfs, remove_root_sysfs)
