@@ -28,12 +28,10 @@ static int schedid_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
 }
 
 static int create_cpu_sysfs(cpu_t *c) {
-    char buf[16];
-    snprintf(buf, sizeof(buf), "cpu%u", c->id);
     fs_dentry_t *cpu_root = vfs_dentry_lookup_from(_laritos.fs.comp_type_root, "cpu");
-    fs_dentry_t *cpudir = vfs_dir_create(cpu_root, buf, FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    fs_dentry_t *cpudir = vfs_dir_create(cpu_root, c->parent.id, FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (cpudir == NULL) {
-        error("Error creating '%s' sysfs directory", buf);
+        error("Error creating '%s' sysfs directory", c->parent.id);
         return -1;
     }
 
@@ -107,7 +105,7 @@ static int create_root_sysfs(sysfs_mod_t *sysfs) {
 }
 
 static int remove_root_sysfs(sysfs_mod_t *sysfs) {
-    return vfs_dir_remove(_laritos.fs.comp_root, "cpu");
+    return vfs_dir_remove(_laritos.fs.comp_type_root, "cpu");
 }
 
 
