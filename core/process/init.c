@@ -65,9 +65,12 @@ static int start_os_tickers(void) {
     return 0;
 }
 
-static int complete_init_process_setup(void) {
+static int complete_init_process_setup(pcb_t *init) {
+    init->parent = init;
+    init->cwd = _laritos.fs.root;
+
     // Create sysfs nodes for the init process
-    return process_sysfs_create(_laritos.proc.init);
+    return process_sysfs_create(init);
 }
 
 static void init_loop(void) {
@@ -105,7 +108,7 @@ int init_main(void *data) {
 
     assert(fs_mount_essential_filesystems() >= 0, "Couldn't mount essential filesystems");
 
-    assert(complete_init_process_setup() >= 0, "Couldn't complete setup for the init process");
+    assert(complete_init_process_setup(process_get_current()) >= 0, "Couldn't complete setup for the init process");
 
     assert(board_parse_and_initialize(&_laritos.bi) >= 0, "Couldn't initialize board");
 
