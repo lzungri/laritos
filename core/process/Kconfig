@@ -28,7 +28,7 @@ menu "Health monitor"
 
 config PROCESS_HEALTH_CHECK_INTERVAL
     int "Time in seconds between system health checks"
-    default 10
+    default 30
 
 config PROCESS_HEALTH_AVAIL_HEAP_WARNING_THRESHOLD
     int "% of available heap at which to trigger a warning"
