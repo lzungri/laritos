@@ -25,14 +25,6 @@ typedef struct {
 // Null-terminated array of pointers to test descriptors
 extern test_descriptor_t *__tests_start[];
 
-/**
- * Runs all the test cases registered via DEF_TEST macro
- *
- * @param testdescs: Null-terminated array of pointers to test descriptors
- * @return 0 on success, <0 on error
- */
-int test_main(void *testdescs);
-
 
 /**
  * Defines a test case function and registers into the test cases array

@@ -5,7 +5,6 @@
 #include <process/sysfs.h>
 #include <cpu/core.h>
 #include <utils/assert.h>
-#include <loader/loader.h>
 #include <sync/spinlock.h>
 #include <component/component.h>
 #include <component/ticker.h>
@@ -19,37 +18,6 @@
 #include <module/core.h>
 #include <generated/autoconf.h>
 #include <generated/utsrelease.h>
-
-#ifdef CONFIG_TEST_ENABLED
-#include <test/test.h>
-#endif
-
-static int spawn_system_processes(void) {
-    info("Spawning idle process");
-    int idle_main(void *data);
-    if(process_spawn_kernel_process("idle", idle_main, NULL,
-            CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST) == NULL) {
-        error("Could not create idle process");
-        return -1;
-    }
-
-#ifdef CONFIG_TEST_ENABLED
-    log_always("***** Running in test mode *****");
-    info("Spawning test process");
-    if (process_spawn_kernel_process("test", test_main, __tests_start,
-            CONFIG_PROCESS_TEST_STACK_SIZE, CONFIG_SCHED_PRIORITY_MAX_USER - 2) == NULL) {
-        error("Could not create TEST process");
-        return -1;
-    };
-#endif
-
-    // TODO: This code will disappear once we implement a shell and file system
-    if (loader_load_executable_from_memory(0) == NULL) {
-        error("Failed to load app #0");
-    }
-
-    return 0;
-}
 
 static int start_os_tickers(void) {
     // Start OS tickers
@@ -137,7 +105,7 @@ int init_main(void *data) {
     // Seed random generator from current time
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
 
-    assert(spawn_system_processes() >= 0, "Failed to create system processes");
+    assert(process_spawn_system_procs() >= 0, "Failed to create system processes");
 
     assert(start_os_tickers() >= 0, "Failed to start OS tickers");
 
