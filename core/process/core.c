@@ -383,6 +383,11 @@ int process_spawn_system_procs(void) {
             error("Couldn't launch %s process", pmod->id);
             break;
         }
+
+        irqctx_t ctx;
+        spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+        ref_inc(&pmod->proc->refcnt);
+        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
     }
 
     // Check if there was an error spawning the processes
@@ -391,6 +396,12 @@ int process_spawn_system_procs(void) {
             error("Killing %s process", pmod->id);
             if (pmod->proc != NULL) {
                 process_kill(pmod->proc);
+
+                irqctx_t ctx;
+                spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
+                ref_dec(&pmod->proc->refcnt);
+                spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
+                pmod->proc = NULL;
             }
         }
         return -1;
