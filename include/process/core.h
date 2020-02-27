@@ -45,6 +45,9 @@ int process_wait_pid(uint16_t pid, int *status);
  * Note: Must be called with _laritos.proc.pcbs_data_lock held
  */
 uint32_t process_get_avail_stack_locked(pcb_t *pcb);
+int process_register_module(proc_mod_t *pmod, module_t *owner);
+int process_unregister_module(proc_mod_t *pmod, module_t *owner);
+int process_spawn_system_procs(void);
 
 static inline pcb_t *process_get_current(void) {
     pcb_t *pcb = CPU_LOCAL_GET(_laritos.sched.running);
@@ -98,3 +101,20 @@ static inline void process_set_name(pcb_t *pcb, char *name) {
  */
 #define for_each_ready_process_safe_locked(_p, _n) \
     list_for_each_entry_safe(_p, _n, CPU_LOCAL_GET_PTR_LOCKED(_laritos.sched.ready_pcbs), sched.sched_node)
+
+#define PROCESS_LAUNCHER_MODULE(_id, _launcher) \
+    static proc_mod_t _proc_mod_ ## _id = { \
+        .id = #_id, \
+        .list = LIST_HEAD_INIT(_proc_mod_ ## _id.list), \
+        .launcher = _launcher, \
+    }; \
+    \
+    static int _init_ ## _id(module_t *m) { \
+        return process_register_module(&_proc_mod_ ## _id, m); \
+    } \
+    \
+    static int _deinit_ ## _id(module_t *m) { \
+        return process_unregister_module(&_proc_mod_ ## _id, m); \
+    } \
+    \
+    MODULE(_proc_mod_ ## _id, _init_ ## _id, _deinit_ ## _id)

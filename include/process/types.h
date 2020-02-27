@@ -94,6 +94,13 @@ typedef struct pcb {
     refcount_t refcnt;
 } pcb_t;
 
+typedef struct proc_mod{
+    char *id;
+    list_head_t list;
+    pcb_t *(*launcher)(struct proc_mod *pmod);
+    pcb_t *proc;
+} proc_mod_t;
+
 
 /**
  * Kernel process main function type
