@@ -32,7 +32,11 @@ static inline void sched_switch_to_locked(pcb_t *from, pcb_t *to, irqctx_t *pcbd
 
     insane_async("Resuming execution of pid=%u", process_get_current()->pid);
     // Check if the stack has been corrupted
-    spprot_check(process_get_current());
+    if (spprot_is_stack_corrupted(process_get_current())) {
+        // Kill process and schedule
+        exc_handle_process_exception(process_get_current());
+        // Execution will never reach this point
+    }
 
 #ifdef DEBUG
     debug_dump_processes();
