@@ -4,6 +4,10 @@ config TEST_ENABLED
     bool "Enable kernel testing"
     default n
 
+config PROCESS_TEST_STACK_SIZE
+    int "Test process stack size"
+    default 8196
+
 source "test/fwk/Kconfig"
 source "test/tests/Kconfig"
 
