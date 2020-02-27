@@ -99,8 +99,12 @@ static int bd_malloc(void *param) {
     }
     unsigned long size = strtoul(param, NULL, 0);
     void *ptr = malloc(size);
+    if (ptr == NULL) {
+        error("Not enough memory");
+        return -1;
+    }
     info("new malloc'ed chunk of %lu bytes at %p", size, ptr);
-    return ptr != NULL ? 0 : -1;
+    return 0;
 }
 
 static int bd_free(void *param) {
