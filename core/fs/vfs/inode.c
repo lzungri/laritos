@@ -107,9 +107,27 @@ int vfs_dir_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, uint32
         return -1;
     }
 
+    if (dirlist == NULL || listlen == 0) {
+        return -1;
+    }
+
     verbose("Listing dir of '%s'", f->dentry->name);
 
-    return f->dentry->inode->fops.listdir(f, offset, dirlist, listlen);
+    // Leave one slot for the '..' virtual dir when listing dirs for offset=0
+    int ndirs = f->dentry->inode->fops.listdir(f,
+                    offset == 0 ? 0 : offset - 1,
+                    offset == 0 ? &dirlist[1] : dirlist,
+                    offset == 0 ? listlen - 1 : listlen);
+    if (ndirs < 0) {
+        return ndirs;
+    }
+    if (offset == 0) {
+        fs_listdir_t *dir = &dirlist[0];
+        strncpy(dir->name, "..", 3);
+        dir->isdir = true;
+        ndirs++;
+    }
+    return ndirs;
 }
 
 fs_dentry_t *vfs_file_create(fs_dentry_t *parent, char *fname, fs_access_mode_t mode) {

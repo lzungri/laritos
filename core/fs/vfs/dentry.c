@@ -63,6 +63,16 @@ static inline fs_dentry_t *find_children(fs_dentry_t *parent, char *relpath) {
         namelen = min(namelen, (size_t) (nextpath - relpath));
     }
 
+    // Check for '/' dir
+    if (namelen == 0) {
+        return parent;
+    }
+
+    // '..' is just a virtual name to reference the parent dentry
+    if (namelen == 2 && relpath[0] == '.' && relpath[1] == '.') {
+        return parent->parent != NULL ? parent->parent : parent;
+    }
+
     fs_dentry_t *d;
     list_for_each_entry(d, &parent->children, siblings) {
         if (strncmp(d->name, relpath, namelen) == 0 && d->name[namelen] == '\0') {
@@ -73,7 +83,7 @@ static inline fs_dentry_t *find_children(fs_dentry_t *parent, char *relpath) {
 }
 
 fs_dentry_t *vfs_dentry_lookup_from(fs_dentry_t *parent, char *relpath) {
-    if (relpath == NULL || strlen(relpath) == 0) {
+    if (relpath == NULL) {
         return NULL;
     }
 
