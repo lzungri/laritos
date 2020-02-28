@@ -30,8 +30,10 @@ typedef struct {
     int (*read)(struct fs_file *f, void *buf, size_t blen, uint32_t offset);
     int (*write)(struct fs_file *f, void *buf, size_t blen, uint32_t offset);
     /**
-     * @return: Number of directory entries filled up. If return value equals to <listlen>,
-     * that means there may be more entries left to be read in subsequent calls
+     * @return: -1 on error, otherwise the number of directory entries filled up.
+     *      If return value equals to <listlen>, that means there may be more entries left
+     *      to be read in subsequent calls
+     *
      */
     int (*listdir)(struct fs_file *f, uint32_t offset, fs_listdir_t *dirlist, uint32_t listlen);
 } fs_file_ops_t;
