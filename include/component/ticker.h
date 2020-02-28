@@ -38,3 +38,4 @@ int ticker_init(ticker_comp_t *t);
 int ticker_deinit(ticker_comp_t *t);
 int ticker_component_init(ticker_comp_t *t, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c));
+int ticker_start_all(void);

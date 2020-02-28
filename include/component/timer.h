@@ -70,3 +70,4 @@ int timer_init(timer_comp_t *t);
 int timer_deinit(timer_comp_t *t);
 int timer_component_init(timer_comp_t *t, board_comp_t *bcomp, component_type_t type,
         int (*init)(component_t *c), int (*deinit)(component_t *c));
+int timer_component_register(timer_comp_t *t);

@@ -55,6 +55,11 @@ typedef struct {
      * Pointer to the init process pcb_t
      */
     struct pcb *init;
+
+    /**
+     * List of modules used to spawn kernel processes
+     */
+    list_head_t proc_launchers;
 } laritos_process_t;
 
 typedef struct {
@@ -85,15 +90,22 @@ typedef struct {
 
 typedef struct {
     atomic32_t ctx_switches;
-    atomic32_t nirqs[CONFIG_INT_MAX_IRQS];
 } laritos_stats_t;
 
 typedef struct {
     list_head_t fstypes;
     list_head_t mounts;
+    list_head_t sysfs_mods;
     fs_dentry_t *root;
     fs_dentry_t *sysfs_root;
     fs_dentry_t *proc_root;
+    fs_dentry_t *mem_root;
+    fs_dentry_t *slab_root;
+    fs_dentry_t *stats_root;
+    fs_dentry_t *sched_root;
+    fs_dentry_t *comp_root;
+    fs_dentry_t *comp_info_root;
+    fs_dentry_t *comp_type_root;
 } laritos_fs_t;
 
 /**

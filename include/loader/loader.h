@@ -38,4 +38,4 @@ pcb_t *loader_load_executable_from_memory(uint16_t appidx);
         return loader_unregister_loader_type(&_loader_ ## _id); \
     } \
     \
-    MODULE(_id, _init_ ## _id, _deinit_ ## _id)
+    MODULE(loader_ ## _id, _init_ ## _id, _deinit_ ## _id)

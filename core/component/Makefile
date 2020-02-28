@@ -1,9 +1,10 @@
-obj-y += uart.o
 obj-y += component.o
-obj-y += inputdev.o
+obj-y += uart.o
 obj-y += intc.o
+obj-y += stream.o
 obj-y += bytestream.o
 obj-y += timer.o
 obj-y += vrtimer.o
 obj-y += cpu.o
 obj-y += ticker.o
+obj-y += inputdev.o

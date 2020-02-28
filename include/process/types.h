@@ -14,6 +14,7 @@
 #include <sync/atomic.h>
 #include <sync/condition.h>
 #include <syscall/syscall-no.h>
+#include <fs/vfs/types.h>
 #include <generated/autoconf.h>
 
 typedef struct {
@@ -31,6 +32,7 @@ typedef struct {
     void *heap_start;
     secsize_t heap_size;
     void *stack_bottom;
+    void *stack_top;
     secsize_t stack_size;
 
     spctx_t *sp_ctx;
@@ -76,7 +78,7 @@ typedef struct pcb {
     bool kernel;
 
     char cmd[CONFIG_PROCESS_MAX_CMD_LEN];
-    char cwd[CONFIG_FS_MAX_FILENAME_LEN];
+    fs_dentry_t *cwd;
     pcb_mm_t mm;
     pcb_sched_t sched;
     pcb_fs_t fs;
@@ -92,6 +94,13 @@ typedef struct pcb {
     refcount_t refcnt;
 } pcb_t;
 
+typedef struct proc_mod{
+    char *id;
+    list_head_t list;
+    pcb_t *(*launcher)(struct proc_mod *pmod);
+    pcb_t *proc;
+} proc_mod_t;
+
 
 /**
  * Kernel process main function type
@@ -99,3 +108,14 @@ typedef struct pcb {
  * @param data: Pointer to any data you want to send to the kernel function
  */
 typedef int (*kproc_main_t)(void *data);
+
+extern void *__text_start[];
+extern secsize_t __text_size[];
+extern void *__data_start[];
+extern secsize_t __data_size[];
+extern void *__bss_start[];
+extern secsize_t __bss_size[];
+// Start address of the OS heap
+extern void *__heap_start[];
+// End address of the OS heap
+extern void *__heap_end[];

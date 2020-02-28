@@ -172,7 +172,7 @@ static int process(board_comp_t *comp) {
         goto fail;
     }
 
-    if (component_register((component_t *) gic) < 0) {
+    if (intc_component_register(intc) < 0) {
         error("Couldn't register gic '%s'", comp->id);
         goto fail;
     }

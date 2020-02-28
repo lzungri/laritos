@@ -12,7 +12,7 @@
 #endif
 
 #ifdef CONFIG_LOG_USE_COLORS
-#define RESTORE_COLOR "\e[39m"
+#define RESTORE_COLOR "\e[00m"
 #define FATAL_COLOR "\e[38;5;196m"
 #define ERROR_COLOR "\e[91m"
 #define WARN_COLOR "\e[93m"

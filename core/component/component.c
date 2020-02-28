@@ -8,6 +8,10 @@
 #include <utils/utils.h>
 #include <dstruct/list.h>
 #include <mm/heap.h>
+#include <fs/vfs/core.h>
+#include <fs/vfs/types.h>
+#include <fs/pseudofs.h>
+#include <fs/core.h>
 
 int component_init_global_context() {
     int i;
@@ -48,6 +52,57 @@ int component_init(component_t *comp, char *id, board_comp_t *bcomp, component_t
     return 0;
 }
 
+static int product_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    component_t *c = f->data0;
+    return pseudofs_write_to_buf(buf, blen, c->product, sizeof(c->product), offset);
+}
+
+static int vendor_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    component_t *c = f->data0;
+    return pseudofs_write_to_buf(buf, blen, c->vendor, sizeof(c->vendor), offset);
+}
+
+static int desc_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    component_t *c = f->data0;
+    return pseudofs_write_to_buf(buf, blen, c->description, sizeof(c->description), offset);
+}
+
+static int default_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    component_t *c = f->data0;
+    return pseudofs_write_to_buf(buf, blen, c->dflt ? "1" : "0", 2, offset);
+}
+
+static int create_component_sysfs(component_t *c) {
+    fs_dentry_t *compdir = vfs_dir_create(_laritos.fs.comp_info_root, c->id,
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (compdir == NULL) {
+        error("Error creating '%s' sysfs directory", c->id);
+        return -1;
+    }
+
+    if (pseudofs_create_custom_ro_file_with_dataptr(compdir, "product", product_read, c) == NULL) {
+        error("Failed to create 'freq' sysfs file");
+        return -1;
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(compdir, "vendor", vendor_read, c) == NULL) {
+        error("Failed to create 'vendor' sysfs file");
+        return -1;
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(compdir, "desc", desc_read, c) == NULL) {
+        error("Failed to create 'desc' sysfs file");
+        return -1;
+    }
+    if (pseudofs_create_custom_ro_file_with_dataptr(compdir, "default", default_read, c) == NULL) {
+        error("Failed to create 'default' sysfs file");
+        return -1;
+    }
+    return 0;
+}
+
+static int remove_component_sysfs(component_t *c) {
+    return vfs_dir_remove(_laritos.fs.comp_info_root, c->id);
+}
+
 int component_register(component_t *comp) {
     debug("Registering component '%s' of type %d", comp->id, comp->type);
 
@@ -64,20 +119,29 @@ int component_register(component_t *comp) {
         list_del(&comp->list);
         return -1;
     }
-    info("'%s' component (type %d%s) registered", comp->id, comp->type, comp->dflt ? ", default" : "");
+
+    create_component_sysfs(comp);
+
+    info("'%s' %s component registered%s", comp->id,
+            component_get_type_str(comp->type), comp->dflt ? " (default)" : "");
     return 0;
 }
 
 int component_unregister(component_t *comp) {
     verbose("De-initializing component '%s'", comp->id);
+
+    remove_component_sysfs(comp);
+
     list_del(&comp->list);
     if (comp->ops.deinit(comp) < 0) {
         error("Couldn't de-initialize component '%s'", comp->id);
     }
+
     if (comp->ops.free != NULL) {
         verbose("Freeing component '%s'", comp->id);
         comp->ops.free(comp);
     }
+
     info("Component '%s' of type %d unregistered", comp->id, comp->type);
     return 0;
 }
@@ -116,3 +180,35 @@ bool component_are_mandatory_comps_present(void) {
     }
     return true;
 }
+
+static int create_root_sysfs(sysfs_mod_t *sysfs) {
+    _laritos.fs.comp_root = vfs_dir_create(_laritos.fs.sysfs_root, "component",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (_laritos.fs.comp_root == NULL) {
+        error("Error creating component sysfs directory");
+        return -1;
+    }
+
+    _laritos.fs.comp_info_root = vfs_dir_create(_laritos.fs.comp_root, "info",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (_laritos.fs.comp_info_root == NULL) {
+        error("Error creating component/info sysfs directory");
+        return -1;
+    }
+
+    _laritos.fs.comp_type_root = vfs_dir_create(_laritos.fs.comp_root, "type",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (_laritos.fs.comp_type_root == NULL) {
+        error("Error creating component/type sysfs directory");
+        return -1;
+    }
+
+    return 0;
+}
+
+static int remove_root_sysfs(sysfs_mod_t *sysfs) {
+    return vfs_dir_remove(_laritos.fs.sysfs_root, "component");
+}
+
+
+SYSFS_MODULE(component, create_root_sysfs, remove_root_sysfs)

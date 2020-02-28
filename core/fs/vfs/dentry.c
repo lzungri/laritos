@@ -1,4 +1,3 @@
-//#define DEBUG
 #include <log.h>
 
 #include <stdbool.h>
@@ -9,6 +8,7 @@
 #include <fs/vfs/core.h>
 #include <mm/heap.h>
 #include <utils/file.h>
+#include <utils/math.h>
 #include <process/core.h>
 #include <generated/autoconf.h>
 
@@ -63,6 +63,16 @@ static inline fs_dentry_t *find_children(fs_dentry_t *parent, char *relpath) {
         namelen = min(namelen, (size_t) (nextpath - relpath));
     }
 
+    // Check for '/' dir
+    if (namelen == 0) {
+        return parent;
+    }
+
+    // '..' is just a virtual name to reference the parent dentry
+    if (namelen == 2 && relpath[0] == '.' && relpath[1] == '.') {
+        return parent->parent != NULL ? parent->parent : parent;
+    }
+
     fs_dentry_t *d;
     list_for_each_entry(d, &parent->children, siblings) {
         if (strncmp(d->name, relpath, namelen) == 0 && d->name[namelen] == '\0') {
@@ -73,7 +83,7 @@ static inline fs_dentry_t *find_children(fs_dentry_t *parent, char *relpath) {
 }
 
 fs_dentry_t *vfs_dentry_lookup_from(fs_dentry_t *parent, char *relpath) {
-    if (relpath == NULL || strlen(relpath) == 0) {
+    if (relpath == NULL) {
         return NULL;
     }
 
@@ -107,8 +117,7 @@ fs_dentry_t *vfs_dentry_lookup(char *path) {
         return vfs_dentry_lookup_from(_laritos.fs.root, path);
     }
 
-    fs_dentry_t *cwd = vfs_dentry_lookup(process_get_current()->cwd);
-    return vfs_dentry_lookup_from(cwd, path);
+    return vfs_dentry_lookup_from(process_get_current()->cwd, path);
 }
 
 fs_dentry_t *vfs_dentry_lookup_parent(char *path) {
@@ -135,6 +144,42 @@ bool vfs_dentry_is_dir(fs_dentry_t *d) {
         return false;
     }
     return d->inode->mode & FS_ACCESS_MODE_DIR;
+}
+
+static void get_fullpath(fs_dentry_t *d, char *buf, size_t *buflen) {
+    if (d == NULL) {
+        if (*buflen > 0) {
+            buf[0] = '\0';
+        }
+        return;
+    }
+
+    get_fullpath(d->parent, buf, buflen);
+
+    if (*buflen > 1) {
+        strncat(buf, d->name, *buflen - 1);
+        *buflen -= min(strlen(d->name), *buflen - 1);
+
+        if (*buflen > 1) {
+            strncat(buf, "/", *buflen - 1);
+            (*buflen)--;
+        }
+    }
+    return;
+}
+
+int vfs_dentry_get_fullpath(fs_dentry_t *d, char *buf, size_t buflen) {
+    if (d == NULL || buf == NULL || buflen <= 1) {
+        return -1;
+    }
+
+    get_fullpath(d, buf, &buflen);
+    // Remove extra '/'
+    size_t len = strlen(buf);
+    if (len > 1 && buf[len - 1] == '/') {
+        buf[len - 1] = '\0';
+    }
+    return 0;
 }
 
 

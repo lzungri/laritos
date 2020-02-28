@@ -11,6 +11,7 @@
 #include <time/core.h>
 #include <sync/atomic.h>
 #include <mm/exc-handlers.h>
+#include <generated/autoconf.h>
 
 
 #define DEF_SCE(_sysno, _func) \
@@ -32,6 +33,17 @@ static syscall_entry_t systable[] = {
     DEF_SCE(SYSCALL_USLEEP, syscall_usleep),
     DEF_SCE(SYSCALL_SET_PRIORITY, syscall_set_priority),
     DEF_SCE(SYSCALL_SET_PROCESS_NAME, syscall_set_process_name),
+    DEF_SCE(SYSCALL_READLINE, syscall_readline),
+    DEF_SCE(SYSCALL_GETC, syscall_getc),
+    DEF_SCE(SYSCALL_GETCWD, syscall_getcwd),
+    DEF_SCE(SYSCALL_CHDIR, syscall_chdir),
+    DEF_SCE(SYSCALL_LISTDIR, syscall_listdir),
+    DEF_SCE(SYSCALL_OPEN, syscall_open),
+    DEF_SCE(SYSCALL_READ, syscall_read),
+    DEF_SCE(SYSCALL_CLOSE, syscall_close),
+#ifdef CONFIG_SYSCALL_OPEN_BACKDOOR
+    DEF_SCE(SYSCALL_BACKDOOR, syscall_backdoor),
+#endif
 };
 
 
@@ -45,7 +57,7 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
     if (arch_context_is_kernel(ctx)) {
         if (_laritos.process_mode) {
             error("Cannot issue a system call in a kernel process");
-            exc_handle_process_exception(process_get_current());
+            exc_handle_generic_process_error(process_get_current(), ctx);
             // Execution will never reach this point
         } else {
             fatal("ABORT: Cannot issue a system call while in kernel mode");
@@ -57,7 +69,7 @@ int syscall(int sysno, spctx_t *ctx, int32_t arg0, int32_t arg1, int32_t arg2, i
 
     if (sysno >= ARRAYSIZE(systable) || systable[sysno].call == NULL) {
         error_async("Unrecognized or unsupported system call #%d", sysno);
-        process_kill_and_schedule(pcb);
+        exc_handle_generic_process_error(pcb, ctx);
         // Execution will never reach this point
     }
 

@@ -6,3 +6,4 @@ obj-y += ticker/
 obj-y += vrtimer/
 obj-y += timer/
 obj-y += logger/
+obj-y += input/

@@ -11,6 +11,10 @@
 #include <sync/atomic.h>
 #include <generated/autoconf.h>
 #include <irq/types.h>
+#include <fs/vfs/core.h>
+#include <fs/vfs/types.h>
+#include <fs/pseudofs.h>
+#include <fs/core.h>
 
 int intc_enable_irq_with_handler(intc_t *intc, irq_t irq, irq_trigger_mode_t tmode, irq_handler_t h, void *data) {
     if (intc->ops.set_irq_trigger_mode(intc, irq, tmode) < 0) {
@@ -44,7 +48,7 @@ static irqret_t handle_irq(intc_t *intc, irq_t irq) {
     insane_async("Handling irq %u with int controller '%s'", irq, ((component_t *) intc)->id);
 
     // Update IRQs stats
-    atomic32_inc(&_laritos.stats.nirqs[irq]);
+    atomic32_inc(&intc->irq_count[irq]);
 
     irqret_t ret = IRQ_RET_NOT_HANDLED;
 
@@ -130,6 +134,42 @@ DEF_NOT_IMPL_FUNC(ni_set_irq_target_cpus, intc_t *intc, irq_t irq, cpubits_t bit
 DEF_NOT_IMPL_FUNC(ni_set_irqs_enable_for_this_cpu, intc_t *intc, bool enabled);
 DEF_NOT_IMPL_FUNC(ni_set_priority_filter, intc_t *intc, uint8_t lowest_prio);
 
+
+
+static int irqcount_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    intc_t *intc = f->data0;
+    int i;
+    char data[512];
+    uint32_t totalb = 0;
+    for (i = 0; i < ARRAYSIZE(intc->irq_count) && sizeof(data) - totalb > 16; i++) {
+        uint32_t count = atomic32_get(&intc->irq_count[i]);
+        if (count > 0) {
+            int strlen = snprintf(data + totalb, sizeof(data) - totalb, "%d %lu\n", i, count);
+            if (strlen < 0) {
+                return -1;
+            }
+            totalb += strlen;
+        }
+    }
+    return pseudofs_write_to_buf(buf, blen, data, totalb, offset);
+}
+
+static int create_instance_sysfs(intc_t *intc) {
+    fs_dentry_t *root = vfs_dentry_lookup_from(_laritos.fs.comp_type_root, "intc");
+    fs_dentry_t *dir = vfs_dir_create(root, intc->parent.id, FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    if (dir == NULL) {
+        error("Error creating '%s' sysfs directory", intc->parent.id);
+        return -1;
+    }
+
+    if (pseudofs_create_custom_ro_file_with_dataptr(dir, "irqcount", irqcount_read, intc) == NULL) {
+        error("Failed to create 'irqcount' sysfs file");
+        return -1;
+    }
+
+    return 0;
+}
+
 int intc_component_init(intc_t *intc, char *id, board_comp_t *bcomp,
         int (*init)(component_t *c), int (*deinit)(component_t *c)) {
     if (component_init((component_t *) intc, id, bcomp, COMP_TYPE_INTC, init, deinit) < 0) {
@@ -150,5 +190,20 @@ int intc_component_init(intc_t *intc, char *id, board_comp_t *bcomp,
     for (i = 0; i < ARRAYSIZE(intc->handlers); i++) {
         INIT_LIST_HEAD(&intc->handlers[i]);
     }
+
+    for (i = 0; i < ARRAYSIZE(intc->irq_count); i++) {
+        atomic32_init(&intc->irq_count[i], 0);
+    }
     return 0;
 }
+
+int intc_component_register(intc_t *intc) {
+    if (component_register((component_t *) intc) < 0) {
+        error("Couldn't register interrupt controller '%s'", intc->parent.id);
+        return -1;
+    }
+    create_instance_sysfs(intc);
+    return 0;
+}
+
+SYSFS_COMPONENT_TYPE_MODULE(intc)

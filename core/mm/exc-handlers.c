@@ -49,6 +49,22 @@ void exc_handle_process_exception(pcb_t *pcb) {
     }
 }
 
+void exc_handle_generic_process_error(pcb_t *pcb, spctx_t *ctx) {
+    debug_message_delimiter();
+
+    int32_t pc = ctx->ret - 4;
+    arch_debug_dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
+
+    uint32_t *ptr = (uint32_t *) max(pc - 4 * 8, 0);
+    error_async("Instructions around pc=0x%p:", (void *) pc);
+    int i;
+    for (i = 0; i < 16; i++, ptr++) {
+        error_async(" %s [0x%p] 0x%08lx", ptr == (uint32_t *) pc ? "->" : "  ", ptr, *ptr);
+    }
+
+    exc_handle_process_exception(pcb);
+}
+
 void exc_undef_handler(int32_t pc, spctx_t *ctx) {
     if (!_laritos.process_mode) {
         fatal("ABORT");

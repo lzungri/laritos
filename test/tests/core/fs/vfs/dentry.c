@@ -127,3 +127,84 @@ T(vfs_dentry_lookup_returns_child_dentry_when_relpath_found) {
     vfs_dentry_free(d2);
     vfs_dentry_free(d1);
 TEND
+
+T(vfs_dentry_lookup_works_properly_with_double_dots_dir) {
+    fs_dentry_t *d1 = vfs_dentry_alloc("d1", NULL, NULL);
+    tassert(d1 != NULL);
+    fs_dentry_t *d2 = vfs_dentry_alloc("d2", NULL, d1);
+    tassert(d2 != NULL);
+    fs_dentry_t *d3 = vfs_dentry_alloc("d3", NULL, d2);
+    tassert(d3 != NULL);
+    fs_dentry_t *d4 = vfs_dentry_alloc("d4", NULL, d3);
+    tassert(d4 != NULL);
+
+    tassert(vfs_dentry_lookup_from(d1, "d2") == d2);
+    tassert(vfs_dentry_lookup_from(d1, "d2/..") == d1);
+    tassert(vfs_dentry_lookup_from(d1, "d2/../") == d1);
+    tassert(vfs_dentry_lookup_from(d1, "d2/d3/../") == d2);
+    tassert(vfs_dentry_lookup_from(d1, "d2/d3/../../") == d1);
+    tassert(vfs_dentry_lookup_from(d1, "d2/d3/d4/../../../") == d1);
+
+    tassert(vfs_dentry_lookup_from(d2, "") == d2);
+    tassert(vfs_dentry_lookup_from(d2, "..") == d1);
+    tassert(vfs_dentry_lookup_from(d2, "../d2/d3/d4/") == d4);
+
+    vfs_dentry_free(d4);
+    vfs_dentry_free(d3);
+    vfs_dentry_free(d2);
+    vfs_dentry_free(d1);
+TEND
+
+T(vfs_dentry_lookup_works_properly_with_multiple_consecutive_slashes) {
+    fs_dentry_t *d1 = vfs_dentry_alloc("d1", NULL, NULL);
+    tassert(d1 != NULL);
+    fs_dentry_t *d2 = vfs_dentry_alloc("d2", NULL, d1);
+    tassert(d2 != NULL);
+    fs_dentry_t *d3 = vfs_dentry_alloc("d3", NULL, d2);
+    tassert(d3 != NULL);
+    fs_dentry_t *d4 = vfs_dentry_alloc("d4", NULL, d3);
+    tassert(d4 != NULL);
+
+    tassert(vfs_dentry_lookup_from(d1, "d2") == d2);
+    tassert(vfs_dentry_lookup_from(d1, "d2//") == d2);
+    tassert(vfs_dentry_lookup_from(d1, "d2///d3") == d3);
+    tassert(vfs_dentry_lookup_from(d1, "d2/d3////") == d3);
+    tassert(vfs_dentry_lookup_from(d1, "d2//////d3////d4") == d4);
+    tassert(vfs_dentry_lookup_from(d1, "d2///d3/d4//") == d4);
+
+    vfs_dentry_free(d4);
+    vfs_dentry_free(d3);
+    vfs_dentry_free(d2);
+    vfs_dentry_free(d1);
+TEND
+
+T(vfs_dentry_get_fullpath_returns_all_dentries_until_parent) {
+    fs_dentry_t *root = vfs_dentry_alloc("", NULL, NULL);
+    tassert(root != NULL);
+    fs_dentry_t *d1 = vfs_dentry_alloc("d1", NULL, root);
+    tassert(d1 != NULL);
+    fs_dentry_t *d2 = vfs_dentry_alloc("d2", NULL, d1);
+    tassert(d2 != NULL);
+    fs_dentry_t *d3 = vfs_dentry_alloc("d3", NULL, d2);
+    tassert(d3 != NULL);
+    fs_dentry_t *d4 = vfs_dentry_alloc("d4", NULL, d3);
+    tassert(d4 != NULL);
+
+    char path[128] = { 0 };
+    vfs_dentry_get_fullpath(root, path, sizeof(path));
+    tassert(strncmp("/", path, sizeof(path)) == 0);
+    vfs_dentry_get_fullpath(d1, path, sizeof(path));
+    tassert(strncmp("/d1", path, sizeof(path)) == 0);
+    vfs_dentry_get_fullpath(d2, path, sizeof(path));
+    tassert(strncmp("/d1/d2", path, sizeof(path)) == 0);
+    vfs_dentry_get_fullpath(d3, path, sizeof(path));
+    tassert(strncmp("/d1/d2/d3", path, sizeof(path)) == 0);
+    vfs_dentry_get_fullpath(d4, path, sizeof(path));
+    tassert(strncmp("/d1/d2/d3/d4", path, sizeof(path)) == 0);
+
+    vfs_dentry_free(d4);
+    vfs_dentry_free(d3);
+    vfs_dentry_free(d2);
+    vfs_dentry_free(d1);
+    vfs_dentry_free(root);
+TEND

@@ -13,3 +13,4 @@ char *strncpy(char *dest, const char *src, size_t n);
 char *strchr(const char *s, char c);
 char *strrchr(const char *s, char c);
 char *strstr(const char *str, const char *substr, size_t n);
+char *strncat(char *s1, const char *s2, size_t n);

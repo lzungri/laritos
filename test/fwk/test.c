@@ -16,7 +16,13 @@ typedef struct {
     uint16_t potential_leaks;
 } test_ctx_t;
 
-int test_main(void *testdescs) {
+/**
+ * Runs all the test cases registered via DEF_TEST macro
+ *
+ * @param testdescs: Null-terminated array of pointers to test descriptors
+ * @return 0 on success, <0 on error
+ */
+static int test_main(void *testdescs) {
     test_descriptor_t **tests = testdescs;
 
     info("Tests:");
@@ -101,3 +107,10 @@ int test_main(void *testdescs) {
     info("--------------------------------------------------");
     return 0;
 }
+
+static pcb_t *launcher(proc_mod_t *pmod) {
+    return process_spawn_kernel_process("test", test_main, __tests_start,
+            CONFIG_PROCESS_TEST_STACK_SIZE, CONFIG_SCHED_PRIORITY_MAX_USER - 2);
+}
+
+PROCESS_LAUNCHER_MODULE(test, launcher)

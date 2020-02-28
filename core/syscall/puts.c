@@ -4,6 +4,7 @@
 #include <syscall/syscall.h>
 
 int syscall_puts(const char *s) {
-    info("[pid=%u] %s", process_get_current()->pid, s);
+    // Output process message as a raw string (i.e. no date, pid, tag metadata, etc)
+    __add_log_msg(true, NULL, NULL, (char *) s);
     return 0;
 }

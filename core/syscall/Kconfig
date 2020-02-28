@@ -4,4 +4,8 @@ config SYSCALL_MAX_ARGS
     int "Max number of arguments allowed for a system call"
     default 6
 
+config SYSCALL_OPEN_BACKDOOR
+    bool "Open backdoor syscall for CIA/debugging purposes"
+    default y
+
 endmenu

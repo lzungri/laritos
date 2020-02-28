@@ -23,6 +23,13 @@ typedef enum {
     COMP_TYPE_LEN,
 } component_type_t;
 
+static inline char *component_get_type_str(component_type_t t) {
+    static char *str[COMP_TYPE_LEN] =
+        { "unknown", "cpu", "uart", "intc", "rtc", "hrtimer", "bytestream", "inputdev", "logger",
+          "ticker", "vrtimer", "sched" };
+    return t < COMP_TYPE_LEN ? str[t] : "???";
+}
+
 struct component;
 typedef struct {
     int (*init)(struct component *c);
@@ -86,3 +93,22 @@ void component_dump_registered_comps(void);
 int component_set_info(component_t *c, char *product, char *vendor, char *description);
 bool component_any_of(component_type_t t);
 bool component_are_mandatory_comps_present(void);
+
+
+#define SYSFS_COMPONENT_TYPE_MODULE(_id) \
+    static int create_root_sysfs(sysfs_mod_t *sysfs) { \
+        fs_dentry_t *root = vfs_dir_create(_laritos.fs.comp_type_root, #_id, \
+                FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC); \
+        if (root == NULL) { \
+            error("Error creating component/" #_id " sysfs directory"); \
+            return -1; \
+        } \
+    \
+        return 0; \
+    } \
+    \
+    static int remove_root_sysfs(sysfs_mod_t *sysfs) { \
+        return vfs_dir_remove(_laritos.fs.comp_type_root, #_id); \
+    } \
+    \
+    SYSFS_MODULE(_id, create_root_sysfs, remove_root_sysfs)

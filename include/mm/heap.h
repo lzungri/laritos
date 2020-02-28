@@ -4,16 +4,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <process/types.h>
 #include <generated/autoconf.h>
-
-// Start address of the OS heap
-extern char __heap_start[];
-// End address of the OS heap
-extern char __heap_end[];
 
 int heap_initialize(void *start, uint32_t size);
 uint32_t heap_get_available(void);
-void heap_dump_info(void);
 void *_malloc(size_t size);
 void _free(void *ptr);
 

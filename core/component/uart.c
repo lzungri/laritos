@@ -72,7 +72,7 @@ int uart_component_init(uart_t *uart, board_comp_t *bcomp,
 }
 
 int uart_component_register(uart_t *uart) {
-    if (component_register((component_t *) &uart->bs) < 0) {
+    if (bytestream_component_register(&uart->bs) < 0) {
         error("Failed to register '%s' uart bytestream", uart->parent.id);
         return -1;
     }

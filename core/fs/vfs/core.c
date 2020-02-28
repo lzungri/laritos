@@ -12,6 +12,7 @@
 int vfs_init_global_context() {
     INIT_LIST_HEAD(&_laritos.fs.fstypes);
     INIT_LIST_HEAD(&_laritos.fs.mounts);
+    INIT_LIST_HEAD(&_laritos.fs.sysfs_mods);
     return 0;
 }
 

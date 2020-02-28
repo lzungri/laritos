@@ -1,8 +1,9 @@
 #pragma once
 
-#include <syscall/syscall-no.h>
-#include <time/core.h>
 #include <stdint.h>
+#include <time/core.h>
+#include <fs/vfs/types.h>
+#include <syscall/syscall-no.h>
 #include <generated/autoconf.h>
 
 #ifdef CONFIG_CPU_32_BITS
@@ -21,3 +22,12 @@ int syscall_msleep(uint32_t msecs);
 int syscall_usleep(uint32_t usecs);
 int syscall_set_priority(uint8_t priority);
 int syscall_set_process_name(char *name);
+int syscall_readline(char *buf, int buflen);
+int syscall_getc(void);
+int syscall_backdoor(char *command, void *arg);
+int syscall_getcwd(char *buf, int buflen);
+int syscall_chdir(char *path);
+int syscall_listdir(char *path, uint32_t offset, fs_listdir_t *dirs, int dirlen);
+fs_file_t *syscall_open(char *path, fs_access_mode_t mode);
+int syscall_read(fs_file_t *file, void *buf, int buflen);
+int syscall_close(fs_file_t *file);

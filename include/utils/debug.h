@@ -5,6 +5,7 @@
 #include <printf.h>
 #include <core.h>
 #include <component/component.h>
+#include <component/intc.h>
 #include <arch/debug.h>
 #include <process/core.h>
 #include <process/status.h>
@@ -30,12 +31,15 @@ static inline void debug_dump_kernel_stats(void) {
     int i;
     char buf[128] = { 0 };
     int written = 0;
-    for (i = 0; i < ARRAYSIZE(_laritos.stats.nirqs); i++) {
-        written += snprintf(buf + written, sizeof(buf) - written,
-                "%d=%ld ", i, atomic32_get(&_laritos.stats.nirqs[i]));
-        if ((i + 1) % 10 == 0 || i == ARRAYSIZE(_laritos.stats.nirqs) - 1) {
-            written = 0;
-            log_always("      irqs | %s", buf);
+    intc_t *intc = component_get_default(COMP_TYPE_INTC, intc_t);
+    if (intc != NULL) {
+        for (i = 0; i < ARRAYSIZE(intc->irq_count); i++) {
+            written += snprintf(buf + written, sizeof(buf) - written,
+                    "%d=%ld ", i, atomic32_get(&intc->irq_count[i]));
+            if ((i + 1) % 10 == 0 || i == ARRAYSIZE(intc->irq_count) - 1) {
+                written = 0;
+                log_always("      irqs | %s", buf);
+            }
         }
     }
 }
@@ -166,9 +170,6 @@ __attribute__((always_inline)) static inline void debug_dump_cur_state(void) {
     // calling dump_all_regs()
     arch_debug_dump_all_regs();
     debug_dump_kernel_stats();
-    // TODO: Dump kernel info
-    void heap_dump_info(void);
-    heap_dump_info();
     debug_dump_processes();
     debug_dump_processes_stats();
 }
@@ -177,7 +178,7 @@ static inline void debug_dump_registered_comps(void) {
     component_t *c;
     log_always("Components:");
     for_each_component(c) {
-        log_always("   %s@0x%p, type: %d", c->id, c, c->type);
+        log_always("   %s@0x%p, type: %s (%d)", c->id, c, component_get_type_str(c->type), c->type);
         if (strnlen(c->product, sizeof(c->product)) > 0) {
             log_always("      product: %s", c->product);
         }

@@ -7,6 +7,10 @@
 #include <component/component.h>
 #include <component/stream.h>
 #include <component/bytestream.h>
+#include <fs/vfs/core.h>
+#include <fs/vfs/types.h>
+#include <fs/pseudofs.h>
+#include <fs/core.h>
 
 static int bytestream_read(stream_t *s, void *buf, size_t n, bool blocking) {
     bytestream_t *bs = (bytestream_t *) s;
@@ -46,5 +50,13 @@ int bytestream_component_init(bytestream_t *bs, board_comp_t *bcomp,
 
     circbuf_init(&bs->rxcb, rxbuf, rxsize);
     circbuf_init(&bs->txcb, txbuf, txsize);
+    return 0;
+}
+
+int bytestream_component_register(bytestream_t *bs) {
+    if (stream_component_register((stream_t *) bs) < 0) {
+        error("Couldn't register '%s'", bs->parent.parent.id);
+        return -1;
+    }
     return 0;
 }

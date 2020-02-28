@@ -45,11 +45,15 @@ int __add_log_msg(bool sync, char *level, char *tag, char *fmt, ...) {
     }
 
     pcb_t *pcb = process_get_current();
-    int nchars = snprintf(lineb, sizeof(lineb), "%02d:%02d:%02d.%03d %3u %-6.6s %s %s: ",
-            cal.hour, cal.min, cal.sec, NS_TO_MS(curtime.ns), pcb->pid, pcb->name, level, tag);
-    // If the required number of chars is bigger than the size of the buffer, then truncate string
-    if (nchars > sizeof(lineb)) {
-        goto full_buf;
+    int nchars = 0;
+
+    if (level != NULL) {
+        nchars = snprintf(lineb, sizeof(lineb), "%02d:%02d:%02d.%03d %3u %-6.6s %s %s: ",
+                cal.hour, cal.min, cal.sec, NS_TO_MS(curtime.ns), pcb->pid, pcb->name, level, tag);
+        // If the required number of chars is bigger than the size of the buffer, then truncate string
+        if (nchars > sizeof(lineb)) {
+            goto full_buf;
+        }
     }
 
     va_list ap;

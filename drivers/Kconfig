@@ -6,5 +6,6 @@ source "drivers/rtc/Kconfig"
 source "drivers/cpu/Kconfig"
 source "drivers/timer/Kconfig"
 source "drivers/logger/Kconfig"
+source "drivers/input/Kconfig"
 
 endmenu
