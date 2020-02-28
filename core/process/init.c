@@ -19,19 +19,6 @@
 #include <generated/autoconf.h>
 #include <generated/utsrelease.h>
 
-static int start_os_tickers(void) {
-    // Start OS tickers
-    component_t *comp;
-    for_each_component_type(comp, COMP_TYPE_TICKER) {
-        ticker_comp_t *ticker = (ticker_comp_t *) comp;
-        info("Starting ticker '%s'", comp->id);
-        if (ticker->ops.resume(ticker) < 0) {
-            error("Could not start ticker %s", comp->id);
-            return -1;
-        }
-    }
-    return 0;
-}
 
 static int complete_init_process_setup(pcb_t *init) {
     init->parent = init;
@@ -107,8 +94,9 @@ int init_main(void *data) {
 
     assert(process_spawn_system_procs() >= 0, "Failed to create system processes");
 
-    assert(start_os_tickers() >= 0, "Failed to start OS tickers");
+    assert(ticker_start_all() >= 0, "Failed to start OS tickers");
 
     init_loop();
+
     return 0;
 }

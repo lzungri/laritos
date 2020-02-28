@@ -120,6 +120,20 @@ int ticker_component_init(ticker_comp_t *t, board_comp_t *bcomp,
     return 0;
 }
 
+int ticker_start_all(void) {
+    // Start OS tickers
+    component_t *comp;
+    for_each_component_type(comp, COMP_TYPE_TICKER) {
+        ticker_comp_t *ticker = (ticker_comp_t *) comp;
+        info("Starting ticker '%s'", comp->id);
+        if (ticker->ops.resume(ticker) < 0) {
+            error("Could not start ticker %s", comp->id);
+            return -1;
+        }
+    }
+    return 0;
+}
+
 
 
 #ifdef CONFIG_TEST_CORE_COMPONENT_TICKER
