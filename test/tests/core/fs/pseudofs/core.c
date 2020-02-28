@@ -196,7 +196,7 @@ T(pseudofs_listdir_only_works_on_directories) {
     tassert(!file_exist("/test/f1"));
 TEND
 
-T(pseudofs_listdir_returns_0_if_no_children) {
+T(pseudofs_listdir_returns_double_dot_dir_if_no_children) {
     fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
     tassert(fsm != NULL);
     tassert(file_exist("/test"));
@@ -209,7 +209,9 @@ T(pseudofs_listdir_returns_0_if_no_children) {
     tassert(d != NULL);
 
     fs_listdir_t dirs[5] = { 0 };
-    tassert(vfs_dir_listdir(d, 0, dirs, ARRAYSIZE(dirs)) == 0);
+    tassert(vfs_dir_listdir(d, 0, dirs, ARRAYSIZE(dirs)) == 1);
+    tassert(strncmp(dirs[0].name, "..", sizeof(dirs[0].name)) == 0);
+    tassert(dirs[0].isdir);
 
     vfs_file_close(d);
 
@@ -244,7 +246,17 @@ T(pseudofs_listdir_returns_the_list_of_dirs_and_files) {
     tassert(d != NULL);
 
     fs_listdir_t dirs[5] = { 0 };
-    tassert(vfs_dir_listdir(d, 0, dirs, ARRAYSIZE(dirs)) == 3);
+    tassert(vfs_dir_listdir(d, 0, dirs, ARRAYSIZE(dirs)) == 4);
+    tassert(strncmp(dirs[0].name, "..", sizeof(dirs[0].name)) == 0);
+    tassert(dirs[0].isdir);
+    tassert(strncmp(dirs[1].name, "f1", sizeof(dirs[0].name)) == 0);
+    tassert(!dirs[1].isdir);
+    tassert(strncmp(dirs[2].name, "f2", sizeof(dirs[1].name)) == 0);
+    tassert(!dirs[2].isdir);
+    tassert(strncmp(dirs[3].name, "dir2", sizeof(dirs[2].name)) == 0);
+    tassert(dirs[3].isdir);
+
+    tassert(vfs_dir_listdir(d, 1, dirs, ARRAYSIZE(dirs)) == 3);
     tassert(strncmp(dirs[0].name, "f1", sizeof(dirs[0].name)) == 0);
     tassert(!dirs[0].isdir);
     tassert(strncmp(dirs[1].name, "f2", sizeof(dirs[1].name)) == 0);
@@ -252,21 +264,21 @@ T(pseudofs_listdir_returns_the_list_of_dirs_and_files) {
     tassert(strncmp(dirs[2].name, "dir2", sizeof(dirs[2].name)) == 0);
     tassert(dirs[2].isdir);
 
-    tassert(vfs_dir_listdir(d, 1, dirs, ARRAYSIZE(dirs)) == 2);
+    tassert(vfs_dir_listdir(d, 2, dirs, ARRAYSIZE(dirs)) == 2);
     tassert(strncmp(dirs[0].name, "f2", sizeof(dirs[1].name)) == 0);
     tassert(!dirs[0].isdir);
     tassert(strncmp(dirs[1].name, "dir2", sizeof(dirs[2].name)) == 0);
     tassert(dirs[1].isdir);
 
-    tassert(vfs_dir_listdir(d, 2, dirs, ARRAYSIZE(dirs)) == 1);
+    tassert(vfs_dir_listdir(d, 3, dirs, ARRAYSIZE(dirs)) == 1);
     tassert(strncmp(dirs[0].name, "dir2", sizeof(dirs[2].name)) == 0);
     tassert(dirs[0].isdir);
 
     tassert(vfs_dir_listdir(d, 0, dirs, 1) == 1);
-    tassert(strncmp(dirs[0].name, "f1", sizeof(dirs[2].name)) == 0);
-    tassert(!dirs[0].isdir);
+    tassert(strncmp(dirs[0].name, "..", sizeof(dirs[2].name)) == 0);
+    tassert(dirs[0].isdir);
 
-    tassert(vfs_dir_listdir(d, 3, dirs, ARRAYSIZE(dirs)) == 0);
+    tassert(vfs_dir_listdir(d, 4, dirs, ARRAYSIZE(dirs)) == 0);
     tassert(vfs_dir_listdir(d, 100, dirs, ARRAYSIZE(dirs)) == 0);
 
     vfs_file_close(d);
