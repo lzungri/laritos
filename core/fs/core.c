@@ -32,7 +32,7 @@ int fs_mount_essential_filesystems(void) {
         error("Error mounting data");
         goto error_data;
     }
-    _laritos.fs.sysfs_root = mnt->root;
+    _laritos.fs.data_root = mnt->root;
 
     _laritos.fs.stats_root = vfs_dir_create(_laritos.fs.sysfs_root, "stats",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
