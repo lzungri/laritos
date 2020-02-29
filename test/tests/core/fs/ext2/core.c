@@ -7,7 +7,7 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/ext2.h>
-#include <utils/file.h>
+#include <fs/file.h>
 
 T(ext2_mount_adds_a_new_fs_under_mount_point) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);

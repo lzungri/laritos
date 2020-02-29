@@ -7,7 +7,7 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
-#include <utils/file.h>
+#include <fs/file.h>
 
 static char rdata[32];
 static char wdata[32];

@@ -5,7 +5,7 @@
 #include <process/core.h>
 #include <syscall/syscall.h>
 #include <sync/spinlock.h>
-#include <utils/file.h>
+#include <fs/file.h>
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 

@@ -124,7 +124,6 @@ static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
     debug("  block_size: %lu", (uint32_t) 1024 << sb->info.log_block_size);
     debug("  free_blocks_count: %lu", sb->info.free_blocks_count);
     debug("  free_inodes_count: %lu", sb->info.free_inodes_count);
-    debug("  blocks_count: %lu", sb->info.first_data_block);
     debug("  blocks_per_group: %lu", sb->info.blocks_per_group);
     debug("  frags_per_group: %lu", sb->info.frags_per_group);
     debug("  inodes_per_group: %lu", sb->info.inodes_per_group);

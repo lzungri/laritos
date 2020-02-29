@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <core.h>
 #include <string.h>
-#include <utils/file.h>
+#include <fs/file.h>
 #include <dstruct/list.h>
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
