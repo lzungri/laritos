@@ -5,11 +5,25 @@
 #include <fs/vfs/types.h>
 
 #define EXT2_SB_OFFSET 1024
+#define EXT2_BG_DESC_OFFSET (EXT2_SB_OFFSET + 1024)
+
 #define EXT2_SB_MAGIC 0xEF53
 
+/**
+ * Block group descriptor
+ */
 typedef struct {
-    fs_superblock_t parent;
+    uint32_t  block_bitmap;        /* Blocks bitmap block */
+    uint32_t  inode_bitmap;        /* Inodes bitmap block */
+    uint32_t  inode_table;     /* Inodes table block */
+    uint16_t  free_blocks_count;   /* Free blocks count */
+    uint16_t  free_inodes_count;   /* Free inodes count */
+    uint16_t  used_dirs_count; /* Directories count */
+    uint16_t  pad;
+    uint32_t  reserved[3];
+} ext2_bg_desc_t;
 
+typedef struct ext2_sb_info {
     /**
      * Taken from Linux source
      */
@@ -39,4 +53,10 @@ typedef struct {
     uint16_t  def_resuid;       /* Default uid for reserved blocks */
     uint16_t  def_resgid;       /* Default gid for reserved blocks */
 
+} ext2_sb_info_t;
+
+typedef struct {
+    fs_superblock_t parent;
+
+    ext2_sb_info_t info;
 } ext2_sb_t;
