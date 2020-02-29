@@ -102,6 +102,8 @@ static int mount(fs_type_t *fstype, fs_mount_t *m) {
 
     m->ops.unmount = unmount;
 
+    m->sb->root = alloc_inode(m->sb);
+
     return 0;
 
 error_sb:

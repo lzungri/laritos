@@ -86,9 +86,9 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags
         goto error_dentry;
     }
 
-    fsm->root->inode = fsm->sb->ops.alloc_inode(fsm->sb);
+    fsm->root->inode = fsm->sb->root;
     if (fsm->root->inode == NULL) {
-        error("Couldn't allocate root inode for '%s'", mount_point);
+        error("No root inode for '%s'", mount_point);
         goto error_inode;
     }
     fsm->root->inode->mode = FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_EXEC;

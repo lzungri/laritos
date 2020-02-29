@@ -175,8 +175,15 @@ static int mount(fs_type_t *fstype, fs_mount_t *m) {
         goto error_malformed;
     }
 
+    m->sb->root = alloc_inode(m->sb);
+    if (m->sb->root == NULL) {
+        error("Couldn't allocate root inode");
+        goto error_root;
+    }
+
     return 0;
 
+error_root:
 error_malformed:
 error_populate:
     free(ext2sb);
