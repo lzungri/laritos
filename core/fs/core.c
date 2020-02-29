@@ -26,6 +26,14 @@ int fs_mount_essential_filesystems(void) {
     }
     _laritos.fs.sysfs_root = mnt->root;
 
+    info("Mounting data filesystem");
+    mnt = vfs_mount_fs("ext2", "/data", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    if (mnt == NULL) {
+        error("Error mounting data");
+        goto error_data;
+    }
+    _laritos.fs.sysfs_root = mnt->root;
+
     _laritos.fs.stats_root = vfs_dir_create(_laritos.fs.sysfs_root, "stats",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.stats_root == NULL) {
@@ -59,6 +67,8 @@ int fs_mount_essential_filesystems(void) {
 error_sysfs_mods:
     vfs_dir_remove(_laritos.fs.sysfs_root, "stats");
 error_stats:
+    vfs_unmount_fs("/data");
+error_data:
     vfs_unmount_fs("/sys");
 error_sysfs:
     vfs_unmount_fs("/");
