@@ -48,11 +48,15 @@ static int ext2_def_close(fs_inode_t *inode, fs_file_t *f) {
 }
 
 static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, uint32_t listlen) {
+
+
+
+
     return 0;
 }
 
 static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
-    fs_inode_t *inode = calloc(1, sizeof(fs_inode_t));
+    fs_inode_t *inode = calloc(1, sizeof(ext2_inode_t));
     if (inode == NULL) {
         error("No memory available for ext2_inode_t structure");
         return NULL;
@@ -89,14 +93,12 @@ static inline uint32_t get_num_bgs(ext2_sb_t *sb) {
     return n;
 }
 
-static int get_bg_desc(ext2_sb_t *sb, uint32_t index, ext2_bg_desc_t *bgd) {
+static ext2_bg_desc_t *get_bg_desc(ext2_sb_t *sb, uint32_t index) {
     if (index >= get_num_bgs(sb)) {
-        return -1;
+        error("Invalid group descriptor index %lu", index);
+        return NULL;
     }
-    memcpy(bgd,
-            dataimg_base + EXT2_BG_DESC_OFFSET + sizeof(ext2_bg_desc_t) * index,
-            sizeof(ext2_bg_desc_t));
-    return 0;
+    return (ext2_bg_desc_t *) (dataimg_base + EXT2_BG_DESC_OFFSET + sizeof(ext2_bg_desc_t) * index);
 }
 
 static bool is_valid_superblock(ext2_sb_t *sb) {
@@ -106,13 +108,49 @@ static bool is_valid_superblock(ext2_sb_t *sb) {
     }
 
     // Maybe in the future...
-    if (sb->info.log_block_size > 0) {
+    if (sb->info.log_block_size != (1024 >> (EXT2_BLOCK_SIZE_BITS + 1))) {
         error("%lu bytes block size not supported", (uint32_t) 1024 << sb->info.log_block_size);
         return false;
     }
 
     return true;
 }
+
+static ext2_inode_data_t *get_inode(ext2_sb_t *sb, uint32_t inode) {
+    if (inode >= sb->info.inodes_count) {
+        error("Invalid inode %lu", inode);
+        return NULL;
+    }
+
+    uint32_t bg;
+    bg = (inode - 1) / sb->info.inodes_per_group;
+    ext2_bg_desc_t *bgd = get_bg_desc(sb, bg);
+    if (bgd == NULL) {
+        error("Couldn't get group descriptor");
+        return NULL;
+    }
+
+    uint32_t offset;
+    offset = ((inode - 1) % sb->info.inodes_per_group) * EXT2_INODE_SIZE;
+
+    uint32_t block;
+    block = bgd->inode_table + (offset >> EXT2_BLOCK_SIZE_BITS);
+
+    uint32_t block_offset = offset & (EXT2_BLOCK_SIZE - 1);
+    return (ext2_inode_data_t *) (dataimg_base + block * EXT2_BLOCK_SIZE + block_offset);
+}
+
+static int populate_inode(ext2_sb_t *sb, ext2_inode_t *inode) {
+    ext2_inode_data_t *disk_inode = get_inode(sb, inode->parent.number);
+    if (disk_inode == NULL) {
+        error("Couldn't get inode #%lu", inode->parent.number);
+        return -1;
+    }
+
+
+    return 0;
+}
+
 
 static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
     memcpy(&sb->info, dataimg_base + EXT2_SB_OFFSET, sizeof(ext2_sb_info_t));
@@ -137,15 +175,18 @@ static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
     verbose("Block groups:");
     int i;
     for (i = 0; i < get_num_bgs(sb); i++) {
-        ext2_bg_desc_t bgd;
-        get_bg_desc(sb, i, &bgd);
+        ext2_bg_desc_t *bgd = get_bg_desc(sb, i);
+        if (bgd == NULL) {
+            error("Couldn't get block group descriptor #%d", i);
+            continue;
+        }
 
         verbose("  #%d:", i);
-        verbose("    block_bitmap: %lu", bgd.block_bitmap);
-        verbose("    inode_bitmap: %lu", bgd.inode_bitmap);
-        verbose("    inode_table: %lu", bgd.inode_table);
-        verbose("    free_blocks_count: %u", bgd.free_blocks_count);
-        verbose("    inode_bitmap: %u", bgd.free_inodes_count);
+        verbose("    block_bitmap: %lu", bgd->block_bitmap);
+        verbose("    inode_bitmap: %lu", bgd->inode_bitmap);
+        verbose("    inode_table: %lu", bgd->inode_table);
+        verbose("    free_blocks_count: %u", bgd->free_blocks_count);
+        verbose("    free_inodes_count: %u", bgd->free_inodes_count);
     }
 
     return 0;
@@ -180,9 +221,17 @@ static int mount(fs_type_t *fstype, fs_mount_t *m) {
         error("Couldn't allocate root inode");
         goto error_root;
     }
+    m->sb->root->number = EXT2_ROOT_INO;
+
+    if (populate_inode(ext2sb, (ext2_inode_t *) m->sb->root) < 0) {
+        error("Couldn't populate root inode");
+        goto error_root_pop;
+    }
 
     return 0;
 
+error_root_pop:
+    free_inode(m->sb->root);
 error_root:
 error_malformed:
 error_populate:

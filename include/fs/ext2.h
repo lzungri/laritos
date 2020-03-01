@@ -4,10 +4,26 @@
 #include <stdbool.h>
 #include <fs/vfs/types.h>
 
+/**
+ * -----------------------------------------------
+ * Most structures were ported from Linux fs/ext2.h
+ * -----------------------------------------------
+ */
+
+
 #define EXT2_SB_OFFSET 1024
 #define EXT2_BG_DESC_OFFSET (EXT2_SB_OFFSET + 1024)
 
 #define EXT2_SB_MAGIC 0xEF53
+
+/*
+ * Constants relative to the data blocks
+ */
+#define EXT2_NDIR_BLOCKS        12
+#define EXT2_IND_BLOCK          EXT2_NDIR_BLOCKS
+#define EXT2_DIND_BLOCK         (EXT2_IND_BLOCK + 1)
+#define EXT2_TIND_BLOCK         (EXT2_DIND_BLOCK + 1)
+#define EXT2_N_BLOCKS           (EXT2_TIND_BLOCK + 1)
 
 /*
  * Special inode numbers
@@ -17,9 +33,16 @@
 #define EXT2_BOOT_LOADER_INO     5  /* Boot loader inode */
 #define EXT2_UNDEL_DIR_INO   6  /* Undelete directory inode */
 
+#define EXT2_INODE_SIZE 128
+/**
+ * We only support this block size :(
+ */
+#define EXT2_BLOCK_SIZE_BITS 10
+#define EXT2_BLOCK_SIZE (1 << EXT2_BLOCK_SIZE_BITS)
+
 
 /**
- * Block group descriptor
+ * Block group descriptor on the disk
  */
 typedef struct {
     uint32_t  block_bitmap;        /* Blocks bitmap block */
@@ -32,10 +55,10 @@ typedef struct {
     uint32_t  reserved[3];
 } ext2_bg_desc_t;
 
+/**
+ * Structure of a superblock on the disk
+ */
 typedef struct ext2_sb_info {
-    /**
-     * Taken from Linux source
-     */
     uint32_t  inodes_count;     /* Inodes count */
     uint32_t  blocks_count;     /* Blocks count */
     uint32_t  r_blocks_count;   /* Reserved blocks count */
@@ -61,7 +84,6 @@ typedef struct ext2_sb_info {
     uint32_t  rev_level;        /* Revision level */
     uint16_t  def_resuid;       /* Default uid for reserved blocks */
     uint16_t  def_resgid;       /* Default gid for reserved blocks */
-
 } ext2_sb_info_t;
 
 typedef struct {
@@ -69,3 +91,58 @@ typedef struct {
 
     ext2_sb_info_t info;
 } ext2_sb_t;
+
+/*
+ * The new version of the directory entry.  Since EXT2 structures are
+ * stored in intel byte order, and the name_len field could never be
+ * bigger than 255 chars, it's safe to reclaim the extra byte for the
+ * file_type field.
+ */
+typedef struct {
+    uint32_t  inode;          /* Inode number */
+    uint32_t  rec_len;        /* Directory entry length */
+    uint8_t    name_len;       /* Name length */
+    uint8_t    file_type;
+    char    name[];         /* File name, up to EXT2_NAME_LEN */
+} ext2_direntry_t;
+
+/*
+ * Structure of an inode on the disk
+ */
+typedef struct {
+    uint16_t  mode;     /* File mode */
+    uint16_t  uid;      /* Low 16 bits of Owner Uid */
+    uint32_t  size;     /* Size in bytes */
+    uint32_t  atime;    /* Access time */
+    uint32_t  ctime;    /* Creation time */
+    uint32_t  mtime;    /* Modification time */
+    uint32_t  dtime;    /* Deletion Time */
+    uint16_t  gid;      /* Low 16 bits of Group Id */
+    uint16_t  links_count;  /* Links count */
+    /**
+     * 32-bit value representing the total number of 512-bytes blocks reserved
+     * to contain the data of this inode, regardless if these blocks are used or
+     * not. The block numbers of these reserved blocks are contained in the i_block
+     * array.
+     *
+     * Since this value represents 512-byte blocks and not file system blocks, this
+     * value should not be directly used as an index to the i_block array. Rather,
+     * the maximum index of the i_block array should be computed from
+     *      i_blocks / ((1024<<s_log_block_size)/512),
+     * or once simplified, i_blocks/(2<<s_log_block_size).
+     **/
+    uint32_t  blocks;   /* Blocks count */
+    uint32_t  flags;    /* File flags */
+    uint32_t  i_reserved1;
+    uint32_t  block[EXT2_N_BLOCKS];/* Pointers to blocks */
+    uint32_t  generation;   /* File version (for NFS) */
+    uint32_t  file_acl; /* File ACL */
+    uint32_t  dir_acl;  /* Directory ACL */
+    uint32_t  faddr;    /* Fragment address */
+} ext2_inode_data_t;
+
+typedef struct {
+    fs_inode_t parent;
+
+
+} ext2_inode_t;

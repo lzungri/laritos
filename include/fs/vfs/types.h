@@ -70,6 +70,9 @@ typedef struct {
 typedef struct fs_inode {
     fs_access_mode_t mode;
     struct fs_superblock *sb;
+
+    uint32_t number;
+
     void *file_data0;
     void *file_data1;
 
