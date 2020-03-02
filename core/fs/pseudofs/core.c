@@ -82,6 +82,7 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
 }
 
 static void free_inode(fs_inode_t *inode) {
+    verbose("Freeing inode #%lu", inode != NULL ? inode->number : 0);
     free(inode);
 }
 
