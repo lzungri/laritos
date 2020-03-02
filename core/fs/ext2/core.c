@@ -13,10 +13,74 @@
 #include <utils/math.h>
 #include <time/timeconv.h>
 #include <time/core.h>
+#include <dstruct/bitset.h>
 
 // TODO: This is hardcoded until we append the data.img right after
 // the kernel.img
 static char *dataimg_base = (char *) 0xA0000;
+
+static inline uint32_t get_num_bgs(ext2_sb_t *sb) {
+    uint32_t n = sb->info.blocks_count / sb->info.blocks_per_group;
+    if (sb->info.blocks_count % sb->info.blocks_per_group > 0) {
+        n++;
+    }
+    return n;
+}
+
+static ext2_bg_desc_t *get_bg_desc(ext2_sb_t *sb, uint32_t index) {
+    if (index >= get_num_bgs(sb)) {
+        error("Invalid group descriptor index %lu", index);
+        return NULL;
+    }
+
+    /**
+     * The block group descriptor table starts on the first block following
+     * the superblock. This would be the third block on a 1KiB block file
+     * system, or the second block for 2KiB and larger block file systems.
+     */
+    uint32_t bgd_offset = sb->block_size;
+    if (sb->block_size == 1024) {
+        bgd_offset <<= 1;
+    }
+    return (ext2_bg_desc_t *) (dataimg_base + bgd_offset + sizeof(ext2_bg_desc_t) * index);
+}
+
+static bool is_valid_superblock(ext2_sb_t *sb) {
+    if (sb->info.magic != EXT2_SB_MAGIC) {
+        error("Invalid ext2 magic number");
+        return false;
+    }
+
+    return true;
+}
+
+static ext2_inode_data_t *get_inode(ext2_sb_t *sb, uint32_t inode) {
+    if (inode >= sb->info.inodes_count) {
+        error("Invalid inode %lu", inode);
+        return NULL;
+    }
+
+    // Get block descriptor in which the inode is allocated
+    uint32_t bg;
+    bg = (inode - 1) / sb->info.inodes_per_group;
+    ext2_bg_desc_t *bgd = get_bg_desc(sb, bg);
+    if (bgd == NULL) {
+        error("Couldn't get group descriptor");
+        return NULL;
+    }
+
+    // Calculate the offset within inode table
+    uint32_t offset;
+    offset = ((inode - 1) % sb->info.inodes_per_group) * EXT2_INODE_SIZE;
+
+    // Calculate the block number of the inode
+    uint32_t block;
+    block = bgd->inode_table + (offset >> sb->block_size_bits);
+
+    // Calculate the offset within the block
+    uint32_t block_offset = offset & (sb->block_size - 1);
+    return (ext2_inode_data_t *) (dataimg_base + block * sb->block_size + block_offset);
+}
 
 
 static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
@@ -47,9 +111,23 @@ static int ext2_def_close(fs_inode_t *inode, fs_file_t *f) {
     return 0;
 }
 
+static inline uint32_t get_inode_num_blocks(ext2_sb_t *sb, ext2_inode_data_t *inode) {
+    return inode->blocks / (2 << sb->info.log_block_size);
+}
+
 static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, uint32_t listlen) {
+    ext2_sb_t *sb = (ext2_sb_t *) f->dentry->inode->sb;
+    ext2_inode_data_t *inode = get_inode(sb, f->dentry->inode->number);
+    if (inode == NULL) {
+        error("Failed to read inode %lu", f->dentry->inode->number);
+        return -1;
+    }
 
-
+//    ext2_direntry_t dentries[8] = { 0 };
+//    int i;
+//    for (i = 0; i < get_inode_num_blocks(sb, inode); i++) {
+//        char *block = get_inode_block(sb, inode, i);
+//    }
 
 
     return 0;
@@ -85,61 +163,6 @@ static int unmount(fs_mount_t *fsm) {
     return 0;
 }
 
-static inline uint32_t get_num_bgs(ext2_sb_t *sb) {
-    uint32_t n = sb->info.blocks_count / sb->info.blocks_per_group;
-    if (sb->info.blocks_count % sb->info.blocks_per_group > 0) {
-        n++;
-    }
-    return n;
-}
-
-static ext2_bg_desc_t *get_bg_desc(ext2_sb_t *sb, uint32_t index) {
-    if (index >= get_num_bgs(sb)) {
-        error("Invalid group descriptor index %lu", index);
-        return NULL;
-    }
-    return (ext2_bg_desc_t *) (dataimg_base + EXT2_BG_DESC_OFFSET + sizeof(ext2_bg_desc_t) * index);
-}
-
-static bool is_valid_superblock(ext2_sb_t *sb) {
-    if (sb->info.magic != EXT2_SB_MAGIC) {
-        error("Invalid ext2 magic number");
-        return false;
-    }
-
-    // Maybe in the future...
-    if (sb->info.log_block_size != (1024 >> (EXT2_BLOCK_SIZE_BITS + 1))) {
-        error("%lu bytes block size not supported", (uint32_t) 1024 << sb->info.log_block_size);
-        return false;
-    }
-
-    return true;
-}
-
-static ext2_inode_data_t *get_inode(ext2_sb_t *sb, uint32_t inode) {
-    if (inode >= sb->info.inodes_count) {
-        error("Invalid inode %lu", inode);
-        return NULL;
-    }
-
-    uint32_t bg;
-    bg = (inode - 1) / sb->info.inodes_per_group;
-    ext2_bg_desc_t *bgd = get_bg_desc(sb, bg);
-    if (bgd == NULL) {
-        error("Couldn't get group descriptor");
-        return NULL;
-    }
-
-    uint32_t offset;
-    offset = ((inode - 1) % sb->info.inodes_per_group) * EXT2_INODE_SIZE;
-
-    uint32_t block;
-    block = bgd->inode_table + (offset >> EXT2_BLOCK_SIZE_BITS);
-
-    uint32_t block_offset = offset & (EXT2_BLOCK_SIZE - 1);
-    return (ext2_inode_data_t *) (dataimg_base + block * EXT2_BLOCK_SIZE + block_offset);
-}
-
 static int populate_inode(ext2_sb_t *sb, ext2_inode_t *inode) {
     ext2_inode_data_t *disk_inode = get_inode(sb, inode->parent.number);
     if (disk_inode == NULL) {
@@ -151,15 +174,18 @@ static int populate_inode(ext2_sb_t *sb, ext2_inode_t *inode) {
     return 0;
 }
 
-
 static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
     memcpy(&sb->info, dataimg_base + EXT2_SB_OFFSET, sizeof(ext2_sb_info_t));
+
+    sb->block_size = (uint32_t) 1024 << sb->info.log_block_size;
+    bitset_t bs = ~sb->block_size;
+    sb->block_size_bits = BITSET_NBITS - bitset_ffz(bs) - 1;
 
     debug("Ext2 superblock info:");
     debug("  magic: 0x%X", sb->info.magic);
     debug("  inodes_count: %lu", sb->info.inodes_count);
     debug("  blocks_count: %lu", sb->info.blocks_count);
-    debug("  block_size: %lu", (uint32_t) 1024 << sb->info.log_block_size);
+    debug("  block_size: %lu", sb->block_size);
     debug("  free_blocks_count: %lu", sb->info.free_blocks_count);
     debug("  free_inodes_count: %lu", sb->info.free_inodes_count);
     debug("  blocks_per_group: %lu", sb->info.blocks_per_group);

@@ -12,7 +12,6 @@
 
 
 #define EXT2_SB_OFFSET 1024
-#define EXT2_BG_DESC_OFFSET (EXT2_SB_OFFSET + 1024)
 
 #define EXT2_SB_MAGIC 0xEF53
 
@@ -34,11 +33,6 @@
 #define EXT2_UNDEL_DIR_INO   6  /* Undelete directory inode */
 
 #define EXT2_INODE_SIZE 128
-/**
- * We only support this block size :(
- */
-#define EXT2_BLOCK_SIZE_BITS 10
-#define EXT2_BLOCK_SIZE (1 << EXT2_BLOCK_SIZE_BITS)
 
 
 /**
@@ -90,6 +84,8 @@ typedef struct {
     fs_superblock_t parent;
 
     ext2_sb_info_t info;
+    uint32_t block_size;
+    uint8_t block_size_bits;
 } ext2_sb_t;
 
 /*
