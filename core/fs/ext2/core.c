@@ -11,9 +11,11 @@
 #include <module/core.h>
 #include <mm/heap.h>
 #include <utils/math.h>
+#include <utils/utils.h>
 #include <time/timeconv.h>
 #include <time/core.h>
 #include <dstruct/bitset.h>
+#include <fs/stat.h>
 
 // TODO: This is hardcoded until we append the data.img right after
 // the kernel.img
@@ -54,6 +56,10 @@ static bool is_valid_superblock(ext2_sb_t *sb) {
     return true;
 }
 
+static inline void *get_phys_block_ptr(ext2_sb_t *sb, uint32_t phys_block_num) {
+    return dataimg_base + phys_block_num * sb->block_size;
+}
+
 static ext2_inode_data_t *get_inode(ext2_sb_t *sb, uint32_t inode) {
     if (inode >= sb->info.inodes_count) {
         error("Invalid inode %lu", inode);
@@ -79,7 +85,14 @@ static ext2_inode_data_t *get_inode(ext2_sb_t *sb, uint32_t inode) {
 
     // Calculate the offset within the block
     uint32_t block_offset = offset & (sb->block_size - 1);
-    return (ext2_inode_data_t *) (dataimg_base + block * sb->block_size + block_offset);
+    return (ext2_inode_data_t *) (((char *) get_phys_block_ptr(sb, block)) + block_offset);
+}
+
+static inline void *get_inode_phys_block(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t logical_block) {
+    if (logical_block < EXT2_NDIR_BLOCKS) {
+        return get_phys_block_ptr(sb, inode->block[logical_block]);
+    }
+    return NULL;
 }
 
 
@@ -112,6 +125,7 @@ static int ext2_def_close(fs_inode_t *inode, fs_file_t *f) {
 }
 
 static inline uint32_t get_inode_num_blocks(ext2_sb_t *sb, ext2_inode_data_t *inode) {
+    // Read ext2_inode_data_t.blocks documentation for more info
     return inode->blocks / (2 << sb->info.log_block_size);
 }
 
@@ -123,14 +137,40 @@ static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, ui
         return -1;
     }
 
-//    ext2_direntry_t dentries[8] = { 0 };
-//    int i;
-//    for (i = 0; i < get_inode_num_blocks(sb, inode); i++) {
-//        char *block = get_inode_block(sb, inode, i);
-//    }
+    uint32_t nentries = 0;
+    uint32_t entrypos = 0;
 
+    int i;
+    for (i = 0; i < get_inode_num_blocks(sb, inode); i++) {
+        char *dptr = get_inode_phys_block(sb, inode, i);
+        if (dptr == NULL) {
+            error("Couldn't get inode physical block");
+            return -1;
+        }
 
-    return 0;
+        char *next_block = dptr + sb->block_size;
+        while (dptr < next_block) {
+            ext2_direntry_t *dentry = (ext2_direntry_t *) dptr;
+
+            if (entrypos >= offset) {
+                fs_listdir_t *dir = &dirlist[nentries];
+                uint16_t namelen = min(dentry->name_len, sizeof(dir->name) - 1);
+                strncpy(dir->name, dentry->name, namelen);
+                dir->name[namelen] = '\0';
+                dir->isdir = dentry->file_type == EXT2_FT_DIR;
+
+                nentries++;
+                if (nentries >= listlen) {
+                    return nentries;
+                }
+            }
+
+            entrypos++;
+            dptr += dentry->rec_len;
+        }
+    }
+
+    return nentries;
 }
 
 static fs_inode_t *alloc_inode(fs_superblock_t *sb) {

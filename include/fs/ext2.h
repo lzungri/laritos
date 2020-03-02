@@ -34,6 +34,15 @@
 
 #define EXT2_INODE_SIZE 128
 
+#define EXT2_FT_UNKNOWN  0      // Unknown File Type
+#define EXT2_FT_REG_FILE 1      // Regular File
+#define EXT2_FT_DIR     2       // Directory File
+#define EXT2_FT_CHRDEV  3       // Character Device
+#define EXT2_FT_BLKDEV  4       // Block Device
+#define EXT2_FT_FIFO    5       // Buffer File
+#define EXT2_FT_SOCK    6       // Socket File
+#define EXT2_FT_SYMLINK 7       // Symbolic Link
+
 
 /**
  * Block group descriptor on the disk
@@ -96,8 +105,22 @@ typedef struct {
  */
 typedef struct {
     uint32_t  inode;          /* Inode number */
-    uint32_t  rec_len;        /* Directory entry length */
-    uint8_t    name_len;       /* Name length */
+    /**
+     * 16bit unsigned displacement to the next directory entry from the start
+     * of the current directory entry. This field must have a value at least equal
+     * to the length of the current record.
+     *
+     * The directory entries must be aligned on 4 bytes boundaries and there cannot
+     * be any directory entry spanning multiple data blocks. If an entry cannot
+     * completely fit in one block, it must be pushed to the next data block and
+     * the rec_len of the previous entry properly adjusted.
+     */
+    uint16_t  rec_len;
+    /**
+     * 8bit unsigned value indicating how many bytes of character data are
+     * contained in the name.
+     */
+    uint8_t    name_len;
     uint8_t    file_type;
     char    name[];         /* File name, up to EXT2_NAME_LEN */
 } ext2_direntry_t;
