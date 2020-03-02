@@ -60,7 +60,7 @@ static inline void *get_phys_block_ptr(ext2_sb_t *sb, uint32_t phys_block_num) {
     return dataimg_base + phys_block_num * sb->block_size;
 }
 
-static ext2_inode_data_t *get_inode(ext2_sb_t *sb, uint32_t inode) {
+static ext2_inode_data_t *get_inode_from_fs(ext2_sb_t *sb, uint32_t inode) {
     if (inode >= sb->info.inodes_count) {
         error("Invalid inode %lu", inode);
         return NULL;
@@ -95,25 +95,71 @@ static inline void *get_inode_phys_block(ext2_sb_t *sb, ext2_inode_data_t *inode
     return NULL;
 }
 
+static inline uint32_t get_inode_num_blocks(ext2_sb_t *sb, ext2_inode_data_t *inode) {
+    // Read ext2_inode_data_t.blocks documentation for more info
+    return inode->blocks / (2 << sb->info.log_block_size);
+}
+
+static fs_inode_t *alloc_inode_for(ext2_sb_t *sb, ext2_direntry_t *dentry) {
+    fs_inode_t *inode = sb->parent.ops.alloc_inode(&sb->parent);
+    if (inode == NULL) {
+        error("Couldn't allocate inode");
+        return NULL;
+    }
+    inode->number = dentry->inode;
+
+    ext2_inode_data_t *inode_data = get_inode_from_fs(sb, inode->number);
+    if (inode_data == NULL) {
+        error("Failed to read inode #%lu", inode->number);
+        return NULL;
+    }
+
+    if (S_ISDIR(inode_data->mode)) {
+        inode->mode |= FS_ACCESS_MODE_DIR;
+    }
+    if (inode_data->mode & S_IRUSR) {
+        inode->mode |= FS_ACCESS_MODE_READ;
+    }
+    if (inode_data->mode & S_IWUSR) {
+        inode->mode |= FS_ACCESS_MODE_WRITE;
+    }
+    if (inode_data->mode & S_IXUSR) {
+        inode->mode |= FS_ACCESS_MODE_EXEC;
+    }
+
+    return inode;
+}
 
 static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
+    ext2_sb_t *sb = (ext2_sb_t *) parent->sb;
+    ext2_inode_data_t *pinode_data = get_inode_from_fs(sb, parent->number);
+    if (pinode_data == NULL) {
+        error("Failed to read inode #%lu", parent->number);
+        return NULL;
+    }
+
+    int i;
+    for (i = 0; i < get_inode_num_blocks(sb, pinode_data); i++) {
+        char *dptr = get_inode_phys_block(sb, pinode_data, i);
+        if (dptr == NULL) {
+            error("Couldn't get inode physical block");
+            return NULL;
+        }
+
+        char *next_block = dptr + sb->block_size;
+        while (dptr < next_block) {
+            ext2_direntry_t *dentry = (ext2_direntry_t *) dptr;
+
+            if (strncmp(dentry->name, name, dentry->name_len) == 0 &&
+                    strlen(name) == dentry->name_len) {
+                return alloc_inode_for(sb, dentry);
+            }
+
+            dptr += dentry->rec_len;
+        }
+    }
+
     return NULL;
-}
-
-static int ext2_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
-    return 0;
-}
-
-static int ext2_def_rmdir(fs_inode_t *parent, fs_dentry_t *dentry) {
-    return 0;
-}
-
-static int ext2_def_mkregfile(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
-    return 0;
-}
-
-static int ext2_def_rmregfile(fs_inode_t *parent, fs_dentry_t *dentry) {
-    return 0;
 }
 
 static int ext2_def_open(fs_inode_t *inode, fs_file_t *f) {
@@ -124,14 +170,9 @@ static int ext2_def_close(fs_inode_t *inode, fs_file_t *f) {
     return 0;
 }
 
-static inline uint32_t get_inode_num_blocks(ext2_sb_t *sb, ext2_inode_data_t *inode) {
-    // Read ext2_inode_data_t.blocks documentation for more info
-    return inode->blocks / (2 << sb->info.log_block_size);
-}
-
 static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, uint32_t listlen) {
     ext2_sb_t *sb = (ext2_sb_t *) f->dentry->inode->sb;
-    ext2_inode_data_t *inode = get_inode(sb, f->dentry->inode->number);
+    ext2_inode_data_t *inode = get_inode_from_fs(sb, f->dentry->inode->number);
     if (inode == NULL) {
         error("Failed to read inode %lu", f->dentry->inode->number);
         return -1;
@@ -156,6 +197,10 @@ static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, ui
                 fs_listdir_t *dir = &dirlist[nentries];
                 uint16_t namelen = min(dentry->name_len, sizeof(dir->name) - 1);
                 strncpy(dir->name, dentry->name, namelen);
+                // The length of a directory entry is always a multiple of 4 and,
+                // therefore, null characters (\0) are added for padding at the
+                // end of the filename, if necessary. The name_len field stores
+                // the actual filename length
                 dir->name[namelen] = '\0';
                 dir->isdir = dentry->file_type == EXT2_FT_DIR;
 
@@ -183,10 +228,10 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
     inode->sb = sb;
 
     inode->ops.lookup = ext2_def_lookup;
-    inode->ops.mkdir = ext2_def_mkdir;
-    inode->ops.rmdir = ext2_def_rmdir;
-    inode->ops.mkregfile = ext2_def_mkregfile;
-    inode->ops.rmregfile = ext2_def_rmregfile;
+    inode->ops.mkdir = NULL; // Not supported yet
+    inode->ops.rmdir = NULL; // Not supported yet
+    inode->ops.mkregfile = NULL; // Not supported yet
+    inode->ops.rmregfile = NULL; // Not supported yet
 
     inode->fops.open = ext2_def_open;
     inode->fops.close = ext2_def_close;
@@ -195,6 +240,7 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
 }
 
 static void free_inode(fs_inode_t *inode) {
+    verbose("Freeing inode #%lu", inode != NULL ? inode->number : 0);
     free(inode);
 }
 
@@ -204,7 +250,7 @@ static int unmount(fs_mount_t *fsm) {
 }
 
 static int populate_inode(ext2_sb_t *sb, ext2_inode_t *inode) {
-    ext2_inode_data_t *disk_inode = get_inode(sb, inode->parent.number);
+    ext2_inode_data_t *disk_inode = get_inode_from_fs(sb, inode->parent.number);
     if (disk_inode == NULL) {
         error("Couldn't get inode #%lu", inode->parent.number);
         return -1;
