@@ -95,6 +95,8 @@ typedef struct {
     ext2_sb_info_t info;
     uint32_t block_size;
     uint8_t block_size_bits;
+    uint32_t addr_per_block;
+    uint8_t addr_per_block_bits;
 } ext2_sb_t;
 
 /*

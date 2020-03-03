@@ -87,11 +87,83 @@ static ext2_inode_data_t *get_inode_from_fs(ext2_sb_t *sb, uint32_t inode) {
     return (ext2_inode_data_t *) (((char *) get_phys_block_ptr(sb, block)) + block_offset);
 }
 
-static inline void *get_inode_phys_block(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t logical_block) {
-    if (logical_block < EXT2_NDIR_BLOCKS) {
-        return get_phys_block_ptr(sb, inode->block[logical_block]);
+/**
+ * Ported from Linux source
+ *
+ * ext2_block_to_path - parse the block number into array of offsets
+ * @inode: inode in question (we are only interested in its superblock)
+ * @i_block: block number to be parsed
+ * @offsets: array to store the offsets in
+ *     @boundary: set this non-zero if the referred-to block is likely to be
+ *            followed (on disk) by an indirect block.
+ * To store the locations of file's data ext2 uses a data structure common
+ * for UNIX filesystems - tree of pointers anchored in the inode, with
+ * data blocks at leaves and indirect blocks in intermediate nodes.
+ * This function translates the block number into path in that tree -
+ * return value is the path length and @offsets[n] is the offset of
+ * pointer to (n+1)th node in the nth one. If @block is out of range
+ * (negative or too large) warning is printed and zero returned.
+ *
+ * Note: function doesn't find node addresses, so no IO is needed. All
+ * we need to know is the capacity of indirect blocks (taken from the
+ * inode->i_sb).
+ */
+static uint8_t ext2_log_block_to_path(ext2_sb_t *sb, uint32_t logical_block, int offsets[4], int *boundary) {
+    int ptrs = sb->addr_per_block;
+    int ptrs_bits = sb->addr_per_block_bits;
+    const long direct_blocks = EXT2_NDIR_BLOCKS;
+    const long indirect_blocks = ptrs;
+    const long double_blocks = (1 << (ptrs_bits * 2));
+    uint8_t n = 0;
+    int final = 0;
+
+    if (logical_block < direct_blocks) {
+        offsets[n++] = logical_block;
+        final = direct_blocks;
+    } else if ( (logical_block -= direct_blocks) < indirect_blocks) {
+        offsets[n++] = EXT2_IND_BLOCK;
+        offsets[n++] = logical_block;
+        final = ptrs;
+    } else if ((logical_block -= indirect_blocks) < double_blocks) {
+        offsets[n++] = EXT2_DIND_BLOCK;
+        offsets[n++] = logical_block >> ptrs_bits;
+        offsets[n++] = logical_block & (ptrs - 1);
+        final = ptrs;
+    } else if (((logical_block -= double_blocks) >> (ptrs_bits * 2)) < ptrs) {
+        offsets[n++] = EXT2_TIND_BLOCK;
+        offsets[n++] = logical_block >> (ptrs_bits * 2);
+        offsets[n++] = (logical_block >> ptrs_bits) & (ptrs - 1);
+        offsets[n++] = logical_block & (ptrs - 1);
+        final = ptrs;
+    } else {
+        error("Logical block is too big");
     }
-    return NULL;
+    if (boundary)
+        *boundary = final - 1 - (logical_block & (ptrs - 1));
+
+    return n;
+}
+
+static inline void *get_inode_phys_block(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t logical_block) {
+    int offsets[4];
+    int boundary = 0;
+
+    uint8_t paths = ext2_log_block_to_path(sb, logical_block, offsets, &boundary);
+
+    if (paths == 0) {
+        error("Couldn't get physical block for logical_block=%lu", logical_block);
+        return NULL;
+    }
+
+    uint32_t phys_block = inode->block[offsets[0]];
+    paths--;
+    while (paths > 0) {
+        uint32_t *block = get_phys_block_ptr(sb, phys_block);
+        phys_block = *(block + offsets[paths]);
+        paths--;
+    }
+
+    return get_phys_block_ptr(sb, phys_block);
 }
 
 static inline uint32_t get_inode_num_blocks(ext2_sb_t *sb, ext2_inode_data_t *inode) {
@@ -275,6 +347,10 @@ static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
     sb->block_size = (uint32_t) 1024 << sb->info.log_block_size;
     bitset_t bs = ~sb->block_size;
     sb->block_size_bits = BITSET_NBITS - bitset_ffz(bs) - 1;
+
+    sb->addr_per_block = sb->block_size / sizeof(uint32_t);
+    bs = ~sb->addr_per_block;
+    sb->addr_per_block_bits = BITSET_NBITS - bitset_ffz(bs) - 1;
 
     debug("Ext2 superblock info:");
     debug("  magic: 0x%X", sb->info.magic);
