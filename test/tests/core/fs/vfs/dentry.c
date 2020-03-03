@@ -22,6 +22,24 @@ static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm) {
     return 0;
 }
 
+fs_inode_t *dummy_inode_lookup(fs_inode_t *parent, char *name) {
+    return NULL;
+}
+
+static fs_superblock_t minimal_sb = {
+    .ops = {
+        .alloc_inode = NULL,
+        .free_inode = NULL,
+    },
+};
+
+fs_inode_t minimal_inode = {
+    .sb = &minimal_sb,
+    .ops = {
+        .lookup = dummy_inode_lookup,
+    }
+};
+
 T(vfs_creates_a_slash_root_dentry) {
     tassert(vfs_dentry_lookup("/") == _laritos.fs.root);
 TEND
@@ -74,20 +92,20 @@ T(vfs_dentry_initializes_parent_and_child_properly) {
 TEND
 
 T(vfs_dentry_lookup_returns_null_when_relpath_not_found) {
-    fs_dentry_t *d1 = vfs_dentry_alloc("d1", NULL, NULL);
+    fs_dentry_t *d1 = vfs_dentry_alloc("d1", &minimal_inode, NULL);
     tassert(d1 != NULL);
     tassert(vfs_dentry_lookup_from(d1, "d2") == NULL);
     vfs_dentry_free(d1);
 TEND
 
 T(vfs_dentry_lookup_returns_child_dentry_when_relpath_found) {
-    fs_dentry_t *d1 = vfs_dentry_alloc("d1", NULL, NULL);
+    fs_dentry_t *d1 = vfs_dentry_alloc("d1", &minimal_inode, NULL);
     tassert(d1 != NULL);
-    fs_dentry_t *d2 = vfs_dentry_alloc("d2", NULL, d1);
+    fs_dentry_t *d2 = vfs_dentry_alloc("d2", &minimal_inode, d1);
     tassert(d2 != NULL);
-    fs_dentry_t *d3 = vfs_dentry_alloc("d3", NULL, d2);
+    fs_dentry_t *d3 = vfs_dentry_alloc("d3", &minimal_inode, d2);
     tassert(d3 != NULL);
-    fs_dentry_t *d4 = vfs_dentry_alloc("d4", NULL, d3);
+    fs_dentry_t *d4 = vfs_dentry_alloc("d4", &minimal_inode, d3);
     tassert(d4 != NULL);
 
     tassert(vfs_dentry_lookup_from(d1, "d2") == d2);
@@ -130,13 +148,13 @@ T(vfs_dentry_lookup_returns_child_dentry_when_relpath_found) {
 TEND
 
 T(vfs_dentry_lookup_works_properly_with_double_dots_dir) {
-    fs_dentry_t *d1 = vfs_dentry_alloc("d1", NULL, NULL);
+    fs_dentry_t *d1 = vfs_dentry_alloc("d1", &minimal_inode, NULL);
     tassert(d1 != NULL);
-    fs_dentry_t *d2 = vfs_dentry_alloc("d2", NULL, d1);
+    fs_dentry_t *d2 = vfs_dentry_alloc("d2", &minimal_inode, d1);
     tassert(d2 != NULL);
-    fs_dentry_t *d3 = vfs_dentry_alloc("d3", NULL, d2);
+    fs_dentry_t *d3 = vfs_dentry_alloc("d3", &minimal_inode, d2);
     tassert(d3 != NULL);
-    fs_dentry_t *d4 = vfs_dentry_alloc("d4", NULL, d3);
+    fs_dentry_t *d4 = vfs_dentry_alloc("d4", &minimal_inode, d3);
     tassert(d4 != NULL);
 
     tassert(vfs_dentry_lookup_from(d1, "d2") == d2);
@@ -157,13 +175,13 @@ T(vfs_dentry_lookup_works_properly_with_double_dots_dir) {
 TEND
 
 T(vfs_dentry_lookup_works_properly_with_multiple_consecutive_slashes) {
-    fs_dentry_t *d1 = vfs_dentry_alloc("d1", NULL, NULL);
+    fs_dentry_t *d1 = vfs_dentry_alloc("d1", &minimal_inode, NULL);
     tassert(d1 != NULL);
-    fs_dentry_t *d2 = vfs_dentry_alloc("d2", NULL, d1);
+    fs_dentry_t *d2 = vfs_dentry_alloc("d2", &minimal_inode, d1);
     tassert(d2 != NULL);
-    fs_dentry_t *d3 = vfs_dentry_alloc("d3", NULL, d2);
+    fs_dentry_t *d3 = vfs_dentry_alloc("d3", &minimal_inode, d2);
     tassert(d3 != NULL);
-    fs_dentry_t *d4 = vfs_dentry_alloc("d4", NULL, d3);
+    fs_dentry_t *d4 = vfs_dentry_alloc("d4", &minimal_inode, d3);
     tassert(d4 != NULL);
 
     tassert(vfs_dentry_lookup_from(d1, "d2") == d2);
@@ -180,15 +198,15 @@ T(vfs_dentry_lookup_works_properly_with_multiple_consecutive_slashes) {
 TEND
 
 T(vfs_dentry_get_fullpath_returns_all_dentries_until_parent) {
-    fs_dentry_t *root = vfs_dentry_alloc("", NULL, NULL);
+    fs_dentry_t *root = vfs_dentry_alloc("", &minimal_inode, NULL);
     tassert(root != NULL);
-    fs_dentry_t *d1 = vfs_dentry_alloc("d1", NULL, root);
+    fs_dentry_t *d1 = vfs_dentry_alloc("d1", &minimal_inode, root);
     tassert(d1 != NULL);
-    fs_dentry_t *d2 = vfs_dentry_alloc("d2", NULL, d1);
+    fs_dentry_t *d2 = vfs_dentry_alloc("d2", &minimal_inode, d1);
     tassert(d2 != NULL);
-    fs_dentry_t *d3 = vfs_dentry_alloc("d3", NULL, d2);
+    fs_dentry_t *d3 = vfs_dentry_alloc("d3", &minimal_inode, d2);
     tassert(d3 != NULL);
-    fs_dentry_t *d4 = vfs_dentry_alloc("d4", NULL, d3);
+    fs_dentry_t *d4 = vfs_dentry_alloc("d4", &minimal_inode, d3);
     tassert(d4 != NULL);
 
     char path[128] = { 0 };
