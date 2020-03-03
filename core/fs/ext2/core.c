@@ -127,6 +127,8 @@ static fs_inode_t *alloc_inode_for(ext2_sb_t *sb, ext2_direntry_t *dentry) {
         inode->mode |= FS_ACCESS_MODE_EXEC;
     }
 
+    verbose("New inode #%lu mode=0x%x", inode->number, inode->mode);
+
     return inode;
 }
 
@@ -170,6 +172,12 @@ static int ext2_def_close(fs_inode_t *inode, fs_file_t *f) {
     return 0;
 }
 
+static inline bool is_dot_double_dot_dentry(ext2_direntry_t *dentry) {
+    return (dentry->name_len == 1 && dentry->name[0] == '.') ||
+            (dentry->name_len == 2 && dentry->name[0] == '.' &&
+                    dentry->name[1] == '.');
+}
+
 static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, uint32_t listlen) {
     ext2_sb_t *sb = (ext2_sb_t *) f->dentry->inode->sb;
     ext2_inode_data_t *inode = get_inode_from_fs(sb, f->dentry->inode->number);
@@ -193,24 +201,26 @@ static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, ui
         while (dptr < next_block) {
             ext2_direntry_t *dentry = (ext2_direntry_t *) dptr;
 
-            if (entrypos >= offset) {
-                fs_listdir_t *dir = &dirlist[nentries];
-                uint16_t namelen = min(dentry->name_len, sizeof(dir->name) - 1);
-                strncpy(dir->name, dentry->name, namelen);
-                // The length of a directory entry is always a multiple of 4 and,
-                // therefore, null characters (\0) are added for padding at the
-                // end of the filename, if necessary. The name_len field stores
-                // the actual filename length
-                dir->name[namelen] = '\0';
-                dir->isdir = dentry->file_type == EXT2_FT_DIR;
+            if (!is_dot_double_dot_dentry(dentry)) {
+                if (entrypos >= offset) {
+                    fs_listdir_t *dir = &dirlist[nentries];
+                    uint16_t namelen = min(dentry->name_len, sizeof(dir->name) - 1);
+                    strncpy(dir->name, dentry->name, namelen);
+                    // The length of a directory entry is always a multiple of 4 and,
+                    // therefore, null characters (\0) are added for padding at the
+                    // end of the filename, if necessary. The name_len field stores
+                    // the actual filename length
+                    dir->name[namelen] = '\0';
+                    dir->isdir = dentry->file_type == EXT2_FT_DIR;
 
-                nentries++;
-                if (nentries >= listlen) {
-                    return nentries;
+                    nentries++;
+                    if (nentries >= listlen) {
+                        return nentries;
+                    }
                 }
+                entrypos++;
             }
 
-            entrypos++;
             dptr += dentry->rec_len;
         }
     }
