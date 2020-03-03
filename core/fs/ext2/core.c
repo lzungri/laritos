@@ -167,8 +167,11 @@ static inline void *get_inode_phys_block(ext2_sb_t *sb, ext2_inode_data_t *inode
 }
 
 static inline uint32_t get_inode_num_blocks(ext2_sb_t *sb, ext2_inode_data_t *inode) {
-    // Read ext2_inode_data_t.blocks documentation for more info
-    return inode->blocks / (2 << sb->info.log_block_size);
+    uint32_t n = inode->size >> sb->block_size_bits;
+    if (inode->size & (sb->block_size - 1)) {
+        n++;
+    }
+    return n;
 }
 
 static fs_inode_t *alloc_inode_for(ext2_sb_t *sb, ext2_direntry_t *dentry) {
