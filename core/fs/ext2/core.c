@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <stdint.h>
@@ -18,7 +17,7 @@
 #include <fs/stat.h>
 
 // TODO: This is hardcoded until we append the data.img right after
-// the kernel.img
+// the kernel.img or in a configurable fixed location
 static char *dataimg_base = (char *) 0xA0000;
 
 static inline uint32_t get_num_bgs(ext2_sb_t *sb) {
@@ -201,7 +200,7 @@ static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, ui
         while (dptr < next_block) {
             ext2_direntry_t *dentry = (ext2_direntry_t *) dptr;
 
-            if (!is_dot_double_dot_dentry(dentry)) {
+            if (!is_dot_double_dot_dentry(dentry) && dentry->name_len > 0) {
                 if (entrypos >= offset) {
                     fs_listdir_t *dir = &dirlist[nentries];
                     uint16_t namelen = min(dentry->name_len, sizeof(dir->name) - 1);
