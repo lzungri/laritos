@@ -87,7 +87,12 @@ static inline fs_dentry_t *find_children(fs_dentry_t *parent, char *relpath) {
         return parent;
     }
 
-    // '..' is just a virtual name to reference the parent dentry
+    // '.' is just a virtual name to reference the parent dentry
+    if (namelen == 1 && relpath[0] == '.') {
+        return parent;
+    }
+
+    // '..' is just a virtual name to reference the grandparent dentry
     if (namelen == 2 && relpath[0] == '.' && relpath[1] == '.') {
         return parent->parent != NULL ? parent->parent : parent;
     }
