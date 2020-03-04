@@ -2,7 +2,14 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <sync/atomic.h>
 #include <fs/vfs/types.h>
+
+typedef struct {
+    fs_superblock_t parent;
+
+    atomic32_t next_inode_number;
+} pseudofs_sb_t;
 
 fs_inode_t *pseudofs_def_lookup(fs_inode_t *parent, char *name);
 int pseudofs_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode);
