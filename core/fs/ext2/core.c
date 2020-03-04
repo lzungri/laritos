@@ -245,6 +245,46 @@ static int ext2_def_close(fs_inode_t *inode, fs_file_t *f) {
     return 0;
 }
 
+static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    ext2_sb_t *sb = (ext2_sb_t *) f->dentry->inode->sb;
+    ext2_inode_data_t *pinode_data = get_inode_from_fs(sb, f->dentry->inode->number);
+    if (pinode_data == NULL) {
+        error("Failed to read inode #%lu", f->dentry->inode->number);
+        return -1;
+    }
+
+    if (offset >= pinode_data->size) {
+        return 0;
+    }
+
+    int nbytes = 0;
+
+    uint32_t log_block = offset >> sb->block_size_bits;
+    uint32_t block_offset = offset % sb->block_size;
+    uint32_t bytes_to_eof = pinode_data->size - offset;
+
+    for ( ;log_block < get_inode_num_blocks(sb, pinode_data); log_block++) {
+        char *physb_ptr = get_inode_phys_block(sb, pinode_data, log_block);
+        if (physb_ptr == NULL) {
+            error("Couldn't get inode physical block for logical block #%lu", log_block);
+            return -1;
+        }
+
+        int len = min(blen - nbytes, sb->block_size - block_offset);
+        len = min(len, bytes_to_eof);
+        memcpy((char *) buf + nbytes, physb_ptr + block_offset, len);
+        nbytes += len;
+        bytes_to_eof -= len;
+        block_offset = 0;
+
+        if (nbytes >= blen || bytes_to_eof == 0) {
+            break;
+        }
+    }
+
+    return nbytes;
+}
+
 static inline bool is_dot_double_dot_dentry(ext2_direntry_t *dentry) {
     return (dentry->name_len == 1 && dentry->name[0] == '.') ||
             (dentry->name_len == 2 && dentry->name[0] == '.' &&
@@ -318,6 +358,7 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
 
     inode->fops.open = ext2_def_open;
     inode->fops.close = ext2_def_close;
+    inode->fops.read = ext2_def_read;
     inode->fops.listdir = ext2_listdir;
     return (fs_inode_t *) inode;
 }
