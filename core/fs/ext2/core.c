@@ -149,18 +149,17 @@ static inline void *get_inode_phys_block(ext2_sb_t *sb, ext2_inode_data_t *inode
     int boundary = 0;
 
     uint8_t paths = ext2_log_block_to_path(sb, logical_block, offsets, &boundary);
-
     if (paths == 0) {
         error("Couldn't get physical block for logical_block=%lu", logical_block);
         return NULL;
     }
 
     uint32_t phys_block = inode->block[offsets[0]];
-    paths--;
-    while (paths > 0) {
+    int i;
+    // Start from path=1, we already grabbed the block for path=0
+    for (i = 1; i < paths; i++) {
         uint32_t *block = get_phys_block_ptr(sb, phys_block);
-        phys_block = *(block + offsets[paths]);
-        paths--;
+        phys_block = *(block + offsets[i]);
     }
 
     return get_phys_block_ptr(sb, phys_block);
