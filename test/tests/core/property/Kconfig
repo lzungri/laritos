@@ -1,0 +1,12 @@
+menu "Property"
+
+config TEST_CORE_PROPERTY_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_PROPERTY_CORE
+
+config TEST_CORE_PROPERTY_CORE
+    bool "core.c"
+    default n
+
+endmenu
