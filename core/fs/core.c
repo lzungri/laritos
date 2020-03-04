@@ -26,13 +26,13 @@ int fs_mount_essential_filesystems(void) {
     }
     _laritos.fs.kernelfs_root = mnt->root;
 
-    info("Mounting data filesystem");
-    mnt = vfs_mount_fs("ext2", "/data", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    info("Mounting system filesystem");
+    mnt = vfs_mount_fs("ext2", "/sys", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
     if (mnt == NULL) {
         error("Error mounting data");
         goto error_data;
     }
-    _laritos.fs.data_root = mnt->root;
+    _laritos.fs.sys_root = mnt->root;
 
     _laritos.fs.stats_root = vfs_dir_create(_laritos.fs.kernelfs_root, "stats",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
