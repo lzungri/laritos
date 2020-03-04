@@ -373,17 +373,6 @@ static int unmount(fs_mount_t *fsm) {
     return 0;
 }
 
-static int populate_inode(ext2_sb_t *sb, ext2_inode_t *inode) {
-    ext2_inode_data_t *disk_inode = get_inode_from_fs(sb, inode->parent.number);
-    if (disk_inode == NULL) {
-        error("Couldn't get inode #%lu", inode->parent.number);
-        return -1;
-    }
-
-
-    return 0;
-}
-
 static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
     memcpy(&sb->info, dataimg_base + EXT2_SB_OFFSET, sizeof(ext2_sb_info_t));
 
@@ -463,15 +452,8 @@ static int mount(fs_type_t *fstype, fs_mount_t *m) {
     }
     m->sb->root->number = EXT2_ROOT_INO;
 
-    if (populate_inode(ext2sb, (ext2_inode_t *) m->sb->root) < 0) {
-        error("Couldn't populate root inode");
-        goto error_root_pop;
-    }
-
     return 0;
 
-error_root_pop:
-    free_inode(m->sb->root);
 error_root:
 error_malformed:
 error_populate:
