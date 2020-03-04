@@ -97,7 +97,7 @@ typedef struct {
     list_head_t mounts;
     list_head_t sysfs_mods;
     fs_dentry_t *root;
-    fs_dentry_t *sysfs_root;
+    fs_dentry_t *kernelfs_root;
     fs_dentry_t *data_root;
     fs_dentry_t *proc_root;
     fs_dentry_t *mem_root;

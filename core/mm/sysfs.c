@@ -15,7 +15,7 @@ static int avail_mem_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset)
 }
 
 static int create_root_sysfs(sysfs_mod_t *sysfs) {
-    _laritos.fs.mem_root = vfs_dir_create(_laritos.fs.sysfs_root, "mem",
+    _laritos.fs.mem_root = vfs_dir_create(_laritos.fs.kernelfs_root, "mem",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.mem_root == NULL) {
         error("Error creating mem sysfs directory");
@@ -31,7 +31,7 @@ static int create_root_sysfs(sysfs_mod_t *sysfs) {
 }
 
 static int remove_root_sysfs(sysfs_mod_t *sysfs) {
-    return vfs_dir_remove(_laritos.fs.sysfs_root, "mem");
+    return vfs_dir_remove(_laritos.fs.kernelfs_root, "mem");
 }
 
 

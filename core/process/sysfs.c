@@ -231,7 +231,7 @@ int process_sysfs_remove(pcb_t *pcb) {
 
 
 static int create_root_sysfs(sysfs_mod_t *sysfs) {
-    _laritos.fs.proc_root = vfs_dir_create(_laritos.fs.sysfs_root, "proc",
+    _laritos.fs.proc_root = vfs_dir_create(_laritos.fs.kernelfs_root, "proc",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.proc_root == NULL) {
         error("Error creating proc sysfs directory");
@@ -241,7 +241,7 @@ static int create_root_sysfs(sysfs_mod_t *sysfs) {
 }
 
 static int remove_root_sysfs(sysfs_mod_t *sysfs) {
-    return vfs_dir_remove(_laritos.fs.sysfs_root, "proc");
+    return vfs_dir_remove(_laritos.fs.kernelfs_root, "proc");
 }
 
 SYSFS_MODULE(proc, create_root_sysfs, remove_root_sysfs)
