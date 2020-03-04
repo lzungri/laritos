@@ -113,6 +113,11 @@ int vfs_file_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
         return -1;
     }
 
+    if (f->dentry->inode->mode & FS_ACCESS_MODE_DIR) {
+        error("Cannot read a directory");
+        return -1;
+    }
+
     if (f->dentry->inode->fops.read == NULL) {
         error("read('%s') operation not permitted", f->dentry->name);
         return -1;
@@ -139,6 +144,11 @@ int vfs_file_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
 
     if (!(f->mode & FS_ACCESS_MODE_WRITE)) {
         error("File was not opened for writing");
+        return -1;
+    }
+
+    if (f->dentry->inode->mode & FS_ACCESS_MODE_DIR) {
+        error("Cannot write directly into a directory content");
         return -1;
     }
 
