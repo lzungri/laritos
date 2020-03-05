@@ -40,14 +40,21 @@ static int sysfs_property_read(fs_file_t *f, void *buf, size_t blen, uint32_t of
 }
 
 static int sysfs_property_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-//    stream_t *s = f->data0;
-//    return s->ops.write(s, buf, blen, true);
-    return 0;
+    property_t *p = f->data0;
+    return property_set(p->id, (char *) buf) < 0 ? -1 : min(blen, PROPERTY_VALUE_MAX_LEN);
 }
 
 static inline int sysfs_create(property_t *p) {
-    if (pseudofs_create_custom_rw_file_with_dataptr(_laritos.fs.property_root, p->id,
-            sysfs_property_read, sysfs_property_write, p) == NULL) {
+    bool write_allowed = p->mode & (PROPERTY_MODE_WRITE_BY_ALL | PROPERTY_MODE_WRITE_BY_OWNER);
+    fs_dentry_t *dentry;
+    if (write_allowed) {
+        dentry = pseudofs_create_custom_rw_file_with_dataptr(_laritos.fs.property_root, p->id,
+                    sysfs_property_read, sysfs_property_write, p);
+    } else {
+        dentry = pseudofs_create_custom_ro_file_with_dataptr(_laritos.fs.property_root, p->id,
+                    sysfs_property_read, p);
+    }
+    if (dentry == NULL) {
         error("Failed to create '%s' sysfs file", p->id);
         return -1;
     }
