@@ -408,9 +408,10 @@ int process_spawn_system_procs(void) {
     }
 
     // TODO: This code will disappear once we implement a shell and file system
-    if (loader_load_executable_from_memory(0) == NULL) {
+    if (loader_load_executable_from_file("/sys/shell.elf") == NULL) {
         error("Failed to load app #0");
     }
+
     return 0;
 }
 

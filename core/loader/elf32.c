@@ -16,6 +16,8 @@
 #include <sched/core.h>
 #include <sched/context.h>
 #include <utils/utils.h>
+#include <fs/vfs/core.h>
+#include <fs/vfs/types.h>
 #include <generated/autoconf.h>
 
 
@@ -146,8 +148,8 @@ static inline int relocate_image(Elf32_Ehdr *elf, pcb_t *pcb, uint32_t shstrtab_
     return 0;
 }
 
-static pcb_t *load(void *executable) {
-    Elf32_Ehdr *elf = executable;
+static pcb_t *load(fs_file_t *executable) {
+    Elf32_Ehdr *elf = (void *) executable;
     debug_async("Loading ELF32 from 0x%p", elf);
 
     if (!arch_elf32_is_supported(elf)) {
@@ -241,11 +243,23 @@ error_pcb:
     return NULL;
 }
 
-static bool can_handle(void *executable) {
-    if (memcmp(executable, ELFMAG, sizeof(ELFMAG) - 1) != 0) {
+static bool can_handle(fs_file_t *f) {
+    char buf[SELFMAG] = { 0 };
+    if (vfs_file_read(f, buf, sizeof(buf), 0) < 0) {
+        error_async("Couldn't read magic number from file");
         return false;
     }
-    return ((char *) executable)[EI_CLASS] == ELFCLASS32;
+
+    if (memcmp(buf, ELFMAG, SELFMAG) != 0) {
+        return false;
+    }
+
+    if (vfs_file_read(f, buf, 1, EI_CLASS) < 0) {
+        error_async("Couldn't read ELF class from file");
+        return false;
+    }
+
+    return buf[0] == ELFCLASS32;
 }
 
 LOADER_MODULE(elf32, can_handle, load);
