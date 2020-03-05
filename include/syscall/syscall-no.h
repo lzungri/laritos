@@ -21,6 +21,7 @@ typedef enum {
     SYSCALL_READ,
     SYSCALL_WRITE,
     SYSCALL_CLOSE,
+    SYSCALL_GET_PROPERTY,
 
     SYSCALL_LEN,
 } syscall_t;

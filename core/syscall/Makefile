@@ -15,3 +15,4 @@ obj-y += readline.o
 obj-y += getc.o
 obj-y += dir.o
 obj-y += file.o
+obj-y += property.o
