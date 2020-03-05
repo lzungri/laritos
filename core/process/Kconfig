@@ -24,20 +24,4 @@ config PROCESS_IDLE_STACK_SIZE
     int "Idle process stack size"
     default 8196
 
-menu "Health monitor"
-
-config PROCESS_HEALTH_CHECK_INTERVAL
-    int "Time in seconds between system health checks"
-    default 30
-
-config PROCESS_HEALTH_AVAIL_HEAP_WARNING_THRESHOLD
-    int "% of available heap at which to trigger a warning"
-    default 30
-
-config PROCESS_HEALTH_AVAIL_PROC_STACK_WARNING_THRESHOLD
-    int "% of available process stack at which to trigger a warning"
-    default 30
-
-endmenu
-
 endmenu
