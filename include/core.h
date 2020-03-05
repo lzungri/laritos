@@ -107,6 +107,7 @@ typedef struct {
     fs_dentry_t *comp_root;
     fs_dentry_t *comp_info_root;
     fs_dentry_t *comp_type_root;
+    fs_dentry_t *property_root;
 } laritos_fs_t;
 
 /**
