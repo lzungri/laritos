@@ -69,8 +69,8 @@ static inline int sysfs_remove(property_t *p) {
     return vfs_file_remove(_laritos.fs.property_root, p->id);
 }
 
-int property_create(char *id, prop_mode_t mode) {
-    debug("Creating property %s with mode=0x%x", id, mode);
+int property_create(char *id, char *value, prop_mode_t mode) {
+    debug("Creating property %s with value='%s', mode=0x%x", id, value, mode);
 
     irqctx_t ctx;
     spinlock_acquire(&_laritos.prop_lock, &ctx);
@@ -89,6 +89,7 @@ int property_create(char *id, prop_mode_t mode) {
     }
 
     strncpy(p->id, id, sizeof(p->id) - 1);
+    strncpy(p->value, value != NULL ? value : "", sizeof(p->value) - 1);
     INIT_LIST_HEAD(&p->list);
     p->mode = mode;
 

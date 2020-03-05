@@ -24,7 +24,7 @@ typedef struct {
 } property_t;
 
 int property_init_global_context(void);
-int property_create(char *id, prop_mode_t mode);
+int property_create(char *id, char *value, prop_mode_t mode);
 int property_remove(char *id);
 int property_set(char *id, char *value);
 int property_get(char *id, char *buf);

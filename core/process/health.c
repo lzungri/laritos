@@ -58,14 +58,12 @@ static void check_processes(void) {
 }
 
 static int health_main(void *data) {
-    property_create(CHECK_INTERVAL_PROP, PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL);
-    property_set(CHECK_INTERVAL_PROP, "30");
-
-    property_create(AVAIL_HEAP_THRESH_PROP, PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL);
-    property_set(AVAIL_HEAP_THRESH_PROP, "30");
-
-    property_create(AVAIL_PROC_STACK_THRESH_PROP, PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL);
-    property_set(AVAIL_PROC_STACK_THRESH_PROP, "30");
+    property_create(CHECK_INTERVAL_PROP, "30",
+            PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL);
+    property_create(AVAIL_HEAP_THRESH_PROP, "30",
+            PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL);
+    property_create(AVAIL_PROC_STACK_THRESH_PROP, "30",
+            PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL);
 
     while (1) {
         check_heap();
