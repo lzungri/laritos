@@ -165,3 +165,9 @@ T(prop_create_adds_a_new_entry_in_the_kernelfs) {
     tassert(property_remove("test") >= 0);
     tassert(!file_exist("/kernel/property/test"));
 TEND
+
+T(prop_set_fails_on_read_only_props) {
+    tassert(property_create("test", PROPERTY_MODE_READ_BY_ALL) >= 0);
+    tassert(property_set("test", "fail") < 0);
+    tassert(property_remove("test") >= 0);
+TEND

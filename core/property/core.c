@@ -157,6 +157,11 @@ int property_set(char *id, char *value) {
         spinlock_release(&_laritos.prop_lock, &ctx);
         return -1;
     }
+    if (!(p->mode & (PROPERTY_MODE_WRITE_BY_ALL | PROPERTY_MODE_WRITE_BY_OWNER))) {
+        error("Cannot write %s, read-only property", id);
+        spinlock_release(&_laritos.prop_lock, &ctx);
+        return -1;
+    }
 
     strncpy(p->value, value, sizeof(p->value) - 1);
 
