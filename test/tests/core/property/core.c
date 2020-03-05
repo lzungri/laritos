@@ -31,6 +31,20 @@ T(prop_set_assigns_the_right_value_to_the_prop) {
     tassert(property_remove("test") >= 0);
 TEND
 
+T(prop_get_or_default_returns_def_if_prop_is_null_or_non_existent) {
+    char prop[PROPERTY_VALUE_MAX_LEN];
+    property_get_or_def("test", prop, "default");
+    tassert(strncmp(prop, "default", sizeof(prop)) == 0);
+
+    tassert(property_create("test", PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL) >= 0);
+    tassert(property_set("test", "hello") >= 0);
+
+    property_get_or_def("test", prop, "default2");
+    tassert(strncmp(prop, "hello", sizeof(prop)) == 0);
+
+    tassert(property_remove("test") >= 0);
+TEND
+
 T(prop_get_fails_on_non_existent_prop) {
     char prop[PROPERTY_VALUE_MAX_LEN];
     tassert(property_get("doesntexist", prop) < 0);
@@ -58,6 +72,19 @@ T(prop_get_as_int32_returns_the_str_value_as_int32_t) {
     tassert(property_set("test", "") >= 0);
     tassert(property_get_int32("test", &prop) >= 0);
     tassert(prop == 0);
+
+    tassert(property_remove("test") >= 0);
+TEND
+
+T(prop_get_or_def_int32_returns_def_if_prop_is_null_or_non_existent) {
+    tassert(property_get_or_def_int32("test", 123) == 123);
+
+    tassert(property_create("test", PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL) >= 0);
+
+    tassert(property_get_or_def_int32("test", 123) == 0);
+
+    tassert(property_set("test", "456") >= 0);
+    tassert(property_get_or_def_int32("test", 123) == 456);
 
     tassert(property_remove("test") >= 0);
 TEND
