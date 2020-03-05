@@ -159,9 +159,9 @@ T(prop_remove_fails_if_deletion_comes_from_a_non_auth_process) {
 TEND
 
 T(prop_create_adds_a_new_entry_in_the_kernelfs) {
-    tassert(!file_exist("/kernel/prop/test"));
+    tassert(!file_exist("/kernel/property/test"));
     tassert(property_create("test", PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL) >= 0);
-    tassert(file_exist("/kernel/prop/test"));
+    tassert(file_exist("/kernel/property/test"));
     tassert(property_remove("test") >= 0);
-    tassert(!file_exist("/kernel/prop/test"));
+    tassert(!file_exist("/kernel/property/test"));
 TEND
