@@ -228,10 +228,12 @@ static int freelist_create_sysfs(sysfs_mod_t *sysfs) {
 
     if (pseudofs_create_custom_ro_file(dir, "status", status_read) == NULL) {
         error("Failed to create 'status' sysfs file");
+        return -1;
     }
 
     if (pseudofs_create_custom_ro_file(dir, "freeblocks", freeblocks_read) == NULL) {
         error("Failed to create 'freeblocks' sysfs file");
+        return -1;
     }
 
     return 0;

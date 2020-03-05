@@ -59,10 +59,12 @@ static inline int sysfs_create(bs_slab_t *slab) {
 
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "totalelems", totalelems_read, slab) == NULL) {
         error("Failed to create 'totalelems' sysfs file");
+        return -1;
     }
 
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "avail", avail_read, slab) == NULL) {
         error("Failed to create 'avail' sysfs file");
+        return -1;
     }
 
     return 0;
