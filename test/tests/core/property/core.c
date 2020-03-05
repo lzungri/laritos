@@ -11,13 +11,14 @@
 #include <fs/file.h>
 #include <test/test.h>
 
-
-T(prop_create_adds_a_new_entry_in_the_kernelfs) {
-    tassert(!file_exist("/kernel/prop/test"));
+T(prop_cannot_create_multiple_props_with_same_id) {
     tassert(property_create("test", PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL) >= 0);
-    tassert(file_exist("/kernel/prop/test"));
+    tassert(property_create("test", PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL) < 0);
     tassert(property_remove("test") >= 0);
-    tassert(!file_exist("/kernel/prop/test"));
+TEND
+
+T(prop_remove_fails_on_non_existant_property) {
+    tassert(property_remove("test") < 0);
 TEND
 
 T(prop_set_assigns_the_right_value_to_the_prop) {
@@ -33,6 +34,11 @@ TEND
 T(prop_get_fails_on_non_existent_prop) {
     char prop[PROPERTY_VALUE_MAX_LEN];
     tassert(property_get("doesntexist", prop) < 0);
+TEND
+
+T(prop_get_int32_fails_on_non_existent_prop) {
+    int32_t prop;
+    tassert(property_get_int32("doesntexist", &prop) < 0);
 TEND
 
 T(prop_get_as_int32_returns_the_str_value_as_int32_t) {
@@ -130,6 +136,32 @@ T(prop_set_succeeds_if_write_permission_for_all_is_enabled) {
 
     char prop[PROPERTY_VALUE_MAX_LEN];
     tassert(property_get("test", prop) >= 0);
-    tassert(strncmp(prop, "hello", sizeof(prop)) == 0);
+    tassert(strncmp(prop, "from child process", sizeof(prop)) == 0);
     tassert(property_remove("test") >= 0);
+TEND
+
+static int prop_remove(void *data) {
+    return property_remove("test");
+}
+
+T(prop_remove_fails_if_deletion_comes_from_a_non_auth_process) {
+    tassert(property_create("test", PROPERTY_MODE_READ_BY_OWNER | PROPERTY_MODE_WRITE_BY_OWNER) >= 0);
+
+    pcb_t *p0 = process_spawn_kernel_process("prop0", prop_remove, NULL,
+                        8196, process_get_current()->sched.priority - 1);
+    tassert(p0 != NULL);
+
+    int prop_result;
+    process_wait_for(p0, &prop_result);
+    tassert(prop_result < 0);
+
+    tassert(property_remove("test") >= 0);
+TEND
+
+T(prop_create_adds_a_new_entry_in_the_kernelfs) {
+    tassert(!file_exist("/kernel/prop/test"));
+    tassert(property_create("test", PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL) >= 0);
+    tassert(file_exist("/kernel/prop/test"));
+    tassert(property_remove("test") >= 0);
+    tassert(!file_exist("/kernel/prop/test"));
 TEND
