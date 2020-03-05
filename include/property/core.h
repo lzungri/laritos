@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <dstruct/list.h>
 
-#define PROPERTY_ID_MAX_LEN 16
+#define PROPERTY_ID_MAX_LEN 32
 #define PROPERTY_VALUE_MAX_LEN 128
 
 typedef enum {
@@ -28,4 +28,6 @@ int property_create(char *id, prop_mode_t mode);
 int property_remove(char *id);
 int property_set(char *id, char *value);
 int property_get(char *id, char *buf);
+void property_get_or_def(char *id, char *buf, char *def);
 int property_get_int32(char *id, int32_t *buf);
+int32_t property_get_or_def_int32(char *id, int32_t def);

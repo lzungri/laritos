@@ -19,6 +19,10 @@ int property_init_global_context(void) {
     return 0;
 }
 
+/**
+ * TODO: This is very inefficient, we should use a dictionary or rbtree
+ * along with a LRU to cache the properties
+ */
 static inline property_t *get_property_locked(char *id) {
     property_t *p;
     list_for_each_entry(p, &_laritos.properties, list) {
@@ -183,7 +187,7 @@ int property_get(char *id, char *buf) {
 
     property_t *p = get_property_locked(id);
     if (p == NULL) {
-        error("Property %s doesn't exist", id);
+        verbose("Property %s doesn't exist", id);
         spinlock_release(&_laritos.prop_lock, &ctx);
         return -1;
     }
@@ -201,14 +205,28 @@ int property_get(char *id, char *buf) {
     return 0;
 }
 
+void property_get_or_def(char *id, char *buf, char *def) {
+    if (property_get(id, buf) < 0) {
+        strncpy(buf, def, PROPERTY_VALUE_MAX_LEN - 1);
+    }
+}
+
 int property_get_int32(char *id, int32_t *buf) {
     char prop[PROPERTY_VALUE_MAX_LEN];
     if (property_get(id, prop) < 0) {
-        error("Couldn't get property %s", id);
+        verbose("Couldn't get property %s", id);
         return -1;
     }
     *buf = (int32_t) strtol(prop, NULL, 0);
     return 0;
+}
+
+int32_t property_get_or_def_int32(char *id, int32_t def) {
+    int32_t v;
+    if (property_get_int32(id, &v) < 0) {
+        v = def;
+    }
+    return v;
 }
 
 static int create_root_sysfs(sysfs_mod_t *sysfs) {
