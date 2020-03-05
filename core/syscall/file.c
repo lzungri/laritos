@@ -17,6 +17,10 @@ int syscall_read(fs_file_t *file, void *buf, int buflen) {
     return vfs_file_read_cur_offset(file, buf, buflen);
 }
 
+int syscall_write(fs_file_t *file, void *buf, int buflen) {
+    return vfs_file_write_cur_offset(file, buf, buflen);
+}
+
 int syscall_close(fs_file_t *file) {
     return vfs_file_close(file);
 }

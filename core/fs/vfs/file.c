@@ -161,3 +161,11 @@ int vfs_file_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     verbose("Writing %d bytes to '%s', ret=%d", blen, f->dentry->name, ret);
     return ret;
 }
+
+int vfs_file_write_cur_offset(fs_file_t *f, void *buf, size_t blen) {
+    int nbytes = vfs_file_write(f, buf, blen, f->offset);
+    if (nbytes > 0) {
+        f->offset += nbytes;
+    }
+    return nbytes;
+}

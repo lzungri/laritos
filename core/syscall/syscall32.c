@@ -43,6 +43,7 @@ static syscall_entry_t systable[] = {
     DEF_SCE(SYSCALL_LISTDIR, syscall_listdir),
     DEF_SCE(SYSCALL_OPEN, syscall_open),
     DEF_SCE(SYSCALL_READ, syscall_read),
+    DEF_SCE(SYSCALL_WRITE, syscall_write),
     DEF_SCE(SYSCALL_CLOSE, syscall_close),
 };
 
