@@ -149,6 +149,16 @@ typedef struct {
     list_head_t loaders;
 
     /**
+     * List of system properties
+     * TODO: This should be a dictionary, rbtree, etc
+     */
+    list_head_t properties;
+    /**
+     * Spinlock used to protect the _laritos.properties list
+     */
+    spinlock_t prop_lock;
+
+    /**
      * CPU shortcuts, will be initialized by cpu_init()
      */
     DEF_CPU_LOCAL(cpu_t *, cpu);
