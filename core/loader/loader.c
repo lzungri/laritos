@@ -83,6 +83,7 @@ pcb_t *loader_load_executable_from_file(char *path) {
             if (pcb == NULL) {
                 error_async("Failed to load application");
             }
+            strncpy(pcb->cmd, path, sizeof(pcb->cmd));
 
             vfs_file_close(f);
             return pcb;
