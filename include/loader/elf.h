@@ -14,6 +14,7 @@
 #define ELF64_R_TYPE(i)         ((i) & 0xffffffff)
 #define ELF64_R_INFO(sym,type)      ((((Elf64_Xword) (sym)) << 32) + (type))
 
+#define ELF_SECTION_NAME_MAX_LEN 32
 
 /* 32-bit ELF base types. */
 typedef uint32_t   Elf32_Addr;
