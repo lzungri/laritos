@@ -285,6 +285,8 @@ static pcb_t *load(fs_file_t *f) {
         goto error_register;
     }
 
+    // Free temp sections array
+    free(sections);
     return pcb;
 
 error_register:
