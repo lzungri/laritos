@@ -69,6 +69,12 @@ pcb_t *loader_load_executable_from_file(char *path) {
         return NULL;
     }
 
+    if (!(f->dentry->inode->mode & FS_ACCESS_MODE_EXEC)) {
+        error_async("'%s' doesn't have execution permissions", path);
+        vfs_file_close(f);
+        return NULL;
+    }
+
     loader_type_t *loader;
     list_for_each_entry(loader, &_laritos.loaders, list) {
         if (loader->can_handle(f)) {
