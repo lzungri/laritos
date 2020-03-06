@@ -25,31 +25,26 @@ static inline int read_all_from_file(fs_file_t *f, void *buf, size_t blen, uint3
     return nread < 0 || nread < blen ? -1 : 0;
 }
 
-static int copy_image_into_memory(fs_file_t *f, Elf32_Ehdr *elf, void *addr) {
+static int copy_image_into_memory(fs_file_t *f, Elf32_Ehdr *elf, Elf32_Section *sections, void *addr) {
     char *dest = addr;
     uint16_t i;
     // Traverse each ELF section and check whether we need to copy its data
     // into the process image or initialize it to zero
     for (i = 0; i < elf->e_shnum; i++) {
-        Elf32_Shdr sect;
-        if (read_all_from_file(f, &sect, sizeof(sect), elf->e_shoff + elf->e_shentsize * i) < 0) {
-            error_async("Couldn't read ELF section #%d", i);
-            return -1;
-        }
-
-        if (sect.sh_flags & SHF_ALLOC) {
-            if (sect.sh_type & SHT_PROGBITS) {
-                verbose_async("Copying %lu bytes from ELF section #%u into 0x%p", sect.sh_size, i, dest);
+        Elf32_Section *sect = &sections[i];
+        if (sect->parent.sh_flags & SHF_ALLOC) {
+            if (sect->parent.sh_type & SHT_PROGBITS) {
+                verbose_async("Copying %lu bytes from ELF section #%u into 0x%p", sect->parent.sh_size, i, dest);
                 // Data is in the elf image, it must be copied into memory
-                if (read_all_from_file(f, dest, sect.sh_size, sect.sh_offset) < 0) {
+                if (read_all_from_file(f, dest, sect->parent.sh_size, sect->parent.sh_offset) < 0) {
                     error_async("Couldn't read data from ELF section #%d", i);
                     return -1;
                 }
-                dest += sect.sh_size;
-            } else if (sect.sh_type & SHT_NOBITS) {
+                dest += sect->parent.sh_size;
+            } else if (sect->parent.sh_type & SHT_NOBITS) {
                 // Zero-initialized data
-                verbose_async("Zero-initializing %lu bytes at 0x%p", sect.sh_size, addr + sect.sh_addr);
-                memset(addr + sect.sh_addr, 0, sect.sh_size);
+                verbose_async("Zero-initializing %lu bytes at 0x%p", sect->parent.sh_size, addr + sect->parent.sh_addr);
+                memset(addr + sect->parent.sh_addr, 0, sect->parent.sh_size);
             }
         }
     }
@@ -94,41 +89,31 @@ static int relocate_section(fs_file_t *f, Elf32_Ehdr *elf, pcb_t *pcb, uint32_t 
     return 0;
 }
 
-// TODO: Optimize this function, we should cache the sections (Elf32_Shdr)
-static inline int read_section_header(fs_file_t *f, char *section, Elf32_Ehdr *elf, uint32_t shstrtab_offset, Elf32_Shdr *sect) {
+static inline Elf32_Section *get_section(char *section, Elf32_Ehdr *elf, Elf32_Section *sections) {
     int i;
     for (i = 0; i < elf->e_shnum; i++) {
-        if (read_all_from_file(f, sect, sizeof(*sect), elf->e_shoff + elf->e_shentsize * i) < 0) {
-            error_async("Couldn't read ELF section #%d", i);
-            return -1;
-        }
-
-        char sectname[ELF_SECTION_NAME_MAX_LEN];
-        if (read_all_from_file(f, sectname, sizeof(sectname), shstrtab_offset + sect->sh_name) < 0) {
-            error_async("Couldn't read section name from ELF string table");
-            return -1;
-        }
-        if (strncmp(sectname, section, strlen(section)) == 0) {
-            return 0;
+        Elf32_Section *sect = &sections[i];
+        if (strncmp(sect->name, section, sizeof(sect->name)) == 0) {
+            return sect;
         }
     }
-    return -1;
+    return NULL;
 }
 
-static inline int populate_addr_and_size(fs_file_t *f, char *section, void **addr, secsize_t *size, pcb_t *pcb, Elf32_Ehdr *elf, uint32_t shstrtab_offset) {
-    Elf32_Shdr sect;
-    if (read_section_header(f, section, elf, shstrtab_offset, &sect) < 0) {
+static inline int populate_addr_and_size(fs_file_t *f, char *section, void **addr, secsize_t *size, pcb_t *pcb, Elf32_Ehdr *elf, Elf32_Section *sections) {
+    Elf32_Section *sect = get_section(section, elf, sections);
+    if (sect == NULL) {
         error_async("Couldn't read '%s' section header", section);
         return -1;
     }
-    *addr = (char *) pcb->mm.imgaddr + sect.sh_addr;
-    *size = sect.sh_size;
+    *addr = (char *) pcb->mm.imgaddr + sect->parent.sh_addr;
+    *size = sect->parent.sh_size;
     return 0;
 }
 
-static inline int populate_sections(fs_file_t *f, pcb_t *pcb, Elf32_Ehdr *elf, uint32_t shstrtab_offset) {
+static inline int setup_image_sections(fs_file_t *f, pcb_t *pcb, Elf32_Ehdr *elf, Elf32_Section *sections) {
 #define POPULATE_ADDR_AND_SIZE(_sect) \
-    if (populate_addr_and_size(f, "." #_sect, &pcb->mm._sect##_start, &pcb->mm._sect##_size, pcb, elf, shstrtab_offset) < 0) { \
+    if (populate_addr_and_size(f, "." #_sect, &pcb->mm._sect##_start, &pcb->mm._sect##_size, pcb, elf, sections) < 0) { \
         error_async("Couldn't find ." #_sect " section"); \
         return -1; \
     } \
@@ -140,7 +125,7 @@ static inline int populate_sections(fs_file_t *f, pcb_t *pcb, Elf32_Ehdr *elf, u
     POPULATE_ADDR_AND_SIZE(got);
     POPULATE_ADDR_AND_SIZE(heap);
 
-    if (populate_addr_and_size(f, ".stack", &pcb->mm.stack_bottom, &pcb->mm.stack_size, pcb, elf, shstrtab_offset) < 0) {
+    if (populate_addr_and_size(f, ".stack", &pcb->mm.stack_bottom, &pcb->mm.stack_size, pcb, elf, sections) < 0) {
         error_async("Couldn't find .stack section");
         return -1;
     }
@@ -150,20 +135,20 @@ static inline int populate_sections(fs_file_t *f, pcb_t *pcb, Elf32_Ehdr *elf, u
     return 0;
 }
 
-static inline int relocate_image(fs_file_t *f, Elf32_Ehdr *elf, pcb_t *pcb, uint32_t shstrtab_offset, uint32_t symtab_offset) {
+static inline int relocate_image(fs_file_t *f, Elf32_Ehdr *elf, Elf32_Section *sections, pcb_t *pcb, uint32_t symtab_offset) {
     char *relocs[] = { ".rel.text", ".rel.data" };
     int i;
     for (i = 0; i < ARRAYSIZE(relocs); i++) {
+        Elf32_Section *sect = get_section(relocs[i], elf, sections);
+        if (sect == NULL) {
+            debug_async("No relocation section for '%s'", relocs[i]);
+            return -1;
+        }
+
         uint32_t rel_offset;
         uint16_t rel_entries;
-
-        Elf32_Shdr sect;
-        if (read_section_header(f, relocs[i], elf, shstrtab_offset, &sect) < 0) {
-            debug_async("No relocation section for '%s'", relocs[i]);
-            continue;
-        }
-        rel_offset = sect.sh_offset;
-        rel_entries = sect.sh_size / sizeof(Elf32_Rel);
+        rel_offset = sect->parent.sh_offset;
+        rel_entries = sect->parent.sh_size / sizeof(Elf32_Rel);
 
         if (relocate_section(f, elf, pcb, rel_offset, rel_entries, symtab_offset) < 0) {
             error_async("Failed to relocate '%s'", f->dentry->name);
@@ -173,17 +158,63 @@ static inline int relocate_image(fs_file_t *f, Elf32_Ehdr *elf, pcb_t *pcb, uint
     return 0;
 }
 
+static int populate_sections(fs_file_t *f, Elf32_Ehdr *elf, Elf32_Section *sections) {
+    uint32_t shstrtab_offset = U32_MAX;
+
+    int i;
+    for (i = 0; i < elf->e_shnum; i++) {
+        Elf32_Section *sect = &sections[i];
+        // Read section header from ELF
+        if (read_all_from_file(f, &sect->parent, sizeof(Elf32_Shdr), elf->e_shoff + elf->e_shentsize * i) < 0) {
+            error_async("Couldn't read ELF section #%d", i);
+            return -1;
+        }
+
+        if (sect->parent.sh_type == SHT_STRTAB) {
+            shstrtab_offset = sect->parent.sh_offset;
+        }
+    }
+
+    if (shstrtab_offset == U32_MAX) {
+        error_async("Couldn't find offset/s for the shstrtab section");
+        return -1;
+    }
+
+    // Populate sections names
+    for (i = 0; i < elf->e_shnum; i++) {
+        Elf32_Section *sect = &sections[i];
+        if (read_all_from_file(f, sect->name, sizeof(sect->name), shstrtab_offset + sect->parent.sh_name) < 0) {
+            error_async("Couldn't read section name from ELF string table");
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 static pcb_t *load(fs_file_t *f) {
+    debug_async("Loading ELF32 from '%s'", f->dentry->name);
+
     Elf32_Ehdr elf;
     if (read_all_from_file(f, &elf, sizeof(elf), 0) < 0) {
         error_async("Couldn't read ELF header from file");
         return NULL;
     }
-    debug_async("Loading ELF32 from '%s'", f->dentry->name);
 
     if (!arch_elf32_is_supported(&elf)) {
         error_async("Executable not supported by this platform");
         return NULL;
+    }
+
+    Elf32_Section *sections = calloc(elf.e_shnum, sizeof(Elf32_Section));
+    if (sections == NULL) {
+        error_async("Could not allocate memory for ELF sections");
+        return NULL;
+    }
+
+    if (populate_sections(f, &elf, sections) < 0) {
+        error_async("Couldn't populate ELF sections");
+        goto error_popu_sects;
     }
 
     // Allocate PCB structure for this new process
@@ -196,32 +227,25 @@ static pcb_t *load(fs_file_t *f) {
     pcb->kernel = false;
 
     uint32_t symtab_offset = U32_MAX;
-    uint32_t shstrtab_offset = U32_MAX;
 
     int i;
     // Calculate required image size based on the sections marked for allocation
     // and obtain the offset for the symbol tables
     for (i = 0; i < elf.e_shnum; i++) {
-        Elf32_Shdr sect;
-        if (read_all_from_file(f, &sect, sizeof(sect), elf.e_shoff + elf.e_shentsize * i) < 0) {
-            error_async("Couldn't read ELF section #%d", i);
-            goto error_read_sect;
+        Elf32_Section *sect = &sections[i];
+
+        if (sect->parent.sh_flags & SHF_ALLOC) {
+            pcb->mm.imgsize += sect->parent.sh_size;
         }
 
-        if (sect.sh_flags & SHF_ALLOC) {
-            pcb->mm.imgsize += sect.sh_size;
-        }
-
-        if (sect.sh_type == SHT_SYMTAB) {
-            verbose_async("Found symbol table at ELF offset 0x%lX", sect.sh_offset);
-            symtab_offset = sect.sh_offset;
-        } else if (sect.sh_type == SHT_STRTAB) {
-            shstrtab_offset = sect.sh_offset;
+        if (sect->parent.sh_type == SHT_SYMTAB) {
+            verbose_async("Found symbol table at ELF offset 0x%lX", sect->sh_offset);
+            symtab_offset = sect->parent.sh_offset;
         }
     }
 
-    if (symtab_offset == U32_MAX || shstrtab_offset == U32_MAX) {
-        error_async("Couldn't find offset/s for the symtab and/or shstrtab sections");
+    if (symtab_offset == U32_MAX) {
+        error_async("Couldn't find offset for the symtab section");
         goto error_symoffset;
     }
 
@@ -234,12 +258,12 @@ static pcb_t *load(fs_file_t *f) {
 
     debug_async("Process image: 0x%p-0x%p", pcb->mm.imgaddr, (char *) pcb->mm.imgaddr + pcb->mm.imgsize);
 
-    if (populate_sections(f, pcb, &elf, shstrtab_offset) < 0) {
+    if (setup_image_sections(f, pcb, &elf, sections) < 0) {
         error_async("Failed to populate sections for '%s'", f->dentry->name);
         goto error_sections;
     }
 
-    if (copy_image_into_memory(f, &elf, pcb->mm.imgaddr) < 0) {
+    if (copy_image_into_memory(f, &elf, sections, pcb->mm.imgaddr) < 0) {
         error_async("Failed to copy '%s' image into 0x%p", f->dentry->name, pcb->mm.imgaddr);
         goto error_load;
     }
@@ -249,7 +273,7 @@ static pcb_t *load(fs_file_t *f) {
         goto error_setup;
     }
 
-    if (relocate_image(f, &elf, pcb, shstrtab_offset, symtab_offset) < 0) {
+    if (relocate_image(f, &elf, sections, pcb, symtab_offset) < 0) {
         error_async("Failed to handle relocations for '%s'", f->dentry->name);
         goto error_reloc;
     }
@@ -272,9 +296,10 @@ error_sections:
     pcb->mm.imgaddr = NULL;
 error_imgalloc:
 error_symoffset:
-error_read_sect:
     process_free(pcb);
 error_pcb:
+error_popu_sects:
+    free(sections);
     return NULL;
 }
 

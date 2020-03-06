@@ -318,6 +318,11 @@ typedef struct elf32_shdr {
   Elf32_Word    sh_entsize;
 } Elf32_Shdr;
 
+typedef struct elf32_section {
+  Elf32_Shdr parent;
+  char name[ELF_SECTION_NAME_MAX_LEN];
+} Elf32_Section;
+
 typedef struct elf64_shdr {
   Elf64_Word sh_name;       /* Section name, index in string tbl */
   Elf64_Word sh_type;       /* Type of section */
