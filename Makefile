@@ -841,15 +841,22 @@ laritos.bin: laritos.elf FORCE
 
 SYSTEM_IMG_FOLDER := image/system
 
+PHONY += $(SYSTEM_IMG_FOLDER)
 $(SYSTEM_IMG_FOLDER):
-	mkdir -p $@
+	@mkdir -p $@
+
+quiet_cmd_sysimg ?= SYSIMG  $@
+	cmd_sysimg ?= \
+		dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_FS_SYSTEM_IMAGE_SIZE) status=none
 
 system.img: $(SYSTEM_IMG_FOLDER)
+	$(call if_changed,sysimg)
 
 quiet_cmd_img_laritos ?= IMAGE   $@
 	cmd_img_laritos ?= \
 		dd if=/dev/zero of=$@ bs=1M count=64 status=none; \
-		dd if=$< of=$@ conv=notrunc status=none
+		dd if=$< of=$@ conv=notrunc status=none; \
+		dd if=/home/lzungri/dev/fs/data.img of=$@ bs=$(CONFIG_FS_SYSTEM_IMAGE_OFFSET) seek=1 conv=notrunc status=none
 
 laritos.img: laritos.bin system.img FORCE
 	$(call if_changed,img_laritos)

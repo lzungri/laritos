@@ -4,4 +4,12 @@ config FS_MAX_FILENAME_LEN
     int "Maximum file name length"
     default 255
 
+config FS_SYSTEM_IMAGE_OFFSET
+    int "Offset into laritos.img at which the system image is located"
+    default 1048576 # 1MB
+
+config FS_SYSTEM_IMAGE_SIZE
+    int "Size of the system image (in MBs)"
+    default 10
+
 endmenu
