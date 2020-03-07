@@ -839,12 +839,19 @@ quiet_cmd_objcopy_laritos ?= OBJCOPY $@
 laritos.bin: laritos.elf FORCE
 	$(call if_changed,objcopy_laritos)
 
+SYSTEM_IMG_FOLDER := image/system
+
+$(SYSTEM_IMG_FOLDER):
+	mkdir -p $@
+
+system.img: $(SYSTEM_IMG_FOLDER)
+
 quiet_cmd_img_laritos ?= IMAGE   $@
 	cmd_img_laritos ?= \
 		dd if=/dev/zero of=$@ bs=1M count=64 status=none; \
 		dd if=$< of=$@ conv=notrunc status=none
 
-laritos.img: laritos.bin FORCE
+laritos.img: laritos.bin system.img FORCE
 	$(call if_changed,img_laritos)
 	$(Q)echo ''
 	$(Q)$(SIZE) laritos.elf

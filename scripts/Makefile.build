@@ -15,6 +15,7 @@ obj-y :=
 obj-m :=
 lib-y :=
 lib-m :=
+resource-y :=
 always :=
 targets :=
 subdir-y :=
@@ -71,7 +72,7 @@ mod-targets := $(patsubst %.o, %.mod, $(obj-m))
 
 __build: $(if $(KBUILD_BUILTIN),$(builtin-target) $(lib-target) $(extra-y)) \
 	 $(if $(KBUILD_MODULES),$(obj-m) $(mod-targets) $(modorder-target)) \
-	 $(subdir-ym) $(always)
+	 $(subdir-ym) $(real-resource-y) $(always)
 	@:
 
 # Linus' kernel sanity checking tool
@@ -515,5 +516,17 @@ ifneq ($(obj-dirs),)
 $(shell mkdir -p $(obj-dirs))
 endif
 endif
+
+# Root of the system image under the output directory
+SYSTEM_IMG_FOLDER := image/system
+
+PHONY += $(real-resource-y)
+# Create targets for each system image resource
+$(real-resource-y):
+	@echo "  RES     $@"
+# Create folder in the system image directory
+	$(Q)mkdir -p $(addprefix $(SYSTEM_IMG_FOLDER),$(word 2,$(subst @, ,$@)))
+# Copy the resource into the system image
+	$(Q)cp $(srctree)/$(word 1,$(subst @, ,$@)) $(addprefix $(SYSTEM_IMG_FOLDER),$(word 2,$(subst @, ,$@)))
 
 .PHONY: $(PHONY)
