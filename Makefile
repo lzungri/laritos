@@ -846,8 +846,8 @@ $(SYSTEM_IMG_FOLDER):
 	@mkdir -p $@
 
 quiet_cmd_sysimg ?= SYSIMG  $@
-	cmd_sysimg ?= \
-		dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_FS_SYSTEM_IMAGE_SIZE) status=none
+cmd_sysimg ?= \
+	dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_FS_SYSTEM_IMAGE_SIZE) status=none
 
 system.img: $(SYSTEM_IMG_FOLDER)
 	$(call if_changed,sysimg)
@@ -1003,47 +1003,33 @@ boards := $(sort $(notdir $(boards)))
 
 PHONY += help
 help:
-	@echo  'Cleaning targets:'
-	@echo  '  clean		  - Remove most generated files but keep the config and'
-	@echo  '                    enough build support to build external modules'
-	@echo  '  mrproper	  - Remove all generated files + config + various backup files'
-	@echo  ''
-	@echo  'Configuration targets:'
-	@$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
-	@echo  ''
-	@echo  'Other generic targets:'
+	@echo  'Generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
+	@echo  '  system.img      - Build sytem image only'
 	@echo  '  dir/            - Build all files in dir and below'
 	@echo  '  dir/file.[ois]  - Build specified target only'
-	@echo  '  dir/file.ll     - Build the LLVM assembly file'
-	@echo  '                    (requires compiler support for LLVM assembly generation)'
-	@echo  '  dir/file.lst    - Build specified mixed source/assembly target only'
-	@echo  '                    (requires a recent binutils and recent build (System.map))'
 	@echo  '  printmap        - Output the link map info (memory mapping, symbols, etc) (use with make -s)'
 	@echo  '  kernelrelease	  - Output the release version string (use with make -s)'
 	@echo  '  kernelversion	  - Output the version stored in Makefile (use with make -s)'
 	@echo  '  image_name	  - Output the image name (use with make -s)'
 	@echo  ''
-	@echo  'Static analysers:'
-	@echo  '  includecheck    - Check for duplicate included header files'
-	@echo  '  coccicheck      - Check with Coccinelle'
+	@echo  'Cleaning targets:'
+	@echo  '  clean		  - Remove most generated files but keep the config'
+	@echo  '  mrproper	  - Remove all generated files + config + various backup files'
 	@echo  ''
 
-	@echo 'Userspace tools targets:'
-	@echo '  use "make tools/help"'
-	@echo '  or  "cd tools; make help"'
-	@echo  ''
+	@echo  'Configuration targets:'
 	@$(if $(boards), \
 		$(foreach b, $(boards), \
 		printf "  %-24s - Build for %s\\n" $(b) $(subst _defconfig,,$(b));) \
 		echo '')
 
+	@echo  'Logging and static analysis:'
 	@echo  '  make V=0|1 [targets] 0 => quiet build (default), 1 => verbose build'
 	@echo  '  make V=2   [targets] 2 => give reason for rebuild of target'
 	@echo  '  make O=dir [targets] Locate all output files in "dir", including .config'
 	@echo  '  make C=1   [targets] Check re-compiled c source with $$CHECK (sparse by default)'
 	@echo  '  make C=2   [targets] Force check of all c source with $$CHECK'
-	@echo  '  make RECORDMCOUNT_WARN=1 [targets] Warn about ignored mcount sections'
 	@echo  '  make W=n   [targets] Enable extra gcc checks, n=1,2,3 where'
 	@echo  '		1: warnings which may be relevant and do not occur too often'
 	@echo  '		2: warnings which occur quite often but may still be relevant'
