@@ -11,6 +11,7 @@ typedef struct sysfs_mod {
 int fs_mount_essential_filesystems(void);
 int fs_register_sysfs(sysfs_mod_t *sysfs);
 int fs_unregister_sysfs(sysfs_mod_t *sysfs);
+int fs_get_param_uint32(fs_param_t *params, char *param, uint32_t *value);
 
 #define SYSFS_MODULE(_id, _create_sysfs, _remove_sysfs) \
     static sysfs_mod_t _sysfs_mod_ ## _id = { \

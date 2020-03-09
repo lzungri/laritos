@@ -11,7 +11,17 @@ int vfs_register_fs_type(fs_type_t *fst);
 int vfs_unregister_fs_type(fs_type_t *fst);
 bool vfs_is_fs_type_supported(char *fstype);
 
-fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags, void *params);
+/**
+ * Mounts a file system of type <fstype> under the given <mount_point>.
+ *
+ * @param fstype: FS type registered via vfs_register_fs_type()
+ * @param mount_point: Path in which the FS will be mounted
+ * @param flags: Access flags for the FS
+ * @param params: Null-terminated array of FS-specific arguments
+ *
+ * @returns Mounted FS structure
+ */
+fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags, fs_param_t *params);
 int vfs_unmount_fs(char *mount_point);
 
 void vfs_dentry_init(fs_dentry_t *d, char *name, fs_inode_t *inode, fs_dentry_t *parent);

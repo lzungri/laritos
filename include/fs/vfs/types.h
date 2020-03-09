@@ -18,6 +18,7 @@ struct fs_mount;
 struct fs_inode;
 struct fs_dentry;
 struct fs_file;
+struct fs_param;
 
 typedef struct {
     char name[CONFIG_FS_MAX_FILENAME_LEN];
@@ -55,7 +56,7 @@ typedef struct fs_type {
     char *id;
     list_head_t list;
 
-    int (*mount)(struct fs_type *fstype, struct fs_mount *mount);
+    int (*mount)(struct fs_type *fstype, struct fs_mount *mount, struct fs_param *params);
 } fs_type_t;
 
 
@@ -129,3 +130,8 @@ typedef struct fs_mount {
 
     fs_mount_ops_t ops;
 } fs_mount_t;
+
+typedef struct fs_param {
+    char *param;
+    char *value;
+} fs_param_t;

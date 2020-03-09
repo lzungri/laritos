@@ -1,12 +1,14 @@
 #include <log.h>
 
 #include <core.h>
+#include <strtoxl.h>
 #include <process/core.h>
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
 #include <fs/core.h>
 #include <dstruct/list.h>
+#include <utils/utils.h>
 #include <generated/autoconf.h>
 
 int fs_mount_essential_filesystems(void) {
@@ -27,7 +29,11 @@ int fs_mount_essential_filesystems(void) {
     _laritos.fs.kernelfs_root = mnt->root;
 
     info("Mounting system filesystem");
-    mnt = vfs_mount_fs("ext2", "/sys", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    mnt = vfs_mount_fs("ext2", "/sys", FS_MOUNT_READ | FS_MOUNT_WRITE,
+            (fs_param_t []) {
+                { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_OFFSET) },
+                { NULL },
+            });
     if (mnt == NULL) {
         error("Error mounting data");
         goto error_data;
@@ -102,4 +108,15 @@ int fs_unregister_sysfs(sysfs_mod_t *sysfs) {
     list_del_init(&sysfs->list);
 
     return 0;
+}
+
+int fs_get_param_uint32(fs_param_t *params, char *param, uint32_t *value) {
+    fs_param_t *p;
+    for (p = params; p->param != NULL; p++) {
+        if (strncmp(p->param, param, 32) == 0) {
+            *value = (uint32_t) strtoul(p->value, NULL, 0);
+            return 0;
+        }
+    }
+    return -1;
 }

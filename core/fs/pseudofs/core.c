@@ -93,7 +93,7 @@ static int unmount(fs_mount_t *fsm) {
     return 0;
 }
 
-static int mount(fs_type_t *fstype, fs_mount_t *m) {
+static int mount(fs_type_t *fstype, fs_mount_t *m, fs_param_t *params) {
     pseudofs_sb_t *psb = calloc(1, sizeof(pseudofs_sb_t));
     if (psb == NULL) {
         error("No memory available for pseudofs_sb_t structure");

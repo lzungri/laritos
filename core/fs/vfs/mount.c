@@ -39,7 +39,7 @@ static inline fs_mount_t *get_fsmount(char *mount_point) {
     return NULL;
 }
 
-fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags, void *params) {
+fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags, fs_param_t *params) {
     info("Mounting %s filesystem at %s with flags=0x%0x", fstype, mount_point, flags);
 
     fs_type_t *fst = vfs_get_fstype(fstype);
@@ -68,7 +68,7 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags
     fsm->flags = flags;
     INIT_LIST_HEAD(&fsm->list);
 
-    if (fst->mount(fst, fsm) < 0) {
+    if (fst->mount(fst, fsm, params) < 0) {
         error("Could not mount file system '%s' at %s", fst->id, mount_point);
         goto error_mount;
     }
