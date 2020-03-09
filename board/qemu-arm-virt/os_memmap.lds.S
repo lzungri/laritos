@@ -77,6 +77,7 @@ SECTIONS
     /* Kernel binary size (actual size of laritos.bin) */
     __kernel_bin_size = __data_lma + SIZEOF(.data);
     ASSERT(__kernel_bin_size < ORIGIN(flash) + LENGTH(flash), "Not enough Flash to fit the kernel")
+    ASSERT(__kernel_bin_size < ORIGIN(flash) + CONFIG_FS_SYSTEM_IMAGE_OFFSET * 1024 * 1024, "Kernel image overlaps with the system image")
 
     /* Non initialized data will be manually allocated (and zeroed) in ram */
     .bss : {
