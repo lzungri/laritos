@@ -15,7 +15,7 @@ static fs_superblock_t dummy_sb = {
     },
 };
 
-static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm) {
+static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm, fs_param_t *params) {
     dummy_sb.fstype = fstype;
     fsm->sb = &dummy_sb;
     fsm->sb->root = fsm->sb->ops.alloc_inode(fsm->sb);

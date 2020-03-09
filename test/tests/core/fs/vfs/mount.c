@@ -13,14 +13,14 @@ static fs_superblock_t dummy_sb = {
     },
 };
 
-static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm) {
+static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm, fs_param_t *params) {
     dummy_sb.fstype = fstype;
     fsm->sb = &dummy_sb;
     fsm->sb->root = fsm->sb->ops.alloc_inode(fsm->sb);
     return 0;
 }
 
-int mount_error(fs_type_t *fstype, fs_mount_t *fsm) {
+int mount_error(fs_type_t *fstype, fs_mount_t *fsm, fs_param_t *params) {
     return -1;
 }
 
@@ -85,7 +85,7 @@ T(vfs_mount_adds_a_new_fs_under_mount_point) {
     tassert(!vfs_is_fs_type_supported(fst.id));
 TEND
 
-int nosb_mount(fs_type_t *fstype, fs_mount_t *fsm) {
+int nosb_mount(fs_type_t *fstype, fs_mount_t *fsm, fs_param_t *params) {
     fsm->sb = NULL;
     return 0;
 }
