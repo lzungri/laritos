@@ -19,7 +19,7 @@
 
 // TODO: This is hardcoded until we append the data.img right after
 // the kernel.img or in a configurable fixed location
-static char *dataimg_base = (char *) CONFIG_FS_SYSTEM_IMAGE_OFFSET;
+static char *dataimg_base = (char *) (CONFIG_FS_SYSTEM_IMAGE_OFFSET * 1024 * 1024);
 
 static inline uint32_t get_num_bgs(ext2_sb_t *sb) {
     uint32_t n = sb->info.blocks_count / sb->info.blocks_per_group;
