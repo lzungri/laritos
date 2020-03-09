@@ -9,15 +9,31 @@ CONFIG_CPU_LITTLE_ENDIAN=y
 CONFIG_SMP=y
 CONFIG_CPU_MAX_CPUS=4
 
+# From qemu/hw/arm/virt.c
+# static const MemMapEntry base_memmap[] = {
+#     /* Space up to 0x8000000 is reserved for a boot ROM */
+#     [VIRT_FLASH] =              {          0, 0x08000000 },
+#     ...
+#     [VIRT_PCIE_ECAM] =          { 0x3f000000, 0x01000000 },
+#     /* Actual RAM size depends on initial RAM and device memory settings */
+#     [VIRT_MEM] =                { GiB, LEGACY_RAMLIMIT_BYTES },
+# };
 CONFIG_SYS_FLASH_BASE=0x00000000
-CONFIG_SYS_FLASH_SIZE=0x1000000000
+# Flash size = 128MB
+CONFIG_SYS_FLASH_SIZE=0x08000000
 CONFIG_SYS_RAM_BASE=0x40000000
+# RAM size = 1GB
 CONFIG_SYS_RAM_SIZE=0x40000000
+
+# The QEMU arm virtual board is based on the Versatile Express, which requires
+# an image of 64MB (see qemu/hw/arm/virt.c)
+CONFIG_OSIMAGE_FILESIZE=64
 
 CONFIG_INTC_ARM_GICV2=y
 CONFIG_UART_ARM_PL011=y
 CONFIG_RTC_ARM_PL031=y
 CONFIG_TIMER_ARM_V7_GENERIC=y
 
-CONFIG_FS_SYSTEM_IMAGE_OFFSET=1048576
+# system.img offset = 8MB (in the FLASH memory)
+CONFIG_FS_SYSTEM_IMAGE_OFFSET=8
 CONFIG_FS_SYSTEM_IMAGE_SIZE=10
