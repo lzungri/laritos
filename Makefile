@@ -975,6 +975,7 @@ include/generated/utsrelease.h: include/config/kernel.release FORCE
 # make mrproper  Delete the current configuration, and all generated files
 
 CLEAN_FILES += laritos.img laritos.bin laritos.elf
+CLEAN_DIRS += image
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config include/generated          \
