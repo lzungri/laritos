@@ -864,9 +864,9 @@ system.img: $(SYSTEM_IMG_FOLDER)
 
 quiet_cmd_img_laritos ?= IMAGE   $@
 	cmd_img_laritos ?= \
-		dd if=/dev/zero of=$@ bs=1M count=64 status=none; \
+		dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_OSIMAGE_FILESIZE) status=none; \
 		dd if=$< of=$@ conv=notrunc status=none; \
-		dd if=system.img of=$@ bs=$(CONFIG_FS_SYSTEM_IMAGE_OFFSET) seek=1 conv=notrunc status=none
+		dd if=system.img of=$@ bs=1M seek=$(CONFIG_FS_SYSTEM_IMAGE_OFFSET) conv=notrunc status=none
 
 laritos.img: laritos.bin system.img FORCE
 	$(call if_changed,img_laritos)
