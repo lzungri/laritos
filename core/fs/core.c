@@ -111,6 +111,10 @@ int fs_unregister_sysfs(sysfs_mod_t *sysfs) {
 }
 
 int fs_get_param_uint32(fs_param_t *params, char *param, uint32_t *value) {
+    if (params == NULL) {
+        return -1;
+    }
+
     fs_param_t *p;
     for (p = params; p->param != NULL; p++) {
         if (strncmp(p->param, param, 32) == 0) {
