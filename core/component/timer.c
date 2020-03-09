@@ -11,7 +11,6 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
-#include <fs/core.h>
 
 int timer_init(timer_comp_t *t) {
     spinlock_init(&t->lock);

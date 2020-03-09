@@ -5,7 +5,6 @@
 #include <string.h>
 #include <fs/ext2.h>
 #include <dstruct/list.h>
-#include <fs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
 #include <module/core.h>
@@ -433,7 +432,7 @@ static int mount(fs_type_t *fstype, fs_mount_t *m, fs_param_t *params) {
 
     m->ops.unmount = unmount;
 
-    if (fs_get_param_uint32(params, "mem-offset", (uint32_t *) &ext2sb->mem_offset) < 0) {
+    if (vfs_get_param_uint32(params, "mem-offset", (uint32_t *) &ext2sb->mem_offset) < 0) {
         error("No FS memory offset was given, required for in-memory FS");
         goto error_offset;
     }

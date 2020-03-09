@@ -239,7 +239,7 @@ static pcb_t *load(fs_file_t *f) {
         }
 
         if (sect->parent.sh_type == SHT_SYMTAB) {
-            verbose_async("Found symbol table at ELF offset 0x%lX", sect->sh_offset);
+            verbose_async("Found symbol table at ELF offset 0x%lX", sect->parent.sh_offset);
             symtab_offset = sect->parent.sh_offset;
         }
     }

@@ -14,7 +14,7 @@
 #include <utils/random.h>
 #include <utils/debug.h>
 #include <sched/core.h>
-#include <fs/core.h>
+#include <fs/vfs/core.h>
 #include <module/core.h>
 #include <generated/autoconf.h>
 #include <generated/utsrelease.h>
@@ -61,7 +61,7 @@ int init_main(void *data) {
 
     assert(module_load_static_modules() >= 0, "Failed to load static modules");
 
-    assert(fs_mount_essential_filesystems() >= 0, "Couldn't mount essential filesystems");
+    assert(vfs_mount_essential_filesystems() >= 0, "Couldn't mount essential filesystems");
 
     assert(complete_init_process_setup(process_get_current()) >= 0, "Couldn't complete setup for the init process");
 

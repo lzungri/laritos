@@ -9,7 +9,6 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
-#include <fs/core.h>
 
 DEF_NOT_IMPL_FUNC(ni_set_irqs_enable, cpu_t *c, bool enabled);
 

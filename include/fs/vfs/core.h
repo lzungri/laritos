@@ -23,6 +23,7 @@ bool vfs_is_fs_type_supported(char *fstype);
  */
 fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags, fs_param_t *params);
 int vfs_unmount_fs(char *mount_point);
+int vfs_mount_essential_filesystems(void);
 
 void vfs_dentry_init(fs_dentry_t *d, char *name, fs_inode_t *inode, fs_dentry_t *parent);
 fs_dentry_t *vfs_dentry_alloc(char *name, fs_inode_t *inode, fs_dentry_t *parent);
@@ -53,6 +54,30 @@ int vfs_file_write_cur_offset(fs_file_t *f, void *buf, size_t blen);
 
 fs_inode_t *vfs_inode_def_alloc(fs_superblock_t *sb);
 void vfs_inode_def_free(fs_inode_t *inode);
+
+int vfs_get_param_uint32(fs_param_t *params, char *param, uint32_t *value);
+
+int vfs_register_sysfs(fs_sysfs_mod_t *sysfs);
+int vfs_unregister_sysfs(fs_sysfs_mod_t *sysfs);
+
+
+#define SYSFS_MODULE(_id, _create_sysfs, _remove_sysfs) \
+    static fs_sysfs_mod_t _sysfs_mod_ ## _id = { \
+        .id = #_id, \
+        .list = LIST_HEAD_INIT(_sysfs_mod_ ## _id.list), \
+        .create = (_create_sysfs), \
+        .remove = (_remove_sysfs), \
+    }; \
+    \
+    static int _init_ ## _id(module_t *m) { \
+        return vfs_register_sysfs(&_sysfs_mod_ ## _id); \
+    } \
+    \
+    static int _deinit_ ## _id(module_t *m) { \
+        return vfs_unregister_sysfs(&_sysfs_mod_ ## _id); \
+    } \
+    \
+    MODULE(sysfs_mod_ ## _id, _init_ ## _id, _deinit_ ## _id)
 
 
 #define FILESYSTEM_MODULE(_id, _mount) \

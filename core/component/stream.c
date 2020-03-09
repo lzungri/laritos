@@ -9,7 +9,6 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
-#include <fs/core.h>
 
 
 int stream_component_init(stream_t *s, board_comp_t *bcomp, char *id, component_type_t type,

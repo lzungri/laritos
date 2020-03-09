@@ -135,3 +135,10 @@ typedef struct fs_param {
     char *param;
     char *value;
 } fs_param_t;
+
+typedef struct fs_sysfs_mod {
+    char *id;
+    list_head_t list;
+    int (*create)(struct fs_sysfs_mod *sysfs);
+    int (*remove)(struct fs_sysfs_mod *sysfs);
+} fs_sysfs_mod_t;
