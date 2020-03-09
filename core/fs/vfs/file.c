@@ -24,7 +24,7 @@ static fs_file_t *vfs_file_alloc(fs_dentry_t *dentry) {
 
 static void vfs_file_free(fs_file_t *f) {
     slab_t *slab = process_get_current()->fs.fds_slab;
-    verbose("free fd=%lu for file='%s'", slab_get_slab_position(slab, f), f->dentry->name);
+    verbose_async("free fd=%lu for file='%s'", slab_get_slab_position(slab, f), f->dentry->name);
     slab_free(slab, f);
 }
 
@@ -77,9 +77,9 @@ fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
 int vfs_file_close(fs_file_t *f) {
     verbose("Closing '%s'", f->dentry->name);
 
-    if (f->dentry->inode->fops.close != NULL &&
+    if (f->dentry != NULL && f->dentry->inode != NULL && f->dentry->inode->fops.close != NULL &&
             f->dentry->inode->fops.close(f->dentry->inode, f) < 0) {
-        error("Error closing '%s'", f->dentry->name);
+        error_async("Error closing '%s'", f->dentry->name);
         return -1;
     }
     f->opened = false;
@@ -89,12 +89,14 @@ int vfs_file_close(fs_file_t *f) {
 }
 
 int vfs_file_close_all_for_cur_process(void) {
-    slab_t *slab = process_get_current()->fs.fds_slab;
+    pcb_t *pcb = process_get_current();
+    slab_t *slab = pcb->fs.fds_slab;
     int i;
     for (i = 0; i < slab_get_total_elems(slab); i++) {
         if (slab_is_taken(slab, i)) {
             fs_file_t *f = slab_get_ptr_from_position(slab, i);
             if (f->opened) {
+                warn_async("pid=%u is about to die with fd=%d open", pcb->pid, i);
                 vfs_file_close(f);
             }
         }
