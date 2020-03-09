@@ -522,8 +522,9 @@ SYSTEM_IMG_FOLDER := image/system
 
 PHONY += $(real-resource-y)
 # Create targets for each system image resource
+# TODO: Improve this so that we only execute the target when the resource changes
 $(real-resource-y):
-	@echo "  RES     $@"
+	@echo "  RES     $(subst @, -> $(SYSTEM_IMG_FOLDER),$@)"
 # Create folder in the system image directory
 	$(Q)mkdir -p $(addprefix $(SYSTEM_IMG_FOLDER),$(word 2,$(subst @, ,$@)))
 # Copy the resource into the system image
