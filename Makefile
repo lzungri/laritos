@@ -848,7 +848,7 @@ $(SYSTEM_IMG_FOLDER):
 # Commands to create, mount, and copy the files associated with the ext2 system image.
 # Unfortunately, I couldn't find a better way to create the image other than using the
 # mount command, which requires sudo
-quiet_cmd_sysimg ?= SYSIMG  $@ (requires sudo for mounting image)
+quiet_cmd_sysimg ?= SYSIMG  $@ (requires sudo for creating ext2 image)
 cmd_sysimg ?= \
 	dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_FS_SYSTEM_IMAGE_SIZE) status=none; \
 	mkfs.ext2 -q $@; \
