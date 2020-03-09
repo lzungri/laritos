@@ -862,6 +862,9 @@ cmd_sysimg ?= \
 system.img: $(SYSTEM_IMG_FOLDER)
 	$(call if_changed,sysimg)
 
+systemimginfo: system.img
+	@dumpe2fs $<
+
 quiet_cmd_img_laritos ?= IMAGE   $@
 	cmd_img_laritos ?= \
 		dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_OSIMAGE_FILESIZE) status=none; \
@@ -1014,14 +1017,17 @@ boards := $(sort $(notdir $(boards)))
 PHONY += help
 help:
 	@echo  'Generic targets:'
-	@echo  '  all		  - Build all targets marked with [*]'
-	@echo  '  system.img      - Build sytem image only'
+	@echo  '  all             - Build all targets marked with [*]'
+	@echo  '* laritos.img     - Build OS flashable image (kernel + system.img)'
+	@echo  '  laritos.bin     - Build raw kernel binary image only'
+	@echo  '  system.img      - Build system image only'
 	@echo  '  dir/            - Build all files in dir and below'
 	@echo  '  dir/file.[ois]  - Build specified target only'
 	@echo  '  printmap        - Output the link map info (memory mapping, symbols, etc) (use with make -s)'
 	@echo  '  kernelrelease	  - Output the release version string (use with make -s)'
 	@echo  '  kernelversion	  - Output the version stored in Makefile (use with make -s)'
 	@echo  '  image_name	  - Output the image name (use with make -s)'
+	@echo  '  systemimginfo   - Output info about the system.img filesystem'
 	@echo  ''
 	@echo  'Cleaning targets:'
 	@echo  '  clean		  - Remove most generated files but keep the config'
