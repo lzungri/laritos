@@ -845,9 +845,19 @@ PHONY += $(SYSTEM_IMG_FOLDER)
 $(SYSTEM_IMG_FOLDER):
 	@mkdir -p $@
 
-quiet_cmd_sysimg ?= SYSIMG  $@
+# Commands to create, mount, and copy the files associated with the ext2 system image.
+# Unfortunately, I couldn't find a better way to create the image other than using the
+# mount command, which requires sudo
+quiet_cmd_sysimg ?= SYSIMG  $@ (requires sudo for mounting image)
 cmd_sysimg ?= \
-	dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_FS_SYSTEM_IMAGE_SIZE) status=none
+	dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_FS_SYSTEM_IMAGE_SIZE) status=none; \
+	mkfs.ext2 -q $@; \
+	sudo bash -c "umount /tmp/laritos-systemimg &> /dev/null || true"; \
+	sudo rm -rf /tmp/laritos-systemimg; \
+	mkdir -p /tmp/laritos-systemimg; \
+	sudo mount $@ /tmp/laritos-systemimg; \
+	sudo cp -r $(SYSTEM_IMG_FOLDER)/* /tmp/laritos-systemimg; \
+	sudo umount /tmp/laritos-systemimg
 
 system.img: $(SYSTEM_IMG_FOLDER)
 	$(call if_changed,sysimg)
@@ -856,7 +866,7 @@ quiet_cmd_img_laritos ?= IMAGE   $@
 	cmd_img_laritos ?= \
 		dd if=/dev/zero of=$@ bs=1M count=64 status=none; \
 		dd if=$< of=$@ conv=notrunc status=none; \
-		dd if=/home/lzungri/dev/fs/data.img of=$@ bs=$(CONFIG_FS_SYSTEM_IMAGE_OFFSET) seek=1 conv=notrunc status=none
+		dd if=system.img of=$@ bs=$(CONFIG_FS_SYSTEM_IMAGE_OFFSET) seek=1 conv=notrunc status=none
 
 laritos.img: laritos.bin system.img FORCE
 	$(call if_changed,img_laritos)
@@ -1035,6 +1045,7 @@ help:
 	@echo  '		2: warnings which occur quite often but may still be relevant'
 	@echo  '		3: more obscure warnings, can most likely be ignored'
 	@echo  '		Multiple levels can be combined with W=12 or W=123'
+	@echo  '  make -n    [targets] Print the commands that would be executed'
 	@echo  ''
 	@echo  'Execute "make" or "make all" to build all targets marked with [*] '
 
