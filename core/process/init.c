@@ -1,6 +1,7 @@
 #include <log.h>
 
 #include <stdbool.h>
+#include <string.h>
 #include <mm/heap.h>
 #include <process/core.h>
 #include <process/sysfs.h>
@@ -22,18 +23,19 @@
 #include <generated/utsrelease.h>
 
 
-static pcb_t *launch_process(bool from_symbol, char *launcher) {
-    info("Launching process from %s '%s'", from_symbol ? "symbol" : "path", launcher);
-    if (from_symbol) {
-        pcb_t *(*func)(void) = symbol_get(launcher);
-        if (func == NULL) {
-            error("No symbol '%s' found, check your launch_on_boot.conf file", launcher);
-            return NULL;
-        }
-        return func();
+static pcb_t *launch_process(char *launcher) {
+    if (launcher[0] == '/') {
+        info("Launching process from binary '%s'", launcher);
+        return loader_load_executable_from_file(launcher);
     }
 
-    return loader_load_executable_from_file(launcher);
+    info("Launching process from symbol '%s'", launcher);
+    pcb_t *(*func)(void) = symbol_get(launcher);
+    if (func == NULL) {
+        error("No symbol '%s' found, check your launch_on_boot.conf file", launcher);
+        return NULL;
+    }
+    return func();
 }
 
 static int spawn_system_procs(void) {
@@ -46,13 +48,9 @@ static int spawn_system_procs(void) {
     }
 
     int ret = 0;
-
-    // tokens: 0=K|U, 1=launcher
-    uint8_t token = 0;
-    uint8_t tokenpos = 0;
-    bool kernel;
-    char launcher[CONFIG_FS_MAX_FILENAME_LEN] = { 0 };
+    uint8_t linepos = 0;
     uint32_t offset = 0;
+    char launcher[CONFIG_FS_MAX_FILENAME_LEN] = { 0 };
     while (true) {
         char buf[256];
         int nbytes = vfs_file_read(f, buf, sizeof(buf), offset);
@@ -63,35 +61,22 @@ static int spawn_system_procs(void) {
         int i;
         for (i = 0; i < nbytes; i++) {
             if (buf[i] == '\n') {
-                // Make sure we have all the tokens, otherwise ignore the line
-                if (token != 1) {
-                    token = 0;
-                    tokenpos = 0;
+                // Make sure we have collected some data at least, otherwise ignore the line
+                if (strlen(launcher) == 0) {
+                    linepos = 0;
                     continue;
                 }
 
-                if (launch_process(kernel, launcher) == NULL) {
-                    error("Couldn't launch %s process %s", kernel ? "kernel" : "user", launcher);
+                if (launch_process(launcher) == NULL) {
+                    error("Couldn't launch %s", launcher);
                     ret = -1;
                 }
 
-                token = 0;
-                tokenpos = 0;
-                kernel = false;
+                linepos = 0;
                 memset(launcher, 0, sizeof(launcher));
-            } else if (buf[i] == ' ') {
-                token++;
-                tokenpos = 0;
             } else {
-                if (token == 0) {
-                    if (tokenpos < 1) {
-                        kernel = buf[i] == 'K' || buf[i] == 'k';
-                        tokenpos++;
-                    }
-                } else if (token == 1) {
-                    if (tokenpos < sizeof(launcher) - 1) {
-                        launcher[tokenpos++] = buf[i];
-                    }
+                if (linepos < sizeof(launcher) - 1) {
+                    launcher[linepos++] = buf[i];
                 }
             }
         }
@@ -100,9 +85,9 @@ static int spawn_system_procs(void) {
     }
 
     // Launch last line process (in case there was no '\n')
-    if (token == 1) {
-        if (launch_process(kernel, launcher) == NULL) {
-            error("Couldn't launch %s process %s", kernel ? "kernel" : "user", launcher);
+    if (strlen(launcher) > 0) {
+        if (launch_process(launcher) == NULL) {
+            error("Couldn't launch %s", launcher);
             ret = -1;
         }
     }
