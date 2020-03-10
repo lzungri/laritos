@@ -74,8 +74,6 @@ static int health_main(void *data) {
     return 0;
 }
 
-static pcb_t *launcher(proc_mod_t *pmod) {
-    return process_spawn_kernel_process(pmod->id, health_main, NULL, 8196, 1);
+pcb_t *health_launcher(void) {
+    return process_spawn_kernel_process("health", health_main, NULL, 8196, 1);
 }
-
-PROCESS_LAUNCHER_MODULE(health, launcher)

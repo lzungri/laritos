@@ -22,18 +22,18 @@
 #include <generated/utsrelease.h>
 
 
-static int launch_process(bool from_symbol, char *launcher) {
+static pcb_t *launch_process(bool from_symbol, char *launcher) {
     info("Launching process from %s '%s'", from_symbol ? "symbol" : "path", launcher);
     if (from_symbol) {
-        int (*func)(void) = symbol_get(launcher);
+        pcb_t *(*func)(void) = symbol_get(launcher);
         if (func == NULL) {
             error("No symbol '%s' found, check your launch_on_boot.conf file", launcher);
-            return -1;
+            return NULL;
         }
         return func();
     }
 
-    return loader_load_executable_from_file(launcher) == NULL ? -1 : 0;
+    return loader_load_executable_from_file(launcher);
 }
 
 static int spawn_system_procs(void) {
@@ -70,7 +70,7 @@ static int spawn_system_procs(void) {
                     continue;
                 }
 
-                if (launch_process(kernel, launcher) < 0) {
+                if (launch_process(kernel, launcher) == NULL) {
                     error("Couldn't launch %s process %s", kernel ? "kernel" : "user", launcher);
                     ret = -1;
                 }
@@ -101,7 +101,7 @@ static int spawn_system_procs(void) {
 
     // Launch last line process (in case there was no '\n')
     if (token == 1) {
-        if (launch_process(kernel, launcher) < 0) {
+        if (launch_process(kernel, launcher) == NULL) {
             error("Couldn't launch %s process %s", kernel ? "kernel" : "user", launcher);
             ret = -1;
         }

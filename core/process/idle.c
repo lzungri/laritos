@@ -13,9 +13,7 @@ static int idle_main(void *data) {
     return 0;
 }
 
-static pcb_t *launcher(proc_mod_t *pmod) {
+pcb_t *idle_launcher(void) {
     return process_spawn_kernel_process("idle", idle_main, NULL,
             CONFIG_PROCESS_IDLE_STACK_SIZE, CONFIG_SCHED_PRIORITY_LOWEST);
 }
-
-PROCESS_LAUNCHER_MODULE(idle, launcher)

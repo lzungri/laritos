@@ -108,9 +108,7 @@ static int test_main(void *testdescs) {
     return 0;
 }
 
-static pcb_t *launcher(proc_mod_t *pmod) {
+pcb_t *test_launcher(void) {
     return process_spawn_kernel_process("test", test_main, __tests_start,
             CONFIG_PROCESS_TEST_STACK_SIZE, CONFIG_SCHED_PRIORITY_MAX_USER - 2);
 }
-
-PROCESS_LAUNCHER_MODULE(test, launcher)
