@@ -32,7 +32,7 @@ static int get_symbol_info(char *query, bool query_by_name, char *name_result, s
         char buf[256];
         int nbytes = vfs_file_read(f, buf, sizeof(buf), offset);
         if (nbytes <= 0) {
-            goto end;
+            break;
         }
 
         int i;
