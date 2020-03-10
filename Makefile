@@ -849,7 +849,6 @@ $(SYSTEM_IMG_FOLDER):
 PHONY += kinfo
 kinfo: laritos.elf $(SYSTEM_IMG_FOLDER)
 	@mkdir -p $(SYSTEM_IMG_FOLDER)/kinfo
-	@chmod 500 $(SYSTEM_IMG_FOLDER)/kinfo
 	@$(NM) --numeric-sort laritos.elf > $(SYSTEM_IMG_FOLDER)/kinfo/symbols
 	@cp $<.map $(SYSTEM_IMG_FOLDER)/kinfo/map
 
