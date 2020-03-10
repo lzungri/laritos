@@ -4,6 +4,7 @@
 #include <cpu/core.h>
 #include <core.h>
 #include <utils/debug.h>
+#include <utils/symbol.h>
 #include <mm/exc-handlers.h>
 
 
@@ -60,9 +61,12 @@ __attribute__((always_inline)) static inline void free(void *ptr) {
         debug_message_delimiter();
         error("Buffer overflow on block with size %zu bytes:", h->size);
         error("  Expected canaries head=0x%lX tail=0x%lX, got head=0x%lX tail=0x%lX", CANARY, CANARY, h->canary, t->canary);
-        error("  Allocation at pc=0x%p", h->pc);
+        char symbol[32] = { 0 };
+        symbol_get_name_at(h->pc, symbol, sizeof(symbol));
+        error("  Allocation at %s (pc=0x%p)", symbol, h->pc);
         error("  Run gdb-multiarch -batch -n -ex 'file bin/laritos.elf' -ex 'disassemble /m 0x%p'", h->pc);
-        error("  Deallocation at pc=0x%p", pc);
+        symbol_get_name_at(pc, symbol, sizeof(symbol));
+        error("  Deallocation at %s (pc=0x%p)", symbol, pc);
         error("  Run gdb-multiarch -batch -n -ex 'file bin/laritos.elf' -ex 'disassemble /m 0x%p'", pc);
         debug_message_delimiter();
 
