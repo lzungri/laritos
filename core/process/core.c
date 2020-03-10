@@ -24,7 +24,6 @@
 
 int process_init_global_context(void) {
     INIT_LIST_HEAD(&_laritos.proc.pcbs);
-    INIT_LIST_HEAD(&_laritos.proc.proc_launchers);
     spinlock_init(&_laritos.proc.pcbs_lock);
     spinlock_init(&_laritos.proc.pcbs_data_lock);
 
@@ -359,60 +358,6 @@ int process_wait_pid(uint16_t pid, int *status) {
 uint32_t process_get_avail_stack_locked(pcb_t *pcb) {
     char *sp = pcb->sched.status == PROC_STATUS_RUNNING ? arch_cpu_get_sp() : pcb->mm.sp_ctx;
     return sp - (char *) pcb->mm.stack_bottom;
-}
-
-int process_register_module(proc_mod_t *pmod, module_t *owner) {
-    debug("Registering process launcher module '%s'", pmod->id);
-    list_add_tail(&pmod->list, &_laritos.proc.proc_launchers);
-    return 0;
-}
-
-int process_unregister_module(proc_mod_t *pmod, module_t *owner) {
-    debug("Un-registering process launcher module '%s'", pmod->id);
-    list_del_init(&pmod->list);
-    return 0;
-}
-
-int process_spawn_system_procs(void) {
-    info("Launching system processes");
-    proc_mod_t *pmod;
-    list_for_each_entry(pmod, &_laritos.proc.proc_launchers, list) {
-        info("Launching %s process", pmod->id);
-        pmod->proc = pmod->launcher(pmod);
-        if (pmod->proc == NULL) {
-            error("Couldn't launch %s process", pmod->id);
-            break;
-        }
-
-        irqctx_t ctx;
-        spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-        ref_inc(&pmod->proc->refcnt);
-        spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
-    }
-
-    // Check if there was an error spawning the processes
-    if (&pmod->list != &_laritos.proc.proc_launchers) {
-        list_for_each_entry_continue_reverse(pmod, &_laritos.proc.proc_launchers, list) {
-            error("Killing %s process", pmod->id);
-            if (pmod->proc != NULL) {
-                process_kill(pmod->proc);
-
-                irqctx_t ctx;
-                spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-                ref_dec(&pmod->proc->refcnt);
-                spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
-                pmod->proc = NULL;
-            }
-        }
-        return -1;
-    }
-
-    // TODO: This code will disappear once we implement a shell and file system
-    if (loader_load_executable_from_file("/sys/shell.elf") == NULL) {
-        error("Failed to load app #0");
-    }
-
-    return 0;
 }
 
 

@@ -55,11 +55,6 @@ typedef struct {
      * Pointer to the init process pcb_t
      */
     struct pcb *init;
-
-    /**
-     * List of modules used to spawn kernel processes
-     */
-    list_head_t proc_launchers;
 } laritos_process_t;
 
 typedef struct {
