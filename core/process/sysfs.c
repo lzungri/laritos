@@ -12,6 +12,7 @@
 #include <time/core.h>
 #include <sync/spinlock.h>
 #include <arch/debug.h>
+#include <utils/symbol.h>
 #include <generated/autoconf.h>
 
 
@@ -46,10 +47,14 @@ static int pc_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     pcb_t *pcb = f->data0;
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-    char data[16];
-    int strlen = snprintf(data, sizeof(data), "0x%p",
-                    pcb->sched.status == PROC_STATUS_RUNNING ?
-                            arch_cpu_get_pc() : arch_context_get_retaddr(pcb->mm.sp_ctx));
+
+    char data[64];
+    regpc_t pc = pcb->sched.status == PROC_STATUS_RUNNING ? arch_cpu_get_pc() : arch_context_get_retaddr(pcb->mm.sp_ctx);
+    char symbol[32] = { 0 };
+    symbol_get_name_at(pc, symbol, sizeof(symbol));
+
+    int strlen = snprintf(data, sizeof(data), "0x%p %s", pc, symbol);
+
     spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
     return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
 }
