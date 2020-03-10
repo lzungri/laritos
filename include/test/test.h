@@ -38,7 +38,7 @@ extern test_descriptor_t *__tests_start[];
         .fpath = __FILE__, \
         .func = (_test), \
     }; \
-    test_descriptor_t * _testdesc_ ## _test ## _ptr __attribute__ ((section (".test"))) = &_test_desc_ ## _test; \
+    test_descriptor_t * _test_desc_ ## _test ## _ptr __attribute__ ((section (".test"))) = &_test_desc_ ## _test; \
     static testres_t _test(void)
 
 #define TEND \
