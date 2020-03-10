@@ -845,6 +845,14 @@ PHONY += $(SYSTEM_IMG_FOLDER)
 $(SYSTEM_IMG_FOLDER):
 	@mkdir -p $@
 
+# Target to generate read-only files with information about the kernel
+PHONY += kinfo
+kinfo: laritos.elf $(SYSTEM_IMG_FOLDER)
+	@mkdir -p $(SYSTEM_IMG_FOLDER)/kinfo
+	@chmod 500 $(SYSTEM_IMG_FOLDER)/kinfo
+	@$(NM) --numeric-sort laritos.elf > $(SYSTEM_IMG_FOLDER)/kinfo/symbols
+	@cp $<.map $(SYSTEM_IMG_FOLDER)/kinfo/map
+
 # Commands to create, mount, and copy the files associated with the ext2 system image.
 # Unfortunately, I couldn't find a better way to create the image other than using the
 # mount command, which requires sudo
@@ -859,7 +867,7 @@ cmd_sysimg ?= \
 	sudo cp -r $(SYSTEM_IMG_FOLDER)/* /tmp/laritos-systemimg; \
 	sudo umount /tmp/laritos-systemimg
 
-system.img: $(SYSTEM_IMG_FOLDER)
+system.img: $(SYSTEM_IMG_FOLDER) kinfo
 	$(call if_changed,sysimg)
 
 systemimginfo: system.img
