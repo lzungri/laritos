@@ -6,6 +6,24 @@
 #include <component/component.h>
 #include <component/inputdev.h>
 
+int syscall_getc(void) {
+    inputdev_t *input = component_get_default(COMP_TYPE_INPUTDEV, inputdev_t);
+    if (input == NULL) {
+        error("No input device available");
+        return -1;
+    }
+
+    char buf[1];
+    int nbytes = input->transport->ops.read(input->transport, buf, sizeof(buf), true);
+    return nbytes < 1 ? nbytes : buf[0];
+}
+
+int syscall_puts(const char *s) {
+    // Output process message as a raw string (i.e. no date, pid, tag metadata, etc)
+    __add_log_msg(true, NULL, NULL, (char *) s);
+    return 0;
+}
+
 int syscall_readline(char *buf, int buflen) {
     inputdev_t *input = component_get_default(COMP_TYPE_INPUTDEV, inputdev_t);
     if (input == NULL) {

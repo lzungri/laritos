@@ -9,3 +9,18 @@ int syscall_set_priority(uint8_t priority) {
     verbose_async("Setting process pid=%u priority to %u", pcb->pid, priority);
     return process_set_priority(pcb, priority);
 }
+
+int syscall_set_process_name(char *name) {
+    pcb_t *pcb = process_get_current();
+    process_set_name(pcb, name);
+    return 0;
+}
+
+int syscall_getpid(void) {
+    return process_get_current()->pid;
+}
+
+void syscall_exit(int status) {
+    process_exit(status);
+    // Execution will never reach this point
+}
