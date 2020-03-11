@@ -71,7 +71,12 @@ error_open:
 
 fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
     verbose("Opening '%s' using mode=0x%x", path, mode);
-    return vfs_file_dentry_open(vfs_dentry_lookup(path), mode);
+    fs_dentry_t *d = vfs_dentry_lookup(path);
+    if (d == NULL) {
+        error("%s not found", path);
+        return NULL;
+    }
+    return vfs_file_dentry_open(d, mode);
 }
 
 int vfs_file_close(fs_file_t *f) {
