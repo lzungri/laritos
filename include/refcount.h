@@ -26,7 +26,7 @@ static inline uint32_t ref_get(refcount_t *ref) {
  * (e.g. by executing them while holding the same lock)
  */
 static inline uint32_t ref_inc(refcount_t *ref) {
-    insane_async("ref=0x%p inc", ref);
+    insane_async("ref=0x%p inc (value=%lu)", ref, ref_get(ref) + 1);
     assert(!ref->stale, "Cannot increment reference counter at 0x%p, already staled", ref);
 
     int32_t v = atomic32_inc(&ref->value);
@@ -35,7 +35,7 @@ static inline uint32_t ref_inc(refcount_t *ref) {
 }
 
 static inline uint32_t ref_dec(refcount_t *ref) {
-    insane_async("ref=0x%p dec", ref);
+    insane_async("ref=0x%p dec (value=%lu)", ref, ref_get(ref) - 1);
     assert(!ref->stale, "Cannot decrement reference counter at 0x%p, already staled", ref);
 
     int32_t v = atomic32_dec(&ref->value);
