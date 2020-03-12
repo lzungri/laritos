@@ -142,7 +142,7 @@ static inline int relocate_image(fs_file_t *f, Elf32_Ehdr *elf, Elf32_Section *s
         Elf32_Section *sect = get_section(relocs[i], elf, sections);
         if (sect == NULL) {
             debug_async("No relocation section for '%s'", relocs[i]);
-            return -1;
+            continue;
         }
 
         uint32_t rel_offset;
