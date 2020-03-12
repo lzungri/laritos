@@ -5,6 +5,7 @@
 #include <loader/elf.h>
 #include <loader/loader-elf.h>
 #include <process/types.h>
+#include <process/core.h>
 #include <sync/spinlock.h>
 #include <dstruct/list.h>
 #include <fs/vfs/core.h>
@@ -83,6 +84,7 @@ pcb_t *loader_load_executable_from_file(char *path) {
             if (pcb == NULL) {
                 error_async("Failed to load application");
             }
+            process_set_name(pcb, f->dentry->name);
             strncpy(pcb->cmd, path, sizeof(pcb->cmd));
 
             vfs_file_close(f);
