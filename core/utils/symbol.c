@@ -48,7 +48,8 @@ static int get_symbol_info(char *query, bool query_by_name, char *name_result, s
                 // If query by symbol name, then compare query with current symbol name, otherwise
                 // compare symbol addresses
                 if ((query_by_name && strncmp(sname, query, sizeof(sname)) == 0) ||
-                        (!query_by_name && strncmp(saddr, query, sizeof(saddr)) >= 0)) {
+                        (!query_by_name && strncmp(saddr, query, sizeof(saddr)) >= 0) ||
+                        (!query_by_name && i == nbytes - 1 && nbytes < sizeof(buf))) {
                     verbose_async("Found symbol=%s, addr=0x%s", sname, saddr);
 
                     char *name_to_return = sname;
@@ -102,7 +103,6 @@ static int get_symbol_info(char *query, bool query_by_name, char *name_result, s
 end:
     vfs_file_close(f);
     return ret;
-
 }
 
 void *symbol_get(char *name) {
