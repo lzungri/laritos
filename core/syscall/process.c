@@ -3,6 +3,7 @@
 #include <process/core.h>
 #include <syscall/syscall.h>
 #include <sched/core.h>
+#include <loader/loader.h>
 
 int syscall_set_priority(uint8_t priority) {
     pcb_t *pcb = process_get_current();
@@ -23,4 +24,9 @@ int syscall_getpid(void) {
 void syscall_exit(int status) {
     process_exit(status);
     // Execution will never reach this point
+}
+
+int syscall_spawn_process(char *executable) {
+    pcb_t *pcb = loader_load_executable_from_file(executable);
+    return pcb == NULL ? -1 : pcb->pid;
 }
