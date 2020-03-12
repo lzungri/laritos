@@ -269,6 +269,7 @@ pcb_t *process_spawn_kernel_process(char *name, kproc_main_t main, void *data, u
 
     process_set_name(pcb, name);
     pcb->kernel = true;
+    strncpy(pcb->cmd, "<kernel>", sizeof(pcb->cmd));
 
     verbose_async("Allocating %lu bytes for kernel process stack", stacksize);
     // Since we only allocate space for the stack (for kernel processes), imgaddr is
