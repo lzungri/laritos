@@ -278,7 +278,7 @@ static pcb_t *load(fs_file_t *f) {
         goto error_reloc;
     }
 
-    process_set_priority(pcb, CONFIG_SCHED_PRIORITY_MAX_USER);
+    process_set_priority(pcb, CONFIG_SCHED_PRIORITY_USER_DEFAULT);
 
     if (process_register(pcb) < 0) {
         error_async("Could not register process '%s'", f->dentry->name);
