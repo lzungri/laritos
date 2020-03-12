@@ -47,6 +47,7 @@ static syscall_entry_t systable[] = {
     DEF_SCE(SYSCALL_CLOSE, syscall_close),
     DEF_SCE(SYSCALL_GET_PROPERTY, syscall_get_property),
     DEF_SCE(SYSCALL_SPAWN_PROCESS, syscall_spawn_process),
+    DEF_SCE(SYSCALL_WAITPID, syscall_waitpid),
 };
 
 

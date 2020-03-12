@@ -30,3 +30,7 @@ int syscall_spawn_process(char *executable) {
     pcb_t *pcb = loader_load_executable_from_file(executable);
     return pcb == NULL ? -1 : pcb->pid;
 }
+
+int syscall_waitpid(int pid, int *status) {
+    return process_wait_pid(pid, status);
+}

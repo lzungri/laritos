@@ -23,6 +23,7 @@ typedef enum {
     SYSCALL_CLOSE,
     SYSCALL_GET_PROPERTY,
     SYSCALL_SPAWN_PROCESS,
+    SYSCALL_WAITPID,
 
     SYSCALL_LEN,
 } syscall_t;

@@ -34,3 +34,4 @@ int syscall_write(fs_file_t *file, void *buf, int buflen);
 int syscall_close(fs_file_t *file);
 int syscall_get_property(char *id, void *buf);
 int syscall_spawn_process(char *executable);
+int syscall_waitpid(int pid, int *status);
