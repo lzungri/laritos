@@ -1,5 +1,6 @@
 #include <log.h>
 
+#include <core.h>
 #include <process/core.h>
 #include <process/types.h>
 #include <syscall/syscall.h>
@@ -7,6 +8,7 @@
 #include <time/core.h>
 #include <utils/debug.h>
 #include <utils/utils.h>
+#include <mm/slab.h>
 #include <strtoxl.h>
 
 typedef struct {
@@ -112,7 +114,7 @@ static int bd_free(void *param) {
         error("Syntax: bd free <ptr_in_hex>");
         return -1;
     }
-    void * ptr = (void *) strtoul(param, NULL, 16);
+    void *ptr = (void *) strtoul(param, NULL, 16);
     info("Freeing ptr=0x%p", ptr);
     free(ptr);
     return 0;
@@ -141,6 +143,25 @@ static int bd_spawn(void *param) {
     return 0;
 }
 
+static int bd_debugpid(void *param) {
+    if (param == NULL) {
+        error("Syntax: bd debugpid <pid>");
+        return -1;
+    }
+
+    int pid = (int) strtoul(param, NULL, 0);
+    pcb_t *pcb = slab_get_ptr_from_position(_laritos.proc.pcb_slab, pid);
+    if (pcb != NULL) {
+        info("Steps to debug %s:", pcb->cmd);
+        info("  1- Make sure you launched the OS in debugging mode");
+        info("  2- Interrupt gdb via ctrl-c");
+        info("  3- Run this in your gdb session: add-symbol-file <path_to_elf> 0x%p", pcb->mm.text_start);
+        info("  4- Setup breakpoints, watchpoints, etc, then type continue");
+        return 0;
+    }
+    return -1;
+}
+
 static bdcmd_t commands[] = {
     { .cmd = "crash_undef", .handler = bd_crash_undef_exception },
     { .cmd = "crash_data", .handler = bd_crash_data },
@@ -155,6 +176,7 @@ static bdcmd_t commands[] = {
     { .cmd = "malloc", .handler = bd_malloc },
     { .cmd = "free", .handler = bd_free },
     { .cmd = "spawn", .handler = bd_spawn },
+    { .cmd = "debugpid", .handler = bd_debugpid },
 };
 
 static void help_message(void) {
