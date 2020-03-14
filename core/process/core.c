@@ -353,6 +353,10 @@ int process_wait_for(pcb_t *pcb, int *status) {
 
 int process_wait_pid(uint16_t pid, int *status) {
     pcb_t *pcb = slab_get_ptr_from_position(_laritos.proc.pcb_slab, pid);
+    if (pcb == NULL) {
+        error_async("Invalid pid=%u", pid);
+        return -1;
+    }
     return process_wait_for(pcb, status);
 }
 

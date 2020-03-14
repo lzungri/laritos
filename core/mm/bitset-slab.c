@@ -180,13 +180,17 @@ uint32_t slab_get_total_elems(slab_t *slab) {
     return ((bs_slab_t *) slab)->total_elems;
 }
 
-uint32_t slab_get_slab_position(slab_t *slab, void *ptr) {
+int32_t slab_get_slab_position(slab_t *slab, void *ptr) {
     bs_slab_t *s = (bs_slab_t *) slab;
-    return ((char *) ptr - s->data) / s->elem_size;
+    uint32_t pos = ((char *) ptr - s->data) / s->elem_size;
+    return pos >= s->total_elems ? -1 : pos;
 }
 
 void *slab_get_ptr_from_position(slab_t *slab, uint32_t pos) {
     bs_slab_t *s = (bs_slab_t *) slab;
+    if (pos >= s->total_elems) {
+        return NULL;
+    }
     return (void *) (s->data + pos * s->elem_size);
 }
 
