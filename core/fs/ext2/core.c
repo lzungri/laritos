@@ -40,7 +40,7 @@ static ext2_bg_desc_t *get_bg_desc(ext2_sb_t *sb, uint32_t index) {
     if (sb->block_size == 1024) {
         bgd_offset <<= 1;
     }
-    return (ext2_bg_desc_t *) (sb->mem_offset + bgd_offset + sizeof(ext2_bg_desc_t) * index);
+    return (ext2_bg_desc_t *) (sb->mem_base + bgd_offset + sizeof(ext2_bg_desc_t) * index);
 }
 
 static bool is_valid_superblock(ext2_sb_t *sb) {
@@ -53,7 +53,7 @@ static bool is_valid_superblock(ext2_sb_t *sb) {
 }
 
 static inline void *get_phys_block_ptr(ext2_sb_t *sb, uint32_t phys_block_num) {
-    return sb->mem_offset + phys_block_num * sb->block_size;
+    return sb->mem_base + phys_block_num * sb->block_size;
 }
 
 static ext2_inode_data_t *get_inode_from_fs(ext2_sb_t *sb, uint32_t inode) {
@@ -371,7 +371,7 @@ static int unmount(fs_mount_t *fsm) {
 }
 
 static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
-    memcpy(&sb->info, sb->mem_offset + EXT2_SB_OFFSET, sizeof(ext2_sb_info_t));
+    memcpy(&sb->info, sb->mem_base + EXT2_SB_OFFSET, sizeof(ext2_sb_info_t));
 
     sb->block_size = (uint32_t) 1024 << sb->info.log_block_size;
     bitset_t bs = ~sb->block_size;
@@ -432,11 +432,10 @@ static int mount(fs_type_t *fstype, fs_mount_t *m, fs_param_t *params) {
 
     m->ops.unmount = unmount;
 
-    if (vfs_get_param_uint32(params, "mem-offset", (uint32_t *) &ext2sb->mem_offset) < 0) {
+    if (vfs_get_param_uint32(params, "mem-offset", (uint32_t *) &ext2sb->mem_base, 16) < 0) {
         error("No FS memory offset was given, required for in-memory FS");
         goto error_offset;
     }
-    ext2sb->mem_offset = (char *) ((uint32_t) ext2sb->mem_offset * 1024 * 1024);
 
     if (populate_ext2_superblock(ext2sb, m) < 0) {
         error("Couldn't read superblock");

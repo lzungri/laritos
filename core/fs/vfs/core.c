@@ -91,7 +91,7 @@ int vfs_mount_essential_filesystems(void) {
     info("Mounting system filesystem");
     mnt = vfs_mount_fs("ext2", "/sys", FS_MOUNT_READ | FS_MOUNT_WRITE,
             (fs_param_t []) {
-                { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_OFFSET) },
+                { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
                 { NULL },
             });
     if (mnt == NULL) {
@@ -170,7 +170,7 @@ int vfs_unregister_sysfs(fs_sysfs_mod_t *sysfs) {
     return 0;
 }
 
-int vfs_get_param_uint32(fs_param_t *params, char *param, uint32_t *value) {
+int vfs_get_param_uint32(fs_param_t *params, char *param, uint32_t *value, uint8_t base) {
     if (params == NULL) {
         return -1;
     }
@@ -178,7 +178,7 @@ int vfs_get_param_uint32(fs_param_t *params, char *param, uint32_t *value) {
     fs_param_t *p;
     for (p = params; p->param != NULL; p++) {
         if (strncmp(p->param, param, 32) == 0) {
-            *value = (uint32_t) strtoul(p->value, NULL, 0);
+            *value = (uint32_t) strtoul(p->value, NULL, base);
             return 0;
         }
     }

@@ -97,7 +97,7 @@ typedef struct {
     uint8_t block_size_bits;
     uint32_t addr_per_block;
     uint8_t addr_per_block_bits;
-    char *mem_offset;
+    char *mem_base;
 } ext2_sb_t;
 
 /*

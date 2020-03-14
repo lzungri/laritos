@@ -59,7 +59,8 @@ def main(args):
         cmd = "{qemudebug} qemu-system-arm --trace events={scriptdir}/trace_events,file={trace} \
 {osdebug} -M virt -smp {ncpus} -m {ram}M -cpu {cpu} -nographic \
 -drive if=pflash,file={scriptdir}/../../bin/laritos.img,format=raw \
-{qemulog} -D /tmp/qemu.log".format(
+-drive if=pflash,file={scriptdir}/../../bin/system.img,format=raw \
+{qemulog}".format(
                 qemudebug="gdbserver :55555" if args.qemu_debug else "",
                 scriptdir=SCRIPT_DIR,
                 trace=trace_file.name,
@@ -67,8 +68,9 @@ def main(args):
                 ncpus=ncpus,
                 cpu=cpu,
                 ram=ram_size,
-                qemulog="-d guest_errors,cpu_reset,int,unimp" if args.qemu_log else "")
+                qemulog="-d guest_errors,cpu_reset,int,unimp -D /tmp/qemu.log" if args.qemu_log else "")
 
+        print(cmd)
         os.system(cmd)
 
         qemudir = os.path.dirname(shutil.which("qemu-system-arm") or "")

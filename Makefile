@@ -833,7 +833,7 @@ laritos.elf: $(laritos-deps) $(KBUILD_BOARD_INFO) $(KBUILD_LDS) FORCE
 	$(call if_changed,link_laritos)
 
 # Remove symbols, relocation info, debugging metadata, etc
-quiet_cmd_objcopy_laritos ?= OBJCOPY $@
+quiet_cmd_objcopy_laritos ?= KERNRAW $@
 	cmd_objcopy_laritos ?= $(OBJCOPY) -O binary $< $@
 
 laritos.bin: laritos.elf FORCE
@@ -864,7 +864,8 @@ cmd_sysimg ?= \
 	mkdir -p /tmp/laritos-systemimg; \
 	sudo mount $@ /tmp/laritos-systemimg; \
 	sudo cp -r $(SYSTEM_IMG_FOLDER)/* /tmp/laritos-systemimg; \
-	sudo umount /tmp/laritos-systemimg
+	sudo umount /tmp/laritos-systemimg; \
+	dd if=/dev/zero of=$@ bs=1 count=1 seek=67108863 status=none # The QEMU arm virtual board requires every flash image to be 64MB
 
 system.img: $(SYSTEM_IMG_FOLDER) kinfo
 	$(call if_changed,sysimg)
@@ -872,19 +873,18 @@ system.img: $(SYSTEM_IMG_FOLDER) kinfo
 systemimginfo: system.img
 	@dumpe2fs $<
 
-quiet_cmd_img_laritos ?= IMAGE   $@
+quiet_cmd_img_laritos ?= KERNIMG $@
 	cmd_img_laritos ?= \
 		dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_OSIMAGE_FILESIZE) status=none; \
-		dd if=$< of=$@ conv=notrunc status=none; \
-		dd if=system.img of=$@ bs=1M seek=$(CONFIG_FS_SYSTEM_IMAGE_OFFSET) conv=notrunc status=none
+		dd if=$< of=$@ conv=notrunc status=none
 
-laritos.img: laritos.bin system.img FORCE
+laritos.img: laritos.bin FORCE
 	$(call if_changed,img_laritos)
+
+laritos: laritos.img system.img
 	$(Q)echo ''
 	$(Q)$(SIZE) laritos.elf
 	$(Q)echo ''
-
-laritos: laritos.img
 
 targets := laritos laritos.img laritos.bin laritos.elf $(KBUILD_BOARD_INFO) $(KBUILD_BI_COPIED) $(KBUILD_LDS)
 

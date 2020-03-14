@@ -13,7 +13,7 @@
 T(ext2_mount_adds_a_new_fs_under_mount_point) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
         (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_OFFSET) },
+            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
             { NULL },
         });
     tassert(fsm != NULL);
@@ -28,7 +28,7 @@ TEND
 T(ext2_reading_small_file_returns_the_right_data) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
         (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_OFFSET) },
+            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
             { NULL },
         });
     tassert(fsm != NULL);
@@ -49,7 +49,7 @@ TEND
 T(ext2_reading_small_file_with_offset_returns_the_right_data) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
         (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_OFFSET) },
+            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
             { NULL },
         });
     tassert(fsm != NULL);
@@ -74,7 +74,7 @@ TEND
 T(ext2_reading_medium_sized_file_returns_the_right_data) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
         (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_OFFSET) },
+            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
             { NULL },
         });
     tassert(fsm != NULL);
@@ -101,7 +101,7 @@ TEND
 T(ext2_reading_big_file_returns_the_right_data) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
         (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_OFFSET) },
+            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
             { NULL },
         });
     tassert(fsm != NULL);
@@ -128,7 +128,7 @@ TEND
 T(ext2_reading_huge_file_returns_the_right_data) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
         (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_OFFSET) },
+            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
             { NULL },
         });
     tassert(fsm != NULL);
