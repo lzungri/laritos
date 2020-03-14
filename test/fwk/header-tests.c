@@ -9,6 +9,10 @@
 
 #include <generated/autoconf.h>
 
+#ifdef CONFIG_TEST_CORE_UTILS_LATENCY
+#include <core/utils/latency.c>
+#endif
+
 #ifdef CONFIG_TEST_CORE_DSTRUCT_BITSET
 #include <core/dstruct/bitset.c>
 #endif
@@ -23,8 +27,4 @@
 
 #ifdef CONFIG_TEST_CORE_UTILS_MATH
 #include <core/utils/math.c>
-#endif
-
-#ifdef CONFIG_TEST_CORE_UTILS_LATENCY
-#include <core/utils/latency.c>
 #endif
