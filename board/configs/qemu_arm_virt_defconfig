@@ -37,6 +37,7 @@ CONFIG_TIMER_ARM_V7_GENERIC=y
 # The QEMU arm virtual board maps two flash memories (see qemu/hw/arm/virt.c#virt_flash_map()):
 #   pflash0: base=0x00000000 size=0x04000000
 #   pflash1: base=0x04000000 size=0x04000000
+# We use pflash0 for the kernel image and pflash1 for the system image
 CONFIG_FS_SYSTEM_IMAGE_BASE=0x04000000
 # This is the file system size (10MB), not the flash
 CONFIG_FS_SYSTEM_IMAGE_SIZE=10
