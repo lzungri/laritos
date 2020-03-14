@@ -150,6 +150,11 @@ static int bd_debugpid(void *param) {
     }
 
     int pid = (int) strtoul(param, NULL, 0);
+    if (!slab_is_taken(_laritos.proc.pcb_slab, pid)) {
+        error("pid=%u not found", pid);
+        return -1;
+    }
+
     pcb_t *pcb = slab_get_ptr_from_position(_laritos.proc.pcb_slab, pid);
     if (pcb != NULL) {
         info("Steps to debug %s:", pcb->cmd);
