@@ -7,14 +7,14 @@
 #include <fs/vfs/types.h>
 
 int conf_readline(fs_file_t *f, char **tokens, uint32_t *tokens_size, uint8_t num_tokens, uint32_t *offset) {
-    uint8_t token = 0;
-    uint8_t tokenpos = 0;
-
     int i;
     for (i = 0; i < num_tokens; i++) {
         memset(tokens[i], 0, tokens_size[i]);
     }
 
+    uint8_t token = 0;
+    uint8_t tokenpos = 0;
+    bool comment = false;
     while (true) {
         char buf[32];
         int nbytes = vfs_file_read(f, buf, sizeof(buf), *offset);
@@ -28,13 +28,17 @@ int conf_readline(fs_file_t *f, char **tokens, uint32_t *tokens_size, uint8_t nu
             if (buf[i] == '\n') {
                 // Check if we have all the previous tokens, if not, return error;
                 return token != num_tokens - 1 || tokenpos == 0 ?  -1 : 1;
-            } else if (buf[i] == ' ') {
+            } else if (comment) {
+                continue;
+            }
+
+            if (buf[i] == ' ') {
                 token++;
                 tokenpos = 0;
-            } else {
-                if (token < num_tokens && tokenpos < tokens_size[token] - 1) {
-                    tokens[token][tokenpos++] = buf[i];
-                }
+            } else if (buf[i] == '#') {
+                comment = true;
+            } else if (token < num_tokens && tokenpos < tokens_size[token] - 1) {
+                tokens[token][tokenpos++] = buf[i];
             }
         }
     }
