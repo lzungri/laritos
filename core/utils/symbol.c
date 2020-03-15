@@ -6,6 +6,7 @@
 #include <printf.h>
 #include <strtoxl.h>
 #include <utils/symbol.h>
+#include <utils/conf.h>
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 
@@ -16,93 +17,69 @@ static int get_symbol_info(char *query, bool query_by_name, char *name_result, s
         return -1;
     }
 
-    char saddr[17] = { 0 };
+    bool found = false;
+
     char prev_saddr[17] = { 0 };
-    char sname[128] = { 0 };
     char prev_sname[128] = { 0 };
 
+    char saddr[17];
+    char stype;
+    char sname[128];
+    char *tokens[] = { saddr, &stype, sname };
+    uint32_t tokens_size[] = { sizeof(saddr), sizeof(char), sizeof(sname) };
+
     uint32_t offset = 0;
+    int ret;
+    while ((ret = conf_readline(f, tokens, tokens_size, ARRAYSIZE(tokens), &offset)) != 0) {
+        if (ret < 0) {
+            continue;
+        }
 
-    int ret = -1;
+        // If query by symbol name, then compare query with current symbol name, otherwise
+        // compare symbol addresses
+        if ((query_by_name && strncmp(sname, query, sizeof(sname)) == 0) ||
+                (!query_by_name && strncmp(saddr, query, sizeof(saddr)) >= 0)) {
+            char *name_to_return = sname;
+            char *addr_to_return = saddr;
+            // If this is a fuzzy query (i.e. not the exact symbol address), then
+            // return the closest and lowest symbol to the given address
+            if (!query_by_name && strncmp(saddr, query, sizeof(saddr)) > 0) {
+                name_to_return = prev_sname;
+                addr_to_return = prev_saddr;
+            }
 
-    // tokens: 0=addr, 1=type, 2=name
-    uint8_t token = 0;
-    uint8_t tokenpos = 0;
-    while (true) {
-        char buf[256];
-        int nbytes = vfs_file_read(f, buf, sizeof(buf), offset);
-        if (nbytes <= 0) {
+            if (name_result != NULL) {
+                strncpy(name_result, name_to_return, namelen);
+            }
+            if (addr_result != NULL) {
+                *addr_result = (void *) strtoul(addr_to_return, NULL, 16);
+            }
+            found = true;
             break;
         }
 
-        int i;
-        for (i = 0; i < nbytes; i++) {
-            if (buf[i] == '\n') {
-                // Check if we have all the previous tokens, if not, return error;
-                if (token != 2) {
-                    goto end;
-                }
-
-                insane_async("symbol=%s, addr=0x%s", sname, saddr);
-
-                // If query by symbol name, then compare query with current symbol name, otherwise
-                // compare symbol addresses
-                if ((query_by_name && strncmp(sname, query, sizeof(sname)) == 0) ||
-                        (!query_by_name && strncmp(saddr, query, sizeof(saddr)) >= 0) ||
-                        (!query_by_name && i == nbytes - 1 && nbytes < sizeof(buf))) {
-                    verbose_async("Found symbol=%s, addr=0x%s", sname, saddr);
-
-                    char *name_to_return = sname;
-                    char *addr_to_return = saddr;
-                    // If this is a fuzzy query (i.e. not the exact symbol address), then
-                    // return the closest and lowest symbol to the given address
-                    if (!query_by_name && strncmp(saddr, query, sizeof(saddr)) > 0) {
-                        name_to_return = prev_sname;
-                        addr_to_return = prev_saddr;
-                    }
-
-                    if (name_result != NULL) {
-                        strncpy(name_result, name_to_return, namelen);
-                    }
-                    if (addr_result != NULL) {
-                        *addr_result = (void *) strtoul(addr_to_return, NULL, 16);
-                    }
-                    ret = 0;
-                    goto end;
-                }
-
-                token = 0;
-                tokenpos = 0;
-                if (addr_result != NULL) {
-                    memcpy(prev_saddr, saddr, sizeof(saddr));
-                }
-                if (name_result != NULL) {
-                    memcpy(prev_sname, sname, sizeof(sname));
-                }
-                memset(saddr, 0, sizeof(saddr));
-                memset(sname, 0, sizeof(sname));
-            } else if (buf[i] == ' ') {
-                token++;
-                tokenpos = 0;
-            } else {
-                if (token == 0) {
-                    if (tokenpos < sizeof(saddr) - 1) {
-                        saddr[tokenpos++] = buf[i];
-                    }
-                } else if (token == 2) {
-                    if (tokenpos < sizeof(sname) - 1) {
-                        sname[tokenpos++] = buf[i];
-                    }
-                }
-            }
+        if (addr_result != NULL) {
+            memcpy(prev_saddr, saddr, sizeof(saddr));
         }
-
-        offset += nbytes;
+        if (name_result != NULL) {
+            memcpy(prev_sname, sname, sizeof(sname));
+        }
     }
 
-end:
+    // If it is a fuzzy query and the symbol hasn't been found yet, then the last symbol
+    // in the file (i.e. the one with the higher addr) will match the query
+    if (found == false && !query_by_name) {
+        if (name_result != NULL) {
+            strncpy(name_result, prev_sname, namelen);
+        }
+        if (addr_result != NULL) {
+            *addr_result = (void *) strtoul(prev_saddr, NULL, 16);
+        }
+        found = true;
+    }
+
     vfs_file_close(f);
-    return ret;
+    return found ? 0 : -1;
 }
 
 void *symbol_get(char *name) {
