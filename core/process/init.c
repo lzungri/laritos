@@ -16,6 +16,7 @@
 #include <utils/random.h>
 #include <utils/debug.h>
 #include <utils/symbol.h>
+#include <utils/conf.h>
 #include <sched/core.h>
 #include <fs/vfs/core.h>
 #include <module/core.h>
@@ -47,48 +48,18 @@ static int spawn_system_procs(void) {
         return -1;
     }
 
-    int ret = 0;
-    uint8_t linepos = 0;
+    char launcher[CONFIG_FS_MAX_FILENAME_LEN];
+    char *tokens[] = { launcher };
+    uint32_t tokens_size[] = { sizeof(launcher) };
+
     uint32_t offset = 0;
-    char launcher[CONFIG_FS_MAX_FILENAME_LEN] = { 0 };
-    while (true) {
-        char buf[256];
-        int nbytes = vfs_file_read(f, buf, sizeof(buf), offset);
-        if (nbytes <= 0) {
-            break;
-        }
-
-        int i;
-        for (i = 0; i < nbytes; i++) {
-            if (buf[i] == '\n') {
-                // Make sure we have collected some data at least, otherwise ignore the line
-                if (strlen(launcher) == 0) {
-                    linepos = 0;
-                    continue;
-                }
-
-                if (launch_process(launcher) == NULL) {
-                    error("Couldn't launch %s", launcher);
-                    ret = -1;
-                }
-
-                linepos = 0;
-                memset(launcher, 0, sizeof(launcher));
-            } else {
-                if (linepos < sizeof(launcher) - 1) {
-                    launcher[linepos++] = buf[i];
-                }
+    int ret;
+    while ((ret = conf_readline(f, tokens, tokens_size, ARRAYSIZE(tokens), &offset)) != 0) {
+        if (ret > 0) {
+            if (launch_process(launcher) == NULL) {
+                error("Couldn't launch %s", launcher);
+                ret = -1;
             }
-        }
-
-        offset += nbytes;
-    }
-
-    // Launch last line process (in case there was no '\n')
-    if (strlen(launcher) > 0) {
-        if (launch_process(launcher) == NULL) {
-            error("Couldn't launch %s", launcher);
-            ret = -1;
         }
     }
 
