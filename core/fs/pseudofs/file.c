@@ -115,12 +115,28 @@ int pseudofs_write_to_buf(void *to, size_t tolen, void *from, size_t fromlen, ui
     return pseudofs_raw_write_to_buf(to, tolen, from, fromlen, offset, true);
 }
 
+int pseudofs_raw_read_from_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset, bool check_nulls) {
+    if (check_nulls && to == NULL) {
+        return 0;
+    }
+    if (offset >= tolen) {
+        return 0;
+    }
+    size_t len = min(tolen - offset, fromlen);
+    memcpy((char *) to + offset, from, len);
+    return len;
+}
+
+int pseudofs_read_from_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset) {
+    return pseudofs_raw_read_from_buf(to, tolen, from, fromlen, offset, true);
+}
+
 static int read_bin(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     return pseudofs_write_to_buf(buf, blen, f->data0, (size_t) f->data1, offset);
 }
 
 static int write_bin(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    return pseudofs_write_to_buf(f->data0, (size_t) f->data1, buf, blen, offset);
+    return pseudofs_read_from_buf(f->data0, (size_t) f->data1, buf, blen, offset);
 }
 
 fs_dentry_t *pseudofs_create_bin_file(fs_dentry_t *parent, char *fname,
