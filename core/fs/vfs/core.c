@@ -80,14 +80,6 @@ int vfs_mount_essential_filesystems(void) {
     }
     _laritos.fs.root = mnt->root;
 
-    info("Mounting kernel pseudo filesystem");
-    mnt = vfs_mount_fs("pseudofs", "/kernel", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
-    if (mnt == NULL) {
-        error("Error mounting sysfs");
-        goto error_sysfs;
-    }
-    _laritos.fs.kernelfs_root = mnt->root;
-
     info("Mounting system filesystem");
     mnt = vfs_mount_fs("ext2", "/sys", FS_MOUNT_READ | FS_MOUNT_WRITE,
             (fs_param_t []) {
@@ -100,7 +92,7 @@ int vfs_mount_essential_filesystems(void) {
     }
     _laritos.fs.sys_root = mnt->root;
 
-    _laritos.fs.stats_root = vfs_dir_create(_laritos.fs.kernelfs_root, "stats",
+    _laritos.fs.stats_root = vfs_dir_create(_laritos.fs.root, "stats",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.stats_root == NULL) {
         error("Error creating stats sysfs directory");
@@ -131,12 +123,10 @@ int vfs_mount_essential_filesystems(void) {
     return 0;
 
 error_sysfs_mods:
-    vfs_dir_remove(_laritos.fs.kernelfs_root, "stats");
+    vfs_dir_remove(_laritos.fs.root, "stats");
 error_stats:
-    vfs_unmount_fs("/data");
-error_data:
     vfs_unmount_fs("/sys");
-error_sysfs:
+error_data:
     vfs_unmount_fs("/");
 error_root:
     return -1;

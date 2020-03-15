@@ -181,7 +181,7 @@ bool component_are_mandatory_comps_present(void) {
 }
 
 static int create_root_sysfs(fs_sysfs_mod_t *sysfs) {
-    _laritos.fs.comp_root = vfs_dir_create(_laritos.fs.kernelfs_root, "component",
+    _laritos.fs.comp_root = vfs_dir_create(_laritos.fs.root, "component",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.comp_root == NULL) {
         error("Error creating component sysfs directory");
@@ -206,7 +206,7 @@ static int create_root_sysfs(fs_sysfs_mod_t *sysfs) {
 }
 
 static int remove_root_sysfs(fs_sysfs_mod_t *sysfs) {
-    return vfs_dir_remove(_laritos.fs.kernelfs_root, "component");
+    return vfs_dir_remove(_laritos.fs.root, "component");
 }
 
 

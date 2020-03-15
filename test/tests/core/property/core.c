@@ -194,11 +194,11 @@ T(prop_remove_fails_if_deletion_comes_from_a_non_auth_process) {
 TEND
 
 T(prop_create_adds_a_new_entry_in_the_kernelfs) {
-    tassert(!file_exist("/kernel/property/test"));
+    tassert(!file_exist("/property/test"));
     tassert(property_create("test", "", PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL) >= 0);
-    tassert(file_exist("/kernel/property/test"));
+    tassert(file_exist("/property/test"));
     tassert(property_remove("test") >= 0);
-    tassert(!file_exist("/kernel/property/test"));
+    tassert(!file_exist("/property/test"));
 TEND
 
 T(prop_set_fails_on_read_only_props) {
@@ -211,7 +211,7 @@ T(prop_read_from_sysfs_returns_the_right_data) {
     tassert(property_create("test", "", PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL) >= 0);
     tassert(property_set("test", "data") >= 0);
 
-    fs_file_t *f = vfs_file_open("/kernel/property/test", FS_ACCESS_MODE_READ);
+    fs_file_t *f = vfs_file_open("/property/test", FS_ACCESS_MODE_READ);
     tassert(f != NULL);
     char buf[32] = { 0 };
     tassert(vfs_file_read(f, buf, sizeof(buf) - 1, 0) >= 0);
@@ -225,7 +225,7 @@ T(prop_write_to_sysfs_updates_the_property_accordingly) {
     tassert(property_create("test", "", PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL) >= 0);
     tassert(property_set("test", "data") >= 0);
 
-    fs_file_t *f = vfs_file_open("/kernel/property/test", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    fs_file_t *f = vfs_file_open("/property/test", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(f != NULL);
     char buf[32] = "from sysfs";
     tassert(vfs_file_write(f, buf, sizeof(buf), 0) >= 0);
@@ -241,7 +241,7 @@ TEND
 T(prop_write_to_sysfs_fails_on_readonly_props) {
     tassert(property_create("test", "", PROPERTY_MODE_READ_BY_ALL) >= 0);
 
-    fs_file_t *f = vfs_file_open("/kernel/property/test", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    fs_file_t *f = vfs_file_open("/property/test", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(f == NULL);
 
     tassert(property_remove("test") >= 0);
@@ -249,7 +249,7 @@ TEND
 
 
 static int prop_sysfs_read(void *data) {
-    fs_file_t *f = vfs_file_open("/kernel/property/test", FS_ACCESS_MODE_READ);
+    fs_file_t *f = vfs_file_open("/property/test", FS_ACCESS_MODE_READ);
     if (f == NULL) {
         return -1;
     }
@@ -279,7 +279,7 @@ TEND
 T(prop_write_to_sysfs_fails_on_readonly_props2) {
     tassert(property_create("test", "", PROPERTY_MODE_READ_BY_ALL) >= 0);
 
-    fs_file_t *f = vfs_file_open("/kernel/property/test", FS_ACCESS_MODE_READ);
+    fs_file_t *f = vfs_file_open("/property/test", FS_ACCESS_MODE_READ);
     tassert(f != NULL);
     char buf[32];
     tassert(vfs_file_write(f, buf, sizeof(buf), 0) < 0);

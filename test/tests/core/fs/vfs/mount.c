@@ -29,14 +29,9 @@ T(vfs_mount_make_sure_root_filesystem_is_mounted) {
     tassert(vfs_dentry_lookup("/") == _laritos.fs.root);
 TEND
 
-T(vfs_mount_make_sure_kernel_filesystem_is_mounted) {
-    tassert(file_is_dir("/kernel"));
-    tassert(vfs_dentry_lookup("/kernel") == _laritos.fs.kernelfs_root);
-TEND
-
 T(vfs_mount_make_sure_procfs_filesystem_is_mounted) {
-    tassert(file_is_dir("/kernel/proc"));
-    tassert(vfs_dentry_lookup("/kernel/proc") == _laritos.fs.proc_root);
+    tassert(file_is_dir("/proc"));
+    tassert(vfs_dentry_lookup("/proc") == _laritos.fs.proc_root);
 TEND
 
 T(vfs_mount_fails_on_unsupported_fs_type) {

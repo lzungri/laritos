@@ -229,7 +229,7 @@ int32_t property_get_or_def_int32(char *id, int32_t def) {
 }
 
 static int create_root_sysfs(fs_sysfs_mod_t *sysfs) {
-    _laritos.fs.property_root = vfs_dir_create(_laritos.fs.kernelfs_root, "property",
+    _laritos.fs.property_root = vfs_dir_create(_laritos.fs.root, "property",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.property_root == NULL) {
         error("Error creating property sysfs directory");
@@ -239,7 +239,7 @@ static int create_root_sysfs(fs_sysfs_mod_t *sysfs) {
 }
 
 static int remove_root_sysfs(fs_sysfs_mod_t *sysfs) {
-    return vfs_dir_remove(_laritos.fs.kernelfs_root, "property");
+    return vfs_dir_remove(_laritos.fs.root, "property");
 }
 
 SYSFS_MODULE(property, create_root_sysfs, remove_root_sysfs)
