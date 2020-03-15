@@ -41,7 +41,7 @@ static int create_instance_sysfs(stream_t *s) {
     }
 
     if (pseudofs_create_custom_rw_file_with_dataptr(dir, "data", sysfs_data_read, sysfs_data_write, s) == NULL) {
-        error("Failed to create 'read' sysfs file");
+        error("Failed to create 'data' sysfs file");
         return -1;
     }
 
