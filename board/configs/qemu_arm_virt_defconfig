@@ -33,6 +33,7 @@ CONFIG_INTC_ARM_GICV2=y
 CONFIG_UART_ARM_PL011=y
 CONFIG_RTC_ARM_PL031=y
 CONFIG_TIMER_ARM_V7_GENERIC=y
+CONFIG_BLOCKDEV_FLASH_CFI=y
 
 # The QEMU arm virtual board maps two flash memories (see qemu/hw/arm/virt.c#virt_flash_map()):
 #   pflash0: base=0x00000000 size=0x04000000

@@ -1,0 +1,7 @@
+menu "Block device"
+
+config BLOCKDEV_FLASH_CFI
+    bool "Common Flash Memory Interface"
+    default n
+
+endmenu
