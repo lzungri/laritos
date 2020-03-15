@@ -8,3 +8,4 @@ obj-y += vrtimer.o
 obj-y += cpu.o
 obj-y += ticker.o
 obj-y += inputdev.o
+obj-y += blockdev.o
