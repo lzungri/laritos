@@ -60,3 +60,8 @@ cfifosched:coop_fifo
 #   pflash1: base=0x04000000 size=0x04000000 (here we put the system image)
 flash0:flash_cfi|baseaddr=0x00000000,sectorsize=262144,nsectors=256,default=y
 flash1:flash_cfi|baseaddr=0x04000000,sectorsize=262144,nsectors=256
+
+# The system image is the first real filesystem mounted by the OS, thus it must be
+# statically mounted during boot. Once it is done, we could dinamically mount other
+# filesystems by reading a configuration file from /sys
+system.img:static_fs_mount|mntpoint=/sys,dev=@flash1,type=ext2
