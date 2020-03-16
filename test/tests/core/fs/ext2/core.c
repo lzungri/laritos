@@ -6,16 +6,26 @@
 #include <test/test.h>
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
+#include <component/component.h>
 #include <fs/ext2.h>
 #include <fs/file.h>
 #include <utils/endian.h>
 
+T(ext2_mount_fails_if_not_given_the_right_params) {
+    fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
+            (fs_param_t []) { { NULL } });
+    tassert(fsm == NULL);
+TEND
+
+T(ext2_mount_fails_if_dev_is_null) {
+    fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
+            (fs_param_t []) { { "dev", NULL }, { NULL } });
+    tassert(fsm == NULL);
+TEND
+
 T(ext2_mount_adds_a_new_fs_under_mount_point) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
-        (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
-            { NULL },
-        });
+            (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
     tassert(fsm != NULL);
     tassert(fsm->flags == (FS_MOUNT_READ | FS_MOUNT_WRITE));
     tassert(strncmp(fsm->root->name, "test", sizeof(fsm->root->name)) == 0);
@@ -27,10 +37,7 @@ TEND
 
 T(ext2_reading_small_file_returns_the_right_data) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
-        (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
-            { NULL },
-        });
+            (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
     tassert(fsm != NULL);
 
     tassert(file_exist("/test/test/systemimg/small.txt"));
@@ -48,10 +55,7 @@ TEND
 
 T(ext2_reading_small_file_with_offset_returns_the_right_data) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
-        (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
-            { NULL },
-        });
+            (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
     tassert(fsm != NULL);
 
     tassert(file_exist("/test/test/systemimg/small.txt"));
@@ -73,10 +77,7 @@ TEND
 
 T(ext2_reading_medium_sized_file_returns_the_right_data) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
-        (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
-            { NULL },
-        });
+            (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
     tassert(fsm != NULL);
 
     tassert(file_exist("/test/test/systemimg/medium.txt"));
@@ -100,10 +101,7 @@ TEND
 
 T(ext2_reading_big_file_returns_the_right_data) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
-        (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
-            { NULL },
-        });
+            (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
     tassert(fsm != NULL);
 
     tassert(file_exist("/test/test/systemimg/big.txt"));
@@ -127,10 +125,7 @@ TEND
 
 T(ext2_reading_huge_file_returns_the_right_data) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
-        (fs_param_t []) {
-            { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
-            { NULL },
-        });
+            (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
     tassert(fsm != NULL);
 
     tassert(file_exist("/test/test/systemimg/huge.txt"));
