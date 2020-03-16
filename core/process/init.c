@@ -44,7 +44,7 @@ static int spawn_system_procs(void) {
 
     fs_file_t *f = vfs_file_open("/sys/conf/init/launch_on_boot.conf", FS_ACCESS_MODE_READ);
     if (f == NULL) {
-        error_async("Couldn't open kernel symbols file");
+        error_async("Couldn't open 'launch_on_boot.conf' file");
         return -1;
     }
 
