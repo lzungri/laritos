@@ -133,7 +133,7 @@ typedef struct fs_mount {
 
 typedef struct fs_param {
     char *param;
-    char *value;
+    void *value;
 } fs_param_t;
 
 typedef struct fs_sysfs_mod {

@@ -55,10 +55,10 @@ int vfs_file_write_cur_offset(fs_file_t *f, void *buf, size_t blen);
 fs_inode_t *vfs_inode_def_alloc(fs_superblock_t *sb);
 void vfs_inode_def_free(fs_inode_t *inode);
 
-int vfs_get_param_uint32(fs_param_t *params, char *param, uint32_t *value, uint8_t base);
-
 int vfs_register_sysfs(fs_sysfs_mod_t *sysfs);
 int vfs_unregister_sysfs(fs_sysfs_mod_t *sysfs);
+
+void *vfs_get_param(fs_param_t *params, char *param);
 
 
 #define SYSFS_MODULE(_id, _create_sysfs, _remove_sysfs) \

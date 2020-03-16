@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <fs/vfs/types.h>
+#include <component/blockdev.h>
 
 /**
  * -----------------------------------------------
@@ -33,6 +34,7 @@
 #define EXT2_UNDEL_DIR_INO   6  /* Undelete directory inode */
 
 #define EXT2_INODE_SIZE 128
+#define EXT2_NAME_LEN 255
 
 #define EXT2_FT_UNKNOWN  0      // Unknown File Type
 #define EXT2_FT_REG_FILE 1      // Regular File
@@ -97,7 +99,10 @@ typedef struct {
     uint8_t block_size_bits;
     uint32_t addr_per_block;
     uint8_t addr_per_block_bits;
-    char *mem_base;
+    uint32_t num_bg_descs;
+    ext2_bg_desc_t *bg_descs;
+
+    blockdev_t *dev;
 } ext2_sb_t;
 
 /*

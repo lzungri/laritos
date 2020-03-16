@@ -17,30 +17,14 @@
 #include <fs/stat.h>
 #include <generated/autoconf.h>
 
-static inline uint32_t get_num_bgs(ext2_sb_t *sb) {
-    uint32_t n = sb->info.blocks_count / sb->info.blocks_per_group;
-    if (sb->info.blocks_count % sb->info.blocks_per_group > 0) {
-        n++;
-    }
-    return n;
-}
 
 static ext2_bg_desc_t *get_bg_desc(ext2_sb_t *sb, uint32_t index) {
-    if (index >= get_num_bgs(sb)) {
+    if (index >= sb->num_bg_descs) {
         error("Invalid group descriptor index %lu", index);
         return NULL;
     }
 
-    /**
-     * The block group descriptor table starts on the first block following
-     * the superblock. This would be the third block on a 1KiB block file
-     * system, or the second block for 2KiB and larger block file systems.
-     */
-    uint32_t bgd_offset = sb->block_size;
-    if (sb->block_size == 1024) {
-        bgd_offset <<= 1;
-    }
-    return (ext2_bg_desc_t *) (sb->mem_base + bgd_offset + sizeof(ext2_bg_desc_t) * index);
+    return &sb->bg_descs[index];
 }
 
 static bool is_valid_superblock(ext2_sb_t *sb) {
@@ -52,14 +36,14 @@ static bool is_valid_superblock(ext2_sb_t *sb) {
     return true;
 }
 
-static inline void *get_phys_block_ptr(ext2_sb_t *sb, uint32_t phys_block_num) {
-    return sb->mem_base + phys_block_num * sb->block_size;
+static inline uint32_t get_phys_block_offset(ext2_sb_t *sb, uint32_t phys_block_num) {
+    return phys_block_num * sb->block_size;
 }
 
-static ext2_inode_data_t *get_inode_from_fs(ext2_sb_t *sb, uint32_t inode) {
+static int read_inode_from_dev(ext2_sb_t *sb, uint32_t inode, ext2_inode_data_t *data) {
     if (inode >= sb->info.inodes_count) {
         error("Invalid inode %lu", inode);
-        return NULL;
+        return -1;
     }
 
     // Get block descriptor in which the inode is allocated
@@ -68,7 +52,7 @@ static ext2_inode_data_t *get_inode_from_fs(ext2_sb_t *sb, uint32_t inode) {
     ext2_bg_desc_t *bgd = get_bg_desc(sb, bg);
     if (bgd == NULL) {
         error("Couldn't get group descriptor");
-        return NULL;
+        return -1;
     }
 
     // Calculate the offset within inode table
@@ -81,7 +65,14 @@ static ext2_inode_data_t *get_inode_from_fs(ext2_sb_t *sb, uint32_t inode) {
 
     // Calculate the offset within the block
     uint32_t block_offset = offset & (sb->block_size - 1);
-    return (ext2_inode_data_t *) (((char *) get_phys_block_ptr(sb, block)) + block_offset);
+
+    if (sb->dev->ops.read(sb->dev, data, sizeof(ext2_inode_data_t),
+            get_phys_block_offset(sb, block) + block_offset) < 0) {
+        error("Couldn't read inode data from device '%s'", sb->dev->parent.id);
+        return -1;
+    }
+
+    return 0;
 }
 
 /**
@@ -141,25 +132,29 @@ static uint8_t ext2_log_block_to_path(ext2_sb_t *sb, uint32_t logical_block, int
     return n;
 }
 
-static inline void *get_inode_phys_block(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t logical_block) {
+static uint32_t get_inode_phys_block_offset(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t logical_block) {
     int offsets[4];
     int boundary = 0;
 
     uint8_t paths = ext2_log_block_to_path(sb, logical_block, offsets, &boundary);
     if (paths == 0) {
         error("Couldn't get physical block for logical_block=%lu", logical_block);
-        return NULL;
+        return -1;
     }
 
     uint32_t phys_block = inode->block[offsets[0]];
     int i;
     // Start from path=1, we already grabbed the block for path=0
     for (i = 1; i < paths; i++) {
-        uint32_t *block = get_phys_block_ptr(sb, phys_block);
-        phys_block = *(block + offsets[i]);
+        uint32_t block_offset = get_phys_block_offset(sb, phys_block);
+        if (sb->dev->ops.read(sb->dev, &phys_block, sizeof(uint32_t),
+                block_offset + offsets[i] * sizeof(uint32_t)) < 0) {
+            error("Couldn't read phys block offset from device '%s'", sb->dev->parent.id);
+            return -1;
+        }
     }
 
-    return get_phys_block_ptr(sb, phys_block);
+    return get_phys_block_offset(sb, phys_block);
 }
 
 static inline uint32_t get_inode_num_blocks(ext2_sb_t *sb, ext2_inode_data_t *inode) {
@@ -178,22 +173,22 @@ static fs_inode_t *alloc_inode_for(ext2_sb_t *sb, ext2_direntry_t *dentry) {
     }
     inode->number = dentry->inode;
 
-    ext2_inode_data_t *inode_data = get_inode_from_fs(sb, inode->number);
-    if (inode_data == NULL) {
+    ext2_inode_data_t inode_data;
+    if (read_inode_from_dev(sb, inode->number, &inode_data) < 0) {
         error("Failed to read inode #%lu", inode->number);
         return NULL;
     }
 
-    if (S_ISDIR(inode_data->mode)) {
+    if (S_ISDIR(inode_data.mode)) {
         inode->mode |= FS_ACCESS_MODE_DIR;
     }
-    if (inode_data->mode & S_IRUSR) {
+    if (inode_data.mode & S_IRUSR) {
         inode->mode |= FS_ACCESS_MODE_READ;
     }
-    if (inode_data->mode & S_IWUSR) {
+    if (inode_data.mode & S_IWUSR) {
         inode->mode |= FS_ACCESS_MODE_WRITE;
     }
-    if (inode_data->mode & S_IXUSR) {
+    if (inode_data.mode & S_IXUSR) {
         inode->mode |= FS_ACCESS_MODE_EXEC;
     }
 
@@ -204,30 +199,42 @@ static fs_inode_t *alloc_inode_for(ext2_sb_t *sb, ext2_direntry_t *dentry) {
 
 static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
     ext2_sb_t *sb = (ext2_sb_t *) parent->sb;
-    ext2_inode_data_t *pinode_data = get_inode_from_fs(sb, parent->number);
-    if (pinode_data == NULL) {
+
+    ext2_inode_data_t pinode_data;
+    if (read_inode_from_dev(sb, parent->number, &pinode_data) < 0) {
         error("Failed to read inode #%lu", parent->number);
         return NULL;
     }
 
+
     int i;
-    for (i = 0; i < get_inode_num_blocks(sb, pinode_data); i++) {
-        char *dptr = get_inode_phys_block(sb, pinode_data, i);
-        if (dptr == NULL) {
+    for (i = 0; i < get_inode_num_blocks(sb, &pinode_data); i++) {
+        uint32_t blkoff = get_inode_phys_block_offset(sb, &pinode_data, i);
+        if (blkoff < 0) {
             error("Couldn't get inode physical block");
             return NULL;
         }
 
-        char *next_block = dptr + sb->block_size;
-        while (dptr < next_block) {
-            ext2_direntry_t *dentry = (ext2_direntry_t *) dptr;
+        uint32_t next_block = blkoff + sb->block_size;
+        while (blkoff < next_block) {
+            char dentry_buf[sizeof(ext2_direntry_t) + EXT2_NAME_LEN];
+            ext2_direntry_t *dentry = (ext2_direntry_t *) dentry_buf;
+            if (sb->dev->ops.read(sb->dev, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
+                error("Couldn't read dentry metadata from device '%s'", sb->dev->parent.id);
+                return NULL;
+            }
+            if (sb->dev->ops.read(sb->dev, (char *) dentry + sizeof(ext2_direntry_t),
+                    dentry->name_len, blkoff + sizeof(ext2_direntry_t)) < 0) {
+                error("Couldn't read dentry file name from device '%s'", sb->dev->parent.id);
+                return NULL;
+            }
 
             if (strncmp(dentry->name, name, dentry->name_len) == 0 &&
                     strlen(name) == dentry->name_len) {
                 return alloc_inode_for(sb, dentry);
             }
 
-            dptr += dentry->rec_len;
+            blkoff += dentry->rec_len;
         }
     }
 
@@ -244,32 +251,39 @@ static int ext2_def_close(fs_inode_t *inode, fs_file_t *f) {
 
 static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     ext2_sb_t *sb = (ext2_sb_t *) f->dentry->inode->sb;
-    ext2_inode_data_t *pinode_data = get_inode_from_fs(sb, f->dentry->inode->number);
-    if (pinode_data == NULL) {
+
+    ext2_inode_data_t pinode_data;
+    if (read_inode_from_dev(sb, f->dentry->inode->number, &pinode_data) < 0) {
         error("Failed to read inode #%lu", f->dentry->inode->number);
         return -1;
     }
 
-    if (offset >= pinode_data->size) {
+    if (offset >= pinode_data.size) {
         return 0;
     }
 
     int nbytes = 0;
 
+
     uint32_t log_block = offset >> sb->block_size_bits;
     uint32_t block_offset = offset % sb->block_size;
-    uint32_t bytes_to_eof = pinode_data->size - offset;
+    uint32_t bytes_to_eof = pinode_data.size - offset;
 
-    for ( ;log_block < get_inode_num_blocks(sb, pinode_data); log_block++) {
-        char *physb_ptr = get_inode_phys_block(sb, pinode_data, log_block);
-        if (physb_ptr == NULL) {
+    for ( ;log_block < get_inode_num_blocks(sb, &pinode_data); log_block++) {
+        uint32_t phys_blkoff = get_inode_phys_block_offset(sb, &pinode_data, log_block);
+        if (phys_blkoff < 0) {
             error("Couldn't get inode physical block for logical block #%lu", log_block);
             return -1;
         }
 
         int len = min(blen - nbytes, sb->block_size - block_offset);
         len = min(len, bytes_to_eof);
-        memcpy((char *) buf + nbytes, physb_ptr + block_offset, len);
+
+        if (sb->dev->ops.read(sb->dev, (char *) buf + nbytes, len, phys_blkoff + block_offset) < 0) {
+            error("Couldn't read inode data from device '%s'", sb->dev->parent.id);
+            return -1;
+        }
+
         nbytes += len;
         bytes_to_eof -= len;
         block_offset = 0;
@@ -290,8 +304,8 @@ static inline bool is_dot_double_dot_dentry(ext2_direntry_t *dentry) {
 
 static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, uint32_t listlen) {
     ext2_sb_t *sb = (ext2_sb_t *) f->dentry->inode->sb;
-    ext2_inode_data_t *inode = get_inode_from_fs(sb, f->dentry->inode->number);
-    if (inode == NULL) {
+    ext2_inode_data_t inode;
+    if (read_inode_from_dev(sb, f->dentry->inode->number, &inode) < 0) {
         error("Failed to read inode %lu", f->dentry->inode->number);
         return -1;
     }
@@ -300,16 +314,26 @@ static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, ui
     uint32_t entrypos = 0;
 
     int i;
-    for (i = 0; i < get_inode_num_blocks(sb, inode); i++) {
-        char *dptr = get_inode_phys_block(sb, inode, i);
-        if (dptr == NULL) {
+    for (i = 0; i < get_inode_num_blocks(sb, &inode); i++) {
+        uint32_t blkoff = get_inode_phys_block_offset(sb, &inode, i);
+        if (blkoff < 0) {
             error("Couldn't get inode physical block");
             return -1;
         }
 
-        char *next_block = dptr + sb->block_size;
-        while (dptr < next_block) {
-            ext2_direntry_t *dentry = (ext2_direntry_t *) dptr;
+        uint32_t next_block = blkoff + sb->block_size;
+        while (blkoff < next_block) {
+            char dentry_buf[sizeof(ext2_direntry_t) + EXT2_NAME_LEN];
+            ext2_direntry_t *dentry = (ext2_direntry_t *) dentry_buf;
+            if (sb->dev->ops.read(sb->dev, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
+                error("Couldn't read dentry metadata from device '%s'", sb->dev->parent.id);
+                return -1;
+            }
+            if (sb->dev->ops.read(sb->dev, (char *) dentry + sizeof(ext2_direntry_t),
+                    dentry->name_len, blkoff + sizeof(ext2_direntry_t)) < 0) {
+                error("Couldn't read dentry file name from device '%s'", sb->dev->parent.id);
+                return -1;
+            }
 
             if (!is_dot_double_dot_dentry(dentry) && dentry->name_len > 0) {
                 if (entrypos >= offset) {
@@ -331,7 +355,7 @@ static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, ui
                 entrypos++;
             }
 
-            dptr += dentry->rec_len;
+            blkoff += dentry->rec_len;
         }
     }
 
@@ -366,12 +390,16 @@ static void free_inode(fs_inode_t *inode) {
 }
 
 static int unmount(fs_mount_t *fsm) {
+    free(((ext2_sb_t *) fsm->sb)->bg_descs);
     free(fsm->sb);
     return 0;
 }
 
 static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
-    memcpy(&sb->info, sb->mem_base + EXT2_SB_OFFSET, sizeof(ext2_sb_info_t));
+    if (sb->dev->ops.read(sb->dev, &sb->info, sizeof(ext2_sb_info_t), EXT2_SB_OFFSET) < 0) {
+        error("Couldn't read superblock info from device '%s'", sb->dev->parent.id);
+        return -1;
+    }
 
     sb->block_size = (uint32_t) 1024 << sb->info.log_block_size;
     bitset_t bs = ~sb->block_size;
@@ -380,6 +408,33 @@ static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
     sb->addr_per_block = sb->block_size / sizeof(uint32_t);
     bs = ~sb->addr_per_block;
     sb->addr_per_block_bits = BITSET_NBITS - bitset_ffz(bs) - 1;
+
+    sb->num_bg_descs = sb->info.blocks_count / sb->info.blocks_per_group;
+    if (sb->info.blocks_count % sb->info.blocks_per_group > 0) {
+        sb->num_bg_descs++;
+    }
+
+    sb->bg_descs = calloc(sb->num_bg_descs, sizeof(ext2_bg_desc_t));
+    if (sb->bg_descs == NULL) {
+        error("No memory for ext2_bg_desc_t array");
+        return -1;
+    }
+
+    /**
+     * The block group descriptor table starts on the first block following
+     * the superblock. This would be the third block on a 1KiB block file
+     * system, or the second block for 2KiB and larger block file systems.
+     */
+    uint32_t bgd_offset = sb->block_size;
+    if (sb->block_size == 1024) {
+        bgd_offset <<= 1;
+    }
+    if (sb->dev->ops.read(sb->dev, sb->bg_descs,
+            sizeof(ext2_bg_desc_t) * sb->num_bg_descs, bgd_offset) < 0) {
+        error("Couldn't read block group descriptors from device '%s'", sb->dev->parent.id);
+        free(sb->bg_descs);
+        return -1;
+    }
 
     debug("Ext2 superblock info:");
     debug("  magic: 0x%X", sb->info.magic);
@@ -400,7 +455,7 @@ static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
 
     verbose("Block groups:");
     int i;
-    for (i = 0; i < get_num_bgs(sb); i++) {
+    for (i = 0; i < sb->num_bg_descs; i++) {
         ext2_bg_desc_t *bgd = get_bg_desc(sb, i);
         if (bgd == NULL) {
             error("Couldn't get block group descriptor #%d", i);
@@ -432,9 +487,11 @@ static int mount(fs_type_t *fstype, fs_mount_t *m, fs_param_t *params) {
 
     m->ops.unmount = unmount;
 
-    if (vfs_get_param_uint32(params, "mem-offset", (uint32_t *) &ext2sb->mem_base, 16) < 0) {
-        error("No FS memory offset was given, required for in-memory FS");
-        goto error_offset;
+    ext2sb->dev = vfs_get_param(params, "dev");
+    if (ext2sb->dev == NULL) {
+        error("No device was given");
+        goto error_dev;
+
     }
 
     if (populate_ext2_superblock(ext2sb, m) < 0) {
@@ -458,8 +515,9 @@ static int mount(fs_type_t *fstype, fs_mount_t *m, fs_param_t *params) {
 
 error_root:
 error_malformed:
+    free(ext2sb->bg_descs);
 error_populate:
-error_offset:
+error_dev:
     free(ext2sb);
 error_sb:
     return -1;

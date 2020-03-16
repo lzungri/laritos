@@ -80,18 +80,6 @@ int vfs_mount_essential_filesystems(void) {
     }
     _laritos.fs.root = mnt->root;
 
-    info("Mounting system filesystem");
-    mnt = vfs_mount_fs("ext2", "/sys", FS_MOUNT_READ | FS_MOUNT_WRITE,
-            (fs_param_t []) {
-                { "mem-offset", TOSTRING(CONFIG_FS_SYSTEM_IMAGE_BASE) },
-                { NULL },
-            });
-    if (mnt == NULL) {
-        error("Error mounting data");
-        goto error_data;
-    }
-    _laritos.fs.sys_root = mnt->root;
-
     _laritos.fs.stats_root = vfs_dir_create(_laritos.fs.root, "stats",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.stats_root == NULL) {
@@ -125,8 +113,6 @@ int vfs_mount_essential_filesystems(void) {
 error_sysfs_mods:
     vfs_dir_remove(_laritos.fs.root, "stats");
 error_stats:
-    vfs_unmount_fs("/sys");
-error_data:
     vfs_unmount_fs("/");
 error_root:
     return -1;
@@ -160,19 +146,18 @@ int vfs_unregister_sysfs(fs_sysfs_mod_t *sysfs) {
     return 0;
 }
 
-int vfs_get_param_uint32(fs_param_t *params, char *param, uint32_t *value, uint8_t base) {
+void *vfs_get_param(fs_param_t *params, char *param) {
     if (params == NULL) {
-        return -1;
+        return NULL;
     }
 
     fs_param_t *p;
     for (p = params; p->param != NULL; p++) {
         if (strncmp(p->param, param, 32) == 0) {
-            *value = (uint32_t) strtoul(p->value, NULL, base);
-            return 0;
+            return p->value;
         }
     }
-    return -1;
+    return NULL;
 }
 
 
