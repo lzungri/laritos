@@ -120,29 +120,6 @@ static int bd_free(void *param) {
     return 0;
 }
 
-static int bdproc_main(void *data) {
-    uint16_t *secs = (uint16_t *) data;
-    info("New process pid=%u, sleeping for %u seconds", process_get_current()->pid, *secs);
-    sleep(*secs);
-    free(secs);
-    info("Dying...");
-    return 0;
-}
-
-static int bd_spawn(void *param) {
-    if (param == NULL) {
-        error("Syntax: bd spawn <sleep_time_in_secs>");
-        return -1;
-    }
-    uint16_t *secs = malloc(sizeof(uint16_t));
-    *secs = strtoul(param, NULL, 0);
-    pcb_t *proc = process_spawn_kernel_process("bdproc", bdproc_main, secs, 4096, CONFIG_SCHED_PRIORITY_MAX_USER - 1);
-    if (proc == NULL) {
-        free(secs);
-    }
-    return 0;
-}
-
 static int bd_debugpid(void *param) {
     if (param == NULL) {
         error("Syntax: bd debugpid <pid>");
@@ -180,7 +157,6 @@ static bdcmd_t commands[] = {
     { .cmd = "pstree", .handler = bd_pstree },
     { .cmd = "malloc", .handler = bd_malloc },
     { .cmd = "free", .handler = bd_free },
-    { .cmd = "spawn", .handler = bd_spawn },
     { .cmd = "debugpid", .handler = bd_debugpid },
 };
 
