@@ -20,12 +20,12 @@ typedef struct {
 } flash_cfi_t;
 
 
-int read(blockdev_t *blk, void *buf, size_t n, uint32_t offset) {
+static int read(blockdev_t *blk, void *buf, size_t n, uint32_t offset) {
     flash_cfi_t *flash = (flash_cfi_t *) blk;
     return pseudofs_raw_write_to_buf(buf, n, flash->baseaddr, flash->parent.size_kbs << 10, offset, false);
 }
 
-int write(blockdev_t *blk, void *buf, size_t n, uint32_t offset) {
+static int write(blockdev_t *blk, void *buf, size_t n, uint32_t offset) {
     flash_cfi_t *flash = (flash_cfi_t *) blk;
     return pseudofs_raw_write_to_buf(flash->baseaddr, flash->parent.size_kbs << 10, buf, n, offset, false);
 }
