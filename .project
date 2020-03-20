@@ -37,13 +37,6 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 		<nature>org.python.pydev.pythonNature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>src</name>
-			<type>2</type>
-			<location>/home/lzungri/dev/src/laritos</location>
-		</link>
-	</linkedResources>
 	<filteredResources>
 		<filter>
 			<id>1572040886945</id>
