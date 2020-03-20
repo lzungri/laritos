@@ -39,7 +39,7 @@ static pcb_t *launch_process(char *launcher) {
     return func();
 }
 
-static int spawn_system_procs(void) {
+static int launch_on_boot_processes(void) {
     info("Launching system processes");
 
     fs_file_t *f = vfs_file_open("/sys/conf/init/launch_on_boot.conf", FS_ACCESS_MODE_READ);
@@ -71,6 +71,15 @@ static int spawn_system_procs(void) {
 static int complete_init_process_setup(pcb_t *init) {
     init->parent = init;
     init->cwd = _laritos.fs.root;
+
+    irqctx_t datactx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &datactx);
+    // Init holds a reference to itself to prevent unwanted process deallocations
+    // (e.g. when a children process uses sleep() and then it releases its reference
+    // to the init process, if the reference reaches zero, init will be deallocated)
+    ref_inc(&init->refcnt);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &datactx);
+
 
     // Create sysfs nodes for the init process
     return process_sysfs_create(init);
@@ -113,6 +122,10 @@ int init_main(void *data) {
 
     assert(complete_init_process_setup(process_get_current()) >= 0, "Couldn't complete setup for the init process");
 
+    info("Launching idle process");
+    pcb_t *idle_launcher(void);
+    assert(idle_launcher() != NULL, "Couldn't launch idle process");
+
     assert(board_parse_and_initialize(&_laritos.bi) >= 0, "Couldn't initialize board");
 
 #ifdef CONFIG_LOG_LEVEL_DEBUG
@@ -140,7 +153,7 @@ int init_main(void *data) {
     // Seed random generator from current time
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
 
-    assert(spawn_system_procs() >= 0, "Failed to create system processes");
+    assert(launch_on_boot_processes() >= 0, "Failed to create system processes");
 
     assert(ticker_start_all() >= 0, "Failed to start OS tickers");
 
