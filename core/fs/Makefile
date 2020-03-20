@@ -2,5 +2,5 @@ obj-y += vfs/
 obj-y += pseudofs/
 obj-y += ext2/
 
-datares-y += readme@/
+datares-y += datareadme@/
 sysres-y += sysreadme@/
