@@ -56,12 +56,15 @@ def main(args):
     print("---------------------------------------------------------------------------\n")
 
     with tempfile.NamedTemporaryFile(prefix="laritos") as trace_file:
-        cmd = "{qemudebug} qemu-system-arm --trace events={scriptdir}/trace_events,file={trace} \
-{osdebug} -M virt -smp {ncpus} -m {ram}M -cpu {cpu} -nographic \
+        cmd = " \
+{qemudebug} qemu-system-{arch} --trace events={scriptdir}/trace_events,file={trace} \
+{osdebug} -M {machine} -smp {ncpus} -m {ram}M -cpu {cpu} -nographic \
 -drive if=pflash,file={scriptdir}/../../bin/laritos.img,format=raw,readonly \
 -drive if=pflash,file={scriptdir}/../../bin/system.img,format=raw,readonly \
 -drive if=sd,cache=writeback,file={scriptdir}/../../bin/data.img,format=raw \
 {qemulog}".format(
+                arch=args.arch,
+                machine=args.machine,
                 scriptdir=SCRIPT_DIR,
                 trace=trace_file.name,
                 ncpus=ncpus,
@@ -70,13 +73,11 @@ def main(args):
                 osdebug="-S -s" if args.os_debug else "",
                 qemudebug="gdbserver :55555" if args.qemu_debug else "",
                 qemulog="-d guest_errors,cpu_reset,int,unimp -D /tmp/qemu.log" if args.qemu_log else "")
-#-drive file={scriptdir}/../../bin/system.img,format=raw,id=mycard \
-#-device sd-card,drive=mycard \
 
         print(cmd)
         os.system(cmd)
 
-        qemudir = os.path.dirname(shutil.which("qemu-system-arm") or "")
+        qemudir = os.path.dirname(shutil.which("qemu-system-{}".format(args.arch)) or "")
         if not qemudir:
             raise Exception("Couldn't find qemu's directory to display the trace report")
 
@@ -91,6 +92,10 @@ def main(args):
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="QEMU launcher for laritOS",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-a", "--arch", default="arm",
+                       help="Target architecture")
+    parser.add_argument("-M", "--machine", default="virt",
+                       help="Emulated machine type")
     parser.add_argument("-d", "--os-debug", default=False, action="store_true",
                        help="Launch laritOS in debugging mode (listening on :1234)")
     parser.add_argument("-D", "--qemu-debug", default=False, action="store_true",
