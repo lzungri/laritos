@@ -840,9 +840,14 @@ laritos.bin: laritos.elf FORCE
 	$(call if_changed,objcopy_laritos)
 
 SYSTEM_IMG_FOLDER := image/system
+DATA_IMG_FOLDER := image/data
 
 PHONY += $(SYSTEM_IMG_FOLDER)
 $(SYSTEM_IMG_FOLDER):
+	@mkdir -p $@
+
+PHONY += $(DATA_IMG_FOLDER)
+$(DATA_IMG_FOLDER):
 	@mkdir -p $@
 
 # Target to generate read-only files with information about the kernel
@@ -852,25 +857,45 @@ kinfo: laritos.elf $(SYSTEM_IMG_FOLDER)
 	@$(NM) --numeric-sort laritos.elf > $(SYSTEM_IMG_FOLDER)/kinfo/symbols
 	@cp $<.map $(SYSTEM_IMG_FOLDER)/kinfo/map
 
-# Commands to create, mount, and copy the files associated with the ext2 system image.
+# Commands to create, mount, and copy the files associated with the system image.
 # Unfortunately, I couldn't find a better way to create the image other than using the
 # mount command, which requires sudo
-quiet_cmd_sysimg ?= SYSIMG  $@ (requires sudo for creating ext2 image)
+quiet_cmd_sysimg ?= SYSIMG  $@ (requires sudo for creating $(CONFIG_FS_SYSTEM_IMAGE_TYPE) image)
 cmd_sysimg ?= \
 	dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_FS_SYSTEM_IMAGE_SIZE) status=none; \
-	mkfs.ext2 -q $@; \
+	mkfs.$(CONFIG_FS_SYSTEM_IMAGE_TYPE) -q $@; \
 	sudo bash -c "umount /tmp/laritos-systemimg &> /dev/null || true"; \
 	sudo rm -rf /tmp/laritos-systemimg; \
 	mkdir -p /tmp/laritos-systemimg; \
 	sudo mount $@ /tmp/laritos-systemimg; \
-	sudo cp -r $(SYSTEM_IMG_FOLDER)/* /tmp/laritos-systemimg; \
+	sudo cp -r $(SYSTEM_IMG_FOLDER)/. /tmp/laritos-systemimg; \
 	sudo umount /tmp/laritos-systemimg; \
 	dd if=/dev/zero of=$@ bs=1 count=1 seek=67108863 status=none # The QEMU arm virtual board requires every flash image to be 64MB
+
+# Commands to create, mount, and copy the files associated with the data image.
+# Unfortunately, I couldn't find a better way to create the image other than using the
+# mount command, which requires sudo
+quiet_cmd_dataimg ?= DATAIMG $@ (requires sudo for creating $(CONFIG_FS_DATA_IMAGE_TYPE) image)
+cmd_dataimg ?= \
+	dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_FS_DATA_IMAGE_SIZE) status=none; \
+	mkfs.$(CONFIG_FS_DATA_IMAGE_TYPE) -q $@; \
+	sudo bash -c "umount /tmp/laritos-dataimg &> /dev/null || true"; \
+	sudo rm -rf /tmp/laritos-dataimg; \
+	mkdir -p /tmp/laritos-dataimg; \
+	sudo mount $@ /tmp/laritos-dataimg; \
+	sudo cp -r $(DATA_IMG_FOLDER)/. /tmp/laritos-dataimg; \
+	sudo umount /tmp/laritos-dataimg
 
 system.img: $(SYSTEM_IMG_FOLDER) kinfo
 	$(call if_changed,sysimg)
 
+data.img: $(DATA_IMG_FOLDER)
+	$(call if_changed,dataimg)
+
 systemimginfo: system.img
+	@dumpe2fs $<
+
+dataimginfo: data.img
 	@dumpe2fs $<
 
 quiet_cmd_img_laritos ?= KERNIMG $@
@@ -881,7 +906,7 @@ quiet_cmd_img_laritos ?= KERNIMG $@
 laritos.img: laritos.bin FORCE
 	$(call if_changed,img_laritos)
 
-laritos: laritos.img system.img
+laritos: laritos.img system.img data.img
 	$(Q)echo ''
 	$(Q)$(SIZE) laritos.elf
 	$(Q)echo ''
@@ -1026,9 +1051,11 @@ PHONY += help
 help:
 	@echo  'Generic targets:'
 	@echo  '  all             - Build all targets marked with [*]'
-	@echo  '* laritos.img     - Build OS flashable image (kernel + system.img)'
-	@echo  '  laritos.bin     - Build raw kernel binary image only'
+	@echo  '* laritos         - Build laritos OS images (laritos.img + system.img + data.img)'
+	@echo  '  laritos.img     - Build kernel image'
+	@echo  '  laritos.bin     - Build raw kernel binary only'
 	@echo  '  system.img      - Build system image only'
+	@echo  '  data.img        - Build data image only'
 	@echo  '  dir/            - Build all files in dir and below'
 	@echo  '  dir/file.[ois]  - Build specified target only'
 	@echo  '  printmap        - Output the link map info (memory mapping, symbols, etc) (use with make -s)'
@@ -1036,6 +1063,7 @@ help:
 	@echo  '  kernelversion	  - Output the version stored in Makefile (use with make -s)'
 	@echo  '  image_name	  - Output the image name (use with make -s)'
 	@echo  '  systemimginfo   - Output info about the system.img filesystem'
+	@echo  '  dataimginfo     - Output info about the data.img filesystem'
 	@echo  ''
 	@echo  'Cleaning targets:'
 	@echo  '  clean		  - Remove most generated files but keep the config'

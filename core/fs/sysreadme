@@ -1,0 +1,5 @@
+/sys filesystem
+----------------
+
+This is a *readonly* file system containing resources for the OS such as configuration files,
+pre-installed binaries and their resources, etc.

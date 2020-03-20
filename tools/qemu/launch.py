@@ -59,8 +59,8 @@ def main(args):
         cmd = "{qemudebug} qemu-system-arm --trace events={scriptdir}/trace_events,file={trace} \
 {osdebug} -M virt -smp {ncpus} -m {ram}M -cpu {cpu} -nographic \
 -drive if=pflash,file={scriptdir}/../../bin/laritos.img,format=raw,readonly \
--drive if=pflash,file={scriptdir}/../../bin/system.img,format=raw \
--drive if=sd,cache=writeback,file={scriptdir}/../../bin/system2.img,format=raw \
+-drive if=pflash,file={scriptdir}/../../bin/system.img,format=raw,readonly \
+-drive if=sd,cache=writeback,file={scriptdir}/../../bin/data.img,format=raw \
 {qemulog}".format(
                 scriptdir=SCRIPT_DIR,
                 trace=trace_file.name,

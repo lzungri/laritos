@@ -40,5 +40,10 @@ CONFIG_BLOCKDEV_FLASH_CFI=y
 #   pflash1: base=0x04000000 size=0x04000000
 # We use pflash0 for the kernel image and pflash1 for the system image
 CONFIG_FS_SYSTEM_IMAGE_BASE=0x04000000
-# This is the file system size (10MB), not the flash
+# This is the file system size (in MBs), not the flash
 CONFIG_FS_SYSTEM_IMAGE_SIZE=10
+CONFIG_FS_SYSTEM_IMAGE_TYPE="ext2"
+
+# Data partition size
+CONFIG_FS_DATA_IMAGE_SIZE=10
+CONFIG_FS_DATA_IMAGE_TYPE="ext2"
