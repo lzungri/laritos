@@ -53,19 +53,21 @@ static int launch_on_boot_processes(void) {
     uint32_t tokens_size[] = { sizeof(launcher) };
 
     uint32_t offset = 0;
+    int fret = 0;
     int ret;
     while ((ret = conf_readline(f, tokens, tokens_size, ARRAYSIZE(tokens), &offset)) != 0) {
-        if (ret > 0) {
-            if (launch_process(launcher) == NULL) {
-                error("Couldn't launch %s", launcher);
-                ret = -1;
-            }
+        if (ret < 0) {
+            continue;
+        }
+        if (launch_process(launcher) == NULL) {
+            error("Couldn't launch %s", launcher);
+            fret = -1;
         }
     }
 
     vfs_file_close(f);
 
-    return ret;
+    return fret;
 }
 
 static int complete_init_process_setup(pcb_t *init) {
@@ -152,6 +154,8 @@ int init_main(void *data) {
 
     // Seed random generator from current time
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
+
+    assert(vfs_mount_from_config() >= 0, "Failed to mount filesystems from mount.conf");
 
     assert(launch_on_boot_processes() >= 0, "Failed to create system processes");
 

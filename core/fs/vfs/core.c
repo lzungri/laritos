@@ -9,8 +9,10 @@
 #include <fs/vfs/core.h>
 #include <fs/pseudofs.h>
 #include <mm/heap.h>
+#include <component/component.h>
 #include <process/core.h>
 #include <utils/utils.h>
+#include <utils/conf.h>
 #include <generated/autoconf.h>
 
 
@@ -116,6 +118,56 @@ error_stats:
     vfs_unmount_fs("/");
 error_root:
     return -1;
+}
+
+int vfs_mount_from_config(void) {
+    info("Mounting file systems from mount.conf");
+
+    fs_file_t *f = vfs_file_open("/sys/conf/mount.conf", FS_ACCESS_MODE_READ);
+    if (f == NULL) {
+        error_async("Couldn't open 'launch_on_boot.conf' file");
+        return -1;
+    }
+
+    char mntpoint[CONFIG_FS_MAX_FILENAME_LEN];
+    char devid[CONFIG_FS_MAX_FILENAME_LEN];
+    char fstype[8];
+    char perm[8];
+    char *tokens[] = { mntpoint, devid, fstype, perm };
+    uint32_t tokens_size[] = { sizeof(mntpoint), sizeof(devid), sizeof(fstype), sizeof(perm) };
+
+    uint32_t offset = 0;
+    int fret = 0;
+    int ret;
+    while ((ret = conf_readline(f, tokens, tokens_size, ARRAYSIZE(tokens), &offset)) != 0) {
+        if (ret < 0) {
+            continue;
+        }
+
+        fs_access_mode_t mode = 0;
+        if (strchr(perm, 'r') != NULL) {
+            mode |= FS_MOUNT_READ;
+        }
+        if (strchr(perm, 'w') != NULL) {
+            mode |= FS_MOUNT_WRITE;
+        }
+
+        void *dev = component_get_by_id(devid);
+        if (dev == NULL) {
+            error("Couldn't find block device with id '%s'", devid);
+            fret = -1;
+            continue;
+        }
+
+        if (vfs_mount_fs(fstype, mntpoint, mode, (fs_param_t []) { { "dev", dev }, { NULL } }) < 0) {
+            error("Could not mount %s", mntpoint);
+            fret = -1;
+        }
+    }
+
+    vfs_file_close(f);
+
+    return fret;
 }
 
 int vfs_register_sysfs(fs_sysfs_mod_t *sysfs) {

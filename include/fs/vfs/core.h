@@ -24,6 +24,7 @@ bool vfs_is_fs_type_supported(char *fstype);
 fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags, fs_param_t *params);
 int vfs_unmount_fs(char *mount_point);
 int vfs_mount_essential_filesystems(void);
+int vfs_mount_from_config(void);
 
 void vfs_dentry_init(fs_dentry_t *d, char *name, fs_inode_t *inode, fs_dentry_t *parent);
 fs_dentry_t *vfs_dentry_alloc(char *name, fs_inode_t *inode, fs_dentry_t *parent);

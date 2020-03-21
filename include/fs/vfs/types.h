@@ -113,8 +113,8 @@ typedef struct fs_superblock {
 
 
 typedef enum {
-    FS_MOUNT_WRITE = 1,
-    FS_MOUNT_READ = 2,
+    FS_MOUNT_WRITE = 2,
+    FS_MOUNT_READ = 4,
 } fs_mount_flags_t;
 
 struct fs_mount;

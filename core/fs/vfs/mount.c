@@ -44,7 +44,7 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags
 
     fs_type_t *fst = vfs_get_fstype(fstype);
     if (fst == NULL) {
-        error("File system '%s' not supported", fstype);
+        error("File system '%s' at '%s' not supported", fstype, mount_point);
         return NULL;
     }
 
