@@ -22,6 +22,7 @@ typedef enum {
     COMP_TYPE_VRTIMER,
     COMP_TYPE_SCHED,
     COMP_TYPE_BLOCKDEV,
+    COMP_TYPE_MCI,
 
     COMP_TYPE_LEN,
 } component_type_t;
@@ -29,7 +30,7 @@ typedef enum {
 static inline char *component_get_type_str(component_type_t t) {
     static char *str[] =
         { "unknown", "cpu", "uart", "intc", "rtc", "hrtimer", "bytestream", "inputdev", "logger",
-          "ticker", "vrtimer", "sched", "blockdev" };
+          "ticker", "vrtimer", "sched", "blockdev", "mci" };
     cassert(ARRAYSIZE(str) >= COMP_TYPE_LEN, component_types_missing);
     return t < COMP_TYPE_LEN ? str[t] : "???";
 }
