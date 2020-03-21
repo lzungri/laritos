@@ -18,7 +18,7 @@ config FS_SYSTEM_IMAGE_TYPE
 
 config FS_DATA_IMAGE_SIZE
     int "Size of the data image (in MBs)"
-    default 10
+    default 32
 
 config FS_DATA_IMAGE_TYPE
     string "Data image filesystem type"
