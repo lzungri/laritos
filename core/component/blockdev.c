@@ -41,12 +41,12 @@ int blockdev_component_init(blockdev_t *blk, board_comp_t *bcomp,
     return 0;
 }
 
-static int sysfs_data_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+static int sysfs_raw_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     blockdev_t *blk = f->data0;
     return blk->ops.read(blk, buf, blen, offset);
 }
 
-static int sysfs_data_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+static int sysfs_raw_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     blockdev_t *blk = f->data0;
     return blk->ops.write(blk, buf, blen, offset);
 }
@@ -73,7 +73,7 @@ static int create_instance_sysfs(blockdev_t *blk) {
         return -1;
     }
 
-    if (pseudofs_create_custom_rw_file_with_dataptr(dir, "data", sysfs_data_read, sysfs_data_write, blk) == NULL) {
+    if (pseudofs_create_custom_rw_file_with_dataptr(dir, "raw", sysfs_raw_read, sysfs_raw_write, blk) == NULL) {
         error("Failed to create 'data' sysfs file");
         return -1;
     }
