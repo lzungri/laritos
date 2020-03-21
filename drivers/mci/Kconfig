@@ -1,0 +1,7 @@
+menu "Multimedia Card Interface"
+
+config MCI_PL181
+    bool "PL181 Multimedia Card Interface"
+    default n
+
+endmenu

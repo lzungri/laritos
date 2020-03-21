@@ -8,5 +8,6 @@ source "drivers/timer/Kconfig"
 source "drivers/logger/Kconfig"
 source "drivers/input/Kconfig"
 source "drivers/blockdev/Kconfig"
+source "drivers/mci/Kconfig"
 
 endmenu
