@@ -154,7 +154,7 @@ int vfs_mount_from_config(void) {
 
         void *dev = component_get_by_id(devid);
         if (dev == NULL) {
-            error("Couldn't find block device with id '%s'", devid);
+            error("Couldn't find block device with id '%s' for mountpoint '%s'", devid, mntpoint);
             fret = -1;
             continue;
         }

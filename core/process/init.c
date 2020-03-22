@@ -155,7 +155,9 @@ int init_main(void *data) {
     // Seed random generator from current time
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
 
-    assert(vfs_mount_from_config() >= 0, "Failed to mount filesystems from mount.conf");
+    if (vfs_mount_from_config() < 0) {
+        warn("Error mounting file systems from config file, some FSs may not be mounted");
+    }
 
     assert(launch_on_boot_processes() >= 0, "Failed to create system processes");
 
