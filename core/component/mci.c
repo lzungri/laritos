@@ -98,6 +98,9 @@ static int write(blockdev_t *blk, void *buf, size_t blen, uint32_t offset) {
 }
 
 int mci_register_card(mci_t *mci) {
+    // Unregister a previously added card (if any)
+    mci_unregister_card(mci);
+
     board_comp_t comp;
     char id[COMPONENT_MAX_ID_LEN] = { 0 };
     snprintf(id, sizeof(id), "%s-sd0", mci->parent.id);
@@ -141,7 +144,6 @@ int mci_unregister_card(mci_t *mci) {
     snprintf(id, sizeof(id), "%s-sd0", mci->parent.id);
     component_t *bdev = component_get_by_id(id);
     if (bdev == NULL) {
-        error("No sdcard with id '%s'", id);
         return -1;
     }
     return component_unregister(bdev);
