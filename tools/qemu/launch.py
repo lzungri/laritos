@@ -57,7 +57,7 @@ def main(args):
 
     with tempfile.NamedTemporaryFile(prefix="laritos") as trace_file:
         cmd = " \
-{qemudebug} qemu-system-{arch} --trace events={scriptdir}/trace_events,file={trace} \
+{qemudebug} qemu-system-{arch} -no-reboot --trace events={scriptdir}/trace_events,file={trace} \
 {osdebug} -M {machine} -smp {ncpus} -m {ram}M -cpu {cpu} -nographic \
 -drive if=pflash,file={scriptdir}/../../bin/laritos.img,format=raw,readonly \
 -drive if=pflash,file={scriptdir}/../../bin/system.img,format=raw,readonly \
