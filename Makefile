@@ -826,7 +826,7 @@ KBUILD_LARITOS_LIBS := $(libs-y1)
 
 laritos-deps := $(KBUILD_LARITOS_OBJS) $(KBUILD_LARITOS_LIBS)
 
-quiet_cmd_link_laritos ?= LD      $@
+quiet_cmd_link_laritos ?= LINK    $@
 	cmd_link_laritos ?= $(LD) -T $(KBUILD_LDS) -whole-archive $(KBUILD_LARITOS_OBJS) $(KBUILD_BOARD_INFO) -o $@ $(KBUILD_LDFLAGS) $(LDFLAGS_laritos) -Map $@.map
 
 laritos.elf: $(laritos-deps) $(KBUILD_BOARD_INFO) $(KBUILD_LDS) FORCE
