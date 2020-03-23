@@ -5,6 +5,8 @@
 #include <board/types.h>
 #include <component/component.h>
 #include <component/blockdev.h>
+#include <component/intc.h>
+#include <irq/types.h>
 
 #define DEF_BLOCK_SIZE_BITS 7
 #define DEF_BLOCK_SIZE (1 << DEF_BLOCK_SIZE_BITS)
@@ -77,6 +79,10 @@ typedef struct mci {
      * Everything else: reserved
      */
     uint32_t ocr;
+
+    intc_t *intc;
+    irq_t irq;
+    irq_trigger_mode_t irq_trigger;
 
     mci_ops_t ops;
 } mci_t;
