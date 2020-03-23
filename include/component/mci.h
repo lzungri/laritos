@@ -7,6 +7,8 @@
 #include <component/blockdev.h>
 #include <component/intc.h>
 #include <irq/types.h>
+#include <sync/rmutex.h>
+
 
 #define DEF_BLOCK_SIZE_BITS 7
 #define DEF_BLOCK_SIZE (1 << DEF_BLOCK_SIZE_BITS)
@@ -84,6 +86,8 @@ typedef struct mci {
     irq_t irq;
     irq_trigger_mode_t irq_trigger;
 
+    rmutex_t mutex;
+
     mci_ops_t ops;
 } mci_t;
 
@@ -97,3 +101,6 @@ int mci_identify_and_register_new_card(mci_t *mci);
 int mci_unregister_card(mci_t *mci);
 int mci_register_card(mci_t *mci);
 bool mci_need_to_wait(mci_cmd_t *cmd);
+int mci_component_init(mci_t *mci, board_comp_t *comp,
+        int (*init)(component_t *c), int (*deinit)(component_t *c));
+int mci_component_register(mci_t *mci);

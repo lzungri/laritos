@@ -24,6 +24,7 @@
 #include <component/mci.h>
 #include <utils/math.h>
 #include <mm/heap.h>
+#include <sync/rmutex.h>
 
 #define VDD_VOLTAGE_WINDOW_MASK 0xffffff
 
@@ -47,28 +48,37 @@ bool mci_need_to_wait(mci_cmd_t *cmd) {
 static int read(blockdev_t *blk, void *buf, size_t blen, uint32_t offset) {
     mci_sdcard_t *sdcard = (mci_sdcard_t *) blk;
 
+    rmutex_acquire(&sdcard->mci->mutex);
+
     uint32_t nbytes = 0;
     while (blen > nbytes) {
         char block[DEF_BLOCK_SIZE];
         if (sdcard->mci->ops.read_block(sdcard->mci, block, offset + nbytes) < 0) {
             error("Failed to read %u bytes at offset=%lu from card", sizeof(block), nbytes);
-            return -1;
+            goto fail;
         }
         memcpy((char *) buf + nbytes, block, min(blen - nbytes, sizeof(block)));
         nbytes += sizeof(block);
     }
 
+    rmutex_release(&sdcard->mci->mutex);
     return blen;
+
+fail:
+    rmutex_release(&sdcard->mci->mutex);
+    return -1;
 }
 
 static int write(blockdev_t *blk, void *buf, size_t blen, uint32_t offset) {
     mci_sdcard_t *sdcard = (mci_sdcard_t *) blk;
 
+    rmutex_acquire(&sdcard->mci->mutex);
+
     uint32_t nbytes = 0;
     while (blen - nbytes >= sdcard->parent.sector_size) {
         if (sdcard->mci->ops.write_block(sdcard->mci, (char *) buf + nbytes, offset + nbytes) < 0) {
             error("Failed to write %u bytes at offset=%lu from card", DEF_BLOCK_SIZE, nbytes);
-            return -1;
+            goto fail;
         }
         nbytes += sdcard->parent.sector_size;
     }
@@ -81,7 +91,7 @@ static int write(blockdev_t *blk, void *buf, size_t blen, uint32_t offset) {
         char block[DEF_BLOCK_SIZE];
         if (sdcard->mci->ops.read_block(sdcard->mci, block, offset + nbytes) < 0) {
             error("Failed to read %u bytes at offset=%lu from card", sizeof(block), nbytes);
-            return -1;
+            goto fail;
         }
 
         // Replace block content with the new data
@@ -90,14 +100,21 @@ static int write(blockdev_t *blk, void *buf, size_t blen, uint32_t offset) {
         // Write the block back
         if (sdcard->mci->ops.write_block(sdcard->mci, block, offset + nbytes) < 0) {
             error("Failed to write %u bytes at offset=%lu from card", DEF_BLOCK_SIZE, nbytes);
-            return -1;
+            goto fail;
         }
     }
 
+    rmutex_release(&sdcard->mci->mutex);
     return blen;
+
+fail:
+    rmutex_release(&sdcard->mci->mutex);
+    return -1;
 }
 
 int mci_register_card(mci_t *mci) {
+    rmutex_acquire(&mci->mutex);
+
     // Unregister a previously added card (if any)
     mci_unregister_card(mci);
 
@@ -116,7 +133,7 @@ int mci_register_card(mci_t *mci) {
     mci_sdcard_t *sdcard = component_alloc(sizeof(mci_sdcard_t));
     if (sdcard == NULL) {
         error("Failed to allocate memory for '%s'", comp.id);
-        return -1;
+        goto fail_alloc;
     }
     sdcard->mci = mci;
 
@@ -132,24 +149,41 @@ int mci_register_card(mci_t *mci) {
         goto fail;
     }
 
+    rmutex_release(&mci->mutex);
     return 0;
 
 fail:
     free(sdcard);
+fail_alloc:
+    rmutex_release(&mci->mutex);
     return -1;
 }
 
 int mci_unregister_card(mci_t *mci) {
+    rmutex_acquire(&mci->mutex);
+
     char id[COMPONENT_MAX_ID_LEN] = { 0 };
     snprintf(id, sizeof(id), "%s-sd0", mci->parent.id);
     component_t *bdev = component_get_by_id(id);
     if (bdev == NULL) {
-        return -1;
+        goto fail;
     }
-    return component_unregister(bdev);
+
+    if (component_unregister(bdev) < 0) {
+        goto fail;
+    }
+
+    rmutex_release(&mci->mutex);
+    return 0;
+
+fail:
+    rmutex_release(&mci->mutex);
+    return -1;
 }
 
 int mci_identify_and_register_new_card(mci_t *mci) {
+    rmutex_acquire(&mci->mutex);
+
     // The following initialization code is a VERY simplified version of the protocol
     // described in the "4.2 Card Identification Mode" section of the SD physical layer
     // specification:
@@ -160,13 +194,13 @@ int mci_identify_and_register_new_card(mci_t *mci) {
     // Set card in idle state
     if (mci->ops.send_command(mci, &(mci_cmd_t) { .idx = CMD0_GO_IDLE_STATE }) < 0) {
         error("Couldn't change card to idle mode");
-        return -1;
+        goto fail;
     }
 
     // Prepare card for application command (ACMD41)
     if (mci->ops.send_command(mci, &(mci_cmd_t) { .idx = CMD55_APP_CMD }) < 0) {
         error("Couldn't prepare card to accept an application command");
-        return -1;
+        goto fail;
     }
 
     // Validate the card supports the given voltage range (qemu just ignores this).
@@ -174,7 +208,7 @@ int mci_identify_and_register_new_card(mci_t *mci) {
     mci_cmd_t cmd41 = { .idx = ACMD41_SD_APP_OP_COND, .arg = 1 << 23 };
     if (mci->ops.send_command(mci, &cmd41) < 0) {
         error("Couldn't prepare card to accept an application command");
-        return -1;
+        goto fail;
     }
     mci->ocr = cmd41.resp[0] & VDD_VOLTAGE_WINDOW_MASK;
     debug("Card OCR=0x%08lx", mci->ocr);
@@ -183,7 +217,7 @@ int mci_identify_and_register_new_card(mci_t *mci) {
     mci_cmd_t cmd2 = { .idx = CMD2_ALL_SEND_CID };
     if (mci->ops.send_command(mci, &cmd2) < 0) {
         error("Couldn't retrieve the card id");
-        return -1;
+        goto fail;
     }
     info("SD card id: 0x%08lx%08lx%08lx%08lx", cmd2.resp[0], cmd2.resp[1], cmd2.resp[2], cmd2.resp[3]);
 
@@ -191,7 +225,7 @@ int mci_identify_and_register_new_card(mci_t *mci) {
     mci_cmd_t cmd3 = { .idx = CMD3_SEND_RELATIVE_ADDR };
     if (mci->ops.send_command(mci, &cmd3) < 0) {
         error("Couldn't publish a new rca");
-        return -1;
+        goto fail;
     }
     mci->rca = cmd3.resp[0] >> 16;
     debug("Card RCA=0x%08x", mci->rca);
@@ -201,20 +235,39 @@ int mci_identify_and_register_new_card(mci_t *mci) {
     // in the most significant bytes
     if (mci->ops.send_command(mci, &(mci_cmd_t) { .idx = CMD7_SE_DESELECT_CARD, .arg = mci->rca << 16 }) < 0) {
         error("Couldn't put card in transfer mode");
-        return -1;
+        goto fail;
     }
 
     // Set block size
     if (mci->ops.send_command(mci, &(mci_cmd_t) { .idx = CMD16_SET_BLOCKLEN, .arg = DEF_BLOCK_SIZE }) < 0) {
         error("Failed to set block size");
-        return -1;
+        goto fail;
     }
     mci->block_size = DEF_BLOCK_SIZE;
 
     if (mci_register_card(mci) < 0) {
         error("Couldn't register card");
-        return -1;
+        goto fail;
     }
 
+    rmutex_release(&mci->mutex);
     return 0;
+
+fail:
+    rmutex_release(&mci->mutex);
+    return -1;
+}
+
+int mci_component_init(mci_t *mci, board_comp_t *comp,
+        int (*init)(component_t *c), int (*deinit)(component_t *c)) {
+    if (component_init((component_t *) mci, comp->id, comp, COMP_TYPE_MCI, init, deinit) < 0) {
+        error("Failed to register '%s'", comp->id);
+        return -1;
+    }
+    rmutex_init(&mci->mutex);
+    return 0;
+}
+
+int mci_component_register(mci_t *mci) {
+    return component_register((component_t *) mci);
 }
