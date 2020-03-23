@@ -60,15 +60,18 @@ def main(args):
 {osdebug} -M virt -smp {ncpus} -m {ram}M -cpu {cpu} -nographic \
 -drive if=pflash,file={scriptdir}/../../bin/laritos.img,format=raw,readonly \
 -drive if=pflash,file={scriptdir}/../../bin/system.img,format=raw \
+-drive if=sd,cache=writeback,file={scriptdir}/../../bin/system2.img,format=raw \
 {qemulog}".format(
-                qemudebug="gdbserver :55555" if args.qemu_debug else "",
                 scriptdir=SCRIPT_DIR,
                 trace=trace_file.name,
-                osdebug="-S -s" if args.os_debug else "",
                 ncpus=ncpus,
                 cpu=cpu,
                 ram=ram_size,
+                osdebug="-S -s" if args.os_debug else "",
+                qemudebug="gdbserver :55555" if args.qemu_debug else "",
                 qemulog="-d guest_errors,cpu_reset,int,unimp -D /tmp/qemu.log" if args.qemu_log else "")
+#-drive file={scriptdir}/../../bin/system.img,format=raw,id=mycard \
+#-device sd-card,drive=mycard \
 
         print(cmd)
         os.system(cmd)
@@ -77,7 +80,7 @@ def main(args):
         if not qemudir:
             raise Exception("Couldn't find qemu's directory to display the trace report")
 
-        treport = subprocess.check_output([os.path.join(qemudir, "..", "..", "..", "..", "scripts", "simpletrace.py"),
+        treport = subprocess.check_output([os.path.join(qemudir, "..", "scripts", "simpletrace.py"),
                                             os.path.join(qemudir, "..", "trace-events-all"),
                                             trace_file.name])
         if treport:
