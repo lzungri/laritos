@@ -3,27 +3,30 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <core.h>
 #include <test/test.h>
+#include <test/utils/fs.h>
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <component/component.h>
 #include <fs/ext2.h>
 #include <fs/file.h>
 #include <utils/endian.h>
+#include <generated/autoconf.h>
 
-T(ext2_mount_fails_if_not_given_the_right_params) {
+SYSIMG_T(ext2, ext2_mount_fails_if_not_given_the_right_params) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
             (fs_param_t []) { { NULL } });
     tassert(fsm == NULL);
-TEND
+SYSIMG_TEND
 
-T(ext2_mount_fails_if_dev_is_null) {
+SYSIMG_T(ext2, ext2_mount_fails_if_dev_is_null) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
             (fs_param_t []) { { "dev", NULL }, { NULL } });
     tassert(fsm == NULL);
-TEND
+SYSIMG_TEND
 
-T(ext2_mount_adds_a_new_fs_under_mount_point) {
+SYSIMG_T(ext2, ext2_mount_adds_a_new_fs_under_mount_point) {
     fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
             (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
     tassert(fsm != NULL);
@@ -33,33 +36,21 @@ T(ext2_mount_adds_a_new_fs_under_mount_point) {
 
     vfs_unmount_fs("/test");
     tassert(!file_exist("/test"));
-TEND
+SYSIMG_TEND
 
-T(ext2_reading_small_file_returns_the_right_data) {
-    fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
-            (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
-    tassert(fsm != NULL);
-
-    tassert(file_exist("/test/test/systemimg/small.txt"));
-    fs_file_t *f = vfs_file_open("/test/test/systemimg/small.txt", FS_ACCESS_MODE_READ);
+SYSIMG_T(ext2, ext2_reading_small_file_returns_the_right_data) {
+    tassert(file_exist("/sys/test/systemimg/small.txt"));
+    fs_file_t *f = vfs_file_open("/sys/test/systemimg/small.txt", FS_ACCESS_MODE_READ);
     tassert(f != NULL);
     char buf[128] = { 0 };
     tassert(vfs_file_read(f, buf, sizeof(buf) - 1, 0) >= 0);
     tassert(strncmp(buf, "This is a small file", sizeof(buf)) == 0);
-
     vfs_file_close(f);
+SYSIMG_TEND
 
-    vfs_unmount_fs("/test");
-    tassert(!file_exist("/test"));
-TEND
-
-T(ext2_reading_small_file_with_offset_returns_the_right_data) {
-    fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
-            (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
-    tassert(fsm != NULL);
-
-    tassert(file_exist("/test/test/systemimg/small.txt"));
-    fs_file_t *f = vfs_file_open("/test/test/systemimg/small.txt", FS_ACCESS_MODE_READ);
+SYSIMG_T(ext2, ext2_reading_small_file_with_offset_returns_the_right_data) {
+    tassert(file_exist("/sys/test/systemimg/small.txt"));
+    fs_file_t *f = vfs_file_open("/sys/test/systemimg/small.txt", FS_ACCESS_MODE_READ);
     tassert(f != NULL);
     char buf[128] = { 0 };
     tassert(vfs_file_read(f, buf, sizeof(buf) - 1, 5) >= 0);
@@ -70,18 +61,11 @@ T(ext2_reading_small_file_with_offset_returns_the_right_data) {
     tassert(vfs_file_read(f, buf, sizeof(buf) - 1, strlen("This is a small file") + 100) == 0);
 
     vfs_file_close(f);
+SYSIMG_TEND
 
-    vfs_unmount_fs("/test");
-    tassert(!file_exist("/test"));
-TEND
-
-T(ext2_reading_medium_sized_file_returns_the_right_data) {
-    fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
-            (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
-    tassert(fsm != NULL);
-
-    tassert(file_exist("/test/test/systemimg/medium.txt"));
-    fs_file_t *f = vfs_file_open("/test/test/systemimg/medium.txt", FS_ACCESS_MODE_READ);
+SYSIMG_T(ext2, ext2_reading_medium_sized_file_returns_the_right_data) {
+    tassert(file_exist("/sys/test/systemimg/medium.txt"));
+    fs_file_t *f = vfs_file_open("/sys/test/systemimg/medium.txt", FS_ACCESS_MODE_READ);
     tassert(f != NULL);
 
     uint32_t pos = 0;
@@ -94,18 +78,11 @@ T(ext2_reading_medium_sized_file_returns_the_right_data) {
     tassert(value == 99);
 
     vfs_file_close(f);
+SYSIMG_TEND
 
-    vfs_unmount_fs("/test");
-    tassert(!file_exist("/test"));
-TEND
-
-T(ext2_reading_big_file_returns_the_right_data) {
-    fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
-            (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
-    tassert(fsm != NULL);
-
-    tassert(file_exist("/test/test/systemimg/big.txt"));
-    fs_file_t *f = vfs_file_open("/test/test/systemimg/big.txt", FS_ACCESS_MODE_READ);
+SYSIMG_T(ext2, ext2_reading_big_file_returns_the_right_data) {
+    tassert(file_exist("/sys/test/systemimg/big.txt"));
+    fs_file_t *f = vfs_file_open("/sys/test/systemimg/big.txt", FS_ACCESS_MODE_READ);
     tassert(f != NULL);
 
     uint32_t pos = 0;
@@ -118,18 +95,11 @@ T(ext2_reading_big_file_returns_the_right_data) {
     tassert(value == 9999);
 
     vfs_file_close(f);
+SYSIMG_TEND
 
-    vfs_unmount_fs("/test");
-    tassert(!file_exist("/test"));
-TEND
-
-T(ext2_reading_huge_file_returns_the_right_data) {
-    fs_mount_t *fsm = vfs_mount_fs("ext2", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE,
-            (fs_param_t []) { { "dev", component_get_by_id("flash1") }, { NULL } });
-    tassert(fsm != NULL);
-
-    tassert(file_exist("/test/test/systemimg/huge.txt"));
-    fs_file_t *f = vfs_file_open("/test/test/systemimg/huge.txt", FS_ACCESS_MODE_READ);
+SYSIMG_T(ext2, ext2_reading_huge_file_returns_the_right_data) {
+    tassert(file_exist("/sys/test/systemimg/huge.txt"));
+    fs_file_t *f = vfs_file_open("/sys/test/systemimg/huge.txt", FS_ACCESS_MODE_READ);
     tassert(f != NULL);
 
     uint32_t pos = 0;
@@ -142,7 +112,31 @@ T(ext2_reading_huge_file_returns_the_right_data) {
     tassert(value == 999999);
 
     vfs_file_close(f);
+SYSIMG_TEND
 
-    vfs_unmount_fs("/test");
-    tassert(!file_exist("/test"));
-TEND
+DATAIMG_T(ext2, ext2_mkdir_creates_a_new_directory) {
+    fs_dentry_t *dir = vfs_dir_create(vfs_dentry_lookup("/data/test"), "mkdir",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(dir != NULL);
+    tassert(file_is_dir("/data/test/mkdir"));
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_listdir_returns_new_direntry) {
+    tassert(!fs_file_in_listdir("/data/test", "rodir"));
+    fs_dentry_t *dir = vfs_dir_create(vfs_dentry_lookup("/data/test"), "mkdir",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(dir != NULL);
+    tassert(file_is_dir("/data/test/mkdir"));
+    tassert(fs_file_in_listdir("/data/test", "rodir"));
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_mkdir_fails_on_readonly_parent) {
+    fs_dentry_t *dir = vfs_dir_create(vfs_dentry_lookup("/data/test"), "rodir", FS_ACCESS_MODE_READ);
+    tassert(dir != NULL);
+    tassert(file_is_dir("/data/test/rodir"));
+
+    fs_dentry_t *dir2 = vfs_dir_create(dir, "child", FS_ACCESS_MODE_READ);
+    tassert(dir2 == NULL);
+    tassert(file_is_dir("/data/test/rodir/dir2"));
+    tassert(!fs_file_in_listdir("/data/test/rodir", "dir2"));
+DATAIMG_TEND

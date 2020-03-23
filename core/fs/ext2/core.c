@@ -241,11 +241,51 @@ static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
     return NULL;
 }
 
+static int allocate_inode_from_dev(ext2_sb_t *sb) {
+
+
+
+
+
+
+
+
+
+    return 0;
+}
+
 static int ext2_def_open(fs_inode_t *inode, fs_file_t *f) {
     return 0;
 }
 
 static int ext2_def_close(fs_inode_t *inode, fs_file_t *f) {
+    return 0;
+}
+
+static int ext2_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+//    ext2_sb_t *sb = (ext2_sb_t *) parent->sb;
+//
+//    ext2_inode_data_t phys_inode_data;
+//    if (read_inode_from_dev(sb, parent->number, &phys_inode_data) < 0) {
+//        error("Failed to read inode #%lu", parent->number);
+//        return -1;
+//    }
+//
+//    ext2_inode_data_t new_phys_inode = { 0 };
+//    new_phys_inode.
+
+    return -1;
+}
+
+static int ext2_def_rmdir(fs_inode_t *parent, fs_dentry_t *dentry) {
+    return 0;
+}
+
+static int ext2_def_mkregfile(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+    return 0;
+}
+
+static int ext2_def_rmregfile(fs_inode_t *parent, fs_dentry_t *dentry) {
     return 0;
 }
 
@@ -294,6 +334,10 @@ static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) 
     }
 
     return nbytes;
+}
+
+static int ext2_def_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    return 0;
 }
 
 static inline bool is_dot_double_dot_dentry(ext2_direntry_t *dentry) {
@@ -372,14 +416,15 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
     inode->sb = sb;
 
     inode->ops.lookup = ext2_def_lookup;
-    inode->ops.mkdir = NULL; // Not supported yet
-    inode->ops.rmdir = NULL; // Not supported yet
-    inode->ops.mkregfile = NULL; // Not supported yet
-    inode->ops.rmregfile = NULL; // Not supported yet
+    inode->ops.mkdir = ext2_def_mkdir;
+    inode->ops.rmdir = ext2_def_rmdir;
+    inode->ops.mkregfile = ext2_def_mkregfile;
+    inode->ops.rmregfile = ext2_def_rmregfile;
 
     inode->fops.open = ext2_def_open;
     inode->fops.close = ext2_def_close;
     inode->fops.read = ext2_def_read;
+    inode->fops.write = ext2_def_write;
     inode->fops.listdir = ext2_listdir;
     return (fs_inode_t *) inode;
 }
