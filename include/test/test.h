@@ -6,11 +6,13 @@
 #include <stdbool.h>
 #include <utils/utils.h>
 #include <time/core.h>
+#include <generated/autoconf.h>
 
 typedef enum {
     TEST_ERROR = -2,
     TEST_FAIL,
     TEST_PASS,
+    TEST_SKIP,
 } testres_t;
 
 typedef testres_t (*testfunc_t)(void);
@@ -42,6 +44,42 @@ extern test_descriptor_t *__tests_start[];
     static testres_t _test(void)
 
 #define TEND \
+        return TEST_PASS;\
+    }
+
+/**
+ * Defines a test case which requires the system.img to be of type <_fstype> and
+ * mounted at /sys
+ *
+ * @param _fstype: Kind of file system
+ * @param _test: Test name
+ */
+#define SYSIMG_T(_fstype, _test) \
+    T(_test) { \
+        if (!file_is_dir("/sys") || strncmp(CONFIG_FS_SYSTEM_IMAGE_TYPE, #_fstype, 10) != 0) { \
+            return TEST_SKIP; \
+        }
+
+#define SYSIMG_TEND \
+        } \
+        return TEST_PASS;\
+    }
+
+/**
+ * Defines a test case which requires the data.img to be of type <_fstype> and
+ * mounted at /data
+ *
+ * @param _fstype: Kind of file system
+ * @param _test: Test name
+ */
+#define DATAIMG_T(_fstype, _test) \
+    T(_test) { \
+        if (!file_is_dir("/data") || strncmp(CONFIG_FS_DATA_IMAGE_TYPE, #_fstype, 10) != 0) { \
+            return TEST_SKIP; \
+        }
+
+#define DATAIMG_TEND \
+        } \
         return TEST_PASS;\
     }
 

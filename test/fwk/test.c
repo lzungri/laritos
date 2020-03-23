@@ -13,6 +13,7 @@ typedef struct {
     uint16_t failed;
     uint16_t error;
     uint16_t passed;
+    uint16_t skipped;
     uint16_t potential_leaks;
 } test_ctx_t;
 
@@ -86,6 +87,11 @@ static int test_main(void *testdescs) {
                     td->name, hours, mins, secs, (uint16_t) NS_TO_MS(duration.ns));
             ctx.passed++;
             break;
+        case TEST_SKIP:
+            info("  %-50.50s | SKIP | %02u:%02u:%02u.%03u",
+                    td->name, hours, mins, secs, (uint16_t) NS_TO_MS(duration.ns));
+            ctx.skipped++;
+            break;
         }
 
         // Release each zombie child that may have been spawn during the test
@@ -101,7 +107,8 @@ static int test_main(void *testdescs) {
     info("  Failed:   %3u", ctx.failed);
     info("  Error:    %3u", ctx.error);
     info("  Passed:   %3u", ctx.passed);
-    info("  Total:    %3u", ctx.failed + ctx.error + ctx.passed);
+    info("  Skipped:  %3u", ctx.skipped);
+    info("  Total:    %3u", ctx.failed + ctx.error + ctx.passed + ctx.skipped);
     info("  Duration: %02u:%02u:%02u.%03u", hours, mins, secs, (uint16_t) NS_TO_MS(duration.ns));
     info("  Leaks:    %3u", ctx.potential_leaks);
     info("--------------------------------------------------");

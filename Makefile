@@ -889,7 +889,12 @@ cmd_dataimg ?= \
 system.img: $(SYSTEM_IMG_FOLDER) kinfo
 	$(call if_changed,sysimg)
 
-data.img: $(DATA_IMG_FOLDER)
+# Clean the test environment before running the test cases
+datatest:
+	$(Q)rm -rf $(DATA_IMG_FOLDER)/test
+	$(Q)mkdir -p $(DATA_IMG_FOLDER)/test
+
+data.img: $(DATA_IMG_FOLDER) datatest
 	$(call if_changed,dataimg)
 
 systemimginfo: system.img
