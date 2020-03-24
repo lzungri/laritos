@@ -121,13 +121,22 @@ DATAIMG_T(ext2, ext2_mkdir_creates_a_new_directory) {
     tassert(file_is_dir(DATA_TEST_DIR "/mkdir"));
 DATAIMG_TEND
 
-DATAIMG_T(ext2, ext2_listdir_returns_new_direntry) {
-    tassert(!fs_file_in_listdir(DATA_TEST_DIR, "rodir"));
-    fs_dentry_t *dir = vfs_dir_create(fs_get_data_testdir(), "mkdir",
+DATAIMG_T(ext2, ext2_mkdir_works_as_expected_on_dirs_with_max_filename_length) {
+    char dname[CONFIG_FS_MAX_FILENAME_LEN] = { 0 };
+    memset(dname, 'x', sizeof(dname) - 1);
+    fs_dentry_t *dir = vfs_dir_create(fs_get_data_testdir(), dname,
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(dir != NULL);
-    tassert(file_is_dir(DATA_TEST_DIR "/mkdir"));
-    tassert(fs_file_in_listdir(DATA_TEST_DIR, "rodir"));
+    tassert(fs_file_in_listdir(DATA_TEST_DIR, dname));
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_listdir_returns_new_direntry) {
+    tassert(!fs_file_in_listdir(DATA_TEST_DIR, "newdir"));
+    fs_dentry_t *dir = vfs_dir_create(fs_get_data_testdir(), "newdir",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(dir != NULL);
+    tassert(file_is_dir(DATA_TEST_DIR "/newdir"));
+    tassert(fs_file_in_listdir(DATA_TEST_DIR, "newdir"));
 DATAIMG_TEND
 
 DATAIMG_T(ext2, ext2_mkdir_fails_on_readonly_parent) {
@@ -135,8 +144,8 @@ DATAIMG_T(ext2, ext2_mkdir_fails_on_readonly_parent) {
     tassert(dir != NULL);
     tassert(file_is_dir(DATA_TEST_DIR "/rodir"));
 
-    fs_dentry_t *dir2 = vfs_dir_create(dir, "child", FS_ACCESS_MODE_READ);
-    tassert(dir2 == NULL);
-    tassert(file_is_dir(DATA_TEST_DIR "/rodir/dir2"));
-    tassert(!fs_file_in_listdir(DATA_TEST_DIR "/rodir", "dir2"));
+    fs_dentry_t *child = vfs_dir_create(dir, "child", FS_ACCESS_MODE_READ);
+    tassert(child == NULL);
+    tassert(!file_is_dir(DATA_TEST_DIR "/rodir/child"));
+    tassert(!fs_file_in_listdir(DATA_TEST_DIR "/rodir", "child"));
 DATAIMG_TEND
