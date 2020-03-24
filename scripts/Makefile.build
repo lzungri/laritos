@@ -526,7 +526,7 @@ PHONY += $(real-sysres-y)
 # Create targets for each system image resource
 # TODO: Improve this so that we only execute the target when the resource changes
 $(real-sysres-y):
-	@echo "  RES     $(subst @, -> $(SYSTEM_IMG_FOLDER),$@)"
+	@echo "  SYSRES  $(subst @, -> $(SYSTEM_IMG_FOLDER),$@)"
 # Create folder in the system image directory
 	$(Q)mkdir -p $(addprefix $(SYSTEM_IMG_FOLDER),$(word 2,$(subst @, ,$@)))
 # Copy the resource into the system image
@@ -536,7 +536,7 @@ PHONY += $(real-datares-y)
 # Create targets for each data image resource
 # TODO: Improve this so that we only execute the target when the resource changes
 $(real-datares-y):
-	@echo "  RES     $(subst @, -> $(DATA_IMG_FOLDER),$@)"
+	@echo "  DATARES $(subst @, -> $(DATA_IMG_FOLDER),$@)"
 # Create folder in the system image directory
 	$(Q)mkdir -p $(addprefix $(DATA_IMG_FOLDER),$(word 2,$(subst @, ,$@)))
 # Copy the resource into the system image
