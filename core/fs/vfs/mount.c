@@ -16,6 +16,11 @@ static inline bool is_valid_mount_struct(fs_mount_t *fsm) {
         return false;
     }
 
+    if (fsm->sb->root == NULL) {
+        error("No root inode");
+        return false;
+    }
+
     if (fsm->sb->ops.alloc_inode == NULL) {
         error("No alloc_inode() function declared in superblock");
         return false;
