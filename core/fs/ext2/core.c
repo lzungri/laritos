@@ -240,19 +240,19 @@ static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
 
     return NULL;
 }
-
-static int allocate_inode_from_dev(ext2_sb_t *sb) {
-
-
-
-
-
-
-
-
-
-    return 0;
-}
+//
+//static int allocate_inode_from_dev(ext2_sb_t *sb) {
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//    return 0;
+//}
 
 static int ext2_def_open(fs_inode_t *inode, fs_file_t *f) {
     return 0;

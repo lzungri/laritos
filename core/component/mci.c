@@ -13,7 +13,7 @@
  *      ...but mostly on debugging the qemu hw/arm/pl181.c and hw/sd/sd.c source
  */
 
-#define DEBUG
+//#define DEBUG
 #include <log.h>
 
 #include <printf.h>
