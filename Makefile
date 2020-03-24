@@ -889,12 +889,12 @@ cmd_dataimg ?= \
 system.img: $(SYSTEM_IMG_FOLDER) kinfo
 	$(call if_changed,sysimg)
 
-# Clean the test environment before running the test cases
-datatest:
+# Clean the test environment before copying the test resources
+datatest-clean:
 	$(Q)rm -rf $(DATA_IMG_FOLDER)/test
 	$(Q)mkdir -p $(DATA_IMG_FOLDER)/test
 
-data.img: $(DATA_IMG_FOLDER) datatest
+data.img: $(DATA_IMG_FOLDER) $(laritos-deps)
 	$(call if_changed,dataimg)
 
 systemimginfo: system.img
@@ -975,7 +975,7 @@ prepare0: archprepare
 	$(Q)$(MAKE) $(build)=.
 
 # All the preparing..
-prepare: prepare0
+prepare: datatest-clean prepare0
 
 # Generate some files
 # ---------------------------------------------------------------------------
