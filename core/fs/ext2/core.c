@@ -1,3 +1,9 @@
+/**
+ * DISCLAIMER: This is a very basic, slow, and unreliable implementation of the ext2
+ * filesystem based on my poor knowledge of ext2. Use at your own risk...
+ */
+
+#define DEBUG
 #include <log.h>
 
 #include <stdint.h>
@@ -27,6 +33,14 @@ static ext2_bg_desc_t *get_bg_desc(ext2_sb_t *sb, uint32_t index) {
     return &sb->bg_descs[index];
 }
 
+static inline ext2_bg_desc_t *get_bgd_for_inode(ext2_sb_t *sb, uint32_t inodenum) {
+    return get_bg_desc(sb, (inodenum - 1) / sb->info.inodes_per_group);
+}
+
+static inline ext2_bg_desc_t *get_bgd_for_block(ext2_sb_t *sb, uint32_t blocknum) {
+    return get_bg_desc(sb, (blocknum - 1) / sb->info.blocks_per_group);
+}
+
 static bool is_valid_superblock(ext2_sb_t *sb) {
     if (sb->info.magic != EXT2_SB_MAGIC) {
         error("Invalid ext2 magic number");
@@ -47,9 +61,7 @@ static int read_inode_from_dev(ext2_sb_t *sb, uint32_t inode, ext2_inode_data_t 
     }
 
     // Get block descriptor in which the inode is allocated
-    uint32_t bg;
-    bg = (inode - 1) / sb->info.inodes_per_group;
-    ext2_bg_desc_t *bgd = get_bg_desc(sb, bg);
+    ext2_bg_desc_t *bgd = get_bgd_for_inode(sb, inode);
     if (bgd == NULL) {
         error("Couldn't get group descriptor");
         return -1;
@@ -168,7 +180,7 @@ static inline uint32_t get_inode_num_blocks(ext2_sb_t *sb, ext2_inode_data_t *in
 static fs_inode_t *alloc_inode_for(ext2_sb_t *sb, ext2_direntry_t *dentry) {
     fs_inode_t *inode = sb->parent.ops.alloc_inode(&sb->parent);
     if (inode == NULL) {
-        error("Couldn't allocate inode");
+        error("Couldn't allocate inode for '%s'", dentry->name);
         return NULL;
     }
     inode->number = dentry->inode;
@@ -176,7 +188,7 @@ static fs_inode_t *alloc_inode_for(ext2_sb_t *sb, ext2_direntry_t *dentry) {
     ext2_inode_data_t inode_data;
     if (read_inode_from_dev(sb, inode->number, &inode_data) < 0) {
         error("Failed to read inode #%lu", inode->number);
-        return NULL;
+        goto error_read;
     }
 
     if (S_ISDIR(inode_data.mode)) {
@@ -195,6 +207,10 @@ static fs_inode_t *alloc_inode_for(ext2_sb_t *sb, ext2_direntry_t *dentry) {
     verbose("New inode #%lu mode=0x%x", inode->number, inode->mode);
 
     return inode;
+
+error_read:
+    sb->parent.ops.free_inode(inode);
+    return NULL;
 }
 
 static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
@@ -205,7 +221,6 @@ static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
         error("Failed to read inode #%lu", parent->number);
         return NULL;
     }
-
 
     int i;
     for (i = 0; i < get_inode_num_blocks(sb, &pinode_data); i++) {
@@ -240,39 +255,396 @@ static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
 
     return NULL;
 }
-//
-//static int allocate_inode_from_dev(ext2_sb_t *sb) {
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//    return 0;
-//}
 
-static int ext2_def_open(fs_inode_t *inode, fs_file_t *f) {
+static int flush_inode(ext2_sb_t *sb, uint32_t inodenum, ext2_inode_data_t *inode) {
+    debug("Flushing inode #%lu", inodenum);
+
+    ext2_bg_desc_t *bgd = get_bgd_for_inode(sb, inodenum);
+    if (bgd == NULL) {
+        error("Couldn't find block group for inode #%lu", inodenum);
+        return -1;
+    }
+
+    uint32_t iindex = (inodenum - 1) % sb->info.inodes_per_group;
+    uint32_t itable_offset = get_phys_block_offset(sb, bgd->inode_table);
+    if (sb->dev->ops.write(sb->dev, inode, sizeof(ext2_inode_data_t),
+            itable_offset + iindex * sizeof(ext2_inode_data_t)) < 0) {
+        error("Failed to clear bit");
+        return -1;
+    }
+
     return 0;
 }
 
-static int ext2_def_close(fs_inode_t *inode, fs_file_t *f) {
+/**
+ * This is overkill, and we use it a lot in the driver, but it simplifies the code
+ */
+static int flush_metadata(ext2_sb_t *sb) {
+    debug("Flushing metadata");
+
+    time_t t;
+    time_get_rtc_time(&t);
+    sb->info.wtime = t.secs;
+
+    int i;
+    for (i = 0; i < sb->num_bg_descs; i++) {
+        ext2_bg_desc_t *bgd = get_bg_desc(sb, i);
+        if (bgd == NULL) {
+            error("Couldn't get block group descriptor #%d", i);
+            continue;
+        }
+
+        if (sb->dev->ops.write(sb->dev, bgd, sizeof(ext2_bg_desc_t),
+                sb->bgd_pblock_offset + i * sizeof(ext2_bg_desc_t)) < 0) {
+            error("Failed to flush block group #%d", i);
+            return -1;
+        }
+    }
+
+
+    if (sb->dev->ops.write(sb->dev, &sb->info, sizeof(ext2_sb_info_t), EXT2_SB_OFFSET) < 0) {
+        error("Failed to flush superblock");
+        return -1;
+    }
+
     return 0;
+}
+
+static void populate_inode_mode(ext2_inode_data_t *inode, fs_access_mode_t mode) {
+    if (mode & FS_ACCESS_MODE_DIR) {
+        inode->mode |= S_IFDIR;
+    }
+    if (mode & FS_ACCESS_MODE_READ) {
+        inode->mode |= S_IRUSR;
+    }
+    if (mode & FS_ACCESS_MODE_WRITE) {
+        inode->mode |= S_IWUSR;
+    }
+    if (mode & FS_ACCESS_MODE_EXEC) {
+        inode->mode |= S_IXUSR;
+    }
+}
+
+static int set_bitmap_bit_to(ext2_sb_t *sb, uint32_t bmap_offset, uint32_t bitpos, bool value) {
+    verbose("Setting bit %lu of bitmap at 0x%lx to %u", bitpos, bmap_offset, value);
+    uint8_t buf;
+    if (sb->dev->ops.read(sb->dev, &buf, sizeof(buf), bmap_offset + bitpos / (sizeof(buf) * 8)) < 0) {
+        error("Failed to read bitmap");
+        return -1;
+    }
+    uint8_t bufbit = bitpos % (sizeof(buf) * 8);
+    buf = (buf & ~(1 << bufbit)) | ((value ? 1 : 0) << bufbit);
+    if (sb->dev->ops.write(sb->dev, &buf, sizeof(buf), bmap_offset + bitpos / (sizeof(buf) * 8)) < 0) {
+        error("Failed to clear bit");
+        return -1;
+    }
+    return 0;
+}
+
+static int ffz_in_bitmap_and_set(ext2_sb_t *sb, uint32_t bmap_offset, uint32_t maxbits, uint32_t *bitpos) {
+    uint32_t buf;
+    int i;
+    for (i = 0; i * sizeof(buf) < sb->block_size; i++) {
+        if (sb->dev->ops.read(sb->dev, &buf, sizeof(buf), bmap_offset + i * sizeof(buf)) < 0) {
+            error("Failed to read bitmap at offset=%lu", bmap_offset + i * sizeof(buf));
+            return -1;
+        }
+        if (buf != 0xffffffff) {
+            // Assume 32bits
+            bitset_t bs = ~buf;
+            uint8_t ffz = bitset_ffz(bs);
+            *bitpos = ffz == BITSET_IDX_NOT_FOUND ? 0 : BITSET_NBITS - ffz;
+            buf |= 1 << *bitpos;
+
+            verbose("Setting bit %lu of bitmap at 0x%lx to 1", *bitpos, bmap_offset);
+
+            *bitpos += i * sizeof(buf) * 8;
+
+            // Check if the max number of inodes for this bitmap has been exceeded
+            if (*bitpos >= maxbits) {
+                return -1;
+            }
+
+            if (sb->dev->ops.write(sb->dev, &buf, sizeof(buf), bmap_offset + i * sizeof(buf)) < 0) {
+                error("Failed to update bitmap at offset=%lu", bmap_offset + i * sizeof(buf));
+                return -1;
+            }
+            return 0;
+        }
+    }
+    return -1;
+}
+
+static int allocate_block_from_dev(ext2_sb_t *sb, uint32_t *blocknum, uint32_t bgdidx, ext2_bg_desc_t *bgd) {
+    if (bgd->free_blocks_count <= 0) {
+        error("No free blocks left");
+        return -1;
+    }
+
+    uint32_t bmap_offset = get_phys_block_offset(sb, bgd->block_bitmap);
+    uint32_t bitpos;
+    if (ffz_in_bitmap_and_set(sb, bmap_offset, sb->info.blocks_per_group, &bitpos) < 0) {
+        error("No free block in bitmap");
+        return -1;
+    }
+
+    *blocknum = bitpos + bgdidx * sb->info.blocks_per_group + 1;
+
+    bgd->free_blocks_count--;
+    sb->info.free_blocks_count--;
+
+    if (flush_metadata(sb) < 0) {
+        error("Failed to flush ext2 metadata");
+        goto error_flush;
+    }
+
+    debug("Block #%lu allocated", *blocknum);
+
+    return 0;
+
+error_flush:
+    set_bitmap_bit_to(sb, bmap_offset, bitpos, 0);
+    return -1;
+}
+
+static int deallocate_block_from_dev(ext2_sb_t *sb, uint32_t blocknum) {
+    ext2_bg_desc_t *bgd = get_bgd_for_block(sb, blocknum);
+    if (bgd == NULL) {
+        error("No block group for block #%lu", blocknum);
+        return -1;
+    }
+
+    uint32_t bmap_offset = get_phys_block_offset(sb, bgd->block_bitmap);
+    set_bitmap_bit_to(sb, bmap_offset, (blocknum - 1) % sb->info.blocks_per_group, 0);
+
+    bgd->free_blocks_count++;
+    sb->info.free_blocks_count++;
+
+    if (flush_metadata(sb) < 0) {
+        error("Failed to flush ext2 metadata");
+        goto error_flush;
+    }
+
+    debug("Block #%lu deallocated", blocknum);
+
+    return 0;
+
+error_flush:
+    set_bitmap_bit_to(sb, bmap_offset, (blocknum - 1) % sb->info.blocks_per_group, 1);
+    return -1;
+}
+
+static int allocate_free_inode_from_bg(ext2_sb_t *sb, uint32_t bgdidx, ext2_bg_desc_t *bgd, uint32_t *inodenum) {
+    uint32_t bmap_offset = get_phys_block_offset(sb, bgd->inode_bitmap);
+    uint32_t bitpos;
+    if (ffz_in_bitmap_and_set(sb, bmap_offset, sb->info.inodes_per_group, &bitpos) < 0) {
+        error("No free inode in bitmap");
+        return -1;
+    }
+    *inodenum = bitpos + bgdidx * sb->info.blocks_per_group + 1;
+    return 0;
+}
+
+static int allocate_free_inode_from_dev(ext2_sb_t *sb, uint32_t *inodenum) {
+    if (sb->info.free_inodes_count == 0) {
+        error("Free inodes count == 0");
+        return -1;
+    }
+
+    int i;
+    for (i = 0; i < sb->num_bg_descs; i++) {
+        ext2_bg_desc_t *bgd = get_bg_desc(sb, i);
+        if (bgd == NULL) {
+            error("Couldn't get block group descriptor #%d", i);
+            continue;
+        }
+
+        if (bgd->free_inodes_count > 0 && allocate_free_inode_from_bg(sb, i, bgd, inodenum) >= 0) {
+            bgd->free_inodes_count--;
+            sb->info.free_inodes_count--;
+            flush_metadata(sb);
+            debug("Inode #%lu allocated", *inodenum);
+            return 0;
+        }
+    }
+
+    error("Couldn't find free inode");
+    return -1;
+}
+
+static int deallocate_inode_from_dev(ext2_sb_t *sb, uint32_t inodenum) {
+    ext2_inode_data_t physinode;
+    if (read_inode_from_dev(sb, inodenum, &physinode) < 0) {
+        error("Failed to read inode #%lu", inodenum);
+        return -1;
+    }
+
+    int i;
+    for (i = 0; i < physinode.blocks; i++) {
+        if (deallocate_block_from_dev(sb, physinode.block[i]) < 0) {
+            error("Failed to deallocate logical block #%d (phys block=%lu) from inode #%lu",
+                    i, physinode.block[i], inodenum);
+            goto error_dealloc_block;
+        }
+    }
+
+    ext2_bg_desc_t *bgd = get_bgd_for_inode(sb, inodenum);
+    if (bgd == NULL) {
+        error("Couldn't find block group for inode #%lu", inodenum);
+        goto error_bgd;
+    }
+
+    uint32_t bitpos = (inodenum - 1) % sb->info.inodes_per_group;
+    if (set_bitmap_bit_to(sb, get_phys_block_offset(sb, bgd->inode_bitmap), bitpos, 0) < 0) {
+        error("Failed to clear bit #%lu from inode bitmap", bitpos);
+        goto error_clear;
+    }
+
+    bgd->free_inodes_count++;
+    sb->info.free_inodes_count++;
+    if (flush_metadata(sb) < 0) {
+        error("Failed to flush ext2 metadata");
+        goto error_flushmt;
+    }
+
+    debug("Inode #%lu deallocated", inodenum);
+    return 0;
+
+error_flushmt:
+    set_bitmap_bit_to(sb, get_phys_block_offset(sb, bgd->inode_bitmap), bitpos, 1);
+error_clear:
+error_bgd:
+error_dealloc_block:
+    // TODO Realloc blocks :(
+    return -1;
+}
+
+static int allocate_block_for_inode(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t inodenum, uint32_t *blocknum) {
+    if (inode->blocks >= EXT2_NDIR_BLOCKS) {
+        // Indirect blocks not supported yet
+        error("Max blocks per inode reached");
+        return -1;
+    }
+
+    uint32_t bgdidx = (inodenum - 1) / sb->info.inodes_per_group;
+    if (allocate_block_from_dev(sb, blocknum, bgdidx, get_bgd_for_inode(sb, inodenum)) < 0) {
+        error("Couldn't allocate block");
+        return -1;
+    }
+
+    inode->block[inode->blocks++] = *blocknum;
+
+    if (flush_inode(sb, inodenum, inode) < 0) {
+        error("Failed to flush inode");
+        goto error_flush;
+    }
+
+    return 0;
+
+error_flush:
+    deallocate_block_from_dev(sb, *blocknum);
+    return -1;
+}
+
+static int add_dir_entry_to(ext2_sb_t *sb, fs_inode_t *parent, char *entry, uint32_t childno) {
+    debug("Adding directory entry '%s' to inode #%lu", entry, parent->number);
+
+
+    // TODO increase file size
+
+    return -1;
+}
+
+static int rm_dir_entry_from(ext2_sb_t *sb, fs_inode_t *parent, uint32_t childno) {
+    debug("Removing inode #%lu directory entry from inode #%lu", childno, parent->number);
+    // TODO decrease file size
+    return -1;
+}
+
+static int populate_default_dir_entries(ext2_sb_t *sb, fs_inode_t *parent, uint32_t childno) {
+    if (add_dir_entry_to(sb, parent, ".", childno) < 0) {
+        error("Failed to add '.' directory entry");
+        return -1;
+    }
+    if (add_dir_entry_to(sb, parent, "..", parent->number) < 0) {
+        error("Failed to add '..' directory entry");
+        return -1;
+    }
+    return 0;
+}
+
+static int allocate_dir_inode_from_dev(ext2_sb_t *sb, fs_inode_t *parent, ext2_inode_data_t *child, uint32_t *childno, fs_access_mode_t mode) {
+    if (allocate_free_inode_from_dev(sb, childno) < 0) {
+        error("Couldn't allocate inode");
+        return -1;
+    }
+    populate_inode_mode(child, mode);
+
+    uint32_t blocknum;
+    if (allocate_block_for_inode(sb, child, *childno, &blocknum) < 0) {
+        error("Couldn't allocate block");
+        goto error_balloc;
+    }
+    time_t t;
+    time_get_rtc_time(&t);
+    child->ctime = t.secs;
+
+    if (populate_default_dir_entries(sb, parent, *childno) < 0) {
+        error("Failed to populate default directory entries");
+        goto error_direntries;
+    }
+
+    if (flush_inode(sb, *childno, child) < 0) {
+        error("Failed to flush inode");
+        goto error_flush;
+    }
+
+    return 0;
+
+error_flush:
+error_direntries:
+    deallocate_block_from_dev(sb, blocknum);
+error_balloc:
+    deallocate_inode_from_dev(sb, *childno);
+    return -1;
 }
 
 static int ext2_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
-//    ext2_sb_t *sb = (ext2_sb_t *) parent->sb;
-//
-//    ext2_inode_data_t phys_inode_data;
-//    if (read_inode_from_dev(sb, parent->number, &phys_inode_data) < 0) {
-//        error("Failed to read inode #%lu", parent->number);
-//        return -1;
-//    }
-//
-//    ext2_inode_data_t new_phys_inode = { 0 };
-//    new_phys_inode.
+    debug("Creating dir '%s'", dentry->name);
+
+    ext2_sb_t *sb = (ext2_sb_t *) parent->sb;
+
+    ext2_inode_data_t parent_phys_inode;
+    if (read_inode_from_dev(sb, parent->number, &parent_phys_inode) < 0) {
+        error("Failed to read inode #%lu", parent->number);
+        return -1;
+    }
+
+    uint32_t inodenum;
+    ext2_inode_data_t child_phys_inode = { 0 };
+    if (allocate_dir_inode_from_dev(sb, parent, &child_phys_inode, &inodenum, mode) < 0) {
+        error("Couldn't allocate inode for directory '%s'", dentry->name);
+        goto error_alloc;
+    }
+
+    if (add_dir_entry_to(sb, parent, dentry->name, inodenum) < 0) {
+        error("Failed to add directory entry '%s'", dentry->name);
+        goto error_entry;
+    }
+
+    if (flush_metadata(sb) < 0) {
+        error("Failed to flush ext2 metadata");
+        goto error_flushmt;
+    }
+
+    return 0;
+
+error_flushmt:
+    rm_dir_entry_from(sb, parent, inodenum);
+error_entry:
+    deallocate_inode_from_dev(sb, inodenum);
+error_alloc:
+    flush_metadata(sb);
 
     return -1;
 }
@@ -337,6 +709,14 @@ static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) 
 }
 
 static int ext2_def_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    return 0;
+}
+
+static int ext2_def_open(fs_inode_t *inode, fs_file_t *f) {
+    return 0;
+}
+
+static int ext2_def_close(fs_inode_t *inode, fs_file_t *f) {
     return 0;
 }
 
@@ -470,12 +850,12 @@ static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
      * the superblock. This would be the third block on a 1KiB block file
      * system, or the second block for 2KiB and larger block file systems.
      */
-    uint32_t bgd_offset = sb->block_size;
+    sb->bgd_pblock_offset = sb->block_size;
     if (sb->block_size == 1024) {
-        bgd_offset <<= 1;
+        sb->bgd_pblock_offset <<= 1;
     }
     if (sb->dev->ops.read(sb->dev, sb->bg_descs,
-            sizeof(ext2_bg_desc_t) * sb->num_bg_descs, bgd_offset) < 0) {
+            sizeof(ext2_bg_desc_t) * sb->num_bg_descs, sb->bgd_pblock_offset) < 0) {
         error("Couldn't read block group descriptors from device '%s'", sb->dev->parent.id);
         free(sb->bg_descs);
         return -1;
@@ -555,6 +935,14 @@ static int mount(fs_type_t *fstype, fs_mount_t *m, fs_param_t *params) {
         goto error_root;
     }
     m->sb->root->number = EXT2_ROOT_INO;
+
+
+
+
+    // Update mount time and flush
+
+
+
 
     return 0;
 
