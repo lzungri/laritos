@@ -144,7 +144,7 @@ static uint8_t ext2_log_block_to_path(ext2_sb_t *sb, uint32_t logical_block, int
     return n;
 }
 
-static uint32_t get_inode_phys_block_offset(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t logical_block) {
+static int get_inode_phys_block_offset(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t logical_block, uint32_t *block) {
     int offsets[4];
     int boundary = 0;
 
@@ -166,7 +166,8 @@ static uint32_t get_inode_phys_block_offset(ext2_sb_t *sb, ext2_inode_data_t *in
         }
     }
 
-    return get_phys_block_offset(sb, phys_block);
+    *block = get_phys_block_offset(sb, phys_block);
+    return 0;
 }
 
 static inline uint32_t get_inode_num_blocks(ext2_sb_t *sb, ext2_inode_data_t *inode) {
@@ -224,8 +225,8 @@ static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
 
     int i;
     for (i = 0; i < get_inode_num_blocks(sb, &pinode_data); i++) {
-        uint32_t blkoff = get_inode_phys_block_offset(sb, &pinode_data, i);
-        if (blkoff < 0) {
+        uint32_t blkoff;
+        if (get_inode_phys_block_offset(sb, &pinode_data, i, &blkoff) < 0) {
             error("Couldn't get inode physical block");
             return NULL;
         }
@@ -269,7 +270,7 @@ static int flush_inode(ext2_sb_t *sb, uint32_t inodenum, ext2_inode_data_t *inod
     uint32_t itable_offset = get_phys_block_offset(sb, bgd->inode_table);
     if (sb->dev->ops.write(sb->dev, inode, sizeof(ext2_inode_data_t),
             itable_offset + iindex * sizeof(ext2_inode_data_t)) < 0) {
-        error("Failed to clear bit");
+        error("Failed to flush inode");
         return -1;
     }
 
@@ -480,7 +481,7 @@ static int deallocate_inode_from_dev(ext2_sb_t *sb, uint32_t inodenum) {
     }
 
     int i;
-    for (i = 0; i < physinode.blocks; i++) {
+    for (i = 0; i < physinode.blocks - 1; i++) {
         if (deallocate_block_from_dev(sb, physinode.block[i]) < 0) {
             error("Failed to deallocate logical block #%d (phys block=%lu) from inode #%lu",
                     i, physinode.block[i], inodenum);
@@ -532,7 +533,8 @@ static int allocate_block_for_inode(ext2_sb_t *sb, ext2_inode_data_t *inode, uin
         return -1;
     }
 
-    inode->block[inode->blocks++] = *blocknum;
+    inode->block[inode->blocks - 1] = *blocknum;
+    inode->blocks++;
 
     if (flush_inode(sb, inodenum, inode) < 0) {
         error("Failed to flush inode");
@@ -546,38 +548,88 @@ error_flush:
     return -1;
 }
 
-static int add_dir_entry_to(ext2_sb_t *sb, fs_inode_t *parent, char *entry, uint32_t childno) {
-    debug("Adding directory entry '%s' to inode #%lu", entry, parent->number);
-
-
-    // TODO increase file size
-
-    return -1;
-}
-
 static int rm_dir_entry_from(ext2_sb_t *sb, fs_inode_t *parent, uint32_t childno) {
     debug("Removing inode #%lu directory entry from inode #%lu", childno, parent->number);
     // TODO decrease file size
     return -1;
 }
 
-static int populate_default_dir_entries(ext2_sb_t *sb, fs_inode_t *parent, uint32_t childno) {
-    if (add_dir_entry_to(sb, parent, ".", childno) < 0) {
-        error("Failed to add '.' directory entry");
+static int add_dir_entry_to(ext2_sb_t *sb, ext2_inode_data_t *parent, uint32_t parentno, char *name, uint32_t childno, fs_access_mode_t mode) {
+    debug("Adding directory entry '%s' to inode #%lu", name, parentno);
+
+    uint32_t blkoff;
+    if (get_inode_phys_block_offset(sb, parent, parent->blocks - 2, &blkoff) < 0) {
+        error("Couldn't get inode physical block");
         return -1;
     }
-    if (add_dir_entry_to(sb, parent, "..", parent->number) < 0) {
-        error("Failed to add '..' directory entry");
+
+    char dentry_buf[sizeof(ext2_direntry_t) + EXT2_NAME_LEN];
+    ext2_direntry_t *dentry = (ext2_direntry_t *) dentry_buf;
+
+    uint32_t next_block = blkoff + sb->block_size;
+    while (true) {
+        if (sb->dev->ops.read(sb->dev, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
+              error("Couldn't read dentry metadata from device '%s'", sb->dev->parent.id);
+              return -1;
+        }
+        if (sb->dev->ops.read(sb->dev, (char *) dentry + sizeof(ext2_direntry_t),
+            dentry->name_len, blkoff + sizeof(ext2_direntry_t)) < 0) {
+            error("Couldn't read dentry file name from device '%s'", sb->dev->parent.id);
+            return -1;
+        }
+
+        if (dentry->name_len == 0 || blkoff + dentry->rec_len >= next_block) {
+            break;
+        }
+        blkoff += dentry->rec_len;
+    }
+
+    if (dentry->name_len > 0) {
+        dentry->rec_len = sizeof(ext2_direntry_t) + dentry->name_len;
+        if (dentry->rec_len & 0b11) {
+            dentry->rec_len = (dentry->rec_len + 4) & ~0b11;
+        }
+        if (sb->dev->ops.write(sb->dev, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
+              error("Couldn't read dentry metadata from device '%s'", sb->dev->parent.id);
+              return -1;
+        }
+
+        blkoff += dentry->rec_len;
+    }
+
+    // Setup new dentry using the existing dentry buffer
+    dentry->file_type = mode & FS_ACCESS_MODE_DIR ? EXT2_FT_DIR : EXT2_FT_REG_FILE;
+    dentry->inode = childno;
+    dentry->name_len = strlen(name);
+    strncpy(dentry->name, name, EXT2_NAME_LEN);
+    dentry->rec_len = sb->block_size - (blkoff % sb->block_size);
+
+    if (sb->dev->ops.write(sb->dev, dentry, sizeof(ext2_direntry_t) + strlen(name), blkoff) < 0) {
+        error("Failed to add directory entry offset=%lu", blkoff);
         return -1;
     }
+
+//    parent->size += dentry_size;
+//
+//    if (flush_inode(sb, parentno, parent) < 0) {
+//        error("Failed to flush inode");
+//        goto error_flush;
+//    }
+
     return 0;
+
+//error_flush:
+//    rm_dir_entry_from(sb, parent, childno);
+//    return -1;
 }
+
 
 static int allocate_dir_inode_from_dev(ext2_sb_t *sb, fs_inode_t *parent, ext2_inode_data_t *child, uint32_t *childno, fs_access_mode_t mode) {
     if (allocate_free_inode_from_dev(sb, childno) < 0) {
         error("Couldn't allocate inode");
         return -1;
     }
+    child->blocks++;
     populate_inode_mode(child, mode);
 
     uint32_t blocknum;
@@ -588,10 +640,17 @@ static int allocate_dir_inode_from_dev(ext2_sb_t *sb, fs_inode_t *parent, ext2_i
     time_t t;
     time_get_rtc_time(&t);
     child->ctime = t.secs;
+    child->size = sb->block_size;
 
-    if (populate_default_dir_entries(sb, parent, *childno) < 0) {
-        error("Failed to populate default directory entries");
-        goto error_direntries;
+    if (add_dir_entry_to(sb, child, *childno, ".", *childno,
+            FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC) < 0) {
+        error("Failed to add '.' directory entry");
+        goto error_dot;
+    }
+    if (add_dir_entry_to(sb, child, *childno, "..", parent->number,
+            FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC) < 0) {
+        error("Failed to add '..' directory entry");
+        goto error_dotdot;
     }
 
     if (flush_inode(sb, *childno, child) < 0) {
@@ -602,7 +661,8 @@ static int allocate_dir_inode_from_dev(ext2_sb_t *sb, fs_inode_t *parent, ext2_i
     return 0;
 
 error_flush:
-error_direntries:
+error_dotdot:
+error_dot:
     deallocate_block_from_dev(sb, blocknum);
 error_balloc:
     deallocate_inode_from_dev(sb, *childno);
@@ -627,7 +687,7 @@ static int ext2_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mod
         goto error_alloc;
     }
 
-    if (add_dir_entry_to(sb, parent, dentry->name, inodenum) < 0) {
+    if (add_dir_entry_to(sb, &parent_phys_inode, parent->number, dentry->name, inodenum, mode) < 0) {
         error("Failed to add directory entry '%s'", dentry->name);
         goto error_entry;
     }
@@ -682,8 +742,8 @@ static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) 
     uint32_t bytes_to_eof = pinode_data.size - offset;
 
     for ( ;log_block < get_inode_num_blocks(sb, &pinode_data); log_block++) {
-        uint32_t phys_blkoff = get_inode_phys_block_offset(sb, &pinode_data, log_block);
-        if (phys_blkoff < 0) {
+        uint32_t phys_blkoff;
+        if (get_inode_phys_block_offset(sb, &pinode_data, log_block, &phys_blkoff) < 0) {
             error("Couldn't get inode physical block for logical block #%lu", log_block);
             return -1;
         }
@@ -739,8 +799,8 @@ static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, ui
 
     int i;
     for (i = 0; i < get_inode_num_blocks(sb, &inode); i++) {
-        uint32_t blkoff = get_inode_phys_block_offset(sb, &inode, i);
-        if (blkoff < 0) {
+        uint32_t blkoff;
+        if (get_inode_phys_block_offset(sb, &inode, i, &blkoff) < 0) {
             error("Couldn't get inode physical block");
             return -1;
         }

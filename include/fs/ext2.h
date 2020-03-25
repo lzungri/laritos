@@ -167,6 +167,30 @@ typedef struct {
     uint32_t  file_acl; /* File ACL */
     uint32_t  dir_acl;  /* Directory ACL */
     uint32_t  faddr;    /* Fragment address */
+    union {
+        struct {
+            uint8_t    l_i_frag;   /* Fragment number */
+            uint8_t    l_i_fsize;  /* Fragment size */
+            uint16_t   i_pad1;
+            uint16_t  l_i_uid_high;   /* these 2 fields    */
+            uint16_t  l_i_gid_high;   /* were reserved2[0] */
+            uint32_t   l_i_reserved2;
+        } linux2;
+        struct {
+            uint8_t    h_i_frag;   /* Fragment number */
+            uint8_t    h_i_fsize;  /* Fragment size */
+            uint16_t  h_i_mode_high;
+            uint16_t  h_i_uid_high;
+            uint16_t  h_i_gid_high;
+            uint32_t  h_i_author;
+        } hurd2;
+        struct {
+            uint8_t    m_i_frag;   /* Fragment number */
+            uint8_t    m_i_fsize;  /* Fragment size */
+            uint16_t   m_pad1;
+            uint32_t   m_i_reserved2[2];
+        } masix2;
+    } osd2;             /* OS dependent 2 */
 } ext2_inode_data_t;
 
 typedef struct {
