@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <printf.h>
 #include <core.h>
 #include <test/test.h>
 #include <test/utils/fs.h>
@@ -116,35 +117,56 @@ SYSIMG_TEND
 
 DATAIMG_T(ext2, ext2_mkdir_creates_a_new_directory) {
     fs_dentry_t *dir = vfs_dir_create(fs_get_data_testdir(), "mkdir",
-            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     tassert(dir != NULL);
     tassert(file_is_dir(DATA_TEST_DIR "/mkdir"));
 DATAIMG_TEND
 
 DATAIMG_T(ext2, ext2_mkdir_works_as_expected_on_dirs_with_max_filename_length) {
     char dname[CONFIG_FS_MAX_FILENAME_LEN] = { 0 };
-    memset(dname, 'x', sizeof(dname) - 1);
+    int i;
+    for (i = 0; i < sizeof(dname) - 1; i++) {
+        dname[i] = '0' + i % 10;
+    }
     fs_dentry_t *dir = vfs_dir_create(fs_get_data_testdir(), dname,
-            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     tassert(dir != NULL);
     tassert(fs_file_in_listdir(DATA_TEST_DIR, dname));
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_creating_mult_dirs_spanning_from_mult_blks_doesnt_corrupt_fs) {
+    fs_dentry_t *dir = vfs_dir_create(fs_get_data_testdir(), "multipledirs",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+    tassert(dir != NULL);
+    tassert(file_is_dir(DATA_TEST_DIR "/multipledirs"));
+
+    int i;
+    for (i = 0; i < 50; i++) {
+        char buf[EXT2_NAME_LEN] = { 0 };
+        snprintf(buf, sizeof(buf), "long_directory_name_number_%d", i);
+        fs_dentry_t *child = vfs_dir_create(dir, buf, FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
+        tassert(child != NULL);
+        tassert(fs_file_in_listdir(DATA_TEST_DIR "/multipledirs", buf));
+    }
 DATAIMG_TEND
 
 DATAIMG_T(ext2, ext2_listdir_returns_new_direntry) {
     tassert(!fs_file_in_listdir(DATA_TEST_DIR, "newdir"));
     fs_dentry_t *dir = vfs_dir_create(fs_get_data_testdir(), "newdir",
-            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     tassert(dir != NULL);
     tassert(file_is_dir(DATA_TEST_DIR "/newdir"));
     tassert(fs_file_in_listdir(DATA_TEST_DIR, "newdir"));
 DATAIMG_TEND
 
 DATAIMG_T(ext2, ext2_mkdir_fails_on_readonly_parent) {
-    fs_dentry_t *dir = vfs_dir_create(fs_get_data_testdir(), "rodir", FS_ACCESS_MODE_READ);
+    fs_dentry_t *dir = vfs_dir_create(fs_get_data_testdir(), "rodir",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_EXEC);
     tassert(dir != NULL);
     tassert(file_is_dir(DATA_TEST_DIR "/rodir"));
 
-    fs_dentry_t *child = vfs_dir_create(dir, "child", FS_ACCESS_MODE_READ);
+    fs_dentry_t *child = vfs_dir_create(dir, "child",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_EXEC);
     tassert(child == NULL);
     tassert(!file_is_dir(DATA_TEST_DIR "/rodir/child"));
     tassert(!fs_file_in_listdir(DATA_TEST_DIR "/rodir", "child"));
