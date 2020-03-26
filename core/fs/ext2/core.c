@@ -1,6 +1,12 @@
 /**
  * DISCLAIMER: This is a very basic, slow, and unreliable implementation of the ext2
  * filesystem based on my poor knowledge of ext2. Use at your own risk...
+ *
+ * TODO:
+ *  - Support indirect blocks
+ *  - Thread safety
+ *  - Implement rmdir
+ *  - Fix lots of bugs...
  */
 
 #define DEBUG
@@ -521,7 +527,7 @@ error_dealloc_block:
 }
 
 static int allocate_block_for_inode(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t inodenum, uint32_t *blocknum) {
-    if (inode->blocks >= EXT2_NDIR_BLOCKS) {
+    if (inode->blocks - 1 > EXT2_NDIR_BLOCKS) {
         // Indirect blocks not supported yet
         error("Max blocks per inode reached");
         return -1;
@@ -548,9 +554,31 @@ error_flush:
     return -1;
 }
 
+static int deallocate_lastblock_for_inode(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t inodenum) {
+    if (inode->blocks < 2) {
+        error("Inode has no blocks allocated");
+        return -1;
+    }
+
+    if (deallocate_block_from_dev(sb, inode->block[inode->blocks - 2]) < 0) {
+        error("Failed to deallocate block from inode #%lu", inodenum);
+        return -1;
+    }
+
+    inode->block[inode->blocks - 2] = 0;
+    inode->blocks--;
+
+    if (flush_inode(sb, inodenum, inode) < 0) {
+        error("Failed to flush inode");
+        return -1;
+    }
+
+    return 0;
+}
+
 static int rm_dir_entry_from(ext2_sb_t *sb, fs_inode_t *parent, uint32_t childno) {
     debug("Removing inode #%lu directory entry from inode #%lu", childno, parent->number);
-    // TODO decrease file size
+    // TODO Cannot delete dir if it has any children
     return -1;
 }
 
@@ -558,6 +586,7 @@ static int add_dir_entry_to(ext2_sb_t *sb, ext2_inode_data_t *parent, uint32_t p
     debug("Adding directory entry '%s' to inode #%lu", name, parentno);
 
     uint32_t blkoff;
+    // Get last block of the directory file
     if (get_inode_phys_block_offset(sb, parent, parent->blocks - 2, &blkoff) < 0) {
         error("Couldn't get inode physical block");
         return -1;
@@ -584,17 +613,41 @@ static int add_dir_entry_to(ext2_sb_t *sb, ext2_inode_data_t *parent, uint32_t p
         blkoff += dentry->rec_len;
     }
 
-    if (dentry->name_len > 0) {
-        dentry->rec_len = sizeof(ext2_direntry_t) + dentry->name_len;
-        if (dentry->rec_len & 0b11) {
-            dentry->rec_len = (dentry->rec_len + 4) & ~0b11;
-        }
-        if (sb->dev->ops.write(sb->dev, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
-              error("Couldn't read dentry metadata from device '%s'", sb->dev->parent.id);
-              return -1;
-        }
+    uint32_t newblockno = 0;
 
-        blkoff += dentry->rec_len;
+    // name_len == 0 means no entry in the directory yet
+    if (dentry->name_len > 0) {
+        // There cannot be any directory entry spanning multiple data blocks.
+        // If an entry cannot completely fit in one block, it must be pushed
+        // to the next data block and the rec_len of the previous entry properly adjusted.
+        uint32_t bytes_to_nextblock = dentry->rec_len - sizeof(ext2_direntry_t) - dentry->name_len;
+        if (bytes_to_nextblock < sizeof(ext2_direntry_t) + strlen(name)) {
+            debug("Allocating new block for directory with inode #%lu", parentno);
+            if (allocate_block_for_inode(sb, parent, parentno, &newblockno) < 0) {
+                error("Couldn't allocate block");
+                return -1;
+            }
+            parent->size += sb->block_size;
+            if (flush_inode(sb, parentno, parent) < 0) {
+                error("Failed to flush inode");
+                goto error_flush;
+            }
+            if (get_inode_phys_block_offset(sb, parent, parent->blocks - 2, &blkoff) < 0) {
+                error("Couldn't get inode physical block");
+                return -1;
+            }
+        } else {
+            // The directory entries must be aligned on 4 bytes boundaries
+            dentry->rec_len = sizeof(ext2_direntry_t) + dentry->name_len;
+            if (dentry->rec_len & 0b11) {
+                dentry->rec_len = (dentry->rec_len + 4) & ~0b11;
+            }
+            if (sb->dev->ops.write(sb->dev, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
+                  error("Couldn't read dentry metadata from device '%s'", sb->dev->parent.id);
+                  return -1;
+            }
+            blkoff += dentry->rec_len;
+        }
     }
 
     // Setup new dentry using the existing dentry buffer
@@ -606,21 +659,18 @@ static int add_dir_entry_to(ext2_sb_t *sb, ext2_inode_data_t *parent, uint32_t p
 
     if (sb->dev->ops.write(sb->dev, dentry, sizeof(ext2_direntry_t) + strlen(name), blkoff) < 0) {
         error("Failed to add directory entry offset=%lu", blkoff);
-        return -1;
+        goto error_write;
     }
-
-//    parent->size += dentry_size;
-//
-//    if (flush_inode(sb, parentno, parent) < 0) {
-//        error("Failed to flush inode");
-//        goto error_flush;
-//    }
 
     return 0;
 
-//error_flush:
-//    rm_dir_entry_from(sb, parent, childno);
-//    return -1;
+error_write:
+    // TODO Should rollback the dentry->rec_len if updated
+error_flush:
+    if (newblockno != 0) {
+        deallocate_lastblock_for_inode(sb, parent, parentno);
+    }
+    return -1;
 }
 
 
@@ -663,7 +713,7 @@ static int allocate_dir_inode_from_dev(ext2_sb_t *sb, fs_inode_t *parent, ext2_i
 error_flush:
 error_dotdot:
 error_dot:
-    deallocate_block_from_dev(sb, blocknum);
+    deallocate_lastblock_for_inode(sb, child, *childno);
 error_balloc:
     deallocate_inode_from_dev(sb, *childno);
     return -1;
@@ -686,6 +736,7 @@ static int ext2_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mod
         error("Couldn't allocate inode for directory '%s'", dentry->name);
         goto error_alloc;
     }
+    dentry->inode->number = inodenum;
 
     if (add_dir_entry_to(sb, &parent_phys_inode, parent->number, dentry->name, inodenum, mode) < 0) {
         error("Failed to add directory entry '%s'", dentry->name);
