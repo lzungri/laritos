@@ -24,7 +24,9 @@ static inline int file_get_abs_dirname(char *path, char *buf, size_t len) {
     if (file_is_absolute(path)) {
         strncpy(buf, path, len);
     } else {
-        snprintf(buf, len, "%s/%s", process_get_current()->cwd, path);
+        char cwd[256];
+        vfs_dentry_get_fullpath(process_get_current()->cwd, cwd, sizeof(cwd));
+        snprintf(buf, len, "%s/%s", cwd, path);
     }
 
     char *basename = strrchr(buf, '/') + 1;
