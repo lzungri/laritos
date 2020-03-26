@@ -1,4 +1,4 @@
-obj-y += test.o
+obj-y += core.o
 obj-y += header-tests.o
 obj-y += utils/
 
