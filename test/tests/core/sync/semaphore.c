@@ -4,7 +4,7 @@
 
 #include <test/test.h>
 #include <sync/semaphore.h>
-#include <test/utils.h>
+#include <test/utils/process.h>
 #include <utils/utils.h>
 
 T(semaphore_count_variable_is_updated_accordingly) {
