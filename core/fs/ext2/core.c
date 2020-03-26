@@ -4,6 +4,7 @@
  *
  * TODO:
  *  - Support indirect blocks
+ *  - Support big/little endian
  *  - Thread safety
  *  - Implement rmdir
  *  - Fix lots of bugs...

@@ -97,7 +97,8 @@ def parse_args(argv):
     parser.add_argument("-M", "--machine", default="virt",
                        help="Emulated machine type")
     parser.add_argument("-i", "--dataimg", default="{}/../../bin/data.img".format(SCRIPT_DIR),
-                       help="Filesystem to use as data image")
+                       help="Filesystem to use as data image. By default, the one under bin/data.img \
+                       will be used, which is regenerated everytime you build the OS")
     parser.add_argument("-d", "--os-debug", default=False, action="store_true",
                        help="Launch laritOS in debugging mode (listening on :1234)")
     parser.add_argument("-D", "--qemu-debug", default=False, action="store_true",
