@@ -24,6 +24,7 @@ typedef enum {
     SYSCALL_GET_PROPERTY,
     SYSCALL_SPAWN_PROCESS,
     SYSCALL_WAITPID,
+    SYSCALL_MKDIR,
 
     SYSCALL_LEN,
 } syscall_t;

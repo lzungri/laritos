@@ -56,3 +56,8 @@ int syscall_listdir(char *path, uint32_t offset, fs_listdir_t *dirs, int dirlen)
     vfs_file_close(f);
     return ret;
 }
+
+int syscall_mkdir(char *path, fs_access_mode_t mode) {
+    fs_dentry_t *parent = vfs_dentry_lookup_parent(path);
+    return vfs_dir_create(parent, file_get_basename(path), mode) != NULL ? 0 : -1;
+}
