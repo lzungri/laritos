@@ -9,7 +9,7 @@
  *  - Fix lots of bugs...
  */
 
-#define DEBUG
+//#define DEBUG
 #include <log.h>
 
 #include <stdint.h>
@@ -787,7 +787,6 @@ static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) 
 
     int nbytes = 0;
 
-
     uint32_t log_block = offset >> sb->block_size_bits;
     uint32_t block_offset = offset % sb->block_size;
     uint32_t bytes_to_eof = pinode_data.size - offset;
@@ -1047,13 +1046,11 @@ static int mount(fs_type_t *fstype, fs_mount_t *m, fs_param_t *params) {
     }
     m->sb->root->number = EXT2_ROOT_INO;
 
-
-
-
-    // Update mount time and flush
-
-
-
+    time_t t;
+    time_get_rtc_time(&t);
+    ext2sb->info.mtime = t.secs;
+    ext2sb->info.mnt_count++;
+    flush_metadata(ext2sb);
 
     return 0;
 
