@@ -67,4 +67,4 @@ mci0:pl181|baseaddr=0x09090000
 # The system image is the first real filesystem mounted by the OS, thus it must be
 # statically mounted during boot. Once it is done, we could dinamically mount other
 # filesystems by reading from /sys/conf/mount.conf
-system.img:static_fs_mount|mntpoint=/sys,dev=@flash1,type=ext2
+system.img:static_fs_mount|mntpoint=/sys,dev=@flash1,type=ext2,mode=r
