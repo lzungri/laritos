@@ -3,11 +3,12 @@
  * filesystem based on my poor knowledge of ext2. Use at your own risk...
  *
  * TODO:
- *  - Support indirect blocks
+ *  - Support indirect blocks for write operations
  *  - Support big/little endian
  *  - Thread safety
  *  - Implement rmdir
  *  - Fix lots of bugs...
+ *  - Improve performance (e.g. do not flush metadata right after each modification, use dirty flag)
  */
 
 //#define DEBUG
