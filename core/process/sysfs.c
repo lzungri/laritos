@@ -235,17 +235,17 @@ int process_sysfs_remove(pcb_t *pcb) {
 
 
 static int create_root_sysfs(fs_sysfs_mod_t *sysfs) {
-    _laritos.fs.proc_root = vfs_dir_create(_laritos.fs.root, "proc",
-            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
-    if (_laritos.fs.proc_root == NULL) {
-        error("Error creating proc sysfs directory");
+    fs_mount_t *mnt = vfs_mount_fs("pseudofs", "/proc", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    if (mnt == NULL) {
+        error("Error mounting proc pseudo fs");
         return -1;
     }
+    _laritos.fs.proc_root = mnt->root;
     return 0;
 }
 
 static int remove_root_sysfs(fs_sysfs_mod_t *sysfs) {
-    return vfs_dir_remove(_laritos.fs.root, "proc");
+    return vfs_unmount_fs("/proc");
 }
 
 SYSFS_MODULE(proc, create_root_sysfs, remove_root_sysfs)

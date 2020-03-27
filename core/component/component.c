@@ -181,12 +181,12 @@ bool component_are_mandatory_comps_present(void) {
 }
 
 static int create_root_sysfs(fs_sysfs_mod_t *sysfs) {
-    _laritos.fs.comp_root = vfs_dir_create(_laritos.fs.root, "component",
-            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
-    if (_laritos.fs.comp_root == NULL) {
-        error("Error creating component sysfs directory");
+    fs_mount_t *mnt = vfs_mount_fs("pseudofs", "/component", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    if (mnt == NULL) {
+        error("Error mounting component pseudo fs");
         return -1;
     }
+    _laritos.fs.comp_root = mnt->root;
 
     _laritos.fs.comp_info_root = vfs_dir_create(_laritos.fs.comp_root, "info",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
@@ -206,7 +206,7 @@ static int create_root_sysfs(fs_sysfs_mod_t *sysfs) {
 }
 
 static int remove_root_sysfs(fs_sysfs_mod_t *sysfs) {
-    return vfs_dir_remove(_laritos.fs.root, "component");
+    return vfs_unmount_fs("/component");
 }
 
 

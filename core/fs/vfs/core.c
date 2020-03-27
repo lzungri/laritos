@@ -74,7 +74,6 @@ bool vfs_is_fs_type_supported(char *fstype) {
 }
 
 int vfs_mount_essential_filesystems(void) {
-    info("Mounting root filesystem");
     fs_mount_t *mnt = vfs_mount_fs("pseudofs", "/", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
     if (mnt == NULL) {
         error("Error mounting root filesystem");
@@ -82,12 +81,12 @@ int vfs_mount_essential_filesystems(void) {
     }
     _laritos.fs.root = mnt->root;
 
-    _laritos.fs.stats_root = vfs_dir_create(_laritos.fs.root, "stats",
-            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
-    if (_laritos.fs.stats_root == NULL) {
-        error("Error creating stats sysfs directory");
+    mnt = vfs_mount_fs("pseudofs", "/stats", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    if (mnt == NULL) {
+        error("Error mounting stats pseudo fs");
         goto error_stats;
     }
+    _laritos.fs.stats_root = mnt->root;
 
     fs_sysfs_mod_t *sysfs;
     list_for_each_entry(sysfs, &_laritos.fs.sysfs_mods, list) {
@@ -113,7 +112,7 @@ int vfs_mount_essential_filesystems(void) {
     return 0;
 
 error_sysfs_mods:
-    vfs_dir_remove(_laritos.fs.root, "stats");
+    vfs_unmount_fs("/stats");
 error_stats:
     vfs_unmount_fs("/");
 error_root:
@@ -159,7 +158,7 @@ int vfs_mount_from_config(void) {
             continue;
         }
 
-        if (vfs_mount_fs(fstype, mntpoint, mode, (fs_param_t []) { { "dev", dev }, { NULL } }) < 0) {
+        if (vfs_mount_fs(fstype, mntpoint, mode, (fs_param_t []) { { "dev", dev }, { NULL } }) == NULL) {
             error("Could not mount %s", mntpoint);
             fret = -1;
         }
