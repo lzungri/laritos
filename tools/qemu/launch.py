@@ -56,7 +56,7 @@ def main(args):
     print("---------------------------------------------------------------------------\n")
 
     with tempfile.NamedTemporaryFile(prefix="laritos") as trace_file:
-        cmd = " \
+        cmd = "\
 {qemudebug} qemu-system-{arch} -no-reboot --trace events={scriptdir}/trace_events,file={trace} \
 {osdebug} -M {machine} -smp {ncpus} -m {ram}M -cpu {cpu} -nographic \
 -drive if=pflash,file={scriptdir}/../../bin/laritos.img,format=raw,readonly \
@@ -74,7 +74,7 @@ def main(args):
                 qemudebug="gdbserver :55555" if args.qemu_debug else "",
                 qemulog="-d guest_errors,cpu_reset,int,unimp -D /tmp/qemu.log" if args.qemu_log else "")
 
-        print(cmd)
+        print(cmd + "\n")
         os.system(cmd)
 
         qemudir = os.path.dirname(shutil.which("qemu-system-{}".format(args.arch)) or "")
