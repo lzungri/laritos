@@ -770,15 +770,7 @@ error_alloc:
     return -1;
 }
 
-static int ext2_def_rmdir(fs_inode_t *parent, fs_dentry_t *dentry) {
-    return 0;
-}
-
 static int ext2_def_mkregfile(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
-    return 0;
-}
-
-static int ext2_def_rmregfile(fs_inode_t *parent, fs_dentry_t *dentry) {
     return 0;
 }
 
@@ -917,9 +909,9 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
 
     inode->ops.lookup = ext2_def_lookup;
     inode->ops.mkdir = ext2_def_mkdir;
-    inode->ops.rmdir = ext2_def_rmdir;
+    inode->ops.rmdir = NULL;
     inode->ops.mkregfile = ext2_def_mkregfile;
-    inode->ops.rmregfile = ext2_def_rmregfile;
+    inode->ops.rmregfile = NULL;
 
     inode->fops.open = ext2_def_open;
     inode->fops.close = ext2_def_close;
