@@ -59,5 +59,9 @@ int syscall_listdir(char *path, uint32_t offset, fs_listdir_t *dirs, int dirlen)
 
 int syscall_mkdir(char *path, fs_access_mode_t mode) {
     fs_dentry_t *parent = vfs_dentry_lookup_parent(path);
+    if (parent->inode->sb->fstype == vfs_get_fstype("pseudofs")) {
+        error("Permission denied: Cannot create directories on pseudo file systems");
+        return -1;
+    }
     return vfs_dir_create(parent, file_get_basename(path), mode) != NULL ? 0 : -1;
 }
