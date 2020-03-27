@@ -911,6 +911,9 @@ laritos: laritos.img system.img data.img
 	$(Q)$(SIZE) laritos.elf
 	$(Q)echo ''
 
+# Make sure we have everything setup (e.g. output folder created) before preprocessing the linker script
+$(KBUILD_LDS): prepare0
+
 targets := laritos laritos.img laritos.bin laritos.elf $(KBUILD_BOARD_INFO) $(KBUILD_BI_COPIED) $(KBUILD_LDS)
 
 # The actual objects are generated when descending,
