@@ -31,6 +31,14 @@
 #include <generated/autoconf.h>
 
 
+static inline int dev_read(ext2_sb_t *sb, void *buf, size_t n, uint32_t offset) {
+    return sb->parent.dev->ops.read(sb->parent.dev, buf, n, offset);
+}
+
+static inline int dev_write(ext2_sb_t *sb, void *buf, size_t n, uint32_t offset) {
+    return sb->parent.dev->ops.write(sb->parent.dev, buf, n, offset);
+}
+
 static ext2_bg_desc_t *get_bg_desc(ext2_sb_t *sb, uint32_t index) {
     if (index >= sb->num_bg_descs) {
         error("Invalid group descriptor index %lu", index);
@@ -85,9 +93,9 @@ static int read_inode_from_dev(ext2_sb_t *sb, uint32_t inode, ext2_inode_data_t 
     // Calculate the offset within the block
     uint32_t block_offset = offset & (sb->block_size - 1);
 
-    if (sb->dev->ops.read(sb->dev, data, sizeof(ext2_inode_data_t),
+    if (dev_read(sb, data, sizeof(ext2_inode_data_t),
             get_phys_block_offset(sb, block) + block_offset) < 0) {
-        error("Couldn't read inode data from device '%s'", sb->dev->parent.id);
+        error("Couldn't read inode data from device '%s'", sb->parent.dev->parent.id);
         return -1;
     }
 
@@ -166,9 +174,9 @@ static int get_inode_phys_block_offset(ext2_sb_t *sb, ext2_inode_data_t *inode, 
     // Start from path=1, we already grabbed the block for path=0
     for (i = 1; i < paths; i++) {
         uint32_t block_offset = get_phys_block_offset(sb, phys_block);
-        if (sb->dev->ops.read(sb->dev, &phys_block, sizeof(uint32_t),
+        if (dev_read(sb, &phys_block, sizeof(uint32_t),
                 block_offset + offsets[i] * sizeof(uint32_t)) < 0) {
-            error("Couldn't read phys block offset from device '%s'", sb->dev->parent.id);
+            error("Couldn't read phys block offset from device '%s'", sb->parent.dev->parent.id);
             return -1;
         }
     }
@@ -242,13 +250,13 @@ static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
         while (blkoff < next_block) {
             char dentry_buf[sizeof(ext2_direntry_t) + EXT2_NAME_LEN];
             ext2_direntry_t *dentry = (ext2_direntry_t *) dentry_buf;
-            if (sb->dev->ops.read(sb->dev, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
-                error("Couldn't read dentry metadata from device '%s'", sb->dev->parent.id);
+            if (dev_read(sb, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
+                error("Couldn't read dentry metadata from device '%s'", sb->parent.dev->parent.id);
                 return NULL;
             }
-            if (sb->dev->ops.read(sb->dev, (char *) dentry + sizeof(ext2_direntry_t),
+            if (dev_read(sb, (char *) dentry + sizeof(ext2_direntry_t),
                     dentry->name_len, blkoff + sizeof(ext2_direntry_t)) < 0) {
-                error("Couldn't read dentry file name from device '%s'", sb->dev->parent.id);
+                error("Couldn't read dentry file name from device '%s'", sb->parent.dev->parent.id);
                 return NULL;
             }
 
@@ -275,7 +283,7 @@ static int flush_inode(ext2_sb_t *sb, uint32_t inodenum, ext2_inode_data_t *inod
 
     uint32_t iindex = (inodenum - 1) % sb->info.inodes_per_group;
     uint32_t itable_offset = get_phys_block_offset(sb, bgd->inode_table);
-    if (sb->dev->ops.write(sb->dev, inode, sizeof(ext2_inode_data_t),
+    if (dev_write(sb, inode, sizeof(ext2_inode_data_t),
             itable_offset + iindex * sizeof(ext2_inode_data_t)) < 0) {
         error("Failed to flush inode");
         return -1;
@@ -302,7 +310,7 @@ static int flush_metadata(ext2_sb_t *sb) {
             continue;
         }
 
-        if (sb->dev->ops.write(sb->dev, bgd, sizeof(ext2_bg_desc_t),
+        if (dev_write(sb, bgd, sizeof(ext2_bg_desc_t),
                 sb->bgd_pblock_offset + i * sizeof(ext2_bg_desc_t)) < 0) {
             error("Failed to flush block group #%d", i);
             return -1;
@@ -310,7 +318,7 @@ static int flush_metadata(ext2_sb_t *sb) {
     }
 
 
-    if (sb->dev->ops.write(sb->dev, &sb->info, sizeof(ext2_sb_info_t), EXT2_SB_OFFSET) < 0) {
+    if (dev_write(sb, &sb->info, sizeof(ext2_sb_info_t), EXT2_SB_OFFSET) < 0) {
         error("Failed to flush superblock");
         return -1;
     }
@@ -336,13 +344,13 @@ static void populate_inode_mode(ext2_inode_data_t *inode, fs_access_mode_t mode)
 static int set_bitmap_bit_to(ext2_sb_t *sb, uint32_t bmap_offset, uint32_t bitpos, bool value) {
     verbose("Setting bit %lu of bitmap at 0x%lx to %u", bitpos, bmap_offset, value);
     uint8_t buf;
-    if (sb->dev->ops.read(sb->dev, &buf, sizeof(buf), bmap_offset + bitpos / (sizeof(buf) * 8)) < 0) {
+    if (dev_read(sb, &buf, sizeof(buf), bmap_offset + bitpos / (sizeof(buf) * 8)) < 0) {
         error("Failed to read bitmap");
         return -1;
     }
     uint8_t bufbit = bitpos % (sizeof(buf) * 8);
     buf = (buf & ~(1 << bufbit)) | ((value ? 1 : 0) << bufbit);
-    if (sb->dev->ops.write(sb->dev, &buf, sizeof(buf), bmap_offset + bitpos / (sizeof(buf) * 8)) < 0) {
+    if (dev_write(sb, &buf, sizeof(buf), bmap_offset + bitpos / (sizeof(buf) * 8)) < 0) {
         error("Failed to clear bit");
         return -1;
     }
@@ -353,7 +361,7 @@ static int ffz_in_bitmap_and_set(ext2_sb_t *sb, uint32_t bmap_offset, uint32_t m
     uint32_t buf;
     int i;
     for (i = 0; i * sizeof(buf) < sb->block_size; i++) {
-        if (sb->dev->ops.read(sb->dev, &buf, sizeof(buf), bmap_offset + i * sizeof(buf)) < 0) {
+        if (dev_read(sb, &buf, sizeof(buf), bmap_offset + i * sizeof(buf)) < 0) {
             error("Failed to read bitmap at offset=%lu", bmap_offset + i * sizeof(buf));
             return -1;
         }
@@ -373,7 +381,7 @@ static int ffz_in_bitmap_and_set(ext2_sb_t *sb, uint32_t bmap_offset, uint32_t m
                 return -1;
             }
 
-            if (sb->dev->ops.write(sb->dev, &buf, sizeof(buf), bmap_offset + i * sizeof(buf)) < 0) {
+            if (dev_write(sb, &buf, sizeof(buf), bmap_offset + i * sizeof(buf)) < 0) {
                 error("Failed to update bitmap at offset=%lu", bmap_offset + i * sizeof(buf));
                 return -1;
             }
@@ -598,13 +606,13 @@ static int add_dir_entry_to(ext2_sb_t *sb, ext2_inode_data_t *parent, uint32_t p
 
     uint32_t next_block = blkoff + sb->block_size;
     while (true) {
-        if (sb->dev->ops.read(sb->dev, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
-              error("Couldn't read dentry metadata from device '%s'", sb->dev->parent.id);
+        if (dev_read(sb, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
+              error("Couldn't read dentry metadata from device '%s'", sb->parent.dev->parent.id);
               return -1;
         }
-        if (sb->dev->ops.read(sb->dev, (char *) dentry + sizeof(ext2_direntry_t),
+        if (dev_read(sb, (char *) dentry + sizeof(ext2_direntry_t),
             dentry->name_len, blkoff + sizeof(ext2_direntry_t)) < 0) {
-            error("Couldn't read dentry file name from device '%s'", sb->dev->parent.id);
+            error("Couldn't read dentry file name from device '%s'", sb->parent.dev->parent.id);
             return -1;
         }
 
@@ -643,8 +651,8 @@ static int add_dir_entry_to(ext2_sb_t *sb, ext2_inode_data_t *parent, uint32_t p
             if (dentry->rec_len & 0b11) {
                 dentry->rec_len = (dentry->rec_len + 4) & ~0b11;
             }
-            if (sb->dev->ops.write(sb->dev, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
-                  error("Couldn't read dentry metadata from device '%s'", sb->dev->parent.id);
+            if (dev_write(sb, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
+                  error("Couldn't read dentry metadata from device '%s'", sb->parent.dev->parent.id);
                   return -1;
             }
             blkoff += dentry->rec_len;
@@ -658,7 +666,7 @@ static int add_dir_entry_to(ext2_sb_t *sb, ext2_inode_data_t *parent, uint32_t p
     strncpy(dentry->name, name, EXT2_NAME_LEN);
     dentry->rec_len = sb->block_size - (blkoff % sb->block_size);
 
-    if (sb->dev->ops.write(sb->dev, dentry, sizeof(ext2_direntry_t) + strlen(name), blkoff) < 0) {
+    if (dev_write(sb, dentry, sizeof(ext2_direntry_t) + strlen(name), blkoff) < 0) {
         error("Failed to add directory entry offset=%lu", blkoff);
         goto error_write;
     }
@@ -802,8 +810,8 @@ static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) 
         int len = min(blen - nbytes, sb->block_size - block_offset);
         len = min(len, bytes_to_eof);
 
-        if (sb->dev->ops.read(sb->dev, (char *) buf + nbytes, len, phys_blkoff + block_offset) < 0) {
-            error("Couldn't read inode data from device '%s'", sb->dev->parent.id);
+        if (dev_read(sb, (char *) buf + nbytes, len, phys_blkoff + block_offset) < 0) {
+            error("Couldn't read inode data from device '%s'", sb->parent.dev->parent.id);
             return -1;
         }
 
@@ -860,13 +868,13 @@ static int ext2_listdir(fs_file_t *f, uint32_t offset, fs_listdir_t *dirlist, ui
         while (blkoff < next_block) {
             char dentry_buf[sizeof(ext2_direntry_t) + EXT2_NAME_LEN];
             ext2_direntry_t *dentry = (ext2_direntry_t *) dentry_buf;
-            if (sb->dev->ops.read(sb->dev, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
-                error("Couldn't read dentry metadata from device '%s'", sb->dev->parent.id);
+            if (dev_read(sb, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
+                error("Couldn't read dentry metadata from device '%s'", sb->parent.dev->parent.id);
                 return -1;
             }
-            if (sb->dev->ops.read(sb->dev, (char *) dentry + sizeof(ext2_direntry_t),
+            if (dev_read(sb, (char *) dentry + sizeof(ext2_direntry_t),
                     dentry->name_len, blkoff + sizeof(ext2_direntry_t)) < 0) {
-                error("Couldn't read dentry file name from device '%s'", sb->dev->parent.id);
+                error("Couldn't read dentry file name from device '%s'", sb->parent.dev->parent.id);
                 return -1;
             }
 
@@ -932,8 +940,8 @@ static int unmount(fs_mount_t *fsm) {
 }
 
 static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
-    if (sb->dev->ops.read(sb->dev, &sb->info, sizeof(ext2_sb_info_t), EXT2_SB_OFFSET) < 0) {
-        error("Couldn't read superblock info from device '%s'", sb->dev->parent.id);
+    if (dev_read(sb, &sb->info, sizeof(ext2_sb_info_t), EXT2_SB_OFFSET) < 0) {
+        error("Couldn't read superblock info from device '%s'", sb->parent.dev->parent.id);
         return -1;
     }
 
@@ -965,9 +973,9 @@ static int populate_ext2_superblock(ext2_sb_t *sb, fs_mount_t *m) {
     if (sb->block_size == 1024) {
         sb->bgd_pblock_offset <<= 1;
     }
-    if (sb->dev->ops.read(sb->dev, sb->bg_descs,
+    if (dev_read(sb, sb->bg_descs,
             sizeof(ext2_bg_desc_t) * sb->num_bg_descs, sb->bgd_pblock_offset) < 0) {
-        error("Couldn't read block group descriptors from device '%s'", sb->dev->parent.id);
+        error("Couldn't read block group descriptors from device '%s'", sb->parent.dev->parent.id);
         free(sb->bg_descs);
         return -1;
     }
@@ -1023,8 +1031,8 @@ static int mount(fs_type_t *fstype, fs_mount_t *m, fs_param_t *params) {
 
     m->ops.unmount = unmount;
 
-    ext2sb->dev = vfs_get_param(params, "dev");
-    if (ext2sb->dev == NULL) {
+    ext2sb->parent.dev = vfs_get_param(params, "dev");
+    if (ext2sb->parent.dev == NULL) {
         error("No device was given");
         goto error_dev;
 

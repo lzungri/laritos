@@ -102,8 +102,6 @@ typedef struct {
     uint32_t num_bg_descs;
     ext2_bg_desc_t *bg_descs;
     uint32_t bgd_pblock_offset;
-
-    blockdev_t *dev;
 } ext2_sb_t;
 
 /*

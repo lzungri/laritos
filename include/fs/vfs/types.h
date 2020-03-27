@@ -103,10 +103,12 @@ typedef struct {
     void (*free_inode)(fs_inode_t *inode);
 } fs_superblock_ops_t;
 
+struct blockdev;
 typedef struct fs_superblock {
     fs_type_t *fstype;
     struct fs_mount *mount;
     fs_inode_t *root;
+    struct blockdev *dev;
 
     fs_superblock_ops_t ops;
 } fs_superblock_t;
