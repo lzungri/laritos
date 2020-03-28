@@ -40,6 +40,12 @@ static inline int dev_write(ext2_sb_t *sb, void *buf, size_t n, uint32_t offset)
     return sb->parent.dev->ops.write(sb->parent.dev, buf, n, offset);
 }
 
+static inline uint32_t inode_nblocks(ext2_sb_t *sb, ext2_inode_data_t *inode) {
+    // inode->blocks is a 32-bit value representing the total number of
+    // 512-bytes blocks reserved to contain the data of this inode
+    return inode->blocks >> (sb->block_size_bits - 9);
+}
+
 static ext2_bg_desc_t *get_bg_desc(ext2_sb_t *sb, uint32_t index) {
     if (index >= sb->num_bg_descs) {
         error("Invalid group descriptor index %lu", index);
@@ -459,7 +465,7 @@ static int deallocate_inode_from_dev(ext2_sb_t *sb, uint32_t inodenum) {
     }
 
     int i;
-    for (i = 0; i < physinode.blocks - 1; i++) {
+    for (i = 0; i < inode_nblocks(sb, &physinode); i++) {
         if (deallocate_block_from_dev(sb, physinode.block[i]) < 0) {
             error("Failed to deallocate logical block #%d (phys block=%lu) from inode #%lu",
                     i, physinode.block[i], inodenum);
@@ -499,9 +505,9 @@ error_dealloc_block:
 }
 
 static int allocate_block_for_inode(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t inodenum, uint32_t *blocknum) {
-    if (inode->blocks - 1 > EXT2_NDIR_BLOCKS) {
+    if (inode_nblocks(sb, inode) >= EXT2_NDIR_BLOCKS) {
         // Indirect blocks not supported yet
-        error("Max blocks per inode reached");
+        error("Indirect blocks not supported yet");
         return -1;
     }
 
@@ -511,8 +517,8 @@ static int allocate_block_for_inode(ext2_sb_t *sb, ext2_inode_data_t *inode, uin
         return -1;
     }
 
-    inode->block[inode->blocks - 1] = *blocknum;
-    inode->blocks++;
+    inode->block[inode_nblocks(sb, inode)] = *blocknum;
+    inode->blocks += sb->block_size >> 9;
 
     if (flush_inode(sb, inodenum, inode) < 0) {
         error("Failed to flush inode");
@@ -527,18 +533,24 @@ error_flush:
 }
 
 static int deallocate_lastblock_for_inode(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t inodenum) {
-    if (inode->blocks < 2) {
+    if (inode_nblocks(sb, inode) > EXT2_NDIR_BLOCKS) {
+        // Indirect blocks not supported yet
+        error("Indirect blocks not supported yet");
+        return -1;
+    }
+
+    if (inode_nblocks(sb, inode) <= 0) {
         error("Inode has no blocks allocated");
         return -1;
     }
 
-    if (deallocate_block_from_dev(sb, inode->block[inode->blocks - 2]) < 0) {
+    if (deallocate_block_from_dev(sb, inode->block[inode_nblocks(sb, inode) - 1]) < 0) {
         error("Failed to deallocate block from inode #%lu", inodenum);
         return -1;
     }
 
-    inode->block[inode->blocks - 2] = 0;
-    inode->blocks--;
+    inode->block[inode_nblocks(sb, inode) - 1] = 0;
+    inode->blocks -= sb->block_size >> 9;
 
     if (flush_inode(sb, inodenum, inode) < 0) {
         error("Failed to flush inode");
@@ -570,7 +582,7 @@ static int add_dir_entry_to(ext2_sb_t *sb, ext2_inode_data_t *parent, uint32_t p
 
     uint32_t blkoff;
     // Get last block of the directory file
-    if (get_inode_phys_block_offset(sb, parent, parent->blocks - 2, &blkoff) < 0) {
+    if (get_inode_phys_block_offset(sb, parent, inode_nblocks(sb, parent) - 1, &blkoff) < 0) {
         error("Couldn't get inode physical block");
         return -1;
     }
@@ -615,7 +627,7 @@ static int add_dir_entry_to(ext2_sb_t *sb, ext2_inode_data_t *parent, uint32_t p
                 error("Failed to flush inode");
                 goto error_flush;
             }
-            if (get_inode_phys_block_offset(sb, parent, parent->blocks - 2, &blkoff) < 0) {
+            if (get_inode_phys_block_offset(sb, parent, inode_nblocks(sb, parent) - 1, &blkoff) < 0) {
                 error("Couldn't get inode physical block");
                 return -1;
             }
@@ -662,7 +674,6 @@ static int allocate_inode_from_dev(ext2_sb_t *sb, fs_inode_t *parent, ext2_inode
         error("Couldn't allocate inode");
         return -1;
     }
-    child->blocks++;
     populate_inode_mode(child, mode);
 
     uint32_t blocknum;
