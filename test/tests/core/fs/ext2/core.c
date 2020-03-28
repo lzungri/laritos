@@ -172,24 +172,202 @@ DATAIMG_T(ext2, ext2_mkdir_fails_on_readonly_parent) {
     tassert(!fs_file_in_listdir(DATA_TEST_DIR "/rodir", "child"));
 DATAIMG_TEND
 
-DATAIMG_T(ext2, ext2_mkregfile_creates_a_new_file) {
+DATAIMG_T(ext2, ext2_mkregfile_creates_a_new_file_with_size_0_and_1_data_block) {
     fs_dentry_t *f = vfs_file_create(fs_get_data_testdir(), "regfile",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(f != NULL);
     tassert(file_exist(DATA_TEST_DIR "/regfile"));
     tassert(!file_is_dir(DATA_TEST_DIR "/regfile"));
     tassert(fs_file_in_listdir(DATA_TEST_DIR, "regfile"));
+
+    ext2_sb_t *sb = (ext2_sb_t *) f->inode->sb;
+    ext2_inode_data_t physnode;
+    tassert(read_inode_from_dev((ext2_sb_t *) f->inode->sb, f->inode->number, &physnode) >= 0);
+    tassert(physnode.size == 0);
+    tassert(inode_nblocks(sb, &physnode) == 1);
 DATAIMG_TEND
 
 DATAIMG_T(ext2, ext2_mkregfile_fails_on_readonly_parent) {
     fs_dentry_t *dir = vfs_dir_create(fs_get_data_testdir(), "rodir2",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_EXEC);
     tassert(dir != NULL);
-    tassert(file_is_dir(DATA_TEST_DIR "/rodir"));
+    tassert(file_is_dir(DATA_TEST_DIR "/rodir2"));
 
     fs_dentry_t *f = vfs_file_create(dir, "child",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
     tassert(f == NULL);
-    tassert(!file_is_dir(DATA_TEST_DIR "/rodir/child"));
-    tassert(!fs_file_in_listdir(DATA_TEST_DIR "/rodir", "child"));
+    tassert(!file_is_dir(DATA_TEST_DIR "/rodir2/child"));
+    tassert(!fs_file_in_listdir(DATA_TEST_DIR "/rodir2", "child"));
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_writing_n_bytes_change_file_size_to_n) {
+    fs_dentry_t *d = vfs_file_create(fs_get_data_testdir(), "nbytes", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(d != NULL);
+
+    fs_file_t *f = vfs_file_open(DATA_TEST_DIR "/nbytes", FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char buf[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    tassert(vfs_file_write(f, buf, sizeof(buf), 0) == sizeof(buf));
+    vfs_file_close(f);
+
+    ext2_sb_t *sb = (ext2_sb_t *) d->inode->sb;
+    ext2_inode_data_t physnode;
+    tassert(read_inode_from_dev((ext2_sb_t *) d->inode->sb, d->inode->number, &physnode) >= 0);
+    tassert(physnode.size == sizeof(buf));
+    tassert(inode_nblocks(sb, &physnode) == 1);
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_writing_data_updates_corresponding_block) {
+    fs_dentry_t *d = vfs_file_create(fs_get_data_testdir(), "flushblock", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(d != NULL);
+
+    fs_file_t *f = vfs_file_open(DATA_TEST_DIR "/flushblock", FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char wbuf[] = "HELLO";
+    tassert(vfs_file_write(f, wbuf, sizeof(wbuf), 0) == sizeof(wbuf));
+    vfs_file_close(f);
+
+    ext2_inode_data_t physnode;
+    tassert(read_inode_from_dev((ext2_sb_t *) d->inode->sb, d->inode->number, &physnode) >= 0);
+    tassert(physnode.size == sizeof(wbuf));
+
+    f = vfs_file_open(DATA_TEST_DIR "/flushblock", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char rbuf[16];
+    tassert(vfs_file_read(f, rbuf, sizeof(rbuf), 0) == sizeof(wbuf));
+    vfs_file_close(f);
+    tassert(strncmp(rbuf, "HELLO", sizeof(rbuf)) == 0);
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_overwriting_data_doesnt_change_file_size) {
+    fs_dentry_t *d = vfs_file_create(fs_get_data_testdir(), "overwrite", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(d != NULL);
+
+    fs_file_t *f = vfs_file_open(DATA_TEST_DIR "/overwrite", FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char wbuf[] = "HELLO";
+    tassert(vfs_file_write(f, wbuf, sizeof(wbuf), 0) == sizeof(wbuf));
+    vfs_file_close(f);
+    ext2_inode_data_t physnode;
+    tassert(read_inode_from_dev((ext2_sb_t *) d->inode->sb, d->inode->number, &physnode) >= 0);
+    tassert(physnode.size == sizeof(wbuf));
+
+    f = vfs_file_open(DATA_TEST_DIR "/overwrite", FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char ovbuf = 'A';
+    tassert(vfs_file_write(f, &ovbuf, sizeof(ovbuf), 0) == sizeof(ovbuf));
+    vfs_file_close(f);
+    tassert(read_inode_from_dev((ext2_sb_t *) d->inode->sb, d->inode->number, &physnode) >= 0);
+    tassert(physnode.size == sizeof(wbuf));
+
+    f = vfs_file_open(DATA_TEST_DIR "/overwrite", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char rbuf[16];
+    tassert(vfs_file_read(f, rbuf, sizeof(rbuf), 0) == sizeof(wbuf));
+    vfs_file_close(f);
+    tassert(strncmp(rbuf, "AELLO", sizeof(rbuf)) == 0);
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_writing_blocksize_plus1_bytes_allocates_new_block) {
+    fs_dentry_t *d = vfs_file_create(fs_get_data_testdir(), "2blocks", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(d != NULL);
+
+    ext2_sb_t *sb = (ext2_sb_t *) d->inode->sb;
+
+    fs_file_t *f = vfs_file_open(DATA_TEST_DIR "/2blocks", FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char buf[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+    int i;
+    for (i = 0; i < sb->block_size; i += sizeof(buf)) {
+        tassert(vfs_file_write(f, buf, sizeof(buf), i) == sizeof(buf));
+    }
+    tassert(vfs_file_write(f, buf, 1, i) == 1);
+    vfs_file_close(f);
+
+    ext2_inode_data_t physnode;
+    tassert(read_inode_from_dev((ext2_sb_t *) d->inode->sb, d->inode->number, &physnode) >= 0);
+    tassert(physnode.size == sb->block_size + 1);
+    tassert(inode_nblocks(sb, &physnode) == 2);
+
+    f = vfs_file_open(DATA_TEST_DIR "/2blocks", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    for (i = 0; i < sb->block_size; i += sizeof(buf)) {
+        tassert(vfs_file_read(f, buf, sizeof(buf), i) == sizeof(buf));
+        tassert(memcmp(buf, (char []) { 0, 1, 2, 3, 4, 5, 6, 7 }, sizeof(buf)) == 0);
+    }
+    tassert(vfs_file_read(f, buf, 1, i) == 1);
+    tassert(buf[0] == 0);
+    vfs_file_close(f);
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_writing_data_at_blocksize_offset_allocates_new_block) {
+    fs_dentry_t *d = vfs_file_create(fs_get_data_testdir(), "bsoffset", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(d != NULL);
+
+    ext2_sb_t *sb = (ext2_sb_t *) d->inode->sb;
+    fs_file_t *f = vfs_file_open(DATA_TEST_DIR "/bsoffset", FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char wbuf[] = "HELLO";
+    tassert(vfs_file_write(f, wbuf, sizeof(wbuf), sb->block_size) == sizeof(wbuf));
+    vfs_file_close(f);
+
+    ext2_inode_data_t physnode;
+    tassert(read_inode_from_dev((ext2_sb_t *) d->inode->sb, d->inode->number, &physnode) >= 0);
+    tassert(physnode.size == sb->block_size + sizeof(wbuf));
+    tassert(inode_nblocks(sb, &physnode) == 2);
+
+    f = vfs_file_open(DATA_TEST_DIR "/bsoffset", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char rbuf[16];
+    tassert(vfs_file_read(f, rbuf, sizeof(rbuf), sb->block_size) == sizeof(wbuf));
+    vfs_file_close(f);
+    tassert(strncmp(rbuf, "HELLO", sizeof(rbuf)) == 0);
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_writing_data_at_blocksize_boundaries_allocates_new_block) {
+    fs_dentry_t *d = vfs_file_create(fs_get_data_testdir(), "bsoffset2", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(d != NULL);
+
+    ext2_sb_t *sb = (ext2_sb_t *) d->inode->sb;
+    fs_file_t *f = vfs_file_open(DATA_TEST_DIR "/bsoffset2", FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char wbuf[] = "HELLO";
+    tassert(vfs_file_write(f, wbuf, sizeof(wbuf), sb->block_size - 1) == sizeof(wbuf));
+    vfs_file_close(f);
+
+    ext2_inode_data_t physnode;
+    tassert(read_inode_from_dev((ext2_sb_t *) d->inode->sb, d->inode->number, &physnode) >= 0);
+    tassert(physnode.size == sb->block_size - 1 + sizeof(wbuf));
+    tassert(inode_nblocks(sb, &physnode) == 2);
+
+    f = vfs_file_open(DATA_TEST_DIR "/bsoffset2", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char rbuf[16];
+    tassert(vfs_file_read(f, rbuf, sizeof(rbuf), sb->block_size - 1) == sizeof(wbuf));
+    vfs_file_close(f);
+    tassert(strncmp(rbuf, "HELLO", sizeof(rbuf)) == 0);
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_writing_data_at_logblock_num10_allocates_logblocks_from1to10) {
+    fs_dentry_t *d = vfs_file_create(fs_get_data_testdir(), "bsoffset3", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(d != NULL);
+
+    ext2_sb_t *sb = (ext2_sb_t *) d->inode->sb;
+    fs_file_t *f = vfs_file_open(DATA_TEST_DIR "/bsoffset3", FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char wbuf[] = "HELLO";
+    tassert(vfs_file_write(f, wbuf, sizeof(wbuf), sb->block_size * 10 - 1) == sizeof(wbuf));
+    vfs_file_close(f);
+
+    ext2_inode_data_t physnode;
+    tassert(read_inode_from_dev((ext2_sb_t *) d->inode->sb, d->inode->number, &physnode) >= 0);
+    tassert(physnode.size == sb->block_size * 10 - 1 + sizeof(wbuf));
+    tassert(inode_nblocks(sb, &physnode) == 11);
+
+    f = vfs_file_open(DATA_TEST_DIR "/bsoffset3", FS_ACCESS_MODE_READ);
+    tassert(f != NULL);
+    char rbuf[16];
+    tassert(vfs_file_read(f, rbuf, sizeof(rbuf), sb->block_size * 10 - 1) == sizeof(wbuf));
+    vfs_file_close(f);
+    tassert(strncmp(rbuf, "HELLO", sizeof(rbuf)) == 0);
 DATAIMG_TEND
