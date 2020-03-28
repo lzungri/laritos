@@ -171,3 +171,25 @@ DATAIMG_T(ext2, ext2_mkdir_fails_on_readonly_parent) {
     tassert(!file_is_dir(DATA_TEST_DIR "/rodir/child"));
     tassert(!fs_file_in_listdir(DATA_TEST_DIR "/rodir", "child"));
 DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_mkregfile_creates_a_new_file) {
+    fs_dentry_t *f = vfs_file_create(fs_get_data_testdir(), "regfile",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(f != NULL);
+    tassert(file_exist(DATA_TEST_DIR "/regfile"));
+    tassert(!file_is_dir(DATA_TEST_DIR "/regfile"));
+    tassert(fs_file_in_listdir(DATA_TEST_DIR, "regfile"));
+DATAIMG_TEND
+
+DATAIMG_T(ext2, ext2_mkregfile_fails_on_readonly_parent) {
+    fs_dentry_t *dir = vfs_dir_create(fs_get_data_testdir(), "rodir2",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_EXEC);
+    tassert(dir != NULL);
+    tassert(file_is_dir(DATA_TEST_DIR "/rodir"));
+
+    fs_dentry_t *f = vfs_file_create(dir, "child",
+            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE);
+    tassert(f == NULL);
+    tassert(!file_is_dir(DATA_TEST_DIR "/rodir/child"));
+    tassert(!fs_file_in_listdir(DATA_TEST_DIR "/rodir", "child"));
+DATAIMG_TEND
