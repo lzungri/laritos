@@ -33,10 +33,12 @@
 
 
 static inline int dev_read(ext2_sb_t *sb, void *buf, size_t n, uint32_t offset) {
+    insane("Reading %u bytes at offset 0x%lx from dev '%s'", n, offset, sb->parent.dev->parent.id);
     return sb->parent.dev->ops.read(sb->parent.dev, buf, n, offset);
 }
 
 static inline int dev_write(ext2_sb_t *sb, void *buf, size_t n, uint32_t offset) {
+    insane("Writing %u bytes at offset 0x%lx on dev '%s'", n, offset, sb->parent.dev->parent.id);
     return sb->parent.dev->ops.write(sb->parent.dev, buf, n, offset);
 }
 
@@ -684,6 +686,7 @@ static int allocate_inode_from_dev(ext2_sb_t *sb, fs_inode_t *parent, ext2_inode
     time_t t;
     time_get_rtc_time(&t);
     child->ctime = t.secs;
+    child->mtime = t.secs;
 
     if (isdir) {
         // Directory size is equal to the number of allocated blocks
@@ -824,11 +827,12 @@ static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) 
 
     int nbytes = 0;
 
-    uint32_t log_block = offset >> sb->block_size_bits;
+    uint32_t log_block;
     uint32_t block_offset = offset % sb->block_size;
     uint32_t bytes_to_eof = pinode_data.size - offset;
 
-    for ( ;log_block < get_inode_num_blocks(sb, &pinode_data); log_block++) {
+    for (log_block = offset >> sb->block_size_bits;
+            log_block < get_inode_num_blocks(sb, &pinode_data); log_block++) {
         uint32_t phys_blkoff;
         if (get_inode_phys_block_offset(sb, &pinode_data, log_block, &phys_blkoff) < 0) {
             error("Couldn't get inode physical block for logical block #%lu", log_block);
@@ -855,8 +859,79 @@ static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) 
     return nbytes;
 }
 
+static int allocate_blocks_for_region(ext2_sb_t *sb, ext2_inode_data_t *inode, uint32_t inodenum,
+        uint32_t start, size_t len) {
+    uint32_t end_lblock = (start + len - 1) >> sb->block_size_bits;
+    int32_t reqblocks;
+    for (reqblocks = end_lblock + 1 - inode_nblocks(sb, inode); reqblocks > 0; reqblocks--) {
+        uint32_t blocknum;
+        if (allocate_block_for_inode(sb, inode, inodenum, &blocknum) < 0) {
+            error("Couldn't allocate block");
+            return -1;
+        }
+    }
+    return 0;
+}
+
 static int ext2_def_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    return -1;
+    ext2_sb_t *sb = (ext2_sb_t *) f->dentry->inode->sb;
+
+    if (offset >= EXT2_NDIR_BLOCKS * sb->block_size || offset + blen > EXT2_NDIR_BLOCKS * sb->block_size) {
+        error("Indirect blocks not supported yet");
+        return -1;
+    }
+
+    ext2_inode_data_t pinode;
+    if (read_inode_from_dev(sb, f->dentry->inode->number, &pinode) < 0) {
+        error("Failed to read inode #%lu", f->dentry->inode->number);
+        return -1;
+    }
+
+    if (allocate_blocks_for_region(sb, &pinode, f->dentry->inode->number, offset, blen) < 0) {
+        error("Failed to allocate blocks for inode #%lu", f->dentry->inode->number);
+        return -1;
+    }
+
+    int nbytes = 0;
+
+    uint32_t log_block;
+    uint32_t block_offset = offset % sb->block_size;
+
+    for (log_block = offset >> sb->block_size_bits; log_block < inode_nblocks(sb, &pinode); log_block++) {
+        uint32_t phys_blkoff;
+        if (get_inode_phys_block_offset(sb, &pinode, log_block, &phys_blkoff) < 0) {
+            error("Couldn't get inode physical block for logical block #%lu", log_block);
+            return -1;
+        }
+
+        int len = min(blen - nbytes, sb->block_size - block_offset);
+        len = dev_write(sb, (char *) buf + nbytes, len, phys_blkoff + block_offset);
+        if (len <= 0) {
+            error("Couldn't write inode data to device '%s'", sb->parent.dev->parent.id);
+            return -1;
+        }
+
+        nbytes += len;
+        block_offset = 0;
+
+        if (nbytes >= blen) {
+            break;
+        }
+    }
+
+    time_t t;
+    time_get_rtc_time(&t);
+    pinode.mtime = t.secs;
+    if (pinode.size < offset + nbytes) {
+        pinode.size = offset + nbytes;
+    }
+
+    if (flush_inode(sb, f->dentry->inode->number, &pinode) < 0) {
+        error("Failed to flush inode");
+        return -1;
+    }
+
+    return nbytes;
 }
 
 static int ext2_def_open(fs_inode_t *inode, fs_file_t *f) {
