@@ -230,49 +230,6 @@ error_read:
     return NULL;
 }
 
-static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
-    ext2_sb_t *sb = (ext2_sb_t *) parent->sb;
-
-    ext2_inode_data_t pinode_data;
-    if (read_inode_from_dev(sb, parent->number, &pinode_data) < 0) {
-        error("Failed to read inode #%lu", parent->number);
-        return NULL;
-    }
-
-    int i;
-    for (i = 0; i < get_inode_num_blocks(sb, &pinode_data); i++) {
-        uint32_t blkoff;
-        if (get_inode_phys_block_offset(sb, &pinode_data, i, &blkoff) < 0) {
-            error("Couldn't get inode physical block");
-            return NULL;
-        }
-
-        uint32_t next_block = blkoff + sb->block_size;
-        while (blkoff < next_block) {
-            char dentry_buf[sizeof(ext2_direntry_t) + EXT2_NAME_LEN];
-            ext2_direntry_t *dentry = (ext2_direntry_t *) dentry_buf;
-            if (dev_read(sb, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
-                error("Couldn't read dentry metadata from device '%s'", sb->parent.dev->parent.id);
-                return NULL;
-            }
-            if (dev_read(sb, (char *) dentry + sizeof(ext2_direntry_t),
-                    dentry->name_len, blkoff + sizeof(ext2_direntry_t)) < 0) {
-                error("Couldn't read dentry file name from device '%s'", sb->parent.dev->parent.id);
-                return NULL;
-            }
-
-            if (strncmp(dentry->name, name, dentry->name_len) == 0 &&
-                    strlen(name) == dentry->name_len) {
-                return alloc_inode_for(sb, dentry);
-            }
-
-            blkoff += dentry->rec_len;
-        }
-    }
-
-    return NULL;
-}
-
 static int flush_inode(ext2_sb_t *sb, uint32_t inodenum, ext2_inode_data_t *inode) {
     debug("Flushing inode #%lu", inodenum);
 
@@ -788,6 +745,49 @@ error_alloc:
     return -1;
 }
 
+static fs_inode_t *ext2_def_lookup(fs_inode_t *parent, char *name) {
+    ext2_sb_t *sb = (ext2_sb_t *) parent->sb;
+
+    ext2_inode_data_t pinode_data;
+    if (read_inode_from_dev(sb, parent->number, &pinode_data) < 0) {
+        error("Failed to read inode #%lu", parent->number);
+        return NULL;
+    }
+
+    int i;
+    for (i = 0; i < get_inode_num_blocks(sb, &pinode_data); i++) {
+        uint32_t blkoff;
+        if (get_inode_phys_block_offset(sb, &pinode_data, i, &blkoff) < 0) {
+            error("Couldn't get inode physical block");
+            return NULL;
+        }
+
+        uint32_t next_block = blkoff + sb->block_size;
+        while (blkoff < next_block) {
+            char dentry_buf[sizeof(ext2_direntry_t) + EXT2_NAME_LEN];
+            ext2_direntry_t *dentry = (ext2_direntry_t *) dentry_buf;
+            if (dev_read(sb, dentry, sizeof(ext2_direntry_t), blkoff) < 0) {
+                error("Couldn't read dentry metadata from device '%s'", sb->parent.dev->parent.id);
+                return NULL;
+            }
+            if (dev_read(sb, (char *) dentry + sizeof(ext2_direntry_t),
+                    dentry->name_len, blkoff + sizeof(ext2_direntry_t)) < 0) {
+                error("Couldn't read dentry file name from device '%s'", sb->parent.dev->parent.id);
+                return NULL;
+            }
+
+            if (strncmp(dentry->name, name, dentry->name_len) == 0 &&
+                    strlen(name) == dentry->name_len) {
+                return alloc_inode_for(sb, dentry);
+            }
+
+            blkoff += dentry->rec_len;
+        }
+    }
+
+    return NULL;
+}
+
 static int ext2_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
     debug("Creating dir '%s'", dentry->name);
     return ext2_mkinode(parent, dentry, mode, true);
@@ -845,14 +845,16 @@ static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) 
 }
 
 static int ext2_def_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
-    return 0;
+    return -1;
 }
 
 static int ext2_def_open(fs_inode_t *inode, fs_file_t *f) {
+    // Nothing special to do here
     return 0;
 }
 
 static int ext2_def_close(fs_inode_t *inode, fs_file_t *f) {
+    // Nothing special to do here
     return 0;
 }
 
