@@ -11,7 +11,7 @@
  *  - Improve performance (e.g. do not flush metadata right after each modification, use dirty flag)
  */
 
-//#define DEBUG
+#define DEBUG
 #include <log.h>
 
 #include <stdint.h>
@@ -311,6 +311,8 @@ static int flush_metadata(ext2_sb_t *sb) {
             continue;
         }
 
+        verbose("Block group #%d freeblocks=%u, freeinodes=%u", i,
+                bgd->free_blocks_count, bgd->free_inodes_count);
         if (dev_write(sb, bgd, sizeof(ext2_bg_desc_t),
                 sb->bgd_pblock_offset + i * sizeof(ext2_bg_desc_t)) < 0) {
             error("Failed to flush block group #%d", i);
@@ -318,7 +320,8 @@ static int flush_metadata(ext2_sb_t *sb) {
         }
     }
 
-
+    verbose("Superblock freeblocks=%lu, freeinodes=%lu",
+            sb->info.free_blocks_count, sb->info.free_inodes_count);
     if (dev_write(sb, &sb->info, sizeof(ext2_sb_info_t), EXT2_SB_OFFSET) < 0) {
         error("Failed to flush superblock");
         return -1;
@@ -330,6 +333,8 @@ static int flush_metadata(ext2_sb_t *sb) {
 static void populate_inode_mode(ext2_inode_data_t *inode, fs_access_mode_t mode) {
     if (mode & FS_ACCESS_MODE_DIR) {
         inode->mode |= S_IFDIR;
+    } else {
+        inode->mode |= S_IFREG;
     }
     if (mode & FS_ACCESS_MODE_READ) {
         inode->mode |= S_IRUSR;
@@ -588,12 +593,23 @@ static int deallocate_lastblock_for_inode(ext2_sb_t *sb, ext2_inode_data_t *inod
 
 static int rm_dir_entry_from(ext2_sb_t *sb, fs_inode_t *parent, uint32_t childno) {
     debug("Removing inode #%lu directory entry from inode #%lu", childno, parent->number);
+
+    if (!S_ISDIR(parent->mode)) {
+        error("Cannot add dir entry: Not a directory");
+        return -1;
+    }
+
     // TODO Cannot delete dir if it has any children
     return -1;
 }
 
 static int add_dir_entry_to(ext2_sb_t *sb, ext2_inode_data_t *parent, uint32_t parentno, char *name, uint32_t childno, fs_access_mode_t mode) {
     debug("Adding directory entry '%s' to inode #%lu", name, parentno);
+
+    if (!S_ISDIR(parent->mode)) {
+        error("Cannot add dir entry: Not a directory");
+        return -1;
+    }
 
     uint32_t blkoff;
     // Get last block of the directory file
@@ -683,8 +699,8 @@ error_flush:
     return -1;
 }
 
-
-static int allocate_dir_inode_from_dev(ext2_sb_t *sb, fs_inode_t *parent, ext2_inode_data_t *child, uint32_t *childno, fs_access_mode_t mode) {
+static int allocate_inode_from_dev(ext2_sb_t *sb, fs_inode_t *parent, ext2_inode_data_t *child,
+        uint32_t *childno, fs_access_mode_t mode, bool isdir) {
     if (allocate_free_inode_from_dev(sb, childno) < 0) {
         error("Couldn't allocate inode");
         return -1;
@@ -700,17 +716,21 @@ static int allocate_dir_inode_from_dev(ext2_sb_t *sb, fs_inode_t *parent, ext2_i
     time_t t;
     time_get_rtc_time(&t);
     child->ctime = t.secs;
-    child->size = sb->block_size;
 
-    if (add_dir_entry_to(sb, child, *childno, ".", *childno,
-            FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC) < 0) {
-        error("Failed to add '.' directory entry");
-        goto error_dot;
-    }
-    if (add_dir_entry_to(sb, child, *childno, "..", parent->number,
-            FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC) < 0) {
-        error("Failed to add '..' directory entry");
-        goto error_dotdot;
+    if (isdir) {
+        // Directory size is equal to the number of allocated blocks
+        child->size = sb->block_size;
+
+        if (add_dir_entry_to(sb, child, *childno, ".", *childno,
+                FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC) < 0) {
+            error("Failed to add '.' directory entry");
+            goto error_dot;
+        }
+        if (add_dir_entry_to(sb, child, *childno, "..", parent->number,
+                FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC) < 0) {
+            error("Failed to add '..' directory entry");
+            goto error_dotdot;
+        }
     }
 
     if (flush_inode(sb, *childno, child) < 0) {
@@ -729,9 +749,7 @@ error_balloc:
     return -1;
 }
 
-static int ext2_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
-    debug("Creating dir '%s'", dentry->name);
-
+static int ext2_mkinode(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode, bool isdir) {
     ext2_sb_t *sb = (ext2_sb_t *) parent->sb;
 
     ext2_inode_data_t parent_phys_inode;
@@ -742,7 +760,7 @@ static int ext2_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mod
 
     uint32_t inodenum;
     ext2_inode_data_t child_phys_inode = { 0 };
-    if (allocate_dir_inode_from_dev(sb, parent, &child_phys_inode, &inodenum, mode) < 0) {
+    if (allocate_inode_from_dev(sb, parent, &child_phys_inode, &inodenum, mode, isdir) < 0) {
         error("Couldn't allocate inode for directory '%s'", dentry->name);
         goto error_alloc;
     }
@@ -770,8 +788,14 @@ error_alloc:
     return -1;
 }
 
+static int ext2_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
+    debug("Creating dir '%s'", dentry->name);
+    return ext2_mkinode(parent, dentry, mode, true);
+}
+
 static int ext2_def_mkregfile(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode) {
-    return 0;
+    debug("Creating regular file '%s'", dentry->name);
+    return ext2_mkinode(parent, dentry, mode, false);
 }
 
 static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
