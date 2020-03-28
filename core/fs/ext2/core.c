@@ -11,7 +11,7 @@
  *  - Improve performance (e.g. do not flush metadata right after each modification, use dirty flag)
  */
 
-#define DEBUG
+//#define DEBUG
 #include <log.h>
 
 #include <stdint.h>
@@ -33,7 +33,6 @@
 
 
 static inline int dev_read(ext2_sb_t *sb, void *buf, size_t n, uint32_t offset) {
-    insane("Reading %u bytes at offset 0x%lx from dev '%s'", n, offset, sb->parent.dev->parent.id);
     return sb->parent.dev->ops.read(sb->parent.dev, buf, n, offset);
 }
 
@@ -841,8 +840,8 @@ static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) 
 
         int len = min(blen - nbytes, sb->block_size - block_offset);
         len = min(len, bytes_to_eof);
-
-        if (dev_read(sb, (char *) buf + nbytes, len, phys_blkoff + block_offset) < 0) {
+        len = dev_read(sb, (char *) buf + nbytes, len, phys_blkoff + block_offset);
+        if (len <= 0) {
             error("Couldn't read inode data from device '%s'", sb->parent.dev->parent.id);
             return -1;
         }
