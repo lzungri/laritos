@@ -812,6 +812,10 @@ static int ext2_def_mkregfile(fs_inode_t *parent, fs_dentry_t *dentry, fs_access
 }
 
 static int ext2_def_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
+    if (blen == 0) {
+        return 0;
+    }
+
     ext2_sb_t *sb = (ext2_sb_t *) f->dentry->inode->sb;
 
     ext2_inode_data_t pinode_data;
