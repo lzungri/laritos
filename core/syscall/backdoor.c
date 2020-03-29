@@ -1,5 +1,6 @@
 #include <log.h>
 
+#include <core.h>
 #include <process/core.h>
 #include <process/types.h>
 #include <syscall/syscall.h>
@@ -7,6 +8,7 @@
 #include <time/core.h>
 #include <utils/debug.h>
 #include <utils/utils.h>
+#include <mm/slab.h>
 #include <strtoxl.h>
 
 typedef struct {
@@ -112,33 +114,34 @@ static int bd_free(void *param) {
         error("Syntax: bd free <ptr_in_hex>");
         return -1;
     }
-    void * ptr = (void *) strtoul(param, NULL, 16);
+    void *ptr = (void *) strtoul(param, NULL, 16);
     info("Freeing ptr=0x%p", ptr);
     free(ptr);
     return 0;
 }
 
-static int bdproc_main(void *data) {
-    uint16_t *secs = (uint16_t *) data;
-    info("New process pid=%u, sleeping for %u seconds", process_get_current()->pid, *secs);
-    sleep(*secs);
-    free(secs);
-    info("Dying...");
-    return 0;
-}
-
-static int bd_spawn(void *param) {
+static int bd_debugpid(void *param) {
     if (param == NULL) {
-        error("Syntax: bd spawn <sleep_time_in_secs>");
+        error("Syntax: bd debugpid <pid>");
         return -1;
     }
-    uint16_t *secs = malloc(sizeof(uint16_t));
-    *secs = strtoul(param, NULL, 0);
-    pcb_t *proc = process_spawn_kernel_process("bdproc", bdproc_main, secs, 4096, CONFIG_SCHED_PRIORITY_MAX_USER - 1);
-    if (proc == NULL) {
-        free(secs);
+
+    int pid = (int) strtoul(param, NULL, 0);
+    if (!slab_is_taken(_laritos.proc.pcb_slab, pid)) {
+        error("pid=%u not found", pid);
+        return -1;
     }
-    return 0;
+
+    pcb_t *pcb = slab_get_ptr_from_position(_laritos.proc.pcb_slab, pid);
+    if (pcb != NULL) {
+        info("Steps to debug %s:", pcb->cmd);
+        info("  1- Make sure you launched the OS in debugging mode");
+        info("  2- Interrupt gdb via ctrl-c");
+        info("  3- Run this in your gdb session: add-symbol-file <path_to_elf> 0x%p", pcb->mm.text_start);
+        info("  4- Setup breakpoints, watchpoints, etc, then type continue");
+        return 0;
+    }
+    return -1;
 }
 
 static bdcmd_t commands[] = {
@@ -154,7 +157,7 @@ static bdcmd_t commands[] = {
     { .cmd = "pstree", .handler = bd_pstree },
     { .cmd = "malloc", .handler = bd_malloc },
     { .cmd = "free", .handler = bd_free },
-    { .cmd = "spawn", .handler = bd_spawn },
+    { .cmd = "debugpid", .handler = bd_debugpid },
 };
 
 static void help_message(void) {

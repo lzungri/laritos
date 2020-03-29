@@ -5,8 +5,10 @@ config TEST_CORE_FS_ALL
     default n
     select TEST_CORE_FS_VFS_ALL
     select TEST_CORE_FS_PSEUDOFS_ALL
+    select TEST_CORE_FS_EXT2_ALL
 
 source "test/tests/core/fs/vfs/Kconfig"
 source "test/tests/core/fs/pseudofs/Kconfig"
+source "test/tests/core/fs/ext2/Kconfig"
 
 endmenu

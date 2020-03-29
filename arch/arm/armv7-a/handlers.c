@@ -8,6 +8,7 @@
 #include <syscall/syscall.h>
 #include <utils/utils.h>
 #include <utils/debug.h>
+#include <utils/symbol.h>
 #include <arch/debug.h>
 #include <arch/cpu.h>
 #include <arch/context-types.h>
@@ -48,12 +49,14 @@ int _svc_handler(int sysno, const spctx_t *ctx) {
 
 void _undef_handler(int32_t pc, spctx_t *ctx) {
     debug_message_delimiter();
-    error_async("Instruction 0x%08lx at 0x%08lx not recognized", *((uint32_t *) pc), pc);
+    char symbol[32] = { 0 };
+    symbol_get_name_at((void *) pc, symbol, sizeof(symbol));
+    error_async("Instruction 0x%08lx at %s (pc=0x%08lx) not recognized", *((uint32_t *) pc), symbol, pc);
     // cpsr is backed up in spsr during an exception
     arch_debug_dump_regs(ctx->r, ARRAYSIZE(ctx->r) - 1, pc, ctx->ret, ctx->spsr);
 
     uint32_t *ptr = (uint32_t *) max(pc - 4 * 8, 0);
-    error_async("Instructions around pc=0x%p:", (void *) pc);
+    error_async("Instructions around pc=0x%p in function %s:", (void *) pc, symbol);
     int i;
     for (i = 0; i < 16; i++, ptr++) {
         error_async(" %s [0x%p] 0x%08lx", ptr == (uint32_t *) pc ? "->" : "  ", ptr, *ptr);

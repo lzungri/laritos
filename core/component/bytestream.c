@@ -10,7 +10,6 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
-#include <fs/core.h>
 
 static int bytestream_read(stream_t *s, void *buf, size_t n, bool blocking) {
     bytestream_t *bs = (bytestream_t *) s;

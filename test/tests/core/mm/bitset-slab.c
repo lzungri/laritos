@@ -193,3 +193,22 @@ T(bitsetslab_slab_returns_the_right_slab_position) {
     }
     slab_destroy(slab);
 TEND
+
+T(bitsetslab_get_ptr_returns_null_on_invalid_position) {
+    bs_slab_t *slab = (bs_slab_t *) slab_create(10, sizeof(char));
+    tassert(slab != NULL);
+    tassert(slab_get_avail_elems(slab) == 10);
+    tassert(slab_get_ptr_from_position(slab, 0) != NULL);
+    tassert(slab_get_ptr_from_position(slab, 11) == NULL);
+    tassert(slab_get_ptr_from_position(slab, 110) == NULL);
+    slab_destroy(slab);
+TEND
+
+T(bitsetslab_get_position_returns_null_on_invalid_position) {
+    bs_slab_t *slab = (bs_slab_t *) slab_create(10, sizeof(char));
+    tassert(slab != NULL);
+    tassert(slab_get_avail_elems(slab) == 10);
+    tassert(slab_get_slab_position(slab, slab_get_ptr_from_position(slab, 9)) == 9);
+    tassert(slab_get_slab_position(slab, slab_get_ptr_from_position(slab, 9) + 1) == -1);
+    slab_destroy(slab);
+TEND

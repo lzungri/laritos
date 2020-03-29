@@ -5,8 +5,11 @@
 #include <loader/elf.h>
 #include <loader/loader-elf.h>
 #include <process/types.h>
+#include <process/core.h>
 #include <sync/spinlock.h>
 #include <dstruct/list.h>
+#include <fs/vfs/core.h>
+#include <fs/vfs/types.h>
 
 
 int loader_init_global_context(void) {
@@ -60,27 +63,37 @@ int loader_unregister_loader_type(loader_type_t *loader) {
     return -1;
 }
 
-pcb_t *loader_load_executable_from_memory(uint16_t appidx) {
-    /**
-     * Offset in laritos.bin where the apps are loaded.
-     * Apps are (for now) appended to laritos.bin via the tools/apps/install.sh script
-     * This is temporary until we implement a better mechanism for flashing apps,
-     * such as a file system on sd card.
-     */
-    extern char __apps_start[];
-    unsigned char *executable = __apps_start;
+pcb_t *loader_load_executable_from_file(char *path) {
+    fs_file_t *f = vfs_file_open(path, FS_ACCESS_MODE_READ);
+    if (f == NULL) {
+        error_async("Couldn't open '%s' for execution", path);
+        return NULL;
+    }
+
+    if (!(f->dentry->inode->mode & FS_ACCESS_MODE_EXEC)) {
+        error_async("'%s' doesn't have execution permissions", path);
+        vfs_file_close(f);
+        return NULL;
+    }
 
     loader_type_t *loader;
     list_for_each_entry(loader, &_laritos.loaders, list) {
-        if (loader->can_handle(executable)) {
-            debug_async("Loading app at 0x%p with '%s' loader", executable, loader->id);
-            pcb_t *pcb = loader->load(executable);
+        if (loader->can_handle(f)) {
+            debug_async("Loading app from '%s' with '%s' loader", path, loader->id);
+            pcb_t *pcb = loader->load(f);
             if (pcb == NULL) {
                 error_async("Failed to load application");
             }
+            process_set_name(pcb, f->dentry->name);
+            strncpy(pcb->cmd, path, sizeof(pcb->cmd));
+
+            vfs_file_close(f);
             return pcb;
         }
     }
+
     error_async("Executable format not recognized");
+
+    vfs_file_close(f);
     return NULL;
 }

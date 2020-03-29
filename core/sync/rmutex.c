@@ -19,8 +19,6 @@ int rmutex_init(rmutex_t *mutex) {
 
 int rmutex_acquire(rmutex_t *mutex) {
     pcb_t *cur = process_get_current();
-    verbose_async("rmutex_acquire(m=0x%p, count=%u, pid=%u)", mutex, mutex->lock_count, cur->pid);
-
     irqctx_t ctx;
     spinlock_acquire(&mutex->lock, &ctx);
 
@@ -28,7 +26,8 @@ int rmutex_acquire(rmutex_t *mutex) {
     mutex->lock_count++;
     mutex->owner = cur;
 
-    verbose_async("rmutex_acquire(m=0x%p, count=%u, pid=%u) -> ACQUIRED", mutex, mutex->lock_count, cur->pid);
+    verbose_async("rmutex_acquire(m=0x%p, count=%u, pid=%u)%s",
+            mutex, mutex->lock_count, cur->pid, mutex->lock_count == 1 ? " -> ACQUIRED" : "");
     spinlock_release(&mutex->lock, &ctx);
     return 0;
 }

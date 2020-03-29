@@ -1,0 +1,5 @@
+/data filesystem
+----------------
+
+This is a *read/write* file system for storing user data.
+Data saved here will be persistent across reboots.

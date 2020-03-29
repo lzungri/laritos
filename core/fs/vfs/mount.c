@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <core.h>
 #include <string.h>
-#include <utils/file.h>
+#include <fs/file.h>
 #include <dstruct/list.h>
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
@@ -13,6 +13,11 @@
 static inline bool is_valid_mount_struct(fs_mount_t *fsm) {
     if (fsm->sb == NULL) {
         error("No superblock was instantiated");
+        return false;
+    }
+
+    if (fsm->sb->root == NULL) {
+        error("No root inode");
         return false;
     }
 
@@ -39,12 +44,12 @@ static inline fs_mount_t *get_fsmount(char *mount_point) {
     return NULL;
 }
 
-fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags, void *params) {
+fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags, fs_param_t *params) {
     info("Mounting %s filesystem at %s with flags=0x%0x", fstype, mount_point, flags);
 
     fs_type_t *fst = vfs_get_fstype(fstype);
     if (fst == NULL) {
-        error("File system '%s' not supported", fstype);
+        error("File system '%s' at '%s' not supported", fstype, mount_point);
         return NULL;
     }
 
@@ -68,7 +73,7 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags
     fsm->flags = flags;
     INIT_LIST_HEAD(&fsm->list);
 
-    if (fst->mount(fst, fsm) < 0) {
+    if (fst->mount(fst, fsm, params) < 0) {
         error("Could not mount file system '%s' at %s", fst->id, mount_point);
         goto error_mount;
     }
@@ -86,9 +91,9 @@ fs_mount_t *vfs_mount_fs(char *fstype, char *mount_point, fs_mount_flags_t flags
         goto error_dentry;
     }
 
-    fsm->root->inode = fsm->sb->ops.alloc_inode(fsm->sb);
+    fsm->root->inode = fsm->sb->root;
     if (fsm->root->inode == NULL) {
-        error("Couldn't allocate root inode for '%s'", mount_point);
+        error("No root inode for '%s'", mount_point);
         goto error_inode;
     }
     fsm->root->inode->mode = FS_ACCESS_MODE_DIR | FS_ACCESS_MODE_EXEC;

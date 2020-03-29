@@ -35,15 +35,20 @@ static syscall_entry_t systable[] = {
     DEF_SCE(SYSCALL_SET_PROCESS_NAME, syscall_set_process_name),
     DEF_SCE(SYSCALL_READLINE, syscall_readline),
     DEF_SCE(SYSCALL_GETC, syscall_getc),
-    DEF_SCE(SYSCALL_GETCWD, syscall_getcwd),
-    DEF_SCE(SYSCALL_CHDIR, syscall_chdir),
-    DEF_SCE(SYSCALL_LISTDIR, syscall_listdir),
-    DEF_SCE(SYSCALL_OPEN, syscall_open),
-    DEF_SCE(SYSCALL_READ, syscall_read),
-    DEF_SCE(SYSCALL_CLOSE, syscall_close),
 #ifdef CONFIG_SYSCALL_OPEN_BACKDOOR
     DEF_SCE(SYSCALL_BACKDOOR, syscall_backdoor),
 #endif
+    DEF_SCE(SYSCALL_CHDIR, syscall_chdir),
+    DEF_SCE(SYSCALL_GETCWD, syscall_getcwd),
+    DEF_SCE(SYSCALL_LISTDIR, syscall_listdir),
+    DEF_SCE(SYSCALL_OPEN, syscall_open),
+    DEF_SCE(SYSCALL_READ, syscall_read),
+    DEF_SCE(SYSCALL_WRITE, syscall_write),
+    DEF_SCE(SYSCALL_CLOSE, syscall_close),
+    DEF_SCE(SYSCALL_GET_PROPERTY, syscall_get_property),
+    DEF_SCE(SYSCALL_SPAWN_PROCESS, syscall_spawn_process),
+    DEF_SCE(SYSCALL_WAITPID, syscall_waitpid),
+    DEF_SCE(SYSCALL_MKDIR, syscall_mkdir),
 };
 
 

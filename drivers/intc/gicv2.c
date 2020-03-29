@@ -120,8 +120,11 @@ static int init(component_t *c) {
     gic->dist->ctrl.b.enable_group0 = 1;
     gic->dist->ctrl.b.enable_group1 = 1;
 
-    info("Disabling irq priority filtering (prio=0xff)");
+    debug("Disabling irq priority filtering (prio=0xff)");
     gic->parent.ops.set_priority_filter((intc_t *) gic, 0xff);
+
+    debug("Enabling interrupts for the current cpu");
+    set_irqs_enable_for_this_cpu((intc_t *) gic, true);
 
     return 0;
 }

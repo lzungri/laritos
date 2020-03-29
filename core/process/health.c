@@ -7,12 +7,27 @@
 #include <mm/heap.h>
 #include <mm/spprot.h>
 #include <sync/spinlock.h>
+#include <property/core.h>
 #include <generated/autoconf.h>
+
+/**
+ * Time in seconds between system health checks
+ */
+#define CHECK_INTERVAL_PROP "health.check_interval"
+/**
+ * % of available heap at which to trigger a warning
+ */
+#define AVAIL_HEAP_THRESH_PROP "health.thresh.availheap"
+/**
+ * % of available process stack at which to trigger a warning
+ */
+#define AVAIL_PROC_STACK_THRESH_PROP "health.thresh.availstack"
+
 
 static void check_heap(void) {
     verbose("Checking heap healthy status");
     uint32_t avail = heap_get_available() * 100 / CONFIG_MEM_HEAP_SIZE;
-    if (avail < CONFIG_PROCESS_HEALTH_AVAIL_HEAP_WARNING_THRESHOLD) {
+    if (avail < (uint32_t) property_get_or_def_int32(AVAIL_HEAP_THRESH_PROP, 30)) {
         warn("Running low on heap memory, %lu%% available", avail);
     }
 }
@@ -31,7 +46,7 @@ static void check_processes(void) {
         bool stack_corrupted = spprot_is_stack_corrupted(proc);
         spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
 
-        if (stack_avail < CONFIG_PROCESS_HEALTH_AVAIL_PROC_STACK_WARNING_THRESHOLD) {
+        if (stack_avail < (uint32_t) property_get_or_def_int32(AVAIL_PROC_STACK_THRESH_PROP, 30)) {
             warn("Running low on stack for pid=%u, %lu%% available", proc->pid, stack_avail);
         }
         if (stack_corrupted) {
@@ -43,17 +58,22 @@ static void check_processes(void) {
 }
 
 static int health_main(void *data) {
+    property_create(CHECK_INTERVAL_PROP, "30",
+            PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL);
+    property_create(AVAIL_HEAP_THRESH_PROP, "30",
+            PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL);
+    property_create(AVAIL_PROC_STACK_THRESH_PROP, "30",
+            PROPERTY_MODE_READ_BY_ALL | PROPERTY_MODE_WRITE_BY_ALL);
+
     while (1) {
         check_heap();
         check_processes();
 
-        sleep(CONFIG_PROCESS_HEALTH_CHECK_INTERVAL);
+        sleep(property_get_or_def_int32(CHECK_INTERVAL_PROP, 30));
     }
     return 0;
 }
 
-static pcb_t *launcher(proc_mod_t *pmod) {
-    return process_spawn_kernel_process(pmod->id, health_main, NULL, 8196, 1);
+pcb_t *health_launcher(void) {
+    return process_spawn_kernel_process("health", health_main, NULL, 8196, 1);
 }
-
-PROCESS_LAUNCHER_MODULE(health, launcher)

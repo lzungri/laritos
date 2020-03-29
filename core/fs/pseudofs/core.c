@@ -1,4 +1,3 @@
-#define DEBUG
 #include <log.h>
 
 #include <stdint.h>
@@ -10,6 +9,7 @@
 #include <mm/heap.h>
 #include <utils/math.h>
 #include <fs/pseudofs.h>
+#include <sync/atomic.h>
 
 fs_inode_t *pseudofs_def_lookup(fs_inode_t *parent, char *name) {
     return NULL;
@@ -69,6 +69,8 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
 
     inode->sb = sb;
 
+    inode->number = atomic32_inc(&((pseudofs_sb_t *) sb)->next_inode_number);
+
     inode->ops.lookup = pseudofs_def_lookup;
     inode->ops.mkdir = pseudofs_def_mkdir;
     inode->ops.rmdir = pseudofs_def_rmdir;
@@ -82,6 +84,7 @@ static fs_inode_t *alloc_inode(fs_superblock_t *sb) {
 }
 
 static void free_inode(fs_inode_t *inode) {
+    verbose("Freeing inode #%lu", inode != NULL ? inode->number : 0);
     free(inode);
 }
 
@@ -90,17 +93,22 @@ static int unmount(fs_mount_t *fsm) {
     return 0;
 }
 
-static int mount(fs_type_t *fstype, fs_mount_t *m) {
-    m->sb = calloc(1, sizeof(fs_superblock_t));
-    if (m->sb == NULL) {
-        error("No memory available for fs_superblock_t structure");
+static int mount(fs_type_t *fstype, fs_mount_t *m, fs_param_t *params) {
+    pseudofs_sb_t *psb = calloc(1, sizeof(pseudofs_sb_t));
+    if (psb == NULL) {
+        error("No memory available for pseudofs_sb_t structure");
         goto error_sb;
     }
+    m->sb = (fs_superblock_t *) psb;
     m->sb->fstype = fstype;
     m->sb->ops.alloc_inode = alloc_inode;
     m->sb->ops.free_inode = free_inode;
 
     m->ops.unmount = unmount;
+
+    atomic32_init(&psb->next_inode_number, 0);
+
+    m->sb->root = alloc_inode(m->sb);
 
     return 0;
 

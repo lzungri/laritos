@@ -9,7 +9,8 @@
 #include <time/tick.h>
 #include <component/component.h>
 #include <dstruct/list.h>
-#include <test/utils.h>
+#include <test/utils/process.h>
+#include <test/utils/time.h>
 
 static void pause_ticker(void) {
     component_t *c;

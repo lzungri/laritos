@@ -4,10 +4,11 @@
 #include <stdbool.h>
 #include <string.h>
 #include <test/test.h>
+#include <test/utils/fs.h>
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
-#include <utils/file.h>
+#include <fs/file.h>
 
 static char rdata[32];
 static char wdata[32];
@@ -205,15 +206,7 @@ T(pseudofs_listdir_returns_double_dot_dir_if_no_children) {
     tassert(dir1 != NULL);
     tassert(file_is_dir("/test/dir1"));
 
-    fs_file_t *d = vfs_file_open("/test/dir1", FS_ACCESS_MODE_READ);
-    tassert(d != NULL);
-
-    fs_listdir_t dirs[5] = { 0 };
-    tassert(vfs_dir_listdir(d, 0, dirs, ARRAYSIZE(dirs)) == 1);
-    tassert(strncmp(dirs[0].name, "..", sizeof(dirs[0].name)) == 0);
-    tassert(dirs[0].isdir);
-
-    vfs_file_close(d);
+    tassert(fs_file_in_listdir("/test/dir1", ".."));
 
     tassert(vfs_unmount_fs("/test") >= 0);
     tassert(!file_exist("/test"));
@@ -240,7 +233,6 @@ T(pseudofs_listdir_returns_the_list_of_dirs_and_files) {
     fs_dentry_t *dir2 = vfs_dir_create(dir1, "dir2", FS_ACCESS_MODE_READ | FS_ACCESS_MODE_EXEC);
     tassert(dir2 != NULL);
     tassert(file_is_dir("/test/dir1/dir2"));
-
 
     fs_file_t *d = vfs_file_open("/test/dir1", FS_ACCESS_MODE_READ);
     tassert(d != NULL);
@@ -296,22 +288,7 @@ T(pseudofs_listdir_root_returns_all_its_children) {
     fs_mount_t *fsm = vfs_mount_fs("pseudofs", "/test", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
     tassert(fsm != NULL);
     tassert(file_exist("/test"));
-
-    fs_file_t *d = vfs_file_open("/", FS_ACCESS_MODE_READ);
-    tassert(d != NULL);
-
-    fs_listdir_t dirs[10] = { 0 };
-    int ndirs = vfs_dir_listdir(d, 0, dirs, ARRAYSIZE(dirs));
-    int i;
-    for (i = 0; i < ndirs; i++) {
-        if (strncmp(dirs[i].name, "test", sizeof(dirs[i].name)) == 0) {
-            break;
-        }
-    }
-    tassert(i < ndirs);
-
-    vfs_file_close(d);
-
+    tassert(fs_file_in_listdir("/", "test"));
     tassert(vfs_unmount_fs("/test") >= 0);
     tassert(!file_exist("/test"));
 TEND

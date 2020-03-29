@@ -14,6 +14,7 @@
 #define ELF64_R_TYPE(i)         ((i) & 0xffffffff)
 #define ELF64_R_INFO(sym,type)      ((((Elf64_Xword) (sym)) << 32) + (type))
 
+#define ELF_SECTION_NAME_MAX_LEN 32
 
 /* 32-bit ELF base types. */
 typedef uint32_t   Elf32_Addr;
@@ -316,6 +317,11 @@ typedef struct elf32_shdr {
   Elf32_Word    sh_addralign;
   Elf32_Word    sh_entsize;
 } Elf32_Shdr;
+
+typedef struct elf32_section {
+  Elf32_Shdr parent;
+  char name[ELF_SECTION_NAME_MAX_LEN];
+} Elf32_Section;
 
 typedef struct elf64_shdr {
   Elf64_Word sh_name;       /* Section name, index in string tbl */

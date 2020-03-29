@@ -29,4 +29,8 @@ config SYS_RAM_SIZE
     hex "RAM size"
     default 0x40000000
 
+config OSIMAGE_FILESIZE
+    int "laritos.img size (in MB)"
+    default 64
+
 endmenu

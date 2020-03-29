@@ -1,3 +1,4 @@
+//#define DEBUG
 #include <log.h>
 
 #include <stdbool.h>
@@ -7,7 +8,7 @@
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
 #include <mm/heap.h>
-#include <utils/file.h>
+#include <fs/file.h>
 #include <utils/math.h>
 #include <process/core.h>
 #include <generated/autoconf.h>
@@ -48,9 +49,27 @@ fs_dentry_t *vfs_dentry_alloc(char *name, fs_inode_t *inode, fs_dentry_t *parent
 void vfs_dentry_free(fs_dentry_t *d) {
     verbose("Freeing '%s'", d->name);
     vfs_dentry_remove_as_child(d);
+    if (d->inode != NULL && d->inode->sb->ops.free_inode != NULL) {
+        d->inode->sb->ops.free_inode(d->inode);
+        d->inode = NULL;
+    }
     free(d);
 }
 
+static inline fs_dentry_t *lookup_inode_and_create_dentry(fs_dentry_t *parent, char *name) {
+    fs_inode_t *inode = parent->inode->ops.lookup(parent->inode, name);
+    if (inode == NULL) {
+        return NULL;
+    }
+
+    fs_dentry_t *d = vfs_dentry_alloc(name, inode, parent);
+    if (d == NULL) {
+        error("Failed to allocate dentry for %s/%s", parent->name, name);
+        return NULL;
+    }
+
+    return d;
+}
 static inline fs_dentry_t *find_children(fs_dentry_t *parent, char *relpath) {
     if (parent == NULL) {
         return NULL;
@@ -68,7 +87,12 @@ static inline fs_dentry_t *find_children(fs_dentry_t *parent, char *relpath) {
         return parent;
     }
 
-    // '..' is just a virtual name to reference the parent dentry
+    // '.' is just a virtual name to reference the parent dentry
+    if (namelen == 1 && relpath[0] == '.') {
+        return parent;
+    }
+
+    // '..' is just a virtual name to reference the grandparent dentry
     if (namelen == 2 && relpath[0] == '.' && relpath[1] == '.') {
         return parent->parent != NULL ? parent->parent : parent;
     }
@@ -79,7 +103,13 @@ static inline fs_dentry_t *find_children(fs_dentry_t *parent, char *relpath) {
             return d;
         }
     }
-    return NULL;
+
+    // Couldn't find the dentry in the cache, try to look it up from the file system
+    char name[CONFIG_FS_MAX_FILENAME_LEN];
+    int len = min(namelen, sizeof(name) - 1);
+    strncpy(name, relpath, len);
+    name[len] = '\0';
+    return lookup_inode_and_create_dentry(parent, name);
 }
 
 fs_dentry_t *vfs_dentry_lookup_from(fs_dentry_t *parent, char *relpath) {
@@ -131,10 +161,6 @@ void vfs_dentry_free_tree(fs_dentry_t *root) {
     fs_dentry_t *temp;
     list_for_each_entry_safe(d, temp, &root->children, siblings) {
         vfs_dentry_free_tree(d);
-    }
-    if (root->inode != NULL && root->inode->sb->ops.free_inode != NULL) {
-        root->inode->sb->ops.free_inode(root->inode);
-        root->inode = NULL;
     }
     vfs_dentry_free(root);
 }

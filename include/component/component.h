@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <board/types.h>
 #include <dstruct/list.h>
+#include <utils/assert.h>
+#include <utils/utils.h>
 
 #define COMPONENT_MAX_ID_LEN CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES
 
@@ -19,14 +21,17 @@ typedef enum {
     COMP_TYPE_TICKER,
     COMP_TYPE_VRTIMER,
     COMP_TYPE_SCHED,
+    COMP_TYPE_BLOCKDEV,
+    COMP_TYPE_MCI,
 
     COMP_TYPE_LEN,
 } component_type_t;
 
 static inline char *component_get_type_str(component_type_t t) {
-    static char *str[COMP_TYPE_LEN] =
+    static char *str[] =
         { "unknown", "cpu", "uart", "intc", "rtc", "hrtimer", "bytestream", "inputdev", "logger",
-          "ticker", "vrtimer", "sched" };
+          "ticker", "vrtimer", "sched", "blockdev", "mci" };
+    cassert(ARRAYSIZE(str) >= COMP_TYPE_LEN, component_types_missing);
     return t < COMP_TYPE_LEN ? str[t] : "???";
 }
 
@@ -96,7 +101,7 @@ bool component_are_mandatory_comps_present(void);
 
 
 #define SYSFS_COMPONENT_TYPE_MODULE(_id) \
-    static int create_root_sysfs(sysfs_mod_t *sysfs) { \
+    static int create_root_sysfs(fs_sysfs_mod_t *sysfs) { \
         fs_dentry_t *root = vfs_dir_create(_laritos.fs.comp_type_root, #_id, \
                 FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC); \
         if (root == NULL) { \
@@ -107,7 +112,7 @@ bool component_are_mandatory_comps_present(void);
         return 0; \
     } \
     \
-    static int remove_root_sysfs(sysfs_mod_t *sysfs) { \
+    static int remove_root_sysfs(fs_sysfs_mod_t *sysfs) { \
         return vfs_dir_remove(_laritos.fs.comp_type_root, #_id); \
     } \
     \

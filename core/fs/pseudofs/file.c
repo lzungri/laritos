@@ -2,6 +2,7 @@
 #include <log.h>
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
@@ -98,8 +99,8 @@ fs_dentry_t *pseudofs_create_custom_rw_file(fs_dentry_t *parent, char *fname,
     return pseudofs_create_custom_wo_file_with_dataptr(parent, fname, write, NULL);
 }
 
-int pseudofs_write_to_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset) {
-    if (from == NULL) {
+int pseudofs_raw_write_to_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset, bool check_nulls) {
+    if (check_nulls && from == NULL) {
         return 0;
     }
     if (offset >= fromlen) {
@@ -110,8 +111,12 @@ int pseudofs_write_to_buf(void *to, size_t tolen, void *from, size_t fromlen, ui
     return len;
 }
 
-int pseudofs_read_from_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset) {
-    if (to == NULL) {
+int pseudofs_write_to_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset) {
+    return pseudofs_raw_write_to_buf(to, tolen, from, fromlen, offset, true);
+}
+
+int pseudofs_raw_read_from_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset, bool check_nulls) {
+    if (check_nulls && to == NULL) {
         return 0;
     }
     if (offset >= tolen) {
@@ -120,6 +125,10 @@ int pseudofs_read_from_buf(void *to, size_t tolen, void *from, size_t fromlen, u
     size_t len = min(tolen - offset, fromlen);
     memcpy((char *) to + offset, from, len);
     return len;
+}
+
+int pseudofs_read_from_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset) {
+    return pseudofs_raw_read_from_buf(to, tolen, from, fromlen, offset, true);
 }
 
 static int read_bin(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {

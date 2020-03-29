@@ -13,13 +13,14 @@ static fs_superblock_t dummy_sb = {
     },
 };
 
-static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm) {
+static int dummy_mount(fs_type_t *fstype, fs_mount_t *fsm, fs_param_t *params) {
     dummy_sb.fstype = fstype;
     fsm->sb = &dummy_sb;
+    fsm->sb->root = fsm->sb->ops.alloc_inode(fsm->sb);
     return 0;
 }
 
-int mount_error(fs_type_t *fstype, fs_mount_t *fsm) {
+int mount_error(fs_type_t *fstype, fs_mount_t *fsm, fs_param_t *params) {
     return -1;
 }
 
@@ -28,14 +29,9 @@ T(vfs_mount_make_sure_root_filesystem_is_mounted) {
     tassert(vfs_dentry_lookup("/") == _laritos.fs.root);
 TEND
 
-T(vfs_mount_make_sure_sysfs_filesystem_is_mounted) {
-    tassert(file_is_dir("/sys"));
-    tassert(vfs_dentry_lookup("/sys") == _laritos.fs.sysfs_root);
-TEND
-
 T(vfs_mount_make_sure_procfs_filesystem_is_mounted) {
-    tassert(file_is_dir("/sys/proc"));
-    tassert(vfs_dentry_lookup("/sys/proc") == _laritos.fs.proc_root);
+    tassert(file_is_dir("/proc"));
+    tassert(vfs_dentry_lookup("/proc") == _laritos.fs.proc_root);
 TEND
 
 T(vfs_mount_fails_on_unsupported_fs_type) {
@@ -84,7 +80,7 @@ T(vfs_mount_adds_a_new_fs_under_mount_point) {
     tassert(!vfs_is_fs_type_supported(fst.id));
 TEND
 
-int nosb_mount(fs_type_t *fstype, fs_mount_t *fsm) {
+int nosb_mount(fs_type_t *fstype, fs_mount_t *fsm, fs_param_t *params) {
     fsm->sb = NULL;
     return 0;
 }

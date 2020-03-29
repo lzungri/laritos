@@ -24,7 +24,7 @@ static fs_file_t *vfs_file_alloc(fs_dentry_t *dentry) {
 
 static void vfs_file_free(fs_file_t *f) {
     slab_t *slab = process_get_current()->fs.fds_slab;
-    verbose("free fd=%lu for file='%s'", slab_get_slab_position(slab, f), f->dentry->name);
+    verbose_async("free fd=%lu for file='%s'", slab_get_slab_position(slab, f), f->dentry->name);
     slab_free(slab, f);
 }
 
@@ -39,7 +39,7 @@ fs_file_t *vfs_file_dentry_open(fs_dentry_t *d, fs_access_mode_t mode) {
         return NULL;
     }
 
-    if ((d->inode->mode & FS_ACCESS_MODE_WRITE) && !(d->inode->sb->mount->flags & FS_MOUNT_WRITE)) {
+    if ((mode & FS_ACCESS_MODE_WRITE) && !(d->inode->sb->mount->flags & FS_MOUNT_WRITE)) {
         error("Permission denied, mounted filesystem is read-only");
         return NULL;
     }
@@ -71,15 +71,20 @@ error_open:
 
 fs_file_t *vfs_file_open(char *path, fs_access_mode_t mode) {
     verbose("Opening '%s' using mode=0x%x", path, mode);
-    return vfs_file_dentry_open(vfs_dentry_lookup(path), mode);
+    fs_dentry_t *d = vfs_dentry_lookup(path);
+    if (d == NULL) {
+        error("%s not found", path);
+        return NULL;
+    }
+    return vfs_file_dentry_open(d, mode);
 }
 
 int vfs_file_close(fs_file_t *f) {
     verbose("Closing '%s'", f->dentry->name);
 
-    if (f->dentry->inode->fops.close != NULL &&
+    if (f->dentry != NULL && f->dentry->inode != NULL && f->dentry->inode->fops.close != NULL &&
             f->dentry->inode->fops.close(f->dentry->inode, f) < 0) {
-        error("Error closing '%s'", f->dentry->name);
+        error_async("Error closing '%s'", f->dentry->name);
         return -1;
     }
     f->opened = false;
@@ -89,12 +94,14 @@ int vfs_file_close(fs_file_t *f) {
 }
 
 int vfs_file_close_all_for_cur_process(void) {
-    slab_t *slab = process_get_current()->fs.fds_slab;
+    pcb_t *pcb = process_get_current();
+    slab_t *slab = pcb->fs.fds_slab;
     int i;
     for (i = 0; i < slab_get_total_elems(slab); i++) {
         if (slab_is_taken(slab, i)) {
             fs_file_t *f = slab_get_ptr_from_position(slab, i);
             if (f->opened) {
+                warn_async("pid=%u is about to die with fd=%d open", pcb->pid, i);
                 vfs_file_close(f);
             }
         }
@@ -110,6 +117,11 @@ int vfs_file_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
 
     if (!(f->mode & FS_ACCESS_MODE_READ)) {
         error("File was not opened for reading");
+        return -1;
+    }
+
+    if (f->dentry->inode->mode & FS_ACCESS_MODE_DIR) {
+        error("Cannot read a directory");
         return -1;
     }
 
@@ -142,6 +154,11 @@ int vfs_file_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
         return -1;
     }
 
+    if (f->dentry->inode->mode & FS_ACCESS_MODE_DIR) {
+        error("Cannot write directly into a directory content");
+        return -1;
+    }
+
     if (f->dentry->inode->fops.write == NULL) {
         error("write('%s') operation not permitted", f->dentry->name);
         return -1;
@@ -150,4 +167,12 @@ int vfs_file_write(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     int ret = f->dentry->inode->fops.write(f, buf, blen, offset);
     verbose("Writing %d bytes to '%s', ret=%d", blen, f->dentry->name, ret);
     return ret;
+}
+
+int vfs_file_write_cur_offset(fs_file_t *f, void *buf, size_t blen) {
+    int nbytes = vfs_file_write(f, buf, blen, f->offset);
+    if (nbytes > 0) {
+        f->offset += nbytes;
+    }
+    return nbytes;
 }

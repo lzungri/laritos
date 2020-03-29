@@ -5,7 +5,6 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
-#include <fs/core.h>
 #include <mm/heap.h>
 
 static int ctxswitches_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
@@ -20,7 +19,7 @@ static int osticks_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
 }
 
-static int create_root_sysfs(sysfs_mod_t *sysfs) {
+static int create_root_sysfs(fs_sysfs_mod_t *sysfs) {
     _laritos.fs.sched_root = vfs_dir_create(_laritos.fs.stats_root, "sched",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.sched_root == NULL) {
@@ -41,7 +40,7 @@ static int create_root_sysfs(sysfs_mod_t *sysfs) {
     return 0;
 }
 
-static int remove_root_sysfs(sysfs_mod_t *sysfs) {
+static int remove_root_sysfs(fs_sysfs_mod_t *sysfs) {
     return vfs_dir_remove(_laritos.fs.stats_root, "sched");
 }
 

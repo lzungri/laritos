@@ -1,5 +1,7 @@
 #include <log.h>
 
+#include <stdbool.h>
+#include <string.h>
 #include <mm/heap.h>
 #include <process/core.h>
 #include <process/sysfs.h>
@@ -13,16 +15,73 @@
 #include <board/core.h>
 #include <utils/random.h>
 #include <utils/debug.h>
+#include <utils/symbol.h>
+#include <utils/conf.h>
 #include <sched/core.h>
-#include <fs/core.h>
+#include <fs/vfs/core.h>
 #include <module/core.h>
 #include <generated/autoconf.h>
 #include <generated/utsrelease.h>
 
 
+static pcb_t *launch_process(char *launcher) {
+    if (launcher[0] == '/') {
+        info("Launching process from binary '%s'", launcher);
+        return loader_load_executable_from_file(launcher);
+    }
+
+    info("Launching process from symbol '%s'", launcher);
+    pcb_t *(*func)(void) = symbol_get(launcher);
+    if (func == NULL) {
+        error("No symbol '%s' found, check your launch_on_boot.conf file", launcher);
+        return NULL;
+    }
+    return func();
+}
+
+static int launch_on_boot_processes(void) {
+    info("Launching system processes");
+
+    fs_file_t *f = vfs_file_open("/sys/conf/init/launch_on_boot.conf", FS_ACCESS_MODE_READ);
+    if (f == NULL) {
+        error_async("Couldn't open 'launch_on_boot.conf' file");
+        return -1;
+    }
+
+    char launcher[CONFIG_FS_MAX_FILENAME_LEN];
+    char *tokens[] = { launcher };
+    uint32_t tokens_size[] = { sizeof(launcher) };
+
+    uint32_t offset = 0;
+    int fret = 0;
+    int ret;
+    while ((ret = conf_readline(f, tokens, tokens_size, ARRAYSIZE(tokens), &offset)) != 0) {
+        if (ret < 0) {
+            continue;
+        }
+        if (launch_process(launcher) == NULL) {
+            error("Couldn't launch %s", launcher);
+            fret = -1;
+        }
+    }
+
+    vfs_file_close(f);
+
+    return fret;
+}
+
 static int complete_init_process_setup(pcb_t *init) {
     init->parent = init;
     init->cwd = _laritos.fs.root;
+
+    irqctx_t datactx;
+    spinlock_acquire(&_laritos.proc.pcbs_data_lock, &datactx);
+    // Init holds a reference to itself to prevent unwanted process deallocations
+    // (e.g. when a children process uses sleep() and then it releases its reference
+    // to the init process, if the reference reaches zero, init will be deallocated)
+    ref_inc(&init->refcnt);
+    spinlock_release(&_laritos.proc.pcbs_data_lock, &datactx);
+
 
     // Create sysfs nodes for the init process
     return process_sysfs_create(init);
@@ -61,9 +120,13 @@ int init_main(void *data) {
 
     assert(module_load_static_modules() >= 0, "Failed to load static modules");
 
-    assert(fs_mount_essential_filesystems() >= 0, "Couldn't mount essential filesystems");
+    assert(vfs_mount_essential_filesystems() >= 0, "Couldn't mount essential filesystems");
 
     assert(complete_init_process_setup(process_get_current()) >= 0, "Couldn't complete setup for the init process");
+
+    info("Launching idle process");
+    pcb_t *idle_launcher(void);
+    assert(idle_launcher() != NULL, "Couldn't launch idle process");
 
     assert(board_parse_and_initialize(&_laritos.bi) >= 0, "Couldn't initialize board");
 
@@ -92,7 +155,11 @@ int init_main(void *data) {
     // Seed random generator from current time
     random_seed((uint32_t) _laritos.timeinfo.boottime.secs);
 
-    assert(process_spawn_system_procs() >= 0, "Failed to create system processes");
+    if (vfs_mount_from_config() < 0) {
+        warn("Error mounting file systems from config file, some FSs may not be mounted");
+    }
+
+    assert(launch_on_boot_processes() >= 0, "Failed to create system processes");
 
     assert(ticker_start_all() >= 0, "Failed to start OS tickers");
 

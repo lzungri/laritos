@@ -10,6 +10,7 @@
 #include <fs/vfs/core.h>
 #include <sched/core.h>
 #include <sync/atomic.h>
+#include <property/core.h>
 #include <utils/utils.h>
 
 laritos_t _laritos;
@@ -36,6 +37,10 @@ static int initialize_global_context(void) {
     }
 
     if (vfs_init_global_context() < 0) {
+        while(1);
+    }
+
+    if (property_init_global_context() < 0) {
         while(1);
     }
 

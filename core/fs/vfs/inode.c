@@ -45,10 +45,11 @@ static fs_dentry_t *_do_create(fs_dentry_t *parent, char *name, fs_access_mode_t
 
     if (createfunc(parent->inode, d, mode) < 0) {
         error("Could not create '%s'", name);
-        return NULL;
+        goto error_createfunc;
     }
     return d;
 
+error_createfunc:
 error_inode:
     vfs_dentry_free(d);
     return NULL;

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <sched/core.h>
 #include <test/test.h>
-#include <test/utils.h>
+#include <test/utils/process.h>
 #include <dstruct/circbuf.h>
 
 T(circbuf_correctly_initializes_all_its_data) {

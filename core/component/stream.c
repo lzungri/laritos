@@ -9,7 +9,6 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
-#include <fs/core.h>
 
 
 int stream_component_init(stream_t *s, board_comp_t *bcomp, char *id, component_type_t type,
@@ -42,7 +41,7 @@ static int create_instance_sysfs(stream_t *s) {
     }
 
     if (pseudofs_create_custom_rw_file_with_dataptr(dir, "data", sysfs_data_read, sysfs_data_write, s) == NULL) {
-        error("Failed to create 'read' sysfs file");
+        error("Failed to create 'data' sysfs file");
         return -1;
     }
 

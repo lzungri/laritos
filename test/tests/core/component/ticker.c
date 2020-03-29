@@ -9,7 +9,8 @@
 #include <time/system-tick.h>
 #include <component/component.h>
 #include <dstruct/list.h>
-#include <test/utils.h>
+#include <test/utils/process.h>
+#include <test/utils/time.h>
 
 
 static bool is_callback_registered(ticker_comp_t *t, ticker_cb_t cb, void *data) {

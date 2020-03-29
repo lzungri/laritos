@@ -4,4 +4,24 @@ config FS_MAX_FILENAME_LEN
     int "Maximum file name length"
     default 255
 
+config FS_SYSTEM_IMAGE_BASE
+    hex "Base address in the flash memory at which the system image is located"
+    default 0x04000000
+
+config FS_SYSTEM_IMAGE_SIZE
+    int "Size of the system image (in MBs)"
+    default 10
+
+config FS_SYSTEM_IMAGE_TYPE
+    string "System image filesystem type"
+    default ext2
+
+config FS_DATA_IMAGE_SIZE
+    int "Size of the data image (in MBs)"
+    default 32
+
+config FS_DATA_IMAGE_TYPE
+    string "Data image filesystem type"
+    default ext2
+
 endmenu

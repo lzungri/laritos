@@ -55,11 +55,6 @@ typedef struct {
      * Pointer to the init process pcb_t
      */
     struct pcb *init;
-
-    /**
-     * List of modules used to spawn kernel processes
-     */
-    list_head_t proc_launchers;
 } laritos_process_t;
 
 typedef struct {
@@ -97,7 +92,6 @@ typedef struct {
     list_head_t mounts;
     list_head_t sysfs_mods;
     fs_dentry_t *root;
-    fs_dentry_t *sysfs_root;
     fs_dentry_t *proc_root;
     fs_dentry_t *mem_root;
     fs_dentry_t *slab_root;
@@ -106,6 +100,7 @@ typedef struct {
     fs_dentry_t *comp_root;
     fs_dentry_t *comp_info_root;
     fs_dentry_t *comp_type_root;
+    fs_dentry_t *property_root;
 } laritos_fs_t;
 
 /**
@@ -146,6 +141,16 @@ typedef struct {
      * List of supported loader formats (e.g. elf32, a.out, etc)
      */
     list_head_t loaders;
+
+    /**
+     * List of system properties
+     * TODO: This should be a dictionary, rbtree, etc
+     */
+    list_head_t properties;
+    /**
+     * Spinlock used to protect the _laritos.properties list
+     */
+    spinlock_t prop_lock;
 
     /**
      * CPU shortcuts, will be initialized by cpu_init()

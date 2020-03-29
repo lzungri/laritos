@@ -16,3 +16,4 @@ obj-y += irq/
 obj-y += sync/
 obj-y += utils/
 obj-y += fs/
+obj-y += property/

@@ -11,7 +11,7 @@
 #include <irq/types.h>
 #include <sync/spinlock.h>
 #include <generated/autoconf.h>
-#include <test/utils.h>
+#include <test/utils/process.h>
 
 
 static bool is_process_active(pcb_t *pcb) {

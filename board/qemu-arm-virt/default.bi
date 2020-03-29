@@ -54,3 +54,17 @@ rrsched:preempt_rr|ticker=@ticker0
 
 # Cooperative FIFO scheduler
 cfifosched:coop_fifo
+
+# The QEMU arm virtual board maps two flash memories (see qemu/hw/arm/virt.c#virt_flash_map()):
+#   pflash0: base=0x00000000 size=0x04000000 (here we put the kernel image)
+#   pflash1: base=0x04000000 size=0x04000000 (here we put the system image)
+flash0:flash_cfi|baseaddr=0x00000000,sectorsize=262144,nsectors=256,default=y
+flash1:flash_cfi|baseaddr=0x04000000,sectorsize=262144,nsectors=256
+
+# Multimedia card interface (pl181)
+mci0:pl181|baseaddr=0x09090000
+
+# The system image is the first real filesystem mounted by the OS, thus it must be
+# statically mounted during boot. Once it is done, we could dinamically mount other
+# filesystems by reading from /sys/conf/mount.conf
+system.img:static_fs_mount|mntpoint=/sys,dev=@flash1,type=ext2,mode=r

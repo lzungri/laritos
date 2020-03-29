@@ -17,3 +17,8 @@
         } \
     } while(0)
 #endif
+
+/**
+ * Compile time assertion
+ */
+#define cassert(_cond, _msg) typedef char __attribute__((__used__)) _msg[(_cond) ? 1 : -1]

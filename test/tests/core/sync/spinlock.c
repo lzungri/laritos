@@ -5,7 +5,7 @@
 #include <test/test.h>
 #include <sync/spinlock.h>
 #include <irq/core.h>
-#include <test/utils.h>
+#include <test/utils/process.h>
 #include <utils/utils.h>
 #include <process/core.h>
 #include <generated/autoconf.h>

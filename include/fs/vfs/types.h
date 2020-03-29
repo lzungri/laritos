@@ -18,6 +18,7 @@ struct fs_mount;
 struct fs_inode;
 struct fs_dentry;
 struct fs_file;
+struct fs_param;
 
 typedef struct {
     char name[CONFIG_FS_MAX_FILENAME_LEN];
@@ -55,7 +56,7 @@ typedef struct fs_type {
     char *id;
     list_head_t list;
 
-    int (*mount)(struct fs_type *fstype, struct fs_mount *mount);
+    int (*mount)(struct fs_type *fstype, struct fs_mount *mount, struct fs_param *params);
 } fs_type_t;
 
 
@@ -70,6 +71,9 @@ typedef struct {
 typedef struct fs_inode {
     fs_access_mode_t mode;
     struct fs_superblock *sb;
+
+    uint32_t number;
+
     void *file_data0;
     void *file_data1;
 
@@ -99,17 +103,20 @@ typedef struct {
     void (*free_inode)(fs_inode_t *inode);
 } fs_superblock_ops_t;
 
+struct blockdev;
 typedef struct fs_superblock {
     fs_type_t *fstype;
     struct fs_mount *mount;
+    fs_inode_t *root;
+    struct blockdev *dev;
 
     fs_superblock_ops_t ops;
 } fs_superblock_t;
 
 
 typedef enum {
-    FS_MOUNT_WRITE = 1,
-    FS_MOUNT_READ = 2,
+    FS_MOUNT_WRITE = 2,
+    FS_MOUNT_READ = 4,
 } fs_mount_flags_t;
 
 struct fs_mount;
@@ -125,3 +132,15 @@ typedef struct fs_mount {
 
     fs_mount_ops_t ops;
 } fs_mount_t;
+
+typedef struct fs_param {
+    char *param;
+    void *value;
+} fs_param_t;
+
+typedef struct fs_sysfs_mod {
+    char *id;
+    list_head_t list;
+    int (*create)(struct fs_sysfs_mod *sysfs);
+    int (*remove)(struct fs_sysfs_mod *sysfs);
+} fs_sysfs_mod_t;

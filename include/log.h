@@ -115,7 +115,7 @@ int log_flush(void);
 
 
 #if defined(CONFIG_LOG_LEVEL_INSANE) || defined(DEBUG)
-#define insane_sync(_sync, _msg, ...) log(_sync, INSANE_COLOR "V", _msg RESTORE_COLOR, ##__VA_ARGS__)
+#define insane_sync(_sync, _msg, ...) log(_sync, INSANE_COLOR "!", _msg RESTORE_COLOR, ##__VA_ARGS__)
 #else
 #define insane_sync(_sync, _msg, ...)
 #endif

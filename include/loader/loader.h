@@ -5,17 +5,19 @@
 #include <loader/elf.h>
 #include <process/types.h>
 #include <dstruct/list.h>
+#include <fs/vfs/types.h>
 
 typedef struct {
     char *id;
-    bool (*can_handle)(void *executable);
-    pcb_t *(*load)(void *executable);
+    bool (*can_handle)(fs_file_t *executable);
+    pcb_t *(*load)(fs_file_t *executable);
     list_head_t list;
 } loader_type_t;
 
 int loader_init_global_context(void);
 int loader_register_loader_type(loader_type_t *loader);
 int loader_unregister_loader_type(loader_type_t *loader);
+pcb_t *loader_load_executable_from_file(char *path);
 /**
  * Temporary api for loading apps
  */

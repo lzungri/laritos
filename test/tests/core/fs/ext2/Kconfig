@@ -1,0 +1,12 @@
+menu "ext2"
+
+config TEST_CORE_FS_EXT2_ALL
+    bool "Select all"
+    default n
+    select TEST_CORE_FS_EXT2_CORE
+
+config TEST_CORE_FS_EXT2_CORE
+    bool "core.c"
+    default n
+
+endmenu

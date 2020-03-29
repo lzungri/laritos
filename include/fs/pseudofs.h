@@ -2,7 +2,14 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <sync/atomic.h>
 #include <fs/vfs/types.h>
+
+typedef struct {
+    fs_superblock_t parent;
+
+    atomic32_t next_inode_number;
+} pseudofs_sb_t;
 
 fs_inode_t *pseudofs_def_lookup(fs_inode_t *parent, char *name);
 int pseudofs_def_mkdir(fs_inode_t *parent, fs_dentry_t *dentry, fs_access_mode_t mode);
@@ -35,7 +42,9 @@ fs_dentry_t *pseudofs_create_custom_rw_file(fs_dentry_t *parent, char *fname,
 fs_dentry_t *pseudofs_create_bin_file(fs_dentry_t *parent, char *fname, fs_access_mode_t mode, void *value, size_t size);
 
 int pseudofs_write_to_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset);
+int pseudofs_raw_write_to_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset, bool check_nulls);
 int pseudofs_read_from_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset);
+int pseudofs_raw_read_from_buf(void *to, size_t tolen, void *from, size_t fromlen, uint32_t offset, bool check_nulls);
 
 #define DECL_PSEUDOFS_FILE_FUNC(_type) \
     static inline fs_dentry_t *pseudofs_create_ ## _type ##_file(fs_dentry_t *parent, char *fname, fs_access_mode_t mode, void *value) { \

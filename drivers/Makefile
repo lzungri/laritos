@@ -7,3 +7,6 @@ obj-y += vrtimer/
 obj-y += timer/
 obj-y += logger/
 obj-y += input/
+obj-y += blockdev/
+obj-y += fs/
+obj-y += mci/

@@ -6,6 +6,7 @@ config TEST_CORE_UTILS_ALL
     select TEST_CORE_UTILS_MATH
     select TEST_CORE_UTILS_LATENCY
     select TEST_CORE_UTILS_RANDOM_LCG
+    select TEST_CORE_UTILS_SYMBOL
 
 config TEST_CORE_UTILS_MATH
     bool "math.c"
@@ -17,6 +18,10 @@ config TEST_CORE_UTILS_LATENCY
 
 config TEST_CORE_UTILS_RANDOM_LCG
     bool "random-lcg.c"
+    default n
+
+config TEST_CORE_UTILS_SYMBOL
+    bool "symbol.c"
     default n
 
 endmenu

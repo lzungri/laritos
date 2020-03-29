@@ -4,8 +4,8 @@
 
 MEMORY
 {
-    flash : ORIGIN = CONFIG_SYS_FLASH_BASE, LENGTH = CONFIG_SYS_FLASH_SIZE  /* 64 GB */
-    ram :   ORIGIN = CONFIG_SYS_RAM_BASE, LENGTH = CONFIG_SYS_RAM_SIZE    /* 1 GB */
+    flash : ORIGIN = CONFIG_SYS_FLASH_BASE, LENGTH = CONFIG_SYS_FLASH_SIZE
+    ram :   ORIGIN = CONFIG_SYS_RAM_BASE, LENGTH = CONFIG_SYS_RAM_SIZE
 }
 
 SECTIONS
@@ -70,20 +70,14 @@ SECTIONS
         __data_end = ABSOLUTE(.);
         __data_size = __data_end - __data_start;
      } > ram AT > flash
-    ASSERT(__data_end < ORIGIN(flash) + LENGTH(flash), "Not enough Flash to fit the OS .data")
 
     /* Variable used to transfer the .data section from flash to ram */
     __data_lma = LOADADDR(.data);
 
     /* Kernel binary size (actual size of laritos.bin) */
     __kernel_bin_size = __data_lma + SIZEOF(.data);
-
-    /**
-     * Offset in laritos.bin where the apps are loaded (apps are appended to laritos.bin)
-     * This is temporary until we implement a better mechanism for flashing apps,
-     * such as a file system on sd card.
-     */
-    __apps_start = __kernel_bin_size;
+    ASSERT(__kernel_bin_size < ORIGIN(flash) + LENGTH(flash), "Not enough Flash to fit the kernel")
+    ASSERT(__kernel_bin_size < ORIGIN(flash) + CONFIG_FS_SYSTEM_IMAGE_BASE, "Kernel image overlaps with the system image")
 
     /* Non initialized data will be manually allocated (and zeroed) in ram */
     .bss : {

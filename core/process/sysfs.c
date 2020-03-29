@@ -8,11 +8,11 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
-#include <fs/core.h>
 #include <sched/context.h>
 #include <time/core.h>
 #include <sync/spinlock.h>
 #include <arch/debug.h>
+#include <utils/symbol.h>
 #include <generated/autoconf.h>
 
 
@@ -47,10 +47,14 @@ static int pc_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
     pcb_t *pcb = f->data0;
     irqctx_t ctx;
     spinlock_acquire(&_laritos.proc.pcbs_data_lock, &ctx);
-    char data[16];
-    int strlen = snprintf(data, sizeof(data), "0x%p",
-                    pcb->sched.status == PROC_STATUS_RUNNING ?
-                            arch_cpu_get_pc() : arch_context_get_retaddr(pcb->mm.sp_ctx));
+
+    char data[64];
+    regpc_t pc = pcb->sched.status == PROC_STATUS_RUNNING ? arch_cpu_get_pc() : arch_context_get_retaddr(pcb->mm.sp_ctx);
+    char symbol[32] = { 0 };
+    symbol_get_name_at(pc, symbol, sizeof(symbol));
+
+    int strlen = snprintf(data, sizeof(data), "0x%p %s", pc, symbol);
+
     spinlock_release(&_laritos.proc.pcbs_data_lock, &ctx);
     return pseudofs_write_to_buf(buf, blen, data, strlen + 1, offset);
 }
@@ -230,18 +234,18 @@ int process_sysfs_remove(pcb_t *pcb) {
 }
 
 
-static int create_root_sysfs(sysfs_mod_t *sysfs) {
-    _laritos.fs.proc_root = vfs_dir_create(_laritos.fs.sysfs_root, "proc",
-            FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
-    if (_laritos.fs.proc_root == NULL) {
-        error("Error creating proc sysfs directory");
+static int create_root_sysfs(fs_sysfs_mod_t *sysfs) {
+    fs_mount_t *mnt = vfs_mount_fs("pseudofs", "/proc", FS_MOUNT_READ | FS_MOUNT_WRITE, NULL);
+    if (mnt == NULL) {
+        error("Error mounting proc pseudo fs");
         return -1;
     }
+    _laritos.fs.proc_root = mnt->root;
     return 0;
 }
 
-static int remove_root_sysfs(sysfs_mod_t *sysfs) {
-    return vfs_dir_remove(_laritos.fs.sysfs_root, "proc");
+static int remove_root_sysfs(fs_sysfs_mod_t *sysfs) {
+    return vfs_unmount_fs("/proc");
 }
 
 SYSFS_MODULE(proc, create_root_sysfs, remove_root_sysfs)

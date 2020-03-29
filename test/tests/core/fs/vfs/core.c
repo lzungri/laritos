@@ -6,7 +6,7 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 
-static int empty_mount(fs_type_t *fstype, fs_mount_t *fsm) {
+static int empty_mount(fs_type_t *fstype, fs_mount_t *fsm, fs_param_t *params) {
     return 0;
 }
 

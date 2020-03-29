@@ -9,7 +9,6 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
-#include <fs/core.h>
 
 
 typedef struct {
@@ -59,10 +58,12 @@ static inline int sysfs_create(bs_slab_t *slab) {
 
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "totalelems", totalelems_read, slab) == NULL) {
         error("Failed to create 'totalelems' sysfs file");
+        return -1;
     }
 
     if (pseudofs_create_custom_ro_file_with_dataptr(dir, "avail", avail_read, slab) == NULL) {
         error("Failed to create 'avail' sysfs file");
+        return -1;
     }
 
     return 0;
@@ -179,13 +180,17 @@ uint32_t slab_get_total_elems(slab_t *slab) {
     return ((bs_slab_t *) slab)->total_elems;
 }
 
-uint32_t slab_get_slab_position(slab_t *slab, void *ptr) {
+int32_t slab_get_slab_position(slab_t *slab, void *ptr) {
     bs_slab_t *s = (bs_slab_t *) slab;
-    return ((char *) ptr - s->data) / s->elem_size;
+    uint32_t pos = ((char *) ptr - s->data) / s->elem_size;
+    return pos >= s->total_elems ? -1 : pos;
 }
 
 void *slab_get_ptr_from_position(slab_t *slab, uint32_t pos) {
     bs_slab_t *s = (bs_slab_t *) slab;
+    if (pos >= s->total_elems) {
+        return NULL;
+    }
     return (void *) (s->data + pos * s->elem_size);
 }
 
@@ -194,7 +199,7 @@ bool slab_is_taken(slab_t *slab, uint32_t idx) {
     return bitset_array_lm_bit(s->bitset, s->bs_elems, idx) != 0;
 }
 
-static int slab_create_sysfs(sysfs_mod_t *sysfs) {
+static int slab_create_sysfs(fs_sysfs_mod_t *sysfs) {
     _laritos.fs.slab_root = vfs_dir_create(_laritos.fs.mem_root, "slab",
             FS_ACCESS_MODE_READ | FS_ACCESS_MODE_WRITE | FS_ACCESS_MODE_EXEC);
     if (_laritos.fs.slab_root == NULL) {
@@ -204,7 +209,7 @@ static int slab_create_sysfs(sysfs_mod_t *sysfs) {
     return 0;
 }
 
-static int slab_remove_sysfs(sysfs_mod_t *sysfs) {
+static int slab_remove_sysfs(fs_sysfs_mod_t *sysfs) {
     return vfs_dir_remove(_laritos.fs.mem_root, "slab");
 }
 
