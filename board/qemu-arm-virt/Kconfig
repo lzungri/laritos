@@ -30,7 +30,7 @@ config SYS_RAM_SIZE
     default 0x40000000
 
 config OSIMAGE_FILESIZE
-    int "laritos.img size (in MB)"
+    int "kernel.img size (in MB)"
     default 64
 
 endmenu

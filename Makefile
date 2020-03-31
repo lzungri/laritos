@@ -836,7 +836,7 @@ laritos.elf: $(laritos-deps) $(KBUILD_BOARD_INFO) $(KBUILD_LDS) FORCE
 quiet_cmd_objcopy_laritos ?= KERNRAW $@
 	cmd_objcopy_laritos ?= $(OBJCOPY) -O binary $< $@
 
-laritos.bin: laritos.elf FORCE
+kernel.bin: laritos.elf FORCE
 	$(call if_changed,objcopy_laritos)
 
 SYSTEM_IMG_FOLDER := image/system
@@ -903,10 +903,10 @@ quiet_cmd_img_laritos ?= KERNIMG $@
 		dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_OSIMAGE_FILESIZE) status=none; \
 		dd if=$< of=$@ conv=notrunc status=none
 
-laritos.img: laritos.bin FORCE
+kernel.img: kernel.bin FORCE
 	$(call if_changed,img_laritos)
 
-laritos: laritos.img system.img data.img
+laritos: kernel.img system.img data.img
 	$(Q)echo ''
 	$(Q)$(SIZE) laritos.elf
 	$(Q)echo ''
@@ -914,7 +914,7 @@ laritos: laritos.img system.img data.img
 # Make sure we have everything setup (e.g. output folder created) before preprocessing the linker script
 $(KBUILD_LDS): prepare0
 
-targets := laritos laritos.img laritos.bin laritos.elf $(KBUILD_BOARD_INFO) $(KBUILD_BI_COPIED) $(KBUILD_LDS)
+targets := laritos kernel.img kernel.bin laritos.elf $(KBUILD_BOARD_INFO) $(KBUILD_BI_COPIED) $(KBUILD_LDS)
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
@@ -1009,7 +1009,7 @@ include/generated/utsrelease.h: include/config/kernel.release FORCE
 #                Leave enough to build external modules
 # make mrproper  Delete the current configuration, and all generated files
 
-CLEAN_FILES += laritos.img laritos.bin laritos.elf
+CLEAN_FILES += kernel.img kernel.bin laritos.elf
 CLEAN_DIRS += image
 
 # Directories & files removed with 'make mrproper'
@@ -1054,9 +1054,9 @@ PHONY += help
 help:
 	@echo  'Generic targets:'
 	@echo  '  all             - Build all targets marked with [*]'
-	@echo  '* laritos         - Build laritos OS images (laritos.img + system.img + data.img)'
-	@echo  '  laritos.img     - Build kernel image'
-	@echo  '  laritos.bin     - Build raw kernel binary only'
+	@echo  '* laritos         - Build laritos OS images (kernel.img + system.img + data.img)'
+	@echo  '  kernel.img      - Build kernel image'
+	@echo  '  kernel.bin      - Build raw kernel binary only'
 	@echo  '  system.img      - Build system image only'
 	@echo  '  data.img        - Build data image only'
 	@echo  '  dir/            - Build all files in dir and below'
