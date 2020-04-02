@@ -26,7 +26,7 @@ The operating system is composed of the following 3 components, each of them wit
 </p>
 
 ## Wiki
-For the complete OS documentation, please refer to the [wiki page](xxx)
+For the complete OS documentation, please refer to the [wiki page](https://github.com/lzungri/laritos/wiki)
 
 ## Features
 ### Kernel features
@@ -65,18 +65,18 @@ For the complete OS documentation, please refer to the [wiki page](xxx)
 * ARM 32bits support (`armv7a`)
 * Debug utilities
 
-See [laritos-toolchain](https://github.com/lzungri/laritos-toolchain/blob/master/README.md) repo for more info
+See [laritos-toolchain](https://github.com/lzungri/laritos-toolchain) repo for more info
 
 ### Userspace features
 
 * Minimal shell supporting commands such as cat, xxd, run, run in the background, cd, mkdir, ls, getprop, and others
 * `ps` program for listing active processes
 
-See [laritos-app](https://github.com/lzungri/laritos-app/blob/master/README.md) repo for more info
+See [laritos-app](https://github.com/lzungri/laritos-app) repo for more info
 
 ## Building, installing and running
 
-See [main](xxx) wiki page
+See [wiki page](https://github.com/lzungri/laritos/wiki)
 
 ## Status
 laritOS is currently in alpha version, hence some features may not work as expected and stability is not guaranteed. Use at your own risk :boom:
