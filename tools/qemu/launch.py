@@ -49,7 +49,7 @@ def main(args):
 
     if args.qemu_debug:
         print("Launching qemu in debugging mode (listening on :55555)")
-        print("Debug qemu with 'gdb <your_qemu>/bin/debug/native/arm-softmmu/qemu-system-arm -ex \"target remote :55555\" -q'")
+        print("Debug qemu with 'gdb <your_qemu>/bin/arm-softmmu/qemu-system-arm -ex \"target remote :55555\" -q'")
 
     print("")
     os.system("qemu-system-arm --version | grep version")
