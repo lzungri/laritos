@@ -1,6 +1,6 @@
 
 <p align="center">
-    <img src="https://github.com/lzungri/laritos/wiki/resources/logo.png">
+    <img src="https://laritos.page.link/89eQ">
 </p>
 
 
