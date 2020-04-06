@@ -62,7 +62,7 @@ flash0:flash_cfi|baseaddr=0x00000000,sectorsize=262144,nsectors=256,default=y
 flash1:flash_cfi|baseaddr=0x04000000,sectorsize=262144,nsectors=256
 
 # Multimedia card interface (pl181)
-#mci0:pl181|baseaddr=0x09090000
+mci0:pl181|baseaddr=0x09090000,intc=@gic,irq=42,trigger=level_hi
 
 # The system image is the first real filesystem mounted by the OS, thus it must be
 # statically mounted during boot. Once it is done, we could dinamically mount other
