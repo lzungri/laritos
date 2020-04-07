@@ -1,6 +1,6 @@
 
 <p align="center">
-    <img src="https://laritos.page.link/89eQ">
+    <img src="https://bit.ly/laritos">
 </p>
 
 
