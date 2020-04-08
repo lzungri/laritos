@@ -30,6 +30,10 @@ def get_config():
         raise Exception("Config file {} not found".format(config_file))
 
 
+def sdcard_supported(config):
+    return config.get("CONFIG_MCI_SUPPORT", "n") == "y"
+
+
 def main(args):
     config = get_config()
 
@@ -56,26 +60,33 @@ def main(args):
     print("---------------------------------------------------------------------------\n")
 
     with tempfile.NamedTemporaryFile(prefix="laritos") as trace_file:
-        cmd = "\
-{qemudebug} qemu-system-{arch} -no-reboot --trace events={scriptdir}/trace_events,file={trace} \
-{osdebug} -M {machine} -smp {ncpus} -m {ram}M -cpu {cpu} -nographic \
+        basecmd = "\
+qemu-system-{arch} -no-reboot --trace events={scriptdir}/trace_events,file={trace} \
+-M {machine} -smp {ncpus} -m {ram}M -cpu {cpu} -nographic \
 -drive if=pflash,file={scriptdir}/../../bin/kernel.img,format=raw,readonly \
--drive if=pflash,file={scriptdir}/../../bin/system.img,format=raw,readonly \
--drive if=sd,cache=writeback,file={scriptdir}/../../bin/data.img,format=raw \
-{qemulog}".format(
+-drive if=pflash,file={scriptdir}/../../bin/system.img,format=raw,readonly" \
+            .format(
                 arch=args.arch,
                 machine=args.machine,
                 scriptdir=SCRIPT_DIR,
                 trace=trace_file.name,
                 ncpus=ncpus,
                 cpu=cpu,
-                ram=ram_size,
-                osdebug="-S -s" if args.os_debug else "",
-                qemudebug="gdbserver :55555" if args.qemu_debug else "",
-                qemulog="-d guest_errors,cpu_reset,int,unimp -D /tmp/qemu.log" if args.qemu_log else "")
+                ram=ram_size)
 
-        print(cmd + "\n")
-        os.system(cmd)
+        cmd = [basecmd]
+        if args.qemu_debug:
+            cmd.insert(0, "gdbserver :55555")
+        if args.os_debug:
+            cmd.append("-S -s")
+        if args.qemu_log:
+            cmd.append("-d guest_errors,cpu_reset,int,unimp -D /tmp/qemu.log")
+        if sdcard_supported(config):
+            cmd.append("-drive if=sd,cache=writeback,file={}/../../bin/data.img,format=raw".format(SCRIPT_DIR))
+
+        cmdstr = " ".join(cmd)
+        print(cmdstr + "\n")
+        os.system(cmdstr)
 
         qemudir = os.path.dirname(shutil.which("qemu-system-{}".format(args.arch)) or "")
         if not qemudir:
