@@ -152,10 +152,11 @@ int vfs_mount_from_config(void) {
 
     char mntpoint[CONFIG_FS_MAX_FILENAME_LEN];
     char devid[CONFIG_FS_MAX_FILENAME_LEN];
+    char devoffset[16];
     char fstype[8];
     char perm[8];
-    char *tokens[] = { mntpoint, devid, fstype, perm };
-    uint32_t tokens_size[] = { sizeof(mntpoint), sizeof(devid), sizeof(fstype), sizeof(perm) };
+    char *tokens[] = { mntpoint, devid, devoffset, fstype, perm };
+    uint32_t tokens_size[] = { sizeof(mntpoint), sizeof(devid), sizeof(devoffset), sizeof(fstype), sizeof(perm) };
 
     uint32_t offset = 0;
     int fret = 0;
@@ -180,7 +181,12 @@ int vfs_mount_from_config(void) {
             continue;
         }
 
-        if (vfs_mount_fs(fstype, mntpoint, mode, (fs_param_t []) { { "dev", dev }, { NULL } }) == NULL) {
+        if (vfs_mount_fs(fstype, mntpoint, mode,
+                (fs_param_t []) {
+                    { "dev", dev },
+                    { "devoffset", (void *) strtoul(devoffset, NULL, 0) },
+                    { NULL },
+                }) == NULL) {
             error("Could not mount %s", mntpoint);
             fret = -1;
         }
@@ -231,6 +237,11 @@ void *vfs_get_param(fs_param_t *params, char *param) {
         }
     }
     return NULL;
+}
+
+void *vfs_get_param_or_def(fs_param_t *params, char *param, void *def) {
+    void *v = vfs_get_param(params, param);
+    return v == NULL ? def : v;
 }
 
 

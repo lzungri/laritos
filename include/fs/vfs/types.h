@@ -109,6 +109,7 @@ typedef struct fs_superblock {
     struct fs_mount *mount;
     fs_inode_t *root;
     struct blockdev *dev;
+    uint32_t devoffset;
 
     fs_superblock_ops_t ops;
 } fs_superblock_t;

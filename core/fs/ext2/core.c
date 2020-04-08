@@ -55,12 +55,12 @@
 
 
 static inline int dev_read(ext2_sb_t *sb, void *buf, size_t n, uint32_t offset) {
-    return sb->parent.dev->ops.read(sb->parent.dev, buf, n, offset);
+    return sb->parent.dev->ops.read(sb->parent.dev, buf, n, sb->parent.devoffset + offset);
 }
 
 static inline int dev_write(ext2_sb_t *sb, void *buf, size_t n, uint32_t offset) {
     insane("Writing %u bytes at offset 0x%lx on dev '%s'", n, offset, sb->parent.dev->parent.id);
-    return sb->parent.dev->ops.write(sb->parent.dev, buf, n, offset);
+    return sb->parent.dev->ops.write(sb->parent.dev, buf, n, sb->parent.devoffset + offset);
 }
 
 static inline uint32_t inode_nblocks(ext2_sb_t *sb, ext2_inode_data_t *inode) {
@@ -1165,8 +1165,8 @@ static int mount(fs_type_t *fstype, fs_mount_t *m, fs_param_t *params) {
     if (ext2sb->parent.dev == NULL) {
         error("No device was given");
         goto error_dev;
-
     }
+    ext2sb->parent.devoffset = (uint32_t) vfs_get_param_or_def(params, "devoffset", 0);
 
     if (populate_ext2_superblock(ext2sb, m) < 0) {
         error("Couldn't read superblock");

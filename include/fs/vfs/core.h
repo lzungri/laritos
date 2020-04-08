@@ -60,6 +60,7 @@ int vfs_register_sysfs(fs_sysfs_mod_t *sysfs);
 int vfs_unregister_sysfs(fs_sysfs_mod_t *sysfs);
 
 void *vfs_get_param(fs_param_t *params, char *param);
+void *vfs_get_param_or_def(fs_param_t *params, char *param, void *def);
 
 
 #define SYSFS_MODULE(_id, _create_sysfs, _remove_sysfs) \
