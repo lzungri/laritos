@@ -1,4 +1,5 @@
 menu "Multimedia Card Interface"
+    depends on MCI_SUPPORT
 
 config MCI_PL181
     bool "PL181 Multimedia Card Interface"

@@ -9,4 +9,4 @@ obj-y += logger/
 obj-y += input/
 obj-y += blockdev/
 obj-y += fs/
-obj-y += mci/
+obj-$(CONFIG_MCI_SUPPORT) += mci/

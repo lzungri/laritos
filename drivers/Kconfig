@@ -8,6 +8,11 @@ source "drivers/timer/Kconfig"
 source "drivers/logger/Kconfig"
 source "drivers/input/Kconfig"
 source "drivers/blockdev/Kconfig"
+
+config MCI_SUPPORT
+    bool "MCI support"
+    default n
+
 source "drivers/mci/Kconfig"
 
 endmenu
