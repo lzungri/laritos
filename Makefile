@@ -851,11 +851,14 @@ $(DATA_IMG_FOLDER):
 	@mkdir -p $@
 
 # Target to generate read-only files with information about the kernel
+# TODO: This should be part of a kernel ext2 filesystem embedded into the kernel.img, not the system.img.
+# Both images can be compiled independently and therefore be incompatible
 PHONY += kinfo
 kinfo: laritos.elf $(SYSTEM_IMG_FOLDER)
 	@mkdir -p $(SYSTEM_IMG_FOLDER)/kinfo
 	@$(NM) --numeric-sort laritos.elf > $(SYSTEM_IMG_FOLDER)/kinfo/symbols
 	@cp $<.map $(SYSTEM_IMG_FOLDER)/kinfo/map
+	@cp .config $(SYSTEM_IMG_FOLDER)/kinfo/config
 
 # Commands to create, mount, and copy the files associated with the system image.
 # Unfortunately, I couldn't find a better way to create the image other than using the
