@@ -17,4 +17,3 @@ obj-y += sync/
 obj-y += utils/
 obj-y += fs/
 obj-y += property/
-obj-y += sysfs.o
