@@ -33,7 +33,7 @@
 #include <fs/vfs/types.h>
 
 static int get_symbol_info(char *query, bool query_by_name, char *name_result, size_t namelen, void **addr_result) {
-    fs_file_t *f = vfs_file_open("/sys/kinfo/symbols", FS_ACCESS_MODE_READ);
+    fs_file_t *f = vfs_file_open("/kinfo/symbols", FS_ACCESS_MODE_READ);
     if (f == NULL) {
         error_async("Couldn't open kernel symbols file");
         return -1;
