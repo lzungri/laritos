@@ -40,10 +40,17 @@ static int mount_read(fs_file_t *f, void *buf, size_t blen, uint32_t offset) {
         if (sizeof(data) - totalb < 32) {
             break;
         }
+
+        char devoffset[12] = { 0 };
+        if (mnt->sb->dev != NULL && mnt->sb->devoffset > 0) {
+            snprintf(devoffset, sizeof(devoffset), "0x%08x", mnt->sb->devoffset);
+        }
+
         char mntpoint[CONFIG_FS_MAX_FILENAME_LEN];
         vfs_dentry_get_fullpath(mnt->root, mntpoint, sizeof(mntpoint));
-        int strlen = snprintf(data + totalb, sizeof(data) - totalb, "%-10.10s %-10.10s %-10.10s %s%s\n",
-                mntpoint, mnt->sb->dev != NULL ? mnt->sb->dev->parent.id : "<nodev>",
+        int strlen = snprintf(data + totalb, sizeof(data) - totalb, "%-10.10s %-10.10s %-10.10s %-10.10s %s%s\n",
+                mntpoint,
+                mnt->sb->dev != NULL ? mnt->sb->dev->parent.id : "<nodev>", devoffset,
                 mnt->sb->fstype->id, mnt->flags & FS_MOUNT_READ ? "r" : "",
                 mnt->flags & FS_MOUNT_WRITE ? "w" : "");
         if (strlen < 0) {
