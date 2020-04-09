@@ -841,6 +841,7 @@ kernel.bin: laritos.elf FORCE
 
 SYSTEM_IMG_FOLDER := image/system
 DATA_IMG_FOLDER := image/data
+KINFO_IMG_FOLDER := image/kinfo
 
 PHONY += $(SYSTEM_IMG_FOLDER)
 $(SYSTEM_IMG_FOLDER):
@@ -850,15 +851,16 @@ PHONY += $(DATA_IMG_FOLDER)
 $(DATA_IMG_FOLDER):
 	@mkdir -p $@
 
+PHONY += $(KINFO_IMG_FOLDER)
+$(KINFO_IMG_FOLDER):
+	@mkdir -p $@
+
 # Target to generate read-only files with information about the kernel
-# TODO: This should be part of a kernel ext2 filesystem embedded into the kernel.img, not the system.img.
-# Both images can be compiled independently and therefore be incompatible
 PHONY += kinfo
-kinfo: laritos.elf $(SYSTEM_IMG_FOLDER)
-	@mkdir -p $(SYSTEM_IMG_FOLDER)/kinfo
-	@$(NM) --numeric-sort laritos.elf > $(SYSTEM_IMG_FOLDER)/kinfo/symbols
-	@cp $<.map $(SYSTEM_IMG_FOLDER)/kinfo/map
-	@cp .config $(SYSTEM_IMG_FOLDER)/kinfo/config
+kinfo: laritos.elf $(KINFO_IMG_FOLDER)
+	@$(NM) --numeric-sort laritos.elf > $(KINFO_IMG_FOLDER)/symbols
+	@cp $<.map $(KINFO_IMG_FOLDER)/map
+	@cp .config $(KINFO_IMG_FOLDER)/config
 
 # Commands to create, mount, and copy the files associated with the system image.
 # Unfortunately, I couldn't find a better way to create the image other than using the
@@ -876,8 +878,6 @@ cmd_sysimg ?= \
 	dd if=/dev/zero of=$@ bs=1 count=1 seek=67108863 status=none # The QEMU arm virtual board requires every flash image to be 64MB
 
 # Commands to create, mount, and copy the files associated with the data image.
-# Unfortunately, I couldn't find a better way to create the image other than using the
-# mount command, which requires sudo
 quiet_cmd_dataimg ?= DATAIMG $@ (requires sudo for creating $(CONFIG_FS_DATA_IMAGE_TYPE) image)
 cmd_dataimg ?= \
 	dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_FS_DATA_IMAGE_SIZE) status=none; \
@@ -889,11 +889,26 @@ cmd_dataimg ?= \
 	sudo cp -r $(DATA_IMG_FOLDER)/. /tmp/laritos-dataimg; \
 	sudo umount /tmp/laritos-dataimg
 
-system.img: $(SYSTEM_IMG_FOLDER) kinfo
+# Commands to create, mount, and copy the files associated with the kinfo image.
+quiet_cmd_kinfoimg ?= KINFIMG $@ (requires sudo for creating $(CONFIG_FS_DATA_IMAGE_TYPE) image)
+cmd_kinfoimg ?= \
+	dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_FS_KINFO_IMAGE_SIZE) status=none; \
+	mkfs.$(CONFIG_FS_KINFO_IMAGE_TYPE) -q $@; \
+	sudo bash -c "umount /tmp/laritos-kinfoimg &> /dev/null || true"; \
+	sudo rm -rf /tmp/laritos-kinfoimg; \
+	mkdir -p /tmp/laritos-kinfoimg; \
+	sudo mount $@ /tmp/laritos-kinfoimg; \
+	sudo cp -r $(KINFO_IMG_FOLDER)/. /tmp/laritos-kinfoimg; \
+	sudo umount /tmp/laritos-kinfoimg
+
+system.img: $(SYSTEM_IMG_FOLDER) $(laritos-deps)
 	$(call if_changed,sysimg)
 
 data.img: $(DATA_IMG_FOLDER) $(laritos-deps)
 	$(call if_changed,dataimg)
+
+kinfo.img: $(KINFO_IMG_FOLDER) kinfo
+	$(call if_changed,kinfoimg)
 
 systemimginfo: system.img
 	@dumpe2fs $<
@@ -901,12 +916,17 @@ systemimginfo: system.img
 dataimginfo: data.img
 	@dumpe2fs $<
 
+kinfoimginfo: kinfo.img
+	@dumpe2fs $<
+
+# The kinfo.img starts at offset 0x100000 (1MB) in the kernel.img
 quiet_cmd_img_laritos ?= KERNIMG $@
 	cmd_img_laritos ?= \
 		dd if=/dev/zero of=$@ bs=1M count=$(CONFIG_OSIMAGE_FILESIZE) status=none; \
-		dd if=$< of=$@ conv=notrunc status=none
+		dd if=$< of=$@ conv=notrunc status=none; \
+		dd if=$(word 2,$^) of=$@ bs=1M seek=1 conv=notrunc status=none
 
-kernel.img: kernel.bin FORCE
+kernel.img: kernel.bin kinfo.img FORCE
 	$(call if_changed,img_laritos)
 
 laritos: kernel.img system.img data.img
@@ -1062,6 +1082,7 @@ help:
 	@echo  '  kernel.bin      - Build raw kernel binary only'
 	@echo  '  system.img      - Build system image only'
 	@echo  '  data.img        - Build data image only'
+	@echo  '  kinfo.img       - Build kinfo image only'
 	@echo  '  dir/            - Build all files in dir and below'
 	@echo  '  dir/file.[ois]  - Build specified target only'
 	@echo  '  printmap        - Output the link map info (memory mapping, symbols, etc) (use with make -s)'
@@ -1070,6 +1091,7 @@ help:
 	@echo  '  image_name	  - Output the image name (use with make -s)'
 	@echo  '  systemimginfo   - Output info about the system.img filesystem'
 	@echo  '  dataimginfo     - Output info about the data.img filesystem'
+	@echo  '  kinfoimginfo    - Output info about the kinfo.img filesystem'
 	@echo  ''
 	@echo  'Cleaning targets:'
 	@echo  '  clean		  - Remove most generated files but keep the config'

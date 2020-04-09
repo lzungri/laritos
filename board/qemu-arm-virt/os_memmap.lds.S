@@ -74,7 +74,7 @@ SECTIONS
     /* Variable used to transfer the .data section from flash to ram */
     __data_lma = LOADADDR(.data);
 
-    /* Kernel binary size (actual size of laritos.bin) */
+    /* Kernel binary size (actual size of kernel.bin) */
     __kernel_bin_size = __data_lma + SIZEOF(.data);
     ASSERT(__kernel_bin_size < ORIGIN(flash) + LENGTH(flash), "Not enough Flash to fit the kernel")
     ASSERT(__kernel_bin_size < ORIGIN(flash) + CONFIG_FS_SYSTEM_IMAGE_BASE, "Kernel image overlaps with the system image")
