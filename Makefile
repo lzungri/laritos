@@ -861,6 +861,7 @@ kinfo: laritos.elf $(KINFO_IMG_FOLDER)
 	@$(NM) --numeric-sort laritos.elf > $(KINFO_IMG_FOLDER)/symbols
 	@cp $<.map $(KINFO_IMG_FOLDER)/map
 	@cp .config $(KINFO_IMG_FOLDER)/config
+	@echo "laritos-$(KERNELRELEASE)" > $(KINFO_IMG_FOLDER)/version
 
 # Commands to create, mount, and copy the files associated with the system image.
 # Unfortunately, I couldn't find a better way to create the image other than using the
