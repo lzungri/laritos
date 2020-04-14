@@ -8,7 +8,7 @@
 
 # laritOS  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-laritOS is a highly-configurable, modular, test-driven developed educational operating system created entirely from scratch, from bootloader to kernel, kernel to drivers, toolchain (including a minimal libc) to userspace applications.
+laritOS is a highly-configurable, modular, test-driven developed operating system prototype created entirely from scratch, from bootloader to kernel, kernel to drivers, toolchain (including a minimal libc) to userspace applications.
 
 The primary aim of laritOS is to provide a set of free resources (codebase, documentation, tutorials) for learning about operating system internals. Therefore, its focus is put mainly on simplicity, maintainability, modularity, debuggability and testability.
 Aspects such as performance, security, compatibility with existing OSes are not the priority for now.
