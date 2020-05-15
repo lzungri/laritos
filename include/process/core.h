@@ -10,7 +10,7 @@
 #include <dstruct/list.h>
 #include <cpu/core.h>
 #include <cpu/cpu-local.h>
-#include <utils/assert.h>
+#include <assert.h>
 #include <time/tick.h>
 #include <sync/spinlock.h>
 #include <irq/core.h>

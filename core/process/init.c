@@ -28,7 +28,7 @@
 #include <process/core.h>
 #include <process/sysfs.h>
 #include <cpu/core.h>
-#include <utils/assert.h>
+#include <assert.h>
 #include <sync/spinlock.h>
 #include <component/component.h>
 #include <component/ticker.h>

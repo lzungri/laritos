@@ -29,7 +29,7 @@
 #include <core.h>
 #include <process/core.h>
 #include <sched/core.h>
-#include <utils/assert.h>
+#include <assert.h>
 #include <generated/autoconf.h>
 
 int sem_init(sem_t *sem, uint16_t count) {

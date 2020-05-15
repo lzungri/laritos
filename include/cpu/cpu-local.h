@@ -1,7 +1,7 @@
 #pragma once
 
 #include <irq/core.h>
-#include <utils/assert.h>
+#include <assert.h>
 #include <utils/utils.h>
 #include <generated/autoconf.h>
 

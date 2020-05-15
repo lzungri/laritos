@@ -29,7 +29,7 @@
 #include <core.h>
 #include <process/core.h>
 #include <sched/core.h>
-#include <utils/assert.h>
+#include <assert.h>
 
 int rmutex_init(rmutex_t *mutex) {
     mutex->lock_count = 0;

@@ -27,7 +27,7 @@
 #include <process/core.h>
 #include <sched/core.h>
 #include <syscall/syscall.h>
-#include <utils/assert.h>
+#include <assert.h>
 #include <utils/utils.h>
 #include <sched/context.h>
 #include <time/core.h>

@@ -26,7 +26,7 @@
 #include <sync/spinlock.h>
 #include <core.h>
 #include <process/core.h>
-#include <utils/assert.h>
+#include <assert.h>
 #include <generated/autoconf.h>
 
 

@@ -30,7 +30,7 @@
 #include <process/validation.h>
 #include <sched/core.h>
 #include <sched/context.h>
-#include <utils/assert.h>
+#include <assert.h>
 #include <utils/debug.h>
 #include <process/status.h>
 #include <component/sched.h>

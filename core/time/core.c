@@ -32,7 +32,7 @@
 #include <component/timer.h>
 #include <component/vrtimer.h>
 #include <component/component.h>
-#include <utils/assert.h>
+#include <assert.h>
 #include <process/core.h>
 #include <sched/core.h>
 #include <sync/spinlock.h>

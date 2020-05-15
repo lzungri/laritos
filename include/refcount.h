@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <sync/atomic.h>
-#include <utils/assert.h>
+#include <assert.h>
 
 typedef struct refcount {
     atomic32_t value;

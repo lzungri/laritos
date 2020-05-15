@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <board/types.h>
 #include <dstruct/list.h>
-#include <utils/assert.h>
+#include <assert.h>
 #include <utils/utils.h>
 
 #define COMPONENT_MAX_ID_LEN CONFIG_BOARD_INFO_MAX_TOKEN_LEN_BYTES

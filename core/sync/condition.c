@@ -25,7 +25,7 @@
 #include <stdbool.h>
 #include <core.h>
 #include <process/core.h>
-#include <utils/assert.h>
+#include <assert.h>
 #include <dstruct/list.h>
 #include <sync/condition.h>
 #include <sched/core.h>

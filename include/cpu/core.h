@@ -8,7 +8,7 @@
 #include <cpu/cpu-local.h>
 #include <component/cpu.h>
 #include <component/component.h>
-#include <utils/assert.h>
+#include <assert.h>
 #include <generated/autoconf.h>
 
 typedef uint32_t cpubits_t;
