@@ -5,6 +5,7 @@ config TEST_CORE_LIBC_ALL
     default n
     select TEST_CORE_LIBC_STRING
     select TEST_CORE_LIBC_RANDOM_LCG
+    select TEST_CORE_LIBC_SYMBOL
 
 config TEST_CORE_LIBC_STRING
     bool "string.c"
@@ -12,6 +13,10 @@ config TEST_CORE_LIBC_STRING
 
 config TEST_CORE_LIBC_RANDOM_LCG
     bool "random-lcg.c"
+    default n
+
+config TEST_CORE_LIBC_SYMBOL
+    bool "symbol.c"
     default n
 
 endmenu

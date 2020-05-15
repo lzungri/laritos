@@ -5,7 +5,6 @@ config TEST_CORE_UTILS_ALL
     default n
     select TEST_CORE_UTILS_MATH
     select TEST_CORE_UTILS_LATENCY
-    select TEST_CORE_UTILS_SYMBOL
 
 config TEST_CORE_UTILS_MATH
     bool "math.c"
@@ -13,10 +12,6 @@ config TEST_CORE_UTILS_MATH
 
 config TEST_CORE_UTILS_LATENCY
     bool "latency.c"
-    default n
-
-config TEST_CORE_UTILS_SYMBOL
-    bool "symbol.c"
     default n
 
 endmenu
