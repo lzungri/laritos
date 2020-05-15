@@ -35,7 +35,7 @@
 #include <loader/loader.h>
 #include <board/types.h>
 #include <board/core.h>
-#include <utils/random.h>
+#include <random.h>
 #include <utils/debug.h>
 #include <utils/symbol.h>
 #include <utils/conf.h>

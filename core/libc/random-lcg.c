@@ -23,7 +23,7 @@
 #include <log.h>
 
 #include <core.h>
-#include <utils/random.h>
+#include <random.h>
 #include <utils/math.h>
 
 void random_seed(uint32_t seed) {
@@ -47,6 +47,6 @@ int32_t random_int32(int32_t min, int32_t max) {
 
 
 
-#ifdef CONFIG_TEST_CORE_UTILS_RANDOM_LCG
+#ifdef CONFIG_TEST_CORE_LIBC_RANDOM_LCG
 #include __FILE__
 #endif
