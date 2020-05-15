@@ -4,9 +4,14 @@ config TEST_CORE_LIBC_ALL
     bool "Select all"
     default n
     select TEST_CORE_LIBC_STRING
+    select TEST_CORE_LIBC_RANDOM_LCG
 
 config TEST_CORE_LIBC_STRING
     bool "string.c"
+    default n
+
+config TEST_CORE_LIBC_RANDOM_LCG
+    bool "random-lcg.c"
     default n
 
 endmenu

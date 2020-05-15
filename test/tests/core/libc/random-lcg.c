@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <cpu/core.h>
 #include <test/test.h>
-#include <utils/random.h>
+#include <random.h>
 #include <utils/math.h>
 
 T(random_randint_gen_numbers_in_the_given_range) {
