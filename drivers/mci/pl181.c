@@ -48,7 +48,7 @@
 #include <fs/pseudofs.h>
 #include <time/core.h>
 #include <math.h>
-#include <utils/endian.h>
+#include <endian.h>
 #include <dstruct/bitset.h>
 #include <mm/heap.h>
 #include <sync/spinlock.h>

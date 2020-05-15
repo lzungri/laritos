@@ -34,7 +34,7 @@
 #include <component/component.h>
 #include <fs/ext2.h>
 #include <fs/file.h>
-#include <utils/endian.h>
+#include <endian.h>
 #include <generated/autoconf.h>
 
 SYSIMG_T(ext2, ext2_mount_fails_if_not_given_the_right_params) {
