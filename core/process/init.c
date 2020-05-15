@@ -37,7 +37,7 @@
 #include <board/core.h>
 #include <random.h>
 #include <utils/debug.h>
-#include <utils/symbol.h>
+#include <symbol.h>
 #include <utils/conf.h>
 #include <sched/core.h>
 #include <fs/vfs/core.h>

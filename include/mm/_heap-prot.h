@@ -4,7 +4,7 @@
 #include <cpu/core.h>
 #include <core.h>
 #include <utils/debug.h>
-#include <utils/symbol.h>
+#include <symbol.h>
 #include <mm/exc-handlers.h>
 
 

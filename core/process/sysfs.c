@@ -34,7 +34,7 @@
 #include <time/core.h>
 #include <sync/spinlock.h>
 #include <arch/debug.h>
-#include <utils/symbol.h>
+#include <symbol.h>
 #include <generated/autoconf.h>
 
 

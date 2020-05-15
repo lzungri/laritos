@@ -27,7 +27,7 @@
 #include <string.h>
 #include <printf.h>
 #include <strtoxl.h>
-#include <utils/symbol.h>
+#include <symbol.h>
 #include <utils/conf.h>
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
@@ -126,6 +126,6 @@ int symbol_get_name_at(void *addr, char *buf, size_t blen) {
 
 
 
-#ifdef CONFIG_TEST_CORE_UTILS_SYMBOL
+#ifdef TEST_CORE_LIBC_SYMBOL
 #include __FILE__
 #endif

@@ -30,7 +30,7 @@
 #include <syscall/syscall.h>
 #include <utils/utils.h>
 #include <utils/debug.h>
-#include <utils/symbol.h>
+#include <symbol.h>
 #include <arch/debug.h>
 #include <arch/cpu.h>
 #include <arch/context-types.h>
