@@ -24,7 +24,7 @@
 
 #include <core.h>
 #include <random.h>
-#include <utils/math.h>
+#include <math.h>
 
 void random_seed(uint32_t seed) {
     _laritos.rndseed = seed;

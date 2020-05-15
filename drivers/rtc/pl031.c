@@ -28,7 +28,7 @@
 #include <driver/core.h>
 #include <driver/pl031.h>
 #include <utils/utils.h>
-#include <utils/math.h>
+#include <math.h>
 #include <mm/heap.h>
 #include <component/timer.h>
 #include <component/component.h>

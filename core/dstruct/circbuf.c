@@ -23,7 +23,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include <utils/math.h>
+#include <math.h>
 #include <dstruct/circbuf.h>
 #include <sync/spinlock.h>
 #include <sync/condition.h>

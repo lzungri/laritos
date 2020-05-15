@@ -35,7 +35,7 @@
 #include <arch/cpu.h>
 #include <arch/context-types.h>
 #include <mm/exc-handlers.h>
-#include <utils/math.h>
+#include <math.h>
 
 /**
  * Fault messages according to the armv7-a ARM document

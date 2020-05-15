@@ -32,7 +32,7 @@
 #include <component/vrtimer.h>
 #include <time/core.h>
 #include <time/tick.h>
-#include <utils/math.h>
+#include <math.h>
 
 
 static void pause_ticker(void) {

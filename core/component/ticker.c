@@ -31,7 +31,7 @@
 #include <component/component.h>
 #include <time/tick.h>
 #include <time/system-tick.h>
-#include <utils/math.h>
+#include <math.h>
 #include <dstruct/list.h>
 #include <mm/heap.h>
 

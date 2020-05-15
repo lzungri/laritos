@@ -24,7 +24,7 @@
 
 #include <stdint.h>
 #include <test/test.h>
-#include <utils/math.h>
+#include <math.h>
 
 T(math_sign_extend_16_32_preserves_sign) {
     tassert(sign_extend_32(0xFFFF, 16) == 0xFFFFFFFF);

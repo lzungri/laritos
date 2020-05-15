@@ -31,7 +31,7 @@
 #include <fs/vfs/core.h>
 #include <mm/heap.h>
 #include <fs/file.h>
-#include <utils/math.h>
+#include <math.h>
 #include <process/core.h>
 #include <generated/autoconf.h>
 

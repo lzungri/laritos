@@ -16,7 +16,7 @@
 #include <irq/core.h>
 #include <time/tick.h>
 #include <component/vrtimer.h>
-#include <utils/math.h>
+#include <math.h>
 #include <syscall/syscall-no.h>
 
 static inline void debug_message_delimiter(void) {

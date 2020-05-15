@@ -4,7 +4,7 @@
 #include <string.h>
 #include <printf.h>
 #include <process/core.h>
-#include <utils/math.h>
+#include <math.h>
 #include <fs/vfs/core.h>
 
 static inline bool file_is_absolute(char *path) {

@@ -31,7 +31,7 @@
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>
 #include <fs/pseudofs.h>
-#include <utils/math.h>
+#include <math.h>
 
 int property_init_global_context(void) {
     INIT_LIST_HEAD(&_laritos.properties);

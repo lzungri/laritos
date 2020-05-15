@@ -22,7 +22,7 @@
 
 #include <string.h>
 #include <stdint.h>
-#include <utils/math.h>
+#include <math.h>
 
 void *memcpy(void *dest, const void *src, size_t n) {
     char *d = dest;

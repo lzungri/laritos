@@ -30,7 +30,7 @@
 #include <process/status.h>
 #include <arch/context-types.h>
 #include <utils/debug.h>
-#include <utils/math.h>
+#include <math.h>
 #include <sched/core.h>
 #include <arch/debug.h>
 #include <sync/spinlock.h>

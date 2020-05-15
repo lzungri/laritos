@@ -44,7 +44,7 @@
 #include <board/core.h>
 #include <component/component.h>
 #include <component/mci.h>
-#include <utils/math.h>
+#include <math.h>
 #include <mm/heap.h>
 #include <sync/rmutex.h>
 

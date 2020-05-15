@@ -28,7 +28,7 @@
 #include <string.h>
 #include <fs/vfs/types.h>
 #include <fs/vfs/core.h>
-#include <utils/math.h>
+#include <math.h>
 #include <fs/pseudofs.h>
 
 fs_dentry_t *pseudofs_create_file(fs_dentry_t *parent, char *fname,

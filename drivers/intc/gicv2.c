@@ -30,7 +30,7 @@
 #include <board/core.h>
 #include <driver/core.h>
 #include <driver/gicv2.h>
-#include <utils/math.h>
+#include <math.h>
 #include <mm/heap.h>
 #include <generated/autoconf.h>
 

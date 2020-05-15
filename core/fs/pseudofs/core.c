@@ -29,7 +29,7 @@
 #include <fs/vfs/core.h>
 #include <module/core.h>
 #include <mm/heap.h>
-#include <utils/math.h>
+#include <math.h>
 #include <fs/pseudofs.h>
 #include <sync/atomic.h>
 

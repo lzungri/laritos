@@ -27,7 +27,7 @@
 #include <dstruct/list.h>
 #include <mm/heap.h>
 #include <utils/utils.h>
-#include <utils/math.h>
+#include <math.h>
 #include <sync/spinlock.h>
 #include <fs/vfs/core.h>
 #include <fs/vfs/types.h>

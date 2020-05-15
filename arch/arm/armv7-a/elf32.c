@@ -25,7 +25,7 @@
 #include <stdbool.h>
 #include <loader/elf.h>
 #include <arch/elf32.h>
-#include <utils/math.h>
+#include <math.h>
 
 /**
  * Relocates symbol on image at address <imgaddr>

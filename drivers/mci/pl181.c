@@ -47,7 +47,7 @@
 #include <component/mci.h>
 #include <fs/pseudofs.h>
 #include <time/core.h>
-#include <utils/math.h>
+#include <math.h>
 #include <utils/endian.h>
 #include <dstruct/bitset.h>
 #include <mm/heap.h>

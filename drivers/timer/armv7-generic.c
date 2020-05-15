@@ -32,7 +32,7 @@
 #include <driver/armv7-generic-timer.h>
 #include <arch/generic-timer.h>
 #include <utils/utils.h>
-#include <utils/math.h>
+#include <math.h>
 #include <mm/heap.h>
 #include <component/timer.h>
 #include <component/component.h>
