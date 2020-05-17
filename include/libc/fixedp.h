@@ -25,7 +25,7 @@ static inline uint8_t q11_5_as_fraction(uint32_t v) {
 }
 
 #define Q11_5(_int, _frac) \
-    (q11_5_t) { (_int) << 5 | q11_5_as_fraction(_frac) }
+    (q11_5_t) (((abs(_int)) << 5 | q11_5_as_fraction(_frac)) * ((_int) < 0 ? -1 : 1))
 
 #define Q11_5_INT(_v) (int16_t) ((_v) >> 5)
 #define Q11_5_FRAC(_v) (uint32_t) (_q11_5_fractions[(_v) & 0x001F])
@@ -35,7 +35,7 @@ static inline q11_5_t _saturation(int32_t v) {
 }
 
 static inline q11_5_t q11_5_add(q11_5_t v1, q11_5_t v2) {
-    return 0;
+    return v1 + v2;
 }
 
 static inline q11_5_t q11_5_sub(q11_5_t v1, q11_5_t v2) {
