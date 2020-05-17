@@ -126,6 +126,6 @@ int symbol_get_name_at(void *addr, char *buf, size_t blen) {
 
 
 
-#ifdef TEST_CORE_LIBC_SYMBOL
+#ifdef CONFIG_TEST_CORE_LIBC_SYMBOL
 #include __FILE__
 #endif
