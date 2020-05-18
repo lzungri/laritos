@@ -47,3 +47,10 @@ static inline q11_5_t q11_5_add(q11_5_t v1, q11_5_t v2) {
 static inline q11_5_t q11_5_sub(q11_5_t v1, q11_5_t v2) {
     return _saturate16((uint32_t) v1 - (uint32_t) v2);
 }
+
+static inline q11_5_t q11_5_mul(q11_5_t v1, q11_5_t v2) {
+    int32_t mul = (int32_t) v1 * (int32_t) v2;
+    // Round up
+    mul += 1 << (5 - 1);
+    return _saturate16(mul >> 5);
+}
