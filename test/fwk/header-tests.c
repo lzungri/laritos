@@ -50,7 +50,3 @@
 #ifdef CONFIG_TEST_CORE_UTILS_MATH
 #include <core/utils/math.c>
 #endif
-
-#ifdef CONFIG_TEST_CORE_LIBC_FIXEDP
-#include <core/libc/fixedp.c>
-#endif
