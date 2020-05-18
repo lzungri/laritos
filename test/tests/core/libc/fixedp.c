@@ -166,9 +166,6 @@ T(q11_5_sub_carries_fractional_part) {
 TEND
 
 T(q11_5_mul_returns_the_multiplication_of_the_two_fp_values) {
-    q11_5_t v1 = Q11_5(3, 15625);
-    q11_5_t v2 = Q11_5(2, 3125);
-
     tassert(q11_5_mul(Q11_5(0, 0), Q11_5(1, 0)) == Q11_5(0, 0));
     tassert(q11_5_mul(Q11_5(0, 0), Q11_5(1, 99999)) == Q11_5(0, 0));
     tassert(q11_5_mul(Q11_5(1, 0), Q11_5(1, 0)) == Q11_5(1, 0));
