@@ -2,6 +2,7 @@
 
 #include <log.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <math.h>
 #include <utils/utils.h>
 
@@ -49,8 +50,35 @@ static inline q11_5_t q11_5_sub(q11_5_t v1, q11_5_t v2) {
 }
 
 static inline q11_5_t q11_5_mul(q11_5_t v1, q11_5_t v2) {
+    /**
+     * v1 = int1 * 32 | frac1
+     * v2 = int2 * 32 | frac2
+     *
+     * v1 * v2 = (((int1 * int2) * 32 * 32) | (frac1 * frac2))
+     *         = q11_10_res = q11_5_res * 32
+     * q11_5_res = (v1 * v2) >> 5
+     */
     int32_t mul = (int32_t) v1 * (int32_t) v2;
-    // Round up
+    // Round up by adding half of the smallest fractional value (2**-5 / 2)
     mul += 1 << (5 - 1);
+    // Rescale back to q11.5 with saturation
     return _saturate16(mul >> 5);
+}
+
+static inline q11_5_t q11_5_div(q11_5_t v1, q11_5_t v2) {
+    /**
+     * v1 = int1 * 32 | frac1
+     * v2 = int2 * 32 | frac2
+     *
+     * v1 / v2 = ((int1 * 32) / (int2 * 32)) | (frac1 / frac2) =
+     *         = (int1 / int2) | (frac1 / frac2) =
+     *         = q16_0_res
+     *
+     * v1 * 32 / v2 = ((int1 * 32 * 32) / (int2 * 32)) | (frac1 / frac2) =
+     *              = ((int1 * 32) / int2) | (frac1 / frac2) =
+     *              = ((int1 / int2) * 32) | (frac1 / frac2) =
+     *              = q11_5_res
+     */
+    int32_t scaled = ((int32_t) v1) << 5;
+    return _saturate16(scaled / v2);
 }
