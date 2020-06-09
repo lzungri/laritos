@@ -16,7 +16,7 @@
  *     that mode.
  *   - Disable interrupts. IRQs are disabled when any exception occurs. FIQs are disabled
  *     when an FIQ occurs and on reset.
- *   - Sets the appropriate LR to the return address.
+ *   - Sets the appropriate LR_<excmode> to the return address.
  *   - Sets the PC to the vector address for the exception.
  */
 
